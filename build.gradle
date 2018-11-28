@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'maven'
+    id "com.github.hierynomus.license" version "0.14.0"
+}
+
+group = "com.github.harbby"
+version = "1.0.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+license {
+    headerDefinitions {  //see: http://code.mycila.com/license-maven-plugin/#supported-comment-types
+        javadoc_style {
+            firstLine = "/*"
+            endLine = " */"
+            beforeEachLine = " * "
+            afterEachLine = ""
+            firstLineDetectionPattern = "(\\s|\\t)*/\\*.*\$"
+            lastLineDetectionPattern = ".*\\*/(\\s|\\t)*\$"
+            allowBlankLines = false
+            padLines = false
+            //skipLine = "//"
+            isMultiline = true
+        }
+    }
+    header rootProject.file('src/license/LICENSE-HEADER.txt')
+    strictCheck true
+    excludes(["**/*.properties", "**/*.sql"])
+    //include "**/*.java"
+}
