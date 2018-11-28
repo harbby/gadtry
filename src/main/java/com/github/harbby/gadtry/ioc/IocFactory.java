@@ -33,7 +33,7 @@ public interface IocFactory
      */
     public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other);
 
-    public <T> Creator<T> getCreater(Class<T> driver);
+    public <T> Creator<T> getCreator(Class<T> driver);
 
     public <T> Binds getAllBeans();
 
@@ -75,17 +75,17 @@ public interface IocFactory
                     }
 
                     @Override
-                    public BindingSetting byCreater(Creator<? extends T> creater)
+                    public BindingSetting byCreator(Creator<? extends T> creator)
                     {
-                        builder.bind(key, creater);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(creater));
+                        builder.bind(key, creator);
+                        return () -> builder.bindUpdate(key, Lazys.goLazy(creator));
                     }
 
                     @Override
-                    public BindingSetting byCreater(Class<? extends Creator<T>> createrClass)
+                    public BindingSetting byCreator(Class<? extends Creator<T>> creatorClass)
                     {
                         try {
-                            return this.byCreater(createrClass.newInstance());
+                            return this.byCreator(creatorClass.newInstance());
                         }
                         catch (InstantiationException | IllegalAccessException e) {
                             throw new InjectorException(e);

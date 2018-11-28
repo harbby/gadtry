@@ -30,9 +30,9 @@ public interface Binder
 
         void byInstance(T instance);
 
-        BindingSetting byCreater(Creator<? extends T> creator);
+        BindingSetting byCreator(Creator<? extends T> creator);
 
-        BindingSetting byCreater(Class<? extends Creator<T>> createrClass);
+        BindingSetting byCreator(Class<? extends Creator<T>> creatorClass);
     }
 
     public interface BindingSetting

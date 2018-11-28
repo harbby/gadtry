@@ -34,9 +34,9 @@ public class IocFactoryTest
         IocFactory iocFactory = IocFactory.create(binder -> {
             binder.bind(Set.class).by(HashSet.class).withSingle();
             binder.bind(HashSet.class).withSingle();
-            binder.bind(List.class).byCreater(ArrayList::new);  //Single object
+            binder.bind(List.class).byCreator(ArrayList::new);  //Single object
             binder.bind(Object.class, new Object());
-            binder.bind(Map.class).byCreater(HashMap::new).withSingle();  //Single object
+            binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
             binder.bind(TestInject.class);
         });
 
@@ -55,8 +55,8 @@ public class IocFactoryTest
 
         Assert.assertNotNull(iocFactory.getInstance(HashSet.class));
 
-        Supplier a5 = iocFactory.getCreater(HashSet.class);
-        Supplier a6 = iocFactory.getCreater(HashSet.class);
+        Supplier a5 = iocFactory.getCreator(HashSet.class);
+        Supplier a6 = iocFactory.getCreator(HashSet.class);
         Assert.assertEquals(false, a5 == a6);
         Assert.assertEquals(true, a5.get() == a6.get());
     }

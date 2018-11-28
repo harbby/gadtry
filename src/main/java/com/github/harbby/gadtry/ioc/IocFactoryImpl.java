@@ -32,13 +32,13 @@ public class IocFactoryImpl
      */
     public <T> T getInstance(Class<T> driver)
     {
-        return getCreater(driver).get();
+        return getCreator(driver).get();
     }
 
     @Override
-    public <T> Creator<T> getCreater(Class<T> driver)
+    public <T> Creator<T> getCreator(Class<T> driver)
     {
-        return getCreater(driver, (driverClass) -> null);
+        return getCreator(driver, (driverClass) -> null);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class IocFactoryImpl
         return binds;
     }
 
-    private <T> Creator<T> getCreater(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
+    private <T> Creator<T> getCreator(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
     {
         return () -> InternalContext.of(binds, other).get(driver);
     }
@@ -57,7 +57,7 @@ public class IocFactoryImpl
      */
     public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
     {
-        return getCreater(driver, other).get();
+        return getCreator(driver, other).get();
     }
 
     Binds getBinds()
