@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Creater;
+import com.github.harbby.gadtry.function.Creator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public class LazyTest
     public void goLazy()
             throws IOException
     {
-        final Creater<Connection> connection = Lazys.goLazy(() -> {
+        final Creator<Connection> connection = Lazys.goLazy(() -> {
             try {
                 return DriverManager.getConnection("jdbc:url");
             }

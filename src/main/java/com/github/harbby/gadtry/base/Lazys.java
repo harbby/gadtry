@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Creater;
+import com.github.harbby.gadtry.function.Creator;
 
 import java.io.Serializable;
 
@@ -25,27 +25,27 @@ public class Lazys
 {
     private Lazys() {}
 
-    public static <T> Creater<T> memoize(Creater<T> delegate)
+    public static <T> Creator<T> memoize(Creator<T> delegate)
     {
         return delegate instanceof LazySupplier ?
                 delegate :
                 new LazySupplier<>(requireNonNull(delegate));
     }
 
-    public static <T> Creater<T> goLazy(Creater<T> delegate)
+    public static <T> Creator<T> goLazy(Creator<T> delegate)
     {
         return memoize(delegate);
     }
 
     public static class LazySupplier<T>
-            implements Serializable, Creater<T>
+            implements Serializable, Creator<T>
     {
-        private final Creater<T> delegate;
+        private final Creator<T> delegate;
         private transient volatile boolean initialized = false;
         private transient T value;
         private static final long serialVersionUID = 0L;
 
-        LazySupplier(Creater<T> delegate)
+        LazySupplier(Creator<T> delegate)
         {
             this.delegate = delegate;
         }

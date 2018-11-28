@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creater;
+import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.base.Lazys;
 
 /**
@@ -33,7 +33,7 @@ public interface IocFactory
      */
     public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other);
 
-    public <T> Creater<T> getCreater(Class<T> driver);
+    public <T> Creator<T> getCreater(Class<T> driver);
 
     public <T> Binds getAllBeans();
 
@@ -63,9 +63,9 @@ public interface IocFactory
                     @Override
                     public BindingSetting by(Class<? extends T> createClass)
                     {
-                        Creater<T> creater = () -> context.getByNew(createClass);
-                        builder.bind(key, creater);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(creater));
+                        Creator<T> creator = () -> context.getByNew(createClass);
+                        builder.bind(key, creator);
+                        return () -> builder.bindUpdate(key, Lazys.goLazy(creator));
                     }
 
                     @Override
@@ -75,14 +75,14 @@ public interface IocFactory
                     }
 
                     @Override
-                    public BindingSetting byCreater(Creater<? extends T> creater)
+                    public BindingSetting byCreater(Creator<? extends T> creater)
                     {
                         builder.bind(key, creater);
                         return () -> builder.bindUpdate(key, Lazys.goLazy(creater));
                     }
 
                     @Override
-                    public BindingSetting byCreater(Class<? extends Creater<T>> createrClass)
+                    public BindingSetting byCreater(Class<? extends Creator<T>> createrClass)
                     {
                         try {
                             return this.byCreater(createrClass.newInstance());

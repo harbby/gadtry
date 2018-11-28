@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creater;
+import com.github.harbby.gadtry.function.Creator;
 
 public class IocFactoryImpl
         implements IocFactory
@@ -36,7 +36,7 @@ public class IocFactoryImpl
     }
 
     @Override
-    public <T> Creater<T> getCreater(Class<T> driver)
+    public <T> Creator<T> getCreater(Class<T> driver)
     {
         return getCreater(driver, (driverClass) -> null);
     }
@@ -47,7 +47,7 @@ public class IocFactoryImpl
         return binds;
     }
 
-    private <T> Creater<T> getCreater(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
+    private <T> Creator<T> getCreater(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
     {
         return () -> InternalContext.of(binds, other).get(driver);
     }

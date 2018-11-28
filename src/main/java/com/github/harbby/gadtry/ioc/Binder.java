@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creater;
+import com.github.harbby.gadtry.function.Creator;
 
 public interface Binder
 {
@@ -30,9 +30,9 @@ public interface Binder
 
         void byInstance(T instance);
 
-        BindingSetting byCreater(Creater<? extends T> creater);
+        BindingSetting byCreater(Creator<? extends T> creator);
 
-        BindingSetting byCreater(Class<? extends Creater<T>> createrClass);
+        BindingSetting byCreater(Class<? extends Creator<T>> createrClass);
     }
 
     public interface BindingSetting

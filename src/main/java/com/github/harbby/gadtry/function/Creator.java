@@ -18,7 +18,7 @@ package com.github.harbby.gadtry.function;
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface Creater<T>
+public interface Creator<T>
         extends Serializable, java.util.function.Supplier<T>
 {
     T get();

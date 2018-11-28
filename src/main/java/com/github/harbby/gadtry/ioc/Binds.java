@@ -15,21 +15,21 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creater;
+import com.github.harbby.gadtry.function.Creator;
 
 import java.util.HashMap;
 import java.util.Map;
 
 interface Binds
 {
-    default <T> Creater<T> get(Class<T> type)
+    default <T> Creator<T> get(Class<T> type)
     {
         return getOrDefault(type, null);
     }
 
-    <T> Creater<T> getOrDefault(Class<T> type, Creater<T> defaultValue);
+    <T> Creator<T> getOrDefault(Class<T> type, Creator<T> defaultValue);
 
-    public <T> Map<Class<?>, Creater<?>> getAllBeans();
+    public <T> Map<Class<?>, Creator<?>> getAllBeans();
 
     static Builder builder()
     {
@@ -38,22 +38,22 @@ interface Binds
 
     static class Builder
     {
-        private final Map<Class<?>, Creater<?>> bindMapping = new HashMap<>();
+        private final Map<Class<?>, Creator<?>> bindMapping = new HashMap<>();
 
-        public <T> Builder bind(Class<T> type, Creater<? extends T> creater)
+        public <T> Builder bind(Class<T> type, Creator<? extends T> creator)
         {
-            Creater oldCreater = bindMapping.get(type);
-            if (oldCreater != null) {
+            Creator oldCreator = bindMapping.get(type);
+            if (oldCreator != null) {
                 throw new InjectorException(" Unable to create IocFactory, see the following errors:\n" +
-                        "A binding to " + type.toString() + " was already configured at " + oldCreater);
+                        "A binding to " + type.toString() + " was already configured at " + oldCreator);
             }
-            bindMapping.put(type, creater);
+            bindMapping.put(type, creator);
             return this;
         }
 
-        <T> void bindUpdate(Class<T> type, Creater<? extends T> creater)
+        <T> void bindUpdate(Class<T> type, Creator<? extends T> creator)
         {
-            bindMapping.put(type, creater);
+            bindMapping.put(type, creator);
         }
 
         public Binds build()
@@ -62,13 +62,13 @@ interface Binds
             {
                 @SuppressWarnings("unchecked")
                 @Override
-                public <T> Creater<T> getOrDefault(Class<T> type, Creater<T> defaultValue)
+                public <T> Creator<T> getOrDefault(Class<T> type, Creator<T> defaultValue)
                 {
-                    return (Creater<T>) bindMapping.getOrDefault(type, defaultValue);
+                    return (Creator<T>) bindMapping.getOrDefault(type, defaultValue);
                 }
 
                 @Override
-                public Map<Class<?>, Creater<?>> getAllBeans()
+                public Map<Class<?>, Creator<?>> getAllBeans()
                 {
                     return bindMapping;
                 }
