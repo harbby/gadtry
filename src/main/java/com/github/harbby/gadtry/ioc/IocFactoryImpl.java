@@ -28,7 +28,7 @@ public class IocFactoryImpl
     }
 
     /**
-     * @throws InjectorException
+     * @throws InjectorException Injector error
      */
     public <T> T getInstance(Class<T> driver)
     {
@@ -53,7 +53,7 @@ public class IocFactoryImpl
     }
 
     /**
-     * @throws InjectorException
+     * @throws InjectorException Injector error
      */
     public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
     {

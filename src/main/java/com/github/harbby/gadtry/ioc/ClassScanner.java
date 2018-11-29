@@ -30,8 +30,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Files.listFiles;
-
 public class ClassScanner
 {
     private ClassScanner() {}

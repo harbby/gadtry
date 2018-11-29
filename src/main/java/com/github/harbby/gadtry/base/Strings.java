@@ -24,9 +24,6 @@ public class Strings
         return !isBlank(cs);
     }
 
-    /**
-     * copy StringUtils.isBlank
-     */
     public static boolean isBlank(final CharSequence cs)
     {
         int strLen;

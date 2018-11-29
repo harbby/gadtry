@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -42,7 +40,9 @@ public class ObjectInputStreamProxy
      * ObjectInputStreamProxy used by user classLoader
      * <p>
      *
+     * @param in InputStream
      * @param classLoader used by loadObject
+     * @throws IOException IOException
      */
     public ObjectInputStreamProxy(InputStream in, ClassLoader classLoader)
             throws IOException
@@ -54,19 +54,13 @@ public class ObjectInputStreamProxy
     /**
      * get Method LatestUserDefinedLoader with java.io.ObjectInputStreamProxy
      * with jdk.internal.misc.VM.latestUserDefinedLoader()
+     *
+     * @return Return user last used classloaer
      */
     public static ClassLoader getLatestUserDefinedLoader()
     {
         //super.latestUserDefinedLoader();
-        Class<?> class1 = java.io.ObjectInputStream.class;
-        try {
-            Method method = class1.getDeclaredMethod("latestUserDefinedLoader");
-            method.setAccessible(true);  //必须要加这个才能
-            return (ClassLoader) method.invoke(null);
-        }
-        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Not compatible with java version");
-        }
+        return sun.misc.VM.latestUserDefinedLoader();
     }
 
     /**

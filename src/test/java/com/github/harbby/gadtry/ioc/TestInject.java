@@ -23,7 +23,8 @@ public class TestInject
     private TestInject test;
 
     @Autowired
-    public TestInject(HashMap set){
+    public TestInject(HashMap set)
+    {
         System.out.println(set);
     }
 }

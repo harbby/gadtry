@@ -32,6 +32,7 @@ public class IOUtils
      * @param buffSize the size of the buffer
      * @param close whether or not close the InputStream and
      * OutputStream at the end. The streams are closed in the finally clause.
+     * @throws IOException IOException
      */
     public static void copyBytes(InputStream in, OutputStream out, int buffSize, boolean close)
             throws IOException
@@ -52,6 +53,7 @@ public class IOUtils
      * @param in InputStrem to read from
      * @param out OutputStream to write to
      * @param buffSize the size of the buffer
+     * @throws IOException IOException
      */
     public static void copyBytes(InputStream in, OutputStream out, int buffSize)
             throws IOException

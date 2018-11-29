@@ -26,15 +26,14 @@ public abstract class Node<E>
 
     public abstract String getName();
 
-    /**
-     * 获取当前节点的临时数据
-     */
     public abstract E getOutput();
 
     public abstract void action(Node<E> parentNode);
 
     /**
-     * 获取当前节点的所有子节点
+     * Get all child nodes of the current node
+     *
+     * @return List child nodes
      */
     public List<Node<E>> nextNodes()
     {

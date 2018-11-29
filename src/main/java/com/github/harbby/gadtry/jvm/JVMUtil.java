@@ -26,7 +26,9 @@ public class JVMUtil
     private JVMUtil() {}
 
     /**
-     * 当前class.path里面所有的jar
+     * get this jvm class.path all jars
+     *
+     * @return Set File
      */
     public static Set<File> systemJars()
     {
@@ -34,8 +36,6 @@ public class JVMUtil
                 .split(Pattern.quote(File.pathSeparator));
         Set<File> res = Arrays.stream(jars).map(File::new).filter(File::isFile)
                 .collect(Collectors.toSet());
-        //res.forEach(x -> logger.info("systemJars: {}", x));
-        //logger.info("flink job systemJars size: {}", res.size());
         return res;
     }
 }

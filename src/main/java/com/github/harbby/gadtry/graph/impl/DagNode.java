@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.GraphBuilder;
+import com.github.harbby.gadtry.graph.Node;
 
 import java.util.function.UnaryOperator;
 

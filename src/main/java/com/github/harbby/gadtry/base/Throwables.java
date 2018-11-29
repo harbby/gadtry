@@ -30,8 +30,10 @@ public class Throwables
      * the full, recursive stack trace of {@code throwable}. Note that you probably should not be
      * parsing the resulting string; if you need programmatic access to the stack frames, you can call
      * {@link Throwable#getStackTrace()}.
+     *
+     * @param throwable throwable
+     * @return throwable to string
      */
-    // java.io.PrintWriter, java.io.StringWriter
     public static String getStackTraceAsString(Throwable throwable)
     {
         StringWriter stringWriter = new StringWriter();
@@ -47,6 +49,8 @@ public class Throwables
      * assertEquals("Unable to assign a customer id", Throwables.getRootCause(e).getMessage());
      * </pre>
      *
+     * @param throwable throwable
+     * @return Throwable return Get the most source exception
      * @throws IllegalArgumentException if there is a loop in the causal chain
      */
     public static Throwable getRootCause(Throwable throwable)

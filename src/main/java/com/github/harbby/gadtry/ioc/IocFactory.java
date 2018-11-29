@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.gadtry.function.Creator;
 
 /**
  * harbby ioc
@@ -24,12 +24,19 @@ import com.github.harbby.gadtry.base.Lazys;
 public interface IocFactory
 {
     /**
-     * @throws InjectorException
+     * @param driver Class waiting to be acquired
+     * @param <T> is driver type
+     * @return Driver instance object
+     * @throws InjectorException Injector error
      */
     public <T> T getInstance(Class<T> driver);
 
     /**
-     * @throws InjectorException
+     * @param driver Class waiting to be acquired
+     * @param other User-provided implementation
+     * @param <T> is driver type
+     * @return T Driver instance object
+     * @throws InjectorException Injector error
      */
     public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other);
 

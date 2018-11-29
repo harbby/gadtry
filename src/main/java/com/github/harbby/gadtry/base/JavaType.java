@@ -27,8 +27,8 @@ import java.util.Objects;
  * package: sun.reflect.generics.reflectiveObjects
  * <p>
  * Jdk9 or above can't find this class
- * Alternatives are available: guice-> new MoreTypes.ParameterizedTypeImpl(null, rawType, typeArguments)
- * guice see {@link com.google.inject.internal.MoreTypes.ParameterizedTypeImpl(Type, Type, Type)}
+ * Alternatives are available: guice: new MoreTypes.ParameterizedTypeImpl(null, rawType, typeArguments)
+ * guice see @link com.google.inject.internal.MoreTypes.ParameterizedTypeImpl(Type, Type, Type)
  *
  * <p>
  * Implementing class for ParameterizedType interface.
@@ -108,9 +108,9 @@ public class JavaType
      *
      * @return an array of <tt>Type</tt> objects representing the actual type
      * arguments to this type
-     * @throws <tt>TypeNotPresentException</tt> if any of the
+     * throws <tt>TypeNotPresentException</tt> if any of the
      * actual type arguments refers to a non-existent type declaration
-     * @throws <tt>MalformedParameterizedTypeException</tt> if any of the
+     * throws <tt>MalformedParameterizedTypeException</tt> if any of the
      * actual type parameters refer to a parameterized type that cannot
      * be instantiated for any reason
      * @since 1.5
@@ -134,17 +134,17 @@ public class JavaType
 
     /**
      * Returns a <tt>Type</tt> object representing the type that this type
-     * is a member of.  For example, if this type is <tt>O<T>.I<S></tt>,
-     * return a representation of <tt>O<T></tt>.
+     * is a member of.  For example, if this type is <tt>O.I</tt>,
+     * return a representation of <tt>O</tt>.
      *
      * <p>If this type is a top-level type, <tt>null</tt> is returned.
      *
      * @return a <tt>Type</tt> object representing the type that
      * this type is a member of. If this type is a top-level type,
      * <tt>null</tt> is returned
-     * @throws <tt>TypeNotPresentException</tt> if the owner type
+     * throws <tt>TypeNotPresentException</tt> if the owner type
      * refers to a non-existent type declaration
-     * @throws <tt>MalformedParameterizedTypeException</tt> if the owner type
+     * throws <tt>MalformedParameterizedTypeException</tt> if the owner type
      * refers to a parameterized type that cannot be instantiated
      * for any reason
      */
