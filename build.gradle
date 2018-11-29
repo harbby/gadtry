@@ -59,6 +59,11 @@ artifacts {
     archives sourcesJar, javadocJar
 }
 
+ext {
+    mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
+    mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
+}
+
 //上传到nexus
 //--- gradle clean build upload
 uploadArchives {   //uploadArchives uploadShadow
