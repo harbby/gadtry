@@ -2,8 +2,22 @@
 Gadtry A collection of java tool libraries.
 Contains: ioc. exec .graph 
 
+## Use
+* maven
+```xml
+    <dependency>
+      <groupId>com.github.harbby</groupId>
+      <artifactId>gadtry</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+```
+* gradle
+```groovy
+    compile group: 'com.github.harbby', name: 'gadtry', version: '1.0.0'
+```
+
 ## Ioc
-factory:
+Create Factory:
 ```
 IocFactory iocFactory = IocFactory.create(binder -> {
     binder.bind(Set.class).by(HashSet.class).withSingle();
@@ -18,7 +32,7 @@ Set a1 = iocFactory.getInstance(Set.class);
 Set a2 = iocFactory.getInstance(Set.class);
 Assert.assertEquals(true, a1 == a2); // Single object
 ```
-class
+Class Inject
 ```
 public class TestInject
 {
