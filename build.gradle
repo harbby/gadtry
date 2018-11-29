@@ -60,6 +60,7 @@ artifacts {
 }
 
 ext {
+    shouldSign = project.hasProperty('mavenUsername')
     mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
     mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
 }
@@ -69,7 +70,7 @@ ext {
 uploadArchives {   //uploadArchives uploadShadow
     repositories {
         signing {
-            required { project.hasProperty('mavenUsername') }
+            required { shouldSign }
             sign configurations.archives
             
             mavenDeployer {
