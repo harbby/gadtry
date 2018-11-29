@@ -69,6 +69,7 @@ ext {
 uploadArchives {   //uploadArchives uploadShadow
     repositories {
         signing {
+            required { project.hasProperty('mavenUsername') }
             sign configurations.archives
             
             mavenDeployer {
