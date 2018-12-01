@@ -15,12 +15,12 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -81,7 +81,7 @@ public class DefaultGraph<E>
     {
         List<String> builder = new ArrayList<>();
         builder.add("/");
-        show(builder, Collections.unmodifiableList(root.nextNodes()), "├");  //ImmutableList.copyOf()
+        show(builder, ImmutableList.copy(root.nextNodes()), "├");  //ImmutableList.copyOf()
         builder.forEach(System.out::println);
     }
 
