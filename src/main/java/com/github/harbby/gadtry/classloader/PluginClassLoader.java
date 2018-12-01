@@ -15,11 +15,13 @@
  */
 package com.github.harbby.gadtry.classloader;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,13 +34,13 @@ public class PluginClassLoader
     private static final ClassLoader PLATFORM_CLASS_LOADER = findPlatformClassLoader();
 
     private final ClassLoader spiClassLoader;
-    private final List<String> spiPackages;
+    private final Collection<String> spiPackages;
     private final List<String> spiResources;
 
     public PluginClassLoader(
             List<URL> urls,
             ClassLoader spiClassLoader,
-            List<String> spiPackages)
+            Collection<String> spiPackages)
     {
         this(urls,
                 spiClassLoader,
@@ -49,14 +51,14 @@ public class PluginClassLoader
     private PluginClassLoader(
             List<URL> urls,
             ClassLoader spiClassLoader,
-            List<String> spiPackages,
+            Collection<String> spiPackages,
             List<String> spiResources)
     {
         // plugins should not have access to the system (application) class loader
-        super(urls.toArray(new URL[urls.size()]), PLATFORM_CLASS_LOADER);
+        super(urls.toArray(new URL[0]), PLATFORM_CLASS_LOADER);
         this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
-        this.spiPackages = Collections.unmodifiableList(spiPackages);  //== ImmutableList.copyOf()
-        this.spiResources = Collections.unmodifiableList(spiResources);
+        this.spiPackages = ImmutableList.copy(spiPackages);  //== ImmutableList.copyOf()
+        this.spiResources = ImmutableList.copy(spiResources);
     }
 
     @Override
