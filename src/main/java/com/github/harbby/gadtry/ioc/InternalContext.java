@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.ioc;
 
+import com.github.harbby.gadtry.function.Creator;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -28,18 +30,18 @@ import static com.github.harbby.gadtry.base.Checks.checkState;
 class InternalContext
 {
     private final ThreadLocal<Set<Class<?>>> deps = ThreadLocal.withInitial(HashSet::new);
-    private final IocFactory.Function<Class<?>, ?> other;
-    private final Binds binds;
+    private final IocFactory.Function<Class<?>, ?> userCreator;
+    private final BindMapping binds;
 
-    private InternalContext(Binds binds, IocFactory.Function<Class<?>, ?> other)
+    private InternalContext(BindMapping binds, IocFactory.Function<Class<?>, ?> userCreator)
     {
         this.binds = binds;
-        this.other = other;
+        this.userCreator = userCreator;
     }
 
-    public static InternalContext of(Binds binds, IocFactory.Function<Class<?>, ?> other)
+    public static InternalContext of(BindMapping binds, IocFactory.Function<Class<?>, ?> userCreator)
     {
-        return new InternalContext(binds, other);
+        return new InternalContext(binds, userCreator);
     }
 
     public <T> T get(Class<T> driver)
@@ -103,16 +105,15 @@ class InternalContext
         for (Class<?> argType : constructor.getParameterTypes()) {
             checkState(argType != driver && check(argType), "Found a circular dependency involving " + driver + ", and circular dependencies are disabled.");
 
-            Object otherValue = other.apply(argType);
-            if (otherValue == null) {
-                //Object value = binds.get(argType);
+            Object userValue = userCreator.apply(argType);
+            if (userValue == null) {
                 Object value = getInstance(argType);
                 checkState(value != null, String.format("Could not find a suitable constructor in [%s]. Classes must have either one (and only one) constructor annotated with @Autowired or a constructor that is not private(and only one).", argType));
                 builder.add(value);
             }
             else {
-                checkState(argType.isInstance(otherValue));
-                builder.add(otherValue);
+                checkState(argType.isInstance(userValue));
+                builder.add(userValue);
             }
         }
 
@@ -138,10 +139,17 @@ class InternalContext
         return instance;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> Constructor<T> selectConstructor(Class<T> driver)
     {
-        @SuppressWarnings("unchecked")
-        Constructor<T>[] constructors = (Constructor<T>[]) driver.getConstructors(); //public
+        Constructor<T>[] constructors;
+        if (Creator.class.isAssignableFrom(driver)) {
+            constructors = (Constructor<T>[]) driver.getDeclaredConstructors();
+        }
+        else {
+            checkState(!driver.isInterface(), driver + " is Interface, cannot be instantiated");
+            constructors = (Constructor<T>[]) driver.getConstructors(); //public
+        }
 
         Constructor<T> noParameter = null;
         for (Constructor<T> constructor : constructors) {

@@ -20,9 +20,9 @@ import com.github.harbby.gadtry.function.Creator;
 public class IocFactoryImpl
         implements IocFactory
 {
-    private final Binds binds;
+    private final BindMapping binds;
 
-    IocFactoryImpl(Binds binds)
+    IocFactoryImpl(BindMapping binds)
     {
         this.binds = binds;
     }
@@ -42,25 +42,25 @@ public class IocFactoryImpl
     }
 
     @Override
-    public <T> Binds getAllBeans()
+    public <T> BindMapping getAllBeans()
     {
         return binds;
     }
 
-    private <T> Creator<T> getCreator(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
+    private <T> Creator<T> getCreator(Class<T> driver, IocFactory.Function<Class<?>, ?> userCreator)
     {
-        return () -> InternalContext.of(binds, other).get(driver);
+        return () -> InternalContext.of(binds, userCreator).get(driver);
     }
 
     /**
      * @throws InjectorException Injector error
      */
-    public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other)
+    public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> userCreator)
     {
-        return getCreator(driver, other).get();
+        return getCreator(driver, userCreator).get();
     }
 
-    Binds getBinds()
+    BindMapping getBinds()
     {
         return binds;
     }

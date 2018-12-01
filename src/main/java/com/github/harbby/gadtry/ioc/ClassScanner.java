@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.base.Files;
+import com.github.harbby.gadtry.collection.ImmutableSet;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,9 @@ public class ClassScanner
     {
         ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
         //loger.warn(classString, error)
-        return getClasses(basePackage, classLoader, (classString, error) -> {throw new RuntimeException(classString, error);});
+        return getClasses(basePackage, classLoader, (classString, error) -> {
+            throw new RuntimeException(classString, error);
+        });
     }
 
     public static Set<Class<?>> getClasses(String basePackage, ClassLoader classLoader, BiConsumer<String, Throwable> handler)
@@ -47,7 +50,7 @@ public class ClassScanner
     {
         Set<String> classStrings = scanClasses(basePackage, classLoader);
 
-        Set<Class<?>> classes = new HashSet<>();
+        ImmutableSet.Builder<Class<?>> classes = ImmutableSet.builder();
         for (String it : classStrings) {
             String classString = it.substring(0, it.length() - 6).replace("/", ".");
 
@@ -59,7 +62,7 @@ public class ClassScanner
                 handler.accept(classString, e);
             }
         }
-        return classes;
+        return classes.build();
     }
 
     public static Set<String> scanClasses(String basePackage, ClassLoader classLoader)
@@ -67,7 +70,7 @@ public class ClassScanner
     {
         String packagePath = basePackage.replace('.', '/');
 
-        Set<String> classStrings = new HashSet<>();
+        ImmutableSet.Builder<String> classStrings = ImmutableSet.builder();
         Enumeration<URL> resources = classLoader.getResources(packagePath);
         while (resources.hasMoreElements()) {
             URL url = resources.nextElement();
@@ -80,7 +83,7 @@ public class ClassScanner
             }
         }
 
-        return classStrings;
+        return classStrings.build();
     }
 
     private static Set<String> scanJarClass(String packagePath, URL url)

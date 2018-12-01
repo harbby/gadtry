@@ -18,6 +18,8 @@ package com.github.harbby.gadtry.ioc;
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Creator;
 
+import static com.github.harbby.gadtry.base.Checks.checkState;
+
 /**
  * harbby ioc
  */
@@ -33,20 +35,20 @@ public interface IocFactory
 
     /**
      * @param driver Class waiting to be acquired
-     * @param other User-provided implementation
+     * @param userCreator User-provided implementation
      * @param <T> is driver type
      * @return T Driver instance object
      * @throws InjectorException Injector error
      */
-    public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> other);
+    public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> userCreator);
 
     public <T> Creator<T> getCreator(Class<T> driver);
 
-    public <T> Binds getAllBeans();
+    public <T> BindMapping getAllBeans();
 
     public static IocFactory create(Bean... beans)
     {
-        final Binds.Builder builder = Binds.builder();
+        final BindMapping.Builder builder = BindMapping.builder();
         final InternalContext context = InternalContext.of(builder.build(), (x) -> null);
         final Binder binder = new Binder()
         {
@@ -64,6 +66,7 @@ public interface IocFactory
                     @Override
                     public void withSingle()
                     {
+                        checkState(!key.isInterface(), key + "key is Interface");
                         builder.bind(key, Lazys.goLazy(() -> context.getByNew(key)));
                     }
 
@@ -92,9 +95,13 @@ public interface IocFactory
                     public BindingSetting byCreator(Class<? extends Creator<T>> creatorClass)
                     {
                         try {
-                            return this.byCreator(creatorClass.newInstance());
+                            Creator<T> creator = Lazys.goLazy(() -> context.getByNew(creatorClass).get());
+                            return this.byCreator(creator);
                         }
-                        catch (InstantiationException | IllegalAccessException e) {
+                        catch (RuntimeException e) {
+                            throw e;
+                        }
+                        catch (Exception e) {
                             throw new InjectorException(e);
                         }
                     }
@@ -105,8 +112,7 @@ public interface IocFactory
         for (Bean bean : beans) {
             bean.configure(binder);
         }
-        Binds binds = builder.build();
-        return new IocFactoryImpl(binds);
+        return new IocFactoryImpl(builder.build());
     }
 
     @FunctionalInterface

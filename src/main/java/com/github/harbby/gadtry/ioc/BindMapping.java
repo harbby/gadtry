@@ -15,12 +15,13 @@
  */
 package com.github.harbby.gadtry.ioc;
 
+import com.github.harbby.gadtry.collection.ImmutableMap;
 import com.github.harbby.gadtry.function.Creator;
 
 import java.util.HashMap;
 import java.util.Map;
 
-interface Binds
+interface BindMapping
 {
     default <T> Creator<T> get(Class<T> type)
     {
@@ -56,9 +57,9 @@ interface Binds
             bindMapping.put(type, creator);
         }
 
-        public Binds build()
+        public BindMapping build()
         {
-            return new Binds()
+            return new BindMapping()
             {
                 @SuppressWarnings("unchecked")
                 @Override
@@ -70,7 +71,7 @@ interface Binds
                 @Override
                 public Map<Class<?>, Creator<?>> getAllBeans()
                 {
-                    return bindMapping;
+                    return ImmutableMap.copy(bindMapping);
                 }
 
                 @Override
