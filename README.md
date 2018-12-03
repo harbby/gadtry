@@ -8,12 +8,8 @@ Contains: ioc. exec .graph
     <dependency>
       <groupId>com.github.harbby</groupId>
       <artifactId>gadtry</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
     </dependency>
-```
-* gradle
-```groovy
-    compile group: 'com.github.harbby', name: 'gadtry', version: '1.0.0'
 ```
 
 ## Ioc
