@@ -1,6 +1,6 @@
 # Gadtry [![Build Status](http://img.shields.io/travis/harbby/gadtry.svg?style=flat&branch=master)](https://travis-ci.org/harbby/gadtry)
 Gadtry A collection of java tool libraries.
-Contains: ioc. exec .graph 
+Contains: ioc. exec. graph 
 
 ## Use
 * maven
