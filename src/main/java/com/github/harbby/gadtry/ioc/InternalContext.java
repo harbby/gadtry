@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
+import com.github.harbby.gadtry.function.Function;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -30,16 +31,16 @@ import static com.github.harbby.gadtry.base.Checks.checkState;
 class InternalContext
 {
     private final ThreadLocal<Set<Class<?>>> deps = ThreadLocal.withInitial(HashSet::new);
-    private final IocFactory.Function<Class<?>, ?> userCreator;
+    private final Function<Class<?>, ?> userCreator;
     private final BindMapping binds;
 
-    private InternalContext(BindMapping binds, IocFactory.Function<Class<?>, ?> userCreator)
+    private InternalContext(BindMapping binds, Function<Class<?>, ?> userCreator)
     {
         this.binds = binds;
         this.userCreator = userCreator;
     }
 
-    public static InternalContext of(BindMapping binds, IocFactory.Function<Class<?>, ?> userCreator)
+    public static InternalContext of(BindMapping binds, Function<Class<?>, ?> userCreator)
     {
         return new InternalContext(binds, userCreator);
     }

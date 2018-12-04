@@ -21,7 +21,7 @@ import com.github.harbby.gadtry.function.Creator;
 import java.util.HashMap;
 import java.util.Map;
 
-interface BindMapping
+public interface BindMapping
 {
     default <T> Creator<T> get(Class<T> type)
     {

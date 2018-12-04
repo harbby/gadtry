@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Creator;
+import com.github.harbby.gadtry.function.Function;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
 
@@ -31,7 +32,10 @@ public interface IocFactory
      * @return Driver instance object
      * @throws InjectorException Injector error
      */
-    public <T> T getInstance(Class<T> driver);
+    default <T> T getInstance(Class<T> driver)
+    {
+        return getInstance(driver, (driverClass) -> null);
+    }
 
     /**
      * @param driver Class waiting to be acquired
@@ -40,7 +44,7 @@ public interface IocFactory
      * @return T Driver instance object
      * @throws InjectorException Injector error
      */
-    public <T> T getInstance(Class<T> driver, IocFactory.Function<Class<?>, ?> userCreator);
+    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?> userCreator);
 
     public <T> Creator<T> getCreator(Class<T> driver);
 
@@ -113,12 +117,5 @@ public interface IocFactory
             bean.configure(binder);
         }
         return new IocFactoryImpl(builder.build());
-    }
-
-    @FunctionalInterface
-    public static interface Function<F0, F1>
-    {
-        F1 apply(F0 f0)
-                throws Exception;
     }
 }
