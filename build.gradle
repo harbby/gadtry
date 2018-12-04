@@ -1,122 +1,136 @@
 plugins {
-    id 'java'
-    id 'maven'
-    id 'signing'
-    id "com.github.hierynomus.license" version "0.14.0"
+  id 'java'
+  id 'maven'
+  id 'signing'
+  id 'checkstyle'
+  id "com.github.hierynomus.license" version "0.14.0"
 }
 
 group = "com.github.harbby"
-version = "1.0.0"
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}
-
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-}
+version = "1.1.0-SNAPSHOT"  //SNAPSHOT
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+}
+
+checkstyle {
+  toolVersion '8.12'
+  showViolations true
+  configFile = rootProject.file('src/checkstyle/facebook_checks.xml')
+  //configFile = file("${rootDir}/src/checkstyle/facebook_checks.xml")
+}
+
 license {
-    headerDefinitions {  //see: http://code.mycila.com/license-maven-plugin/#supported-comment-types
-        javadoc_style {
-            firstLine = "/*"
-            endLine = " */"
-            beforeEachLine = " * "
-            afterEachLine = ""
-            firstLineDetectionPattern = "(\\s|\\t)*/\\*.*\$"
-            lastLineDetectionPattern = ".*\\*/(\\s|\\t)*\$"
-            allowBlankLines = false
-            padLines = false
-            //skipLine = "//"
-            isMultiline = true
-        }
+  headerDefinitions {  //see: http://code.mycila.com/license-maven-plugin/#supported-comment-types
+    javadoc_style {
+      firstLine = "/*"
+      endLine = " */"
+      beforeEachLine = " * "
+      afterEachLine = ""
+      firstLineDetectionPattern = "(\\s|\\t)*/\\*.*\$"
+      lastLineDetectionPattern = ".*\\*/(\\s|\\t)*\$"
+      allowBlankLines = false
+      padLines = false
+      //skipLine = "//"
+      isMultiline = true
     }
-    header rootProject.file('src/license/LICENSE-HEADER.txt')
-    strictCheck true
-    excludes(["**/*.properties", "**/*.sql"])
-    //include "**/*.java"
+  }
+  header rootProject.file('src/license/LICENSE-HEADER.txt')
+  strictCheck true
+  excludes(["**/*.properties", "**/*.sql"])
+  //include "**/*.java"
+}
+
+task checkstyle(type: Checkstyle) {
+  configFile = file("${rootProject.projectDir}/src/checkstyle/facebook_checks.xml")
+  source 'src'
+  include '**/*.java'
+  exclude '**/gen/**', '**/test/**', '**/build/**', '**/module-info.java'
+  classpath = files()
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+  classifier = 'sources'
+  from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-    //javadoc.failOnError = false
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+  //javadoc.failOnError = false
 }
 
 artifacts {
-    archives sourcesJar, javadocJar
+  archives sourcesJar, javadocJar
 }
 
 ext {
-    shouldSign = project.hasProperty('mavenUsername')
-    mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
-    mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
+  shouldSign = project.hasProperty('mavenUsername')
+  mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
+  mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
 }
 
-//上传到nexus
 //--- gradle clean build upload
 uploadArchives {   //uploadArchives uploadShadow
-    repositories {
-        signing {
-            required { shouldSign }
-            sign configurations.archives
-            
-            mavenDeployer {
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                
-                def repository_url = project.version.endsWith('-SNAPSHOT') ? 
-                        'https://oss.sonatype.org/content/repositories/snapshots' :
-                        'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+  repositories {
+    signing {
+      required { shouldSign }
+      sign configurations.archives
 
-                repository(url: repository_url) {
-                    authentication(userName: "${mavenUsername}", password: "${mavenPassword}")
-                }
-                pom.version = "$project.version"
-                pom.artifactId = "$project.name"
-                pom.groupId = "$project.group"
+      mavenDeployer {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-                pom.project {
-                    name 'gadtry'
-                    description 'Gadtry A collection of java tool libraries. Contains: ioc. exec .graph'
-                    url 'https://github.com/harbby/gadtry'
-                    scm {
-                        url 'https://github.com/harbby/gadtry'
-                        connection 'https://github.com/harbby/gadtry.git'
-                        developerConnection 'https://github.com/harbby/gadtry.git'
-                    }
+        def repository_url = project.version.endsWith('-SNAPSHOT') ?
+                'https://oss.sonatype.org/content/repositories/snapshots' :
+                'https://oss.sonatype.org/service/local/staging/deploy/maven2'
 
-                    developers {
-                        developer {
-                            id 'harbby'
-                            name 'harbby'
-                            email 'yezhixinghai@gmail.com'
-                        }
-                    }
-
-                    licenses {
-                        license {
-                            name 'The Apache Software License, Version 2.0'
-                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                            distribution 'repo'
-                        }
-                    }
-                }
-            }
-
-            mavenLocal()
+        repository(url: repository_url) {
+          authentication(userName: "${mavenUsername}", password: "${mavenPassword}")
         }
-    }
-}
+        pom.version = "$project.version"
+        pom.artifactId = "$project.name"
+        pom.groupId = "$project.group"
 
+        pom.project {
+          name 'gadtry'
+          description 'Gadtry A collection of java tool libraries. Contains: ioc. exec .graph'
+          url 'https://github.com/harbby/gadtry'
+          scm {
+            url 'https://github.com/harbby/gadtry'
+            connection 'https://github.com/harbby/gadtry.git'
+            developerConnection 'https://github.com/harbby/gadtry.git'
+          }
+
+          developers {
+            developer {
+              id 'harbby'
+              name 'harbby'
+              email 'yezhixinghai@gmail.com'
+            }
+          }
+
+          licenses {
+            license {
+              name 'The Apache Software License, Version 2.0'
+              url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+              distribution 'repo'
+            }
+          }
+        }
+      }
+
+      mavenLocal()
+    }
+  }
+}
