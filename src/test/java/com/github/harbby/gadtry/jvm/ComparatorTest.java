@@ -13,32 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.base;
+package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.function.Creator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.io.Serializable;
+import java.util.function.UnaryOperator;
 
-public class LazyTest
+/**
+ *java8引入了所谓的类型关联（TypeIntersection）
+ *
+ * TypeIntersection
+ * */
+public class ComparatorTest
 {
-    @Test
-    public void goLazy()
-            throws IOException
+    public static UnaryOperator<Integer> makeComparator()
     {
-        final Creator<Connection> connection = Lazys.goLazy(() -> {
-            try {
-                return DriverManager.getConnection("jdbc:url");
-            }
-            catch (SQLException e) {
-                throw new RuntimeException("Connection create fail", e);
-            }
-        });
+        UnaryOperator<Integer> func = (UnaryOperator<Integer> & Serializable) (a) -> a + 1;
 
-        Assert.assertNotNull(Serializables.serialize(connection));
+        return func;
+    }
+
+    @Test
+    public void Java8TypeIntersectionTest()
+    {
+        UnaryOperator<Integer> func = makeComparator();
+        Assert.assertEquals(func.apply(1).intValue(), 2);
+        Assert.assertTrue(func instanceof Serializable);
     }
 }

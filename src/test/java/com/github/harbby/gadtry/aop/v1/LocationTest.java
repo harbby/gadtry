@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.jvm;
+package com.github.harbby.gadtry.aop.v1;
 
+import com.github.harbby.gadtry.aop.model.Pointcut;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.Serializable;
-import java.util.function.UnaryOperator;
+import java.util.Map;
+import java.util.Set;
 
-public class ComparatorFactory
+public class LocationTest
 {
-    public static UnaryOperator<Integer> makeComparator()
-    {
-        UnaryOperator<Integer> func = (UnaryOperator<Integer> & Serializable) (a) -> a + 1;
-
-        return func;
-    }
-
     @Test
-    public void Java8TypeIntersectionTest()
+    public void filterTest1()
     {
-        UnaryOperator<Integer> func = makeComparator();
-        Assert.assertEquals(func.apply(1).intValue(), 2);
-        Assert.assertTrue(func instanceof Serializable);
+        Pointcut pointcut = new Pointcut("test");
+        LocationBuilder builder = new LocationBuilder(pointcut);
+        builder.classes(Set.class, Map.class)
+                .returnType(boolean.class)
+                .whereMethod(methodInfo -> methodInfo.getName().startsWith("add"))
+                .build();
+
+        Set<Class<?>> classes = pointcut.getLocation().getSearchClass();
+        Assert.assertEquals(1, classes.size());
     }
 }

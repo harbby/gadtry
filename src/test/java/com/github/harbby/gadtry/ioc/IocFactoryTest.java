@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
+import com.github.harbby.gadtry.function.Creator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -59,5 +60,31 @@ public class IocFactoryTest
         Supplier a6 = iocFactory.getCreator(HashSet.class);
         Assert.assertEquals(false, a5 == a6);
         Assert.assertEquals(true, a5.get() == a6.get());
+    }
+
+    @Test
+    public void privateCreator()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(StringBuilder.class).byCreator(TestCreator.class).withSingle();
+            binder.bind(Set.class).byCreator(HashSet::new).withSingle();
+        });
+
+        StringBuilder stringBuilder = iocFactory.getInstance(StringBuilder.class);
+        Assert.assertNotNull(stringBuilder);
+    }
+
+    private static class TestCreator
+            implements Creator<StringBuilder>
+    {
+        @Autowired
+        private Set set;
+
+        @Override
+        public StringBuilder get()
+        {
+            Assert.assertNotNull(set);
+            return new StringBuilder();
+        }
     }
 }

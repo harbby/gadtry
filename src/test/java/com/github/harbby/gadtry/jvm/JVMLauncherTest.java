@@ -49,17 +49,14 @@ public class JVMLauncherTest
         Assert.assertEquals(out.get().get().intValue(), 1);
     }
 
-    //ops.add("-Xms8G");
-    //ops.add("-Xmx8G");
-
     @Test
     public void test2()
             throws IllegalAccessException
     {
         Class<?> class1 = java.io.ObjectInputStream.class;
         try {
-            Field field = class1.getDeclaredField("primClasses"); //class1.getDeclaredField("primClasses");
-            field.setAccessible(true);  //必须要加这个才能
+            Field field = class1.getDeclaredField("primClasses");
+            field.setAccessible(true);
             Map map = (Map) field.get(class1);
             System.out.println(field.get(map));
 
@@ -70,9 +67,6 @@ public class JVMLauncherTest
             e.printStackTrace();
         }
     }
-
-    private final static String hehe = "hehe";
-    public final String xixi = "xixi";
 
     @Test
     public void test()
