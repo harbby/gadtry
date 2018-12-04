@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.util.function.Function;
+
 public class Checks
 {
     private Checks() {}
@@ -31,5 +33,18 @@ public class Checks
         if (!ok) {
             throw new IllegalStateException(error);
         }
+    }
+
+    public static <T> boolean checkContainsTrue(T[] source, Function<T, Boolean> filter)
+    {
+        if (source == null || source.length == 0) {
+            return true;
+        }
+        for (T t : source) {
+            if (filter.apply(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
