@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.memory.collection;
 
-import com.github.harbby.gadtry.function.Functions;
 import com.github.harbby.gadtry.memory.MemoryBlock;
 
 import java.lang.reflect.Modifier;
@@ -23,6 +22,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
@@ -31,13 +31,13 @@ import static java.util.Objects.requireNonNull;
 public class OffHeapMap<K, V>
         implements Map<K, V>
 {
-    private final Functions.Serialization<V> serialization;
-    private final Functions.Deserialization<V> deserialization;
+    private final Function<V, byte[]> serialization;
+    private final Function<byte[], V> deserialization;
     private final Map<K, MemoryBlock> blockMap;
 
     public OffHeapMap(
-            Functions.Serialization<V> serialization,
-            Functions.Deserialization<V> deserialization)
+            Function<V, byte[]> serialization,
+            Function<byte[], V> deserialization)
     {
         this.serialization = requireNonNull(serialization, "serialization is null");
         this.deserialization = requireNonNull(deserialization, "serialization is null");
@@ -45,8 +45,8 @@ public class OffHeapMap<K, V>
     }
 
     public OffHeapMap(
-            Functions.Serialization<V> serialization,
-            Functions.Deserialization<V> deserialization,
+            Function<V, byte[]> serialization,
+            Function<byte[], V> deserialization,
             Class<? extends Map> blockMapClass)
     {
         this.serialization = requireNonNull(serialization, "serialization is null");

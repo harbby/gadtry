@@ -58,6 +58,11 @@ public class ImmutableMap
         }
     }
 
+    public static <K, V> Map<K, V> of()
+    {
+        return Collections.emptyMap();
+    }
+
     public static <K, V> Map<K, V> of(K k1, V v1)
     {
         return Stream.of(Tuple2.of(k1, v1)).collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));

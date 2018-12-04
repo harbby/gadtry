@@ -40,6 +40,9 @@ public class ImmutableList
 
     public static <T> List<T> of(T... t)
     {
+        if (t == null) {
+            return Collections.emptyList();
+        }
         return Stream.of(t).collect(Collectors.toList());
     }
 

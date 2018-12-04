@@ -15,19 +15,9 @@
  */
 package com.github.harbby.gadtry.function;
 
-public class Functions
+@FunctionalInterface
+public interface Function<F0, F1>
 {
-    private Functions() {}
-
-    @FunctionalInterface
-    public interface Serialization<T>
-    {
-        public byte[] apply(T t);
-    }
-
-    @FunctionalInterface
-    public interface Deserialization<T>
-    {
-        public T apply(byte[] bytes);
-    }
+    F1 apply(F0 f0)
+            throws Exception;
 }
