@@ -82,8 +82,9 @@ Dependent on ioc container:
                         Assert.assertTrue(true);
                         System.out.println("after2");
                     });
-        }).setConfigurationProperties(ImmutableMap.of())
-                .initialize();
+        }).initialize();
+
+        Set set = iocFactory.getInstance(HashSet.class);
 ```
 
 ## Exec New Jvm
