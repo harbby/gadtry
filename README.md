@@ -1,6 +1,6 @@
 # Gadtry [![Build Status](http://img.shields.io/travis/harbby/gadtry.svg?style=flat&branch=master)](https://travis-ci.org/harbby/gadtry)
 Gadtry A collection of java tool libraries.
-Contains: ioc. exec. graph 
+Contains: ioc. aop. exec. graph ...
 
 ## Use
 * maven
@@ -40,6 +40,50 @@ public class TestInject
         System.out.println(set);
     }
 }
+```
+
+## Aop
+Does not rely on ioc containers:
+```
+T proxy = AopFactory.proxy(Class<T>)
+    .byInstance(instance)
+    .around(proxyContext -> {
+            String name = proxyContext.getInfo().getName();
+            System.out.println(name);
+            Object value = proxyContext.proceed();
+            switch (name) {
+                case "add":
+                    Assert.assertEquals(true, value);  //Set or List
+                    break;
+                case "size":
+                    Assert.assertTrue(value instanceof Integer);
+                    break;
+            }
+    });
+```
+Dependent on ioc container:
+```
+        IocFactory iocFactory = GadTry.create(binder -> {
+            binder.bind(Map.class).byCreator(HashMap::new).withSingle();
+            binder.bind(HashSet.class).by(HashSet.class).withSingle();
+        }).aop(binder -> {
+            binder.bind("point1")
+                    .withPackage("com.github.harbby")
+                    //.subclassOf(Map.class)
+                    .classAnnotated()
+                    .classes(HashMap.class, HashSet.class)
+                    .whereMethod(methodInfo -> methodInfo.getName().startsWith("add"))
+                    .build()
+                    .before((info) -> {
+                        Assert.assertEquals("add", info.getName());
+                        System.out.println("before1");
+                    })
+                    .after(() -> {
+                        Assert.assertTrue(true);
+                        System.out.println("after2");
+                    });
+        }).setConfigurationProperties(ImmutableMap.of())
+                .initialize();
 ```
 
 ## Exec New Jvm
