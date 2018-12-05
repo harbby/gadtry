@@ -5,11 +5,11 @@ Contains: ioc. aop. exec. graph ...
 ## Use
 * maven
 ```xml
-    <dependency>
-      <groupId>com.github.harbby</groupId>
-      <artifactId>gadtry</artifactId>
-      <version>1.0.1</version>
-    </dependency>
+<dependency>
+  <groupId>com.github.harbby</groupId>
+  <artifactId>gadtry</artifactId>
+  <version>1.1.0</version>
+</dependency>
 ```
 
 ## Ioc
