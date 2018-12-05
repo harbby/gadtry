@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.collection;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,12 +39,47 @@ public class ImmutableList
         return builder.build().collect(Collectors.toList());
     }
 
+    @SafeVarargs
     public static <T> List<T> of(T... t)
     {
         if (t == null) {
             return Collections.emptyList();
         }
         return Stream.of(t).collect(Collectors.toList());
+    }
+
+    public static <T> List<Tuple2<Integer, T>> zipIndex(Iterable<T> iterable)
+    {
+        ImmutableList.Builder<Tuple2<Integer, T>> builder = ImmutableList.builder();
+        int i = 0;
+        for (T t : iterable) {
+            builder.add(Tuple2.of(i, t));
+            i++;
+        }
+        return builder.build();
+    }
+
+    @SafeVarargs
+    public static <T> List<Tuple2<Integer, T>> zipIndex(T... ts)
+    {
+        ImmutableList.Builder<Tuple2<Integer, T>> builder = ImmutableList.builder();
+        int i = 0;
+        for (T t : ts) {
+            builder.add(Tuple2.of(i, t));
+            i++;
+        }
+        return builder.build();
+    }
+
+    public static <T> List<Tuple2<Integer, T>> zipIndex(Iterator<T> iterator)
+    {
+        ImmutableList.Builder<Tuple2<Integer, T>> builder = ImmutableList.builder();
+        int i = 0;
+        while (iterator.hasNext()) {
+            builder.add(Tuple2.of(i, iterator.next()));
+            i++;
+        }
+        return builder.build();
     }
 
     public static <T> Builder<T> builder()
@@ -61,10 +97,27 @@ public class ImmutableList
             return this;
         }
 
+        @SafeVarargs
+        public final Builder<T> add(T... ts)
+        {
+            for (T it : ts) {
+                builder.add(it);
+            }
+            return this;
+        }
+
         public Builder<T> addAll(Iterable<T> iterable)
         {
             for (T it : iterable) {
                 builder.add(it);
+            }
+            return this;
+        }
+
+        public Builder<T> addAll(Iterator<T> iterator)
+        {
+            while (iterator.hasNext()) {
+                builder.add(iterator.next());
             }
             return this;
         }

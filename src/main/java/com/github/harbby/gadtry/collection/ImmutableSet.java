@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.collection;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,10 +59,27 @@ public class ImmutableSet
             return this;
         }
 
+        @SafeVarargs
+        public final Builder<T> add(T... ts)
+        {
+            for (T it : ts) {
+                builder.add(it);
+            }
+            return this;
+        }
+
         public Builder<T> addAll(Iterable<T> iterable)
         {
             for (T it : iterable) {
                 builder.add(it);
+            }
+            return this;
+        }
+
+        public Builder<T> addAll(Iterator<T> iterator)
+        {
+            while (iterator.hasNext()) {
+                builder.add(iterator.next());
             }
             return this;
         }
