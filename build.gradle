@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.1.0-rc1"  //SNAPSHOT
+version = "1.2.0-SNAPSHOT"  //SNAPSHOT
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
