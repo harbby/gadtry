@@ -43,31 +43,39 @@ public class AopFactoryTest
         System.out.println(aopFactory);
     }
 
-    @Test
-    public void propyTest()
+    private static <T> T getProxy(Class<T> key, T instance)
     {
-        Set set = AopFactory.proxy(Set.class).byInstance(new HashSet<String>())
+        return AopFactory.proxy(key).byInstance(instance)
                 .around(proxyContext -> {
                     String name = proxyContext.getInfo().getName();
+                    System.out.println(name);
                     Object value = proxyContext.proceed();
                     switch (name) {
                         case "add":
-                            Assert.assertEquals(true, value);
+                            Assert.assertEquals(true, value);  //Set or List
                             break;
                         case "size":
-                            Assert.assertEquals(1, value);
+                            Assert.assertTrue(value instanceof Integer);
                             break;
                     }
                 });
+    }
 
+    @Test
+    public void jdkPropyTest()
+    {
+        Set set = getProxy(Set.class, new HashSet<String>());
         set.add("t1");
         Assert.assertEquals(1, set.size());
     }
 
-    public static class A1Service
+    @Test
+    public void noJdkPropyTest()
     {
-        public void anyMethod()
-        {
-        }
+        Set set = getProxy(HashSet.class, new HashSet<String>());
+        set.add("t1");
+        Assert.assertEquals(1, set.size());
+
+        System.out.println();
     }
 }

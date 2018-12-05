@@ -32,7 +32,7 @@ public class GadTryTest
     {
         IocFactory iocFactory = GadTry.create(binder -> {
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();
-            binder.bind(Set.class).by(HashSet.class).withSingle();
+            binder.bind(HashSet.class).by(HashSet.class).withSingle();
         }).aop(binder -> {
             binder.bind("point1")
                     .withPackage("com.github.harbby")
@@ -52,7 +52,7 @@ public class GadTryTest
         }).setConfigurationProperties(ImmutableMap.of())
                 .initialize();
 
-        Set set = iocFactory.getInstance(Set.class);
+        Set set = iocFactory.getInstance(HashSet.class);
         System.out.println("************");
         set.add("a1");
         System.out.println("************");

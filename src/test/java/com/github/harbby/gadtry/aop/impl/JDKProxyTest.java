@@ -26,7 +26,8 @@ public class JDKProxyTest
     @Test
     public void of()
     {
-        Assert.assertNotNull(JDKProxy.of(Set.class, new HashSet()));
+        CutModeImpl<Set> setAopProxy = CutModeImpl.of(Set.class, new HashSet(), JdkProxy::newProxyInstance);
+        Assert.assertNotNull(setAopProxy);
     }
 
     @Test
@@ -35,7 +36,7 @@ public class JDKProxyTest
         Set<String> old = new HashSet<>();
         old.add("old");
 
-        Set set = JDKProxy.of(Set.class, old)
+        Set set = CutModeImpl.of(Set.class, old, JdkProxy::newProxyInstance)
                 .around(proxyContext -> {
                     String name = proxyContext.getInfo().getName();
                     Object value = proxyContext.proceed();

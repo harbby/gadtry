@@ -15,12 +15,14 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.impl.AopFactoryImpl;
-import com.github.harbby.gadtry.aop.impl.JDKProxy;
+import com.github.harbby.gadtry.aop.impl.CutModeImpl;
+import com.github.harbby.gadtry.aop.impl.JavassistProxy;
+import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.LocationBuilder;
 import com.github.harbby.gadtry.collection.ImmutableList;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,13 +61,19 @@ public interface AopFactory
             aspect.register(binder);
         }
 
-        return new AopFactoryImpl(ImmutableList.copy(pointcuts));
+        List<Pointcut> copy = ImmutableList.copy(pointcuts);
+        return () -> copy;
     }
 
     public static <T> ByInstance<T> proxy(Class<T> interfaces)
     {
-        checkState(interfaces.isInterface(), "sorry! Currently only supports jdk dynamic proxy, " + interfaces + " must is Interface");
-        return instance -> JDKProxy.of(interfaces, instance);
+        if (interfaces.isInterface()) {
+            return instance -> CutModeImpl.of(interfaces, instance, JdkProxy::newProxyInstance);
+        }
+        else {
+            checkState(!Modifier.isFinal(interfaces.getModifiers()), interfaces + " is final");
+            return instance -> CutModeImpl.of(interfaces, instance, JavassistProxy::newProxyInstance);
+        }
     }
 
     public interface ByInstance<T>
