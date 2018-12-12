@@ -47,7 +47,7 @@ public class JavassistProxy
     {
         try {
             Class<?> aClass = getProxyClass(loader, interfaces);
-            //--存在 可能没有无参构造器问题
+            //--存在可能没有无参构造器的问题
             Object obj = UnsafeHelper.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
 
             ((Proxy.ProxyHandler) obj).setHandler(handler);
