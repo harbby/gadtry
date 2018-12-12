@@ -72,7 +72,7 @@ public class Location
 
     public boolean checkMethod(MethodInfo method)
     {
-        return whereMethod == null || whereMethod.apply(method) &&
+        return (whereMethod == null || whereMethod.apply(method)) &&
                 checkContainsTrue(returnTypes, (returnType -> returnType.isAssignableFrom(method.getReturnType()))) &&
                 checkContainsTrue(methodAnnotations, (ann -> method.getAnnotation(ann) != null));
     }
