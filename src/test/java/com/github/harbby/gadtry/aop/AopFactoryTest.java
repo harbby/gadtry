@@ -29,7 +29,8 @@ public class AopFactoryTest
         AopFactory aopFactory = AopFactory.create(binder -> {
             binder.bind("anyMethod")
                     .withPackage("com.github.harbby")
-                    .whereMethod(method -> method.getName().startsWith("set"))
+                    .classes(HashSet.class) // or Set
+                    .whereMethod(method -> method.getName().startsWith("cle"))
                     .build()
                     .before(() -> {
                         System.out.println("before");
@@ -41,14 +42,19 @@ public class AopFactoryTest
 
         Assert.assertNotNull(aopFactory);
         System.out.println(aopFactory);
+
+        Set set = aopFactory.proxy(Set.class, new HashSet());
+        set.clear();
     }
 
     private static <T> T getProxy(Class<T> key, T instance)
     {
         return AopFactory.proxy(key).byInstance(instance)
+                .returnType(void.class, Boolean.class)
+                //.methodAnnotated(Override.class)
                 .around(proxyContext -> {
                     String name = proxyContext.getInfo().getName();
-                    System.out.println(name);
+                    System.out.println("around: " + name);
                     Object value = proxyContext.proceed();
                     switch (name) {
                         case "add":
@@ -65,6 +71,7 @@ public class AopFactoryTest
     public void jdkPropyTest()
     {
         Set set = getProxy(Set.class, new HashSet<String>());
+        set.clear();
         set.add("t1");
         Assert.assertEquals(1, set.size());
     }
@@ -73,6 +80,7 @@ public class AopFactoryTest
     public void noJdkPropyTest()
     {
         Set set = getProxy(HashSet.class, new HashSet<String>());
+        set.clear();
         set.add("t1");
         Assert.assertEquals(1, set.size());
 

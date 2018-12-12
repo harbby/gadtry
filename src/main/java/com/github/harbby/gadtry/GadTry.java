@@ -17,18 +17,12 @@ package com.github.harbby.gadtry;
 
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.aop.Aspect;
-import com.github.harbby.gadtry.aop.CutMode;
-import com.github.harbby.gadtry.aop.ProxyContext;
-import com.github.harbby.gadtry.aop.model.MethodInfo;
-import com.github.harbby.gadtry.aop.model.Pointcut;
-import com.github.harbby.gadtry.aop.v1.Location;
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.Function;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.BindMapping;
 import com.github.harbby.gadtry.ioc.IocFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class GadTry
@@ -43,7 +37,7 @@ public class GadTry
     public static class Builder
     {
         private IocFactory iocFactory;
-        private Aspect[] aspects;
+        private AopFactory aopFactory;
 
         public Builder(Bean... beans)
         {
@@ -52,12 +46,13 @@ public class GadTry
 
         public Builder aop(AopFactory aopFactory)
         {
+            this.aopFactory = aopFactory;
             return this;
         }
 
         public Builder aop(Aspect... aspects)
         {
-            this.aspects = aspects;
+            this.aopFactory = AopFactory.create(aspects);
             return this;
         }
 
@@ -68,39 +63,14 @@ public class GadTry
 
         public IocFactory initialize()
         {
-            AopFactory aopFactory = AopFactory.create(aspects);
-            Map<Class<?>, Pointcut> pointcutMap = new HashMap<>();
-            aopFactory.getPointcuts().forEach(pointcut -> {
-                for (Class<?> aClass : pointcut.getLocation().getSearchClass()) {
-                    pointcutMap.put(aClass, pointcut);
-                }
-            });
-
             return new IocFactory()
             {
                 @Override
                 public <T> T getInstance(Class<T> driver, Function<Class<?>, ?> userCreator)
                 {
                     T value = iocFactory.getInstance(driver, userCreator);
-                    Pointcut pointcut = pointcutMap.get(driver);
-                    if (pointcut == null) {
-                        pointcut = pointcutMap.get(value.getClass());
-                    }
 
-                    if (pointcut != null) {
-                        final CutMode.Handler1<ProxyContext> handler = pointcut.buildRunHandler();
-                        final Location location = pointcut.getLocation();
-                        return AopFactory.proxy(driver).byInstance(value).around(proxyContext -> {
-                            MethodInfo info = proxyContext.getInfo();
-                            if (location.checkMethod(info)) {
-                                handler.apply(proxyContext);
-                            }
-                            else {
-                                proxyContext.proceed();
-                            }
-                        });
-                    }
-                    return value;
+                    return aopFactory == null ? value : aopFactory.proxy(driver, value);
                 }
 
                 @Override

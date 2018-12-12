@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
-import com.github.harbby.gadtry.aop.v1.LocationBuilder;
+import com.github.harbby.gadtry.aop.v1.FilterBuilder;
 
 public interface Binder
 {
@@ -37,7 +37,7 @@ public interface Binder
      * @param pointName cut name
      * @return LocationOrClass
      */
-    public LocationBuilder bind(String pointName);
+    public FilterBuilder bind(String pointName);
 
     public static class PointBuilder
             implements CutMode<PointBuilder>

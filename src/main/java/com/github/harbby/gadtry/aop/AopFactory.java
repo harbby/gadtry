@@ -15,22 +15,30 @@
  */
 package com.github.harbby.gadtry.aop;
 
+import com.github.harbby.gadtry.aop.impl.AopFactoryImpl;
 import com.github.harbby.gadtry.aop.impl.CutModeImpl;
 import com.github.harbby.gadtry.aop.impl.JavassistProxy;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
+import com.github.harbby.gadtry.aop.impl.Proxy;
+import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
-import com.github.harbby.gadtry.aop.v1.LocationBuilder;
+import com.github.harbby.gadtry.aop.v1.FilterBuilder;
+import com.github.harbby.gadtry.aop.v1.MethodFilter;
 import com.github.harbby.gadtry.collection.ImmutableList;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
 
 public interface AopFactory
 {
     List<Pointcut> getPointcuts();
+
+    <T> T proxy(Class<T> interfaces, T instance);
 
     /**
      * Not implemented
@@ -43,6 +51,7 @@ public interface AopFactory
         List<Pointcut> pointcuts = new ArrayList<>();
         Binder binder = new Binder()
         {
+            @Deprecated
             @Override
             public PointBuilder bind(String pointName, String location)
             {
@@ -50,34 +59,76 @@ public interface AopFactory
             }
 
             @Override
-            public LocationBuilder bind(String pointName)
+            public FilterBuilder bind(String pointName)
             {
                 Pointcut pointcut = new Pointcut(pointName);
                 pointcuts.add(pointcut);
-                return new LocationBuilder(pointcut);
+                return new FilterBuilder(pointcut);
             }
         };
         for (Aspect aspect : aspects) {
             aspect.register(binder);
         }
 
-        List<Pointcut> copy = ImmutableList.copy(pointcuts);
-        return () -> copy;
+        return new AopFactoryImpl(ImmutableList.copy(pointcuts));
     }
 
     public static <T> ByInstance<T> proxy(Class<T> interfaces)
     {
         if (interfaces.isInterface()) {
-            return instance -> CutModeImpl.of(interfaces, instance, JdkProxy::newProxyInstance);
+            return instance -> new ProxyBuilder<>(interfaces, instance, JdkProxy::newProxyInstance);
         }
         else {
             checkState(!Modifier.isFinal(interfaces.getModifiers()), interfaces + " is final");
-            return instance -> CutModeImpl.of(interfaces, instance, JavassistProxy::newProxyInstance);
+            return instance -> new ProxyBuilder<>(interfaces, instance, JavassistProxy::newProxyInstance);
         }
     }
 
     public interface ByInstance<T>
     {
-        public CutMode<T> byInstance(T instance);
+        public ProxyBuilder<T> byInstance(T instance);
+    }
+
+    public static class ProxyBuilder<T>
+            extends CutModeImpl<T>
+            implements MethodFilter.Filter<ProxyBuilder>
+    {
+        //-- method filter
+        private Class<? extends Annotation>[] methodAnnotations;
+        private Class<?>[] returnTypes;
+        private Function<MethodInfo, Boolean> whereMethod;
+
+        protected ProxyBuilder(Class<T> interfaces, T instance, Proxy proxy)
+        {
+            super(interfaces, instance, proxy);
+        }
+
+        @Override
+        @SafeVarargs
+        public final ProxyBuilder<T> methodAnnotated(Class<? extends Annotation>... methodAnnotations)
+        {
+            this.methodAnnotations = methodAnnotations;
+            return this;
+        }
+
+        @Override
+        public ProxyBuilder<T> returnType(Class<?>... returnTypes)
+        {
+            this.returnTypes = returnTypes;
+            return this;
+        }
+
+        @Override
+        public ProxyBuilder<T> whereMethod(Function<MethodInfo, Boolean> whereMethod)
+        {
+            this.whereMethod = whereMethod;
+            return this;
+        }
+
+        @Override
+        public MethodFilter getMethodFilter()
+        {
+            return new MethodFilter(methodAnnotations, returnTypes, whereMethod);
+        }
     }
 }

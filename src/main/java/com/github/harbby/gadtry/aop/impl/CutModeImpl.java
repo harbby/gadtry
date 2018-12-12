@@ -18,11 +18,12 @@ package com.github.harbby.gadtry.aop.impl;
 import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
+import com.github.harbby.gadtry.aop.v1.MethodFilter;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class CutModeImpl<T>
+public class CutModeImpl<T>
         implements CutMode<T>
 {
     private final Class<T> interfaces;
@@ -31,7 +32,7 @@ public final class CutModeImpl<T>
 
     private final Proxy proxy;
 
-    private CutModeImpl(Class<T> interfaces, T instance, Proxy proxy)
+    protected CutModeImpl(Class<T> interfaces, T instance, Proxy proxy)
     {
         this.interfaces = interfaces;
         this.instance = instance;
@@ -44,9 +45,26 @@ public final class CutModeImpl<T>
         return new CutModeImpl<>(interfaces, instance, proxy);
     }
 
+    protected MethodFilter getMethodFilter()
+    {
+        return null;
+    }
+
     private T getProxy(InvocationHandler handler, Class<T> interfaces)
     {
-        return proxy.getProxy(loader, interfaces, handler);
+        final MethodFilter filter = getMethodFilter();
+        InvocationHandler proxyHandler = filter != null ?
+                (proxy, method, args) -> {
+                    if (filter.checkMethod(method)) {
+                        return handler.invoke(proxy, method, args);
+                    }
+                    else {
+                        return method.invoke(instance, args);
+                    }
+                }
+                : handler;
+
+        return proxy.getProxy(loader, interfaces, proxyHandler);
     }
 
     @Override

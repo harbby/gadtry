@@ -22,19 +22,19 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
-public class LocationTest
+public class FilterBuilderTest
 {
     @Test
     public void filterTest1()
     {
         Pointcut pointcut = new Pointcut("test");
-        LocationBuilder builder = new LocationBuilder(pointcut);
+        FilterBuilder builder = new FilterBuilder(pointcut);
         builder.classes(Set.class, Map.class)
                 .returnType(boolean.class)
                 .whereMethod(methodInfo -> methodInfo.getName().startsWith("add"))
                 .build();
 
-        Set<Class<?>> classes = pointcut.getLocation().getSearchClass();
+        Set<Class<?>> classes = pointcut.getSearchClass();
         Assert.assertEquals(1, classes.size());
     }
 }

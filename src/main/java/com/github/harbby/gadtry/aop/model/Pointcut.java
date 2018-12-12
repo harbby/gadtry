@@ -17,7 +17,9 @@ package com.github.harbby.gadtry.aop.model;
 
 import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
-import com.github.harbby.gadtry.aop.v1.Location;
+import com.github.harbby.gadtry.aop.v1.MethodFilter;
+
+import java.util.Set;
 
 public class Pointcut
 {
@@ -28,8 +30,9 @@ public class Pointcut
     private CutMode.Handler1<MethodInfo> afterThrowing;
     private CutMode.Handler1<MethodInfo> afterReturning;
 
-    private Location location;
     private final String pointName;
+    private MethodFilter methodFilter;
+    private Set<Class<?>> searchClass;
 
     public Pointcut(String pointName)
     {
@@ -41,14 +44,24 @@ public class Pointcut
         return pointName;
     }
 
-    public Location getLocation()
+    public MethodFilter getMethodFilter()
     {
-        return location;
+        return methodFilter;
     }
 
-    public void setLocation(Location location)
+    public void setLocation(MethodFilter methodFilter)
     {
-        this.location = location;
+        this.methodFilter = methodFilter;
+    }
+
+    public void setSearchClass(Set<Class<?>> searchClass)
+    {
+        this.searchClass = searchClass;
+    }
+
+    public Set<Class<?>> getSearchClass()
+    {
+        return searchClass;
     }
 
     public CutMode.Handler1<MethodInfo> getAfterThrowing()

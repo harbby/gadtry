@@ -23,13 +23,16 @@ import com.github.harbby.gadtry.classloader.ClassScanner;
 import com.github.harbby.gadtry.collection.ImmutableSet;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
 
-public class LocationBuilder
+public class FilterBuilder
+        implements MethodFilter.Filter<FilterBuilder>
 {
     private final Pointcut pointcut;
     private Set<Class<?>> inputClass = new HashSet<>();
@@ -43,32 +46,47 @@ public class LocationBuilder
     private Class<?>[] returnTypes;
     private Function<MethodInfo, Boolean> whereMethod;
 
-    public LocationBuilder(Pointcut pointcut)
+    public FilterBuilder(Pointcut pointcut)
     {
         this.pointcut = pointcut;
     }
 
-    public LocationBuilder withPackage(String packageName)
+    @Override
+    @SafeVarargs
+    public final FilterBuilder methodAnnotated(Class<? extends Annotation>... methodAnnotations)
+    {
+        this.methodAnnotations = methodAnnotations;
+        return this;
+    }
+
+    @Override
+    public FilterBuilder returnType(Class<?>... returnTypes)
+    {
+        this.returnTypes = returnTypes;
+        return this;
+    }
+
+    @Override
+    public FilterBuilder whereMethod(Function<MethodInfo, Boolean> whereMethod)
+    {
+        this.whereMethod = whereMethod;
+        return this;
+    }
+
+    public FilterBuilder withPackage(String packageName)
     {
         this.packageName = packageName;
         return this;
     }
 
     @SafeVarargs
-    public final LocationBuilder methodAnnotated(Class<? extends Annotation>... methodAnnotations)
-    {
-        this.methodAnnotations = methodAnnotations;
-        return this;
-    }
-
-    @SafeVarargs
-    public final LocationBuilder classAnnotated(Class<? extends Annotation>... classAnnotations)
+    public final FilterBuilder classAnnotated(Class<? extends Annotation>... classAnnotations)
     {
         this.classAnnotations = classAnnotations;
         return this;
     }
 
-    public LocationBuilder classes(Class<?>... inputClass)
+    public FilterBuilder classes(Class<?>... inputClass)
     {
         this.inputClass = ImmutableSet.of(inputClass);
         return this;
@@ -77,25 +95,13 @@ public class LocationBuilder
     /**
      * or
      */
-    public LocationBuilder subclassOf(Class<?>... subclasses)
+    public FilterBuilder subclassOf(Class<?>... subclasses)
     {
         this.subclasses = subclasses;
         return this;
     }
 
-    public LocationBuilder returnType(Class<?>... returnTypes)
-    {
-        this.returnTypes = returnTypes;
-        return this;
-    }
-
-    public LocationBuilder whereMethod(Function<MethodInfo, Boolean> whereMethod)
-    {
-        this.whereMethod = whereMethod;
-        return this;
-    }
-
-    public LocationBuilder whereClass(Function<ClassInfo, Boolean> whereClass)
+    public FilterBuilder whereClass(Function<ClassInfo, Boolean> whereClass)
     {
         checkState(whereClass != null, "whereClass is null");
         this.whereClass = (aClass) -> whereClass.apply(ClassInfo.of(aClass));
@@ -115,14 +121,21 @@ public class LocationBuilder
         }
         scanClass.addAll(inputClass);
 
-        Location location = new Location(
+        MethodFilter methodFilter = new MethodFilter(
                 methodAnnotations,
                 returnTypes,
-                whereMethod,
-                scanClass
+                whereMethod
         );
 
-        pointcut.setLocation(location);
+        //---class filter
+        Set<Class<?>> searchClass = scanClass.stream().filter(
+                aClass -> !Arrays.stream(aClass.getMethods())
+                        .map(method -> !(methodFilter.checkMethod(method)))
+                        .reduce((x, y) -> x && y).orElse(false)
+        ).collect(Collectors.toSet());
+
+        pointcut.setLocation(methodFilter);
+        pointcut.setSearchClass(searchClass);
         return new Binder.PointBuilder(pointcut);
     }
 }
