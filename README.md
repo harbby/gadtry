@@ -48,7 +48,7 @@ Does not rely on ioc containers:
 T proxy = AopFactory.proxy(Class<T>)
     .byInstance(instance)
     .returnType(void.class, Boolean.class)
-    //.methodAnnotated(Override.class)
+    //.methodAnnotated(Setter.class)
     .around(proxyContext -> {
             String name = proxyContext.getInfo().getName();
             System.out.println(name);
@@ -72,7 +72,7 @@ Dependent on ioc container:
             binder.bind("point1")
                     .withPackage("com.github.harbby")
                     //.subclassOf(Map.class)
-                    .classAnnotated()
+                    //.classAnnotated(Service.class)
                     .classes(HashMap.class, HashSet.class)
                     .whereMethod(methodInfo -> methodInfo.getName().startsWith("add"))
                     .build()
