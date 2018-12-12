@@ -47,6 +47,8 @@ Does not rely on ioc containers:
 ```
 T proxy = AopFactory.proxy(Class<T>)
     .byInstance(instance)
+    .returnType(void.class, Boolean.class)
+    //.methodAnnotated(Override.class)
     .around(proxyContext -> {
             String name = proxyContext.getInfo().getName();
             System.out.println(name);
