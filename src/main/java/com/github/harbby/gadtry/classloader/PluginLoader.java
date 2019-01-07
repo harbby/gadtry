@@ -46,8 +46,8 @@ public final class PluginLoader<T>
 
     public List<T> getPlugins()
     {
-        return modules.stream().
-                flatMap(module -> module.getPlugins().stream())
+        return modules.stream()
+                .flatMap(module -> module.getPlugins().stream())
                 .collect(Collectors.toList());
     }
 
