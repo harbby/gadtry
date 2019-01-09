@@ -18,7 +18,7 @@ Create Factory:
 IocFactory iocFactory = IocFactory.create(binder -> {
     binder.bind(Set.class).by(HashSet.class).withSingle();
     binder.bind(HashSet.class).withSingle();
-    binder.bind(List.class).byCreator(ArrayList::new);  //Single object
+    binder.bind(List.class).byCreator(ArrayList::new);  //No Single object
     binder.bind(Object.class, new Object());
     binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
     binder.bind(TestInject.class);
