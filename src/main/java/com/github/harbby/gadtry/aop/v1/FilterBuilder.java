@@ -94,6 +94,8 @@ public class FilterBuilder
 
     /**
      * or
+     * @param subclasses sub class
+     * @return FilterBuilder
      */
     public FilterBuilder subclassOf(Class<?>... subclasses)
     {

@@ -26,6 +26,8 @@ public interface Proxy
         /**
          * Sets a handler.  It can be used for changing handlers
          * during runtime.
+         *
+         * @param handler {@link InvocationHandler}
          */
         void setHandler(InvocationHandler handler);
 
