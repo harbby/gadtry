@@ -44,21 +44,22 @@ public class PluginClassLoader
     {
         this(urls,
                 spiClassLoader,
-                spiPackages,
-                spiPackages.stream().map(PluginClassLoader::classNameToResource).collect(Collectors.toList()));
+                // plugins should not have access to the system (application) class loader
+                spiPackages.isEmpty() ? spiClassLoader : PLATFORM_CLASS_LOADER,
+                spiPackages);
     }
 
     private PluginClassLoader(
             List<URL> urls,
             ClassLoader spiClassLoader,
-            Collection<String> spiPackages,
-            List<String> spiResources)
+            ClassLoader parent,
+            Collection<String> spiPackages)
     {
         // plugins should not have access to the system (application) class loader
-        super(urls.toArray(new URL[0]), PLATFORM_CLASS_LOADER);
+        super(urls.toArray(new URL[0]), parent);
         this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
         this.spiPackages = ImmutableList.copy(spiPackages);  //== ImmutableList.copyOf()
-        this.spiResources = ImmutableList.copy(spiResources);
+        this.spiResources = spiPackages.stream().map(PluginClassLoader::classNameToResource).collect(Collectors.toList());
     }
 
     @Override

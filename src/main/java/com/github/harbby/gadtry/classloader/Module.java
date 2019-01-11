@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Module<T>
         implements Closeable
@@ -28,18 +29,25 @@ public class Module<T>
     private final File modulePath;
     private final long loadTime;
     private final URLClassLoader moduleClassLoader;
+    private final Consumer<Module<T>> closeHandler;
 
-    public Module(File modulePath, List<T> plugins, URLClassLoader moduleClassLoader)
+    Module(File modulePath, long loadTime, List<T> plugins, URLClassLoader moduleClassLoader, Consumer<Module<T>> closeHandler)
     {
         this.plugins = plugins;
         this.modulePath = modulePath;
         this.moduleClassLoader = moduleClassLoader;
-        this.loadTime = modulePath.lastModified();
+        this.loadTime = loadTime;
+        this.closeHandler = closeHandler;
     }
 
     public File getModulePath()
     {
         return modulePath;
+    }
+
+    public String getName()
+    {
+        return modulePath.getName();
     }
 
     public List<T> getPlugins()
@@ -52,15 +60,23 @@ public class Module<T>
         return loadTime;
     }
 
+    public URLClassLoader getModuleClassLoader()
+    {
+        return moduleClassLoader;
+    }
+
+    public boolean refresh()
+    {
+        //查询文件|文件夹的最新更新时间 用来判断是否需要更新
+        return loadTime != modulePath.lastModified();
+    }
+
     @Override
     public void close()
             throws IOException
     {
-        try {
-            // pass
-        }
-        finally {
-            moduleClassLoader.close();
+        try (URLClassLoader classLoader = moduleClassLoader) {
+            closeHandler.accept(this);
         }
     }
 }

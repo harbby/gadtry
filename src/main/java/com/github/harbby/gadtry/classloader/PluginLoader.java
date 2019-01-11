@@ -17,14 +17,23 @@ package com.github.harbby.gadtry.classloader;
 
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.function.Function;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
@@ -32,23 +41,66 @@ import static java.util.Objects.requireNonNull;
 
 public final class PluginLoader<T>
 {
-    private final List<Module<T>> modules;
+    private final Function<File, Module<T>> loader;
+    private final Supplier<Collection<File>> scanner;
+    private final ConcurrentMap<String, Module<T>> modules = new ConcurrentHashMap<>();
 
-    private PluginLoader(List<Module<T>> modules)
+    private PluginLoader(List<Module<T>> modules, Function<File, Module<T>> loader, Supplier<Collection<File>> scanner)
     {
-        this.modules = modules;
+        this.loader = loader;
+        this.scanner = scanner;
+        for (Module<T> module : modules) {
+            this.modules.put(module.getName(), module);
+        }
     }
 
     public List<Module<T>> getModules()
     {
-        return modules;
+        return ImmutableList.copy(modules.values());
+    }
+
+    public Module<T> getModule(String id)
+    {
+        return modules.get(id);
     }
 
     public List<T> getPlugins()
     {
-        return modules.stream()
+        return modules.values().stream()
                 .flatMap(module -> module.getPlugins().stream())
                 .collect(Collectors.toList());
+    }
+
+    public void refresh()
+    {
+        try {
+            Iterator<Module<T>> it = modules.values().iterator();
+            while (it.hasNext()) {
+                Module<T> module = it.next();
+                if (module.refresh()) {
+                    module.close();  //先卸载
+                    File moduleDir = module.getModulePath();
+                    if (moduleDir.exists()) {
+                        Module<T> newModule = loader.apply(moduleDir);
+                        modules.put(newModule.getName(), newModule);
+                    }
+                    else {
+                        it.remove(); //移除已被删除的module
+                    }
+                }
+            }
+            //reload Module dirs;
+            for (File moduleDir : scanner.get()) {
+                String name = moduleDir.getName();
+                if (!modules.containsKey(name)) {
+                    Module<T> module = loader.apply(moduleDir);
+                    modules.put(module.getName(), module);
+                }
+            }
+        }
+        catch (Exception e) {
+            throw new RuntimeException("module reload failed", e);
+        }
     }
 
     public static <T> Builder<T> newScanner()
@@ -58,9 +110,13 @@ public final class PluginLoader<T>
 
     public static class Builder<T>
     {
-        private List<String> spiPackages;
-        private File scanDir;
+        private List<String> spiPackages = Collections.emptyList();
+        private Supplier<Collection<File>> scanner;
         private Class<T> pluginClass;
+        private java.util.function.Function<File, List<File>> filter = moduleDir -> Files.listFiles(moduleDir, true);
+        private Consumer<Module<T>> closeHandler = plugins -> {};
+        private Consumer<Module<T>> loadHandler = plugins -> {};
+        private ClassLoader spiLoader;
 
         public Builder<T> setSpiPackages(List<String> spiPackages)
         {
@@ -70,39 +126,79 @@ public final class PluginLoader<T>
 
         public Builder<T> setScanDir(File scanDir)
         {
-            this.scanDir = scanDir;
+            this.scanner = () -> {
+                File[] listFiles = scanDir.listFiles(File::isDirectory);
+                checkState(listFiles != null, " listFiles is null, dir is " + scanDir);
+                return Arrays.asList(listFiles);
+            };
+            return this;
+        }
+
+        public Builder<T> setScanDir(Supplier<Collection<File>> scanner)
+        {
+            this.scanner = requireNonNull(scanner, "scanner is null");
             return this;
         }
 
         public Builder<T> setPlugin(Class<T> pluginClass)
         {
-            this.pluginClass = pluginClass;
+            this.pluginClass = requireNonNull(pluginClass, "pluginClass is null");
+            return this;
+        }
+
+        public Builder<T> setParentLoader(ClassLoader parentLoader)
+        {
+            this.spiLoader = requireNonNull(parentLoader, "parentLoader is null");
+            return this;
+        }
+
+        public Builder<T> setDepFilter(java.util.function.Function<File, List<File>> filter)
+        {
+            this.filter = requireNonNull(filter, "Depend filter is null");
+            return this;
+        }
+
+        public Builder<T> setCloseHandler(Consumer<Module<T>> closeHandler)
+        {
+            this.closeHandler = requireNonNull(closeHandler, "closeHandler is null");
+            return this;
+        }
+
+        public Builder<T> setLoadHandler(Consumer<Module<T>> loadHandler)
+        {
+            this.loadHandler = requireNonNull(loadHandler, "loadHandler is null");
             return this;
         }
 
         public PluginLoader<T> build()
                 throws IOException
         {
-            File[] listFiles = scanDir.listFiles(File::isDirectory);
-            checkState(listFiles != null, " listFiles is null, dir is " + scanDir);
+            checkState(scanner != null, "scanner is null,your must setScanDir()");
+            checkState(pluginClass != null, "pluginClass is null,your must setPlugin()");
+            if (spiLoader == null) {
+                spiLoader = pluginClass.getClassLoader();
+            }
 
             ImmutableList.Builder<Module<T>> builder = ImmutableList.builder();
-            for (File dir : listFiles) {
+            for (File dir : scanner.get()) {
                 Module<T> module = this.loadModule(dir);
                 builder.add(module);
             }
 
-            return new PluginLoader<>(builder.build());
+            return new PluginLoader<>(builder.build(), this::loadModule, scanner);
         }
 
         private Module<T> loadModule(final File moduleDir)
                 throws IOException
         {
+            long loadTime = moduleDir.lastModified();
             URLClassLoader moduleClassLoader = buildClassLoaderFromDirectory(moduleDir);
             try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(moduleClassLoader)) {
                 ServiceLoader<T> serviceLoader = ServiceLoader.load(pluginClass, moduleClassLoader);
                 List<T> plugins = ImmutableList.copy(serviceLoader);
-                return new Module<>(moduleDir, plugins, moduleClassLoader);
+                Module<T> module = new Module<>(moduleDir, loadTime, plugins, moduleClassLoader, closeHandler);
+                loadHandler.accept(module);
+                return module;
             }
         }
 
@@ -110,11 +206,10 @@ public final class PluginLoader<T>
                 throws IOException
         {
             List<URL> urls = new ArrayList<>();
-            for (File file : Files.listFiles(dir, true)) {
+            for (File file : filter.apply(dir)) {
                 urls.add(file.toURI().toURL());
             }
 
-            ClassLoader spiLoader = getClass().getClassLoader();
             return new PluginClassLoader(urls, spiLoader, spiPackages);
         }
     }
