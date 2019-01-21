@@ -22,6 +22,8 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
+
 public class ObjectInputStreamProxy
         extends java.io.ObjectInputStream
 {
@@ -66,6 +68,7 @@ public class ObjectInputStreamProxy
     /**
      * get field primClasses with java.io.ObjectInputStreamProxy
      */
+    @SuppressWarnings("unchecked")
     private static Map<String, Class<?>> getPrimClasses()
     {
         Class<?> class1 = java.io.ObjectInputStream.class;
@@ -77,7 +80,7 @@ public class ObjectInputStreamProxy
             return primClasses;
         }
         catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Not compatible with java version");
+            throw throwsException(e);  //"Not compatible with java version"
         }
     }
 

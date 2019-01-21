@@ -35,6 +35,7 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Checks.checkContainsTrue;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class ClassScanner
 {
@@ -77,9 +78,8 @@ public class ClassScanner
         private ClassLoader classLoader;
         private Class<?>[] subclasses;
         private Class<? extends Annotation>[] annotations;
-        private BiConsumer<String, Throwable> errorHandler = (classString, error) -> {
-            throw new RuntimeException(classString, error);
-        };
+        private BiConsumer<String, Throwable> errorHandler = (classString, error) -> throwsThrowable(error);
+
         private Function<Class<?>, Boolean> classFilter = aClass -> true;
 
         public Builder(String basePackage)
@@ -145,9 +145,7 @@ public class ClassScanner
     {
         ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
         try {
-            return getClasses(basePackage, classLoader, (classString, error) -> {
-                throw new RuntimeException(classString, error);
-            });
+            return getClasses(basePackage, classLoader, (classString, error) -> throwsThrowable(error));
         }
         catch (IOException e) {
             throw new InjectorException(e);

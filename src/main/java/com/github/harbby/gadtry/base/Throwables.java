@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.base;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.Callable;
 
 /**
  * copy code with com.google.common.base.Throwables
@@ -73,5 +74,43 @@ public class Throwables
             advanceSlowPointer = !advanceSlowPointer; // only advance every other iteration
         }
         return throwable;
+    }
+
+    public static <T> void noCatch(com.github.harbby.gadtry.function.Runnable callable)
+    {
+        try {
+            callable.run();
+        }
+        catch (Exception e) {
+            throwsException(e);
+        }
+    }
+
+    public static <T> T noCatch(Callable<T> callable)
+    {
+        try {
+            return callable.call();
+        }
+        catch (Exception e) {
+            throw throwsException(e);
+        }
+    }
+
+    public static <T extends Throwable> void throwsException(Class<T> clazz)
+            throws T
+    {}
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Exception> RuntimeException throwsException(Exception e)
+            throws T
+    {
+        throw (T) e;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Throwable> RuntimeException throwsThrowable(Throwable e)
+            throws T
+    {
+        throw (T) e;
     }
 }

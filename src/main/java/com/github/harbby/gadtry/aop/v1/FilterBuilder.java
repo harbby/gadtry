@@ -94,6 +94,7 @@ public class FilterBuilder
 
     /**
      * or
+     *
      * @param subclasses sub class
      * @return FilterBuilder
      */
