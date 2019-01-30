@@ -15,11 +15,15 @@
  */
 package com.github.harbby.gadtry.ioc;
 
+import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.collection.ImmutableMap;
 import com.github.harbby.gadtry.function.Creator;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.github.harbby.gadtry.base.Checks.checkState;
+import static java.util.Objects.requireNonNull;
 
 public interface BindMapping
 {
@@ -81,5 +85,78 @@ public interface BindMapping
                 }
             };
         }
+    }
+
+    public static BindMapping create(IocFactory.ReplaceHandler proxyHandler, Bean... beans)
+    {
+        requireNonNull(proxyHandler, "proxyHandler is null");
+        final BindMapping.Builder builder = BindMapping.builder();
+        final InternalContext context = InternalContext.of(builder.build(), (x) -> null);
+        final Binder binder = new Binder()
+        {
+            @Override
+            public <T> void bind(Class<T> key, T instance)
+            {
+                builder.bind(key, () -> proxyHandler.replace(key, instance));
+            }
+
+            @Override
+            public <T> BinderBuilder<T> bind(Class<T> key)
+            {
+                return new BinderBuilder<T>()
+                {
+                    @Override
+                    public void withSingle()
+                    {
+                        checkState(!key.isInterface(), key + "key is Interface");
+                        Creator<T> creator = () -> proxyHandler.replace(key, context.getByNew(key));
+                        builder.bind(key, Lazys.goLazy(creator));
+                    }
+
+                    @Override
+                    public void noScope()
+                    {
+                        checkState(!key.isInterface(), key + "key is Interface");
+                        Creator<T> creator = () -> proxyHandler.replace(key, context.getByNew(key));
+                        builder.bind(key, creator);
+                    }
+
+                    @Override
+                    public Scope by(Class<? extends T> createClass)
+                    {
+                        Creator<T> creator = () -> proxyHandler.replace(key, context.getByNew(createClass));
+                        builder.bind(key, creator);
+                        return () -> builder.bindUpdate(key, Lazys.goLazy(creator));
+                    }
+
+                    @Override
+                    public void byInstance(T instance)
+                    {
+                        builder.bind(key, Lazys.goLazy(() -> proxyHandler.replace(key, instance)));
+                    }
+
+                    @Override
+                    public Scope byCreator(Creator<? extends T> creator)
+                    {
+                        Creator<? extends T> proxyCreator = () -> proxyHandler.replace(key, creator.get());
+                        builder.bind(key, proxyCreator);
+                        return () -> builder.bindUpdate(key, Lazys.goLazy(proxyCreator));
+                    }
+
+                    @Override
+                    public Scope byCreator(Class<? extends Creator<T>> creatorClass)
+                    {
+                        Creator<T> creator = () -> context.getByNew(creatorClass).get();
+                        return () -> this.byCreator(creator);
+                    }
+                };
+            }
+        };
+
+        for (Bean bean : beans) {
+            bean.configure(binder);
+        }
+
+        return builder.build();
     }
 }

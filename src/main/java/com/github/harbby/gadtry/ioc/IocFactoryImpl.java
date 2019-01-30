@@ -23,7 +23,7 @@ public class IocFactoryImpl
 {
     private final BindMapping binds;
 
-    IocFactoryImpl(BindMapping binds)
+    public IocFactoryImpl(BindMapping binds)
     {
         this.binds = binds;
     }

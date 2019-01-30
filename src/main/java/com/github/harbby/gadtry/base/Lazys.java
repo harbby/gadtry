@@ -57,7 +57,7 @@ public class Lazys
                     if (!this.initialized) {
                         T t = this.delegate.get();
                         this.value = t;
-                        this.initialized = true;
+                        this.initialized = true;  //Atomic operation(原子操作)
                         return t;
                     }
                 }

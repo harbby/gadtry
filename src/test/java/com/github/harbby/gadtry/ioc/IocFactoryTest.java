@@ -24,7 +24,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Supplier;
 
 public class IocFactoryTest
@@ -37,8 +39,9 @@ public class IocFactoryTest
             binder.bind(HashSet.class).withSingle();
             binder.bind(List.class).byCreator(ArrayList::new);  //Single object
             binder.bind(Object.class, new Object());
+            binder.bind(Queue.class).byInstance(new ArrayBlockingQueue(100));
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
-            binder.bind(TestInject.class);
+            binder.bind(TestInject.class).noScope();
         });
 
         TestInject testInject = iocFactory.getInstance(TestInject.class);

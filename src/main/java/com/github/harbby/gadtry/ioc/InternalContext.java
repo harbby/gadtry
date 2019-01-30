@@ -20,13 +20,13 @@ import com.github.harbby.gadtry.function.Function;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 class InternalContext
 {
@@ -74,21 +74,7 @@ class InternalContext
 
     private <T> T getNewInstance(Class<T> driver)
     {
-        try {
-            return newInstance(driver);
-        }
-        catch (RuntimeException e) {
-            throw e;
-        }
-        catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-            throw new InjectorException(e.getMessage(), e.getCause());
-        }
-        catch (Exception e) {
-            throw new InjectorException(e);
-        }
+        return noCatch(() -> newInstance(driver));
     }
 
     private boolean check(Class<?> type)

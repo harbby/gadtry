@@ -15,11 +15,8 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.Function;
-
-import static com.github.harbby.gadtry.base.Checks.checkState;
 
 /**
  * harbby ioc
@@ -52,70 +49,21 @@ public interface IocFactory
 
     public static IocFactory create(Bean... beans)
     {
-        final BindMapping.Builder builder = BindMapping.builder();
-        final InternalContext context = InternalContext.of(builder.build(), (x) -> null);
-        final Binder binder = new Binder()
+        BindMapping bindMapping = BindMapping.create(ReplaceHandler.INSTANCE, beans);
+        return new IocFactoryImpl(bindMapping);
+    }
+
+    public interface ReplaceHandler
+    {
+        <T> T replace(Class<T> key, T instance);
+
+        static final ReplaceHandler INSTANCE = new ReplaceHandler()
         {
             @Override
-            public <T> void bind(Class<T> key, T instance)
+            public <T> T replace(Class<T> key, T instance)
             {
-                builder.bind(key, () -> instance);
-            }
-
-            @Override
-            public <T> BinderBuilder<T> bind(Class<T> key)
-            {
-                return new BinderBuilder<T>()
-                {
-                    @Override
-                    public void withSingle()
-                    {
-                        checkState(!key.isInterface(), key + "key is Interface");
-                        builder.bind(key, Lazys.goLazy(() -> context.getByNew(key)));
-                    }
-
-                    @Override
-                    public BindingSetting by(Class<? extends T> createClass)
-                    {
-                        Creator<T> creator = () -> context.getByNew(createClass);
-                        builder.bind(key, creator);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(creator));
-                    }
-
-                    @Override
-                    public void byInstance(T instance)
-                    {
-                        builder.bind(key, () -> instance);
-                    }
-
-                    @Override
-                    public BindingSetting byCreator(Creator<? extends T> creator)
-                    {
-                        builder.bind(key, creator);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(creator));
-                    }
-
-                    @Override
-                    public BindingSetting byCreator(Class<? extends Creator<T>> creatorClass)
-                    {
-                        try {
-                            Creator<T> creator = Lazys.goLazy(() -> context.getByNew(creatorClass).get());
-                            return this.byCreator(creator);
-                        }
-                        catch (RuntimeException e) {
-                            throw e;
-                        }
-                        catch (Exception e) {
-                            throw new InjectorException(e);
-                        }
-                    }
-                };
+                return instance;
             }
         };
-
-        for (Bean bean : beans) {
-            bean.configure(binder);
-        }
-        return new IocFactoryImpl(builder.build());
     }
 }
