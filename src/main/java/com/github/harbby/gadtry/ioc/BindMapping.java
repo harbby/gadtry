@@ -147,7 +147,7 @@ public interface BindMapping
                     public Scope byCreator(Class<? extends Creator<T>> creatorClass)
                     {
                         Creator<T> creator = () -> context.getByNew(creatorClass).get();
-                        return () -> this.byCreator(creator);
+                        return this.byCreator(creator);
                     }
                 };
             }
