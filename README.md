@@ -8,7 +8,7 @@ Contains: ioc. aop. exec. graph ...
 <dependency>
   <groupId>com.github.harbby</groupId>
   <artifactId>gadtry</artifactId>
-  <version>1.3.1</version>
+  <version>1.3.3</version>
 </dependency>
 ```
 
@@ -109,7 +109,7 @@ Assert.assertEquals(out.get().get().intValue(), 1);
 ```
 
 ## Useful mailing lists
-1. yezhixinghai@gmail.com - For discussions about code, design and features
+* yezhixinghai@gmail.com - For discussions about code, design and features
 
-## Other
-* 加入QQ群 438625067
+## Join talk
+* QQ Group: 438625067
