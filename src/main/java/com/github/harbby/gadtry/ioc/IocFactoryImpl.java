@@ -33,24 +33,19 @@ public class IocFactoryImpl
      */
     public <T> T getInstance(Class<T> driver, Function<Class<?>, ?> userCreator)
     {
-        return getCreator(driver, userCreator).get();
+        return InternalContext.of(binds, userCreator).get(driver);
     }
 
     @Override
     public <T> Creator<T> getCreator(Class<T> driver)
     {
-        return getCreator(driver, (driverClass) -> null);
+        return () -> InternalContext.of(binds, (driverClass) -> null).get(driver);
     }
 
     @Override
     public <T> BindMapping getAllBeans()
     {
         return binds;
-    }
-
-    private <T> Creator<T> getCreator(Class<T> driver, Function<Class<?>, ?> userCreator)
-    {
-        return () -> InternalContext.of(binds, userCreator).get(driver);
     }
 
     BindMapping getBinds()

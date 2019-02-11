@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static com.github.harbby.gadtry.base.Checks.checkState;
 
 public class FilterBuilder
-        implements MethodFilter.Filter<FilterBuilder>
+        implements MethodFilter<FilterBuilder>
 {
     private final Pointcut pointcut;
     private Set<Class<?>> inputClass = new HashSet<>();
@@ -124,16 +124,12 @@ public class FilterBuilder
         }
         scanClass.addAll(inputClass);
 
-        MethodFilter methodFilter = new MethodFilter(
-                methodAnnotations,
-                returnTypes,
-                whereMethod
-        );
+        Function<MethodInfo, Boolean> methodFilter = MethodFilter.buildFilter(methodAnnotations, returnTypes, whereMethod);
 
         //---class filter
         Set<Class<?>> searchClass = scanClass.stream().filter(
                 aClass -> !Arrays.stream(aClass.getMethods())
-                        .map(method -> !(methodFilter.checkMethod(method)))
+                        .map(method -> !(methodFilter.apply(MethodInfo.of(method))))
                         .reduce((x, y) -> x && y).orElse(false)
         ).collect(Collectors.toSet());
 

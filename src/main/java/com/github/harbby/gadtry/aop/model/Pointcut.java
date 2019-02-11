@@ -15,23 +15,23 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
-import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
-import com.github.harbby.gadtry.aop.v1.MethodFilter;
+import com.github.harbby.gadtry.function.Consumer;
+import com.github.harbby.gadtry.function.Function;
 
 import java.util.Set;
 
 public class Pointcut
 {
-    private CutMode.Handler1<ProxyContext> around;
+    private Function<ProxyContext, Object> around = ProxyContext::proceed;
 
-    private CutMode.Handler1<MethodInfo> before;
-    private CutMode.Handler1<MethodInfo> after;
-    private CutMode.Handler1<MethodInfo> afterThrowing;
-    private CutMode.Handler1<MethodInfo> afterReturning;
+    private Consumer<MethodInfo> before;
+    private Consumer<MethodInfo> after;
+    private Consumer<MethodInfo> afterThrowing;
+    private Consumer<MethodInfo> afterReturning;
 
     private final String pointName;
-    private MethodFilter methodFilter;
+    private java.util.function.Function<MethodInfo, Boolean> methodFilter;
     private Set<Class<?>> searchClass;
 
     public Pointcut(String pointName)
@@ -44,12 +44,12 @@ public class Pointcut
         return pointName;
     }
 
-    public MethodFilter getMethodFilter()
+    public java.util.function.Function<MethodInfo, Boolean> getMethodFilter()
     {
         return methodFilter;
     }
 
-    public void setLocation(MethodFilter methodFilter)
+    public void setLocation(java.util.function.Function<MethodInfo, Boolean> methodFilter)
     {
         this.methodFilter = methodFilter;
     }
@@ -64,70 +64,76 @@ public class Pointcut
         return searchClass;
     }
 
-    public CutMode.Handler1<MethodInfo> getAfterThrowing()
+    public Consumer<MethodInfo> getAfterThrowing()
     {
         return afterThrowing;
     }
 
-    public void setAfterThrowing(CutMode.Handler1<MethodInfo> afterThrowing)
+    public void setAfterThrowing(Consumer<MethodInfo> afterThrowing)
     {
         this.afterThrowing = afterThrowing;
     }
 
-    public CutMode.Handler1<MethodInfo> getAfterReturning()
+    public Consumer<MethodInfo> getAfterReturning()
     {
         return afterReturning;
     }
 
-    public void setAfterReturning(CutMode.Handler1<MethodInfo> afterReturning)
+    public void setAfterReturning(Consumer<MethodInfo> afterReturning)
     {
         this.afterReturning = afterReturning;
     }
 
-    public CutMode.Handler1<MethodInfo> getBefore()
+    public Consumer<MethodInfo> getBefore()
     {
         return before;
     }
 
-    public void setBefore(CutMode.Handler1<MethodInfo> before)
+    public void setBefore(Consumer<MethodInfo> before)
     {
         this.before = before;
     }
 
-    public CutMode.Handler1<MethodInfo> getAfter()
+    public Consumer<MethodInfo> getAfter()
     {
         return after;
     }
 
-    public void setAfter(CutMode.Handler1<MethodInfo> after)
+    public void setAfter(Consumer<MethodInfo> after)
     {
         this.after = after;
     }
 
-    public void setAround(CutMode.Handler1<ProxyContext> runnable)
+    public void setAround(Consumer<ProxyContext> aroundHandler)
     {
-        this.around = runnable;
+        this.around = proxyContext -> {
+            aroundHandler.apply(proxyContext);
+            return null;
+        };
     }
 
-    public CutMode.Handler1<ProxyContext> getAround()
+    public void setAround(Function<ProxyContext, Object> aroundHandler)
+    {
+        this.around = aroundHandler;
+    }
+
+    public Function<ProxyContext, Object> getAround()
     {
         return around;
     }
 
-    public CutMode.Handler1<ProxyContext> buildRunHandler()
+    public Function<ProxyContext, Object> buildRunHandler()
     {
         return (proxyContext) -> {
+            Object value = null;
+
             if (this.getBefore() != null) {
                 this.getBefore().apply(proxyContext.getInfo());
             }
 
             try {
-                if (this.getAround() != null) {
-                    this.getAround().apply(proxyContext);
-                }
-                else {
-                    proxyContext.proceed();
-                }
+                value = this.getAround().apply(proxyContext);
+
                 if (this.getAfterReturning() != null) {
                     this.getAfterReturning().apply(proxyContext.getInfo());
                 }
@@ -143,6 +149,8 @@ public class Pointcut
                     this.getAfter().apply(proxyContext.getInfo());
                 }
             }
+
+            return value;
         };
     }
 }

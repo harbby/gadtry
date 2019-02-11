@@ -146,8 +146,9 @@ public interface BindMapping
                     @Override
                     public Scope byCreator(Class<? extends Creator<T>> creatorClass)
                     {
-                        Creator<T> creator = () -> context.getByNew(creatorClass).get();
-                        return this.byCreator(creator);
+                        Creator<? extends T> proxyCreator = () -> proxyHandler.replace(key, context.getByNew(creatorClass).get());
+                        builder.bind(key, proxyCreator);
+                        return () -> builder.bindUpdate(key, Lazys.goLazy(proxyCreator));
                     }
                 };
             }

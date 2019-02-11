@@ -48,6 +48,7 @@ public class JDKProxyTest
                             Assert.assertEquals(2, value);
                             break;
                     }
+                    return value;
                 });
 
         set.add("t1");

@@ -16,10 +16,9 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.AopFactory;
-import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.Pointcut;
-import com.github.harbby.gadtry.aop.v1.MethodFilter;
+import com.github.harbby.gadtry.function.Function;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,13 +57,14 @@ public class AopFactoryImpl
         }
 
         if (pointcut != null) {
-            final CutMode.Handler1<ProxyContext> handler = pointcut.buildRunHandler();
-            final MethodFilter methodFilter = pointcut.getMethodFilter();
+            final Function<ProxyContext, Object> handler = pointcut.buildRunHandler();
             return AopFactory.proxy(driver)
                     .byInstance(instance)
-                    .whereMethod(methodFilter::checkMethod)
+                    .whereMethod(pointcut.getMethodFilter())
                     .around(handler);
         }
+
         return instance;
+        //throw new IllegalStateException(String.format("Unable to proxy object %s,ecause no cut point rules are configured", instance));
     }
 }

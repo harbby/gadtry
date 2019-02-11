@@ -18,29 +18,28 @@ package com.github.harbby.gadtry.aop.v1;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.Checks.checkContainsTrue;
 
-public class MethodFilter
+public interface MethodFilter<T>
 {
-    private final Class<? extends Annotation>[] methodAnnotations;
-    private final Class<?>[] returnTypes;
-    private final Function<MethodInfo, Boolean> whereMethod;
+    public T methodAnnotated(Class<? extends Annotation>[] methodAnnotations);
 
-    public MethodFilter(
+    public T returnType(Class<?>... returnTypes);
+
+    public T whereMethod(Function<MethodInfo, Boolean> whereMethod);
+
+    public static Function<MethodInfo, Boolean> buildFilter(
             Class<? extends Annotation>[] methodAnnotations,
-            Class<?>[] returnTypes,
+            Class<?>[] inReturnTypes,
             Function<MethodInfo, Boolean> whereMethod)
     {
-        this.methodAnnotations = methodAnnotations;
-        this.whereMethod = whereMethod;
-        this.returnTypes = returnTypes == null ?
+        final Class<?>[] returnTypes = inReturnTypes == null ?
                 null :
-                Arrays.stream(returnTypes).flatMap(aClass -> {
+                Arrays.stream(inReturnTypes).flatMap(aClass -> {
                     if (aClass == Boolean.class || aClass == boolean.class) {
                         return Stream.of(Boolean.class, boolean.class);
                     }
@@ -69,41 +68,11 @@ public class MethodFilter
                         return Stream.of(aClass);
                     }
                 }).toArray(Class<?>[]::new);
-    }
 
-    public Class<? extends Annotation>[] getMethodAnnotations()
-    {
-        return methodAnnotations;
-    }
-
-    public Class<?>[] getReturnTypes()
-    {
-        return returnTypes;
-    }
-
-    public Function<MethodInfo, Boolean> getWhereMethod()
-    {
-        return whereMethod;
-    }
-
-    public boolean checkMethod(MethodInfo method)
-    {
-        return (whereMethod == null || whereMethod.apply(method)) &&
-                checkContainsTrue(returnTypes, (returnType -> returnType.isAssignableFrom(method.getReturnType()))) &&
-                checkContainsTrue(methodAnnotations, (ann -> method.getAnnotation(ann) != null));
-    }
-
-    public boolean checkMethod(Method method)
-    {
-        return checkMethod(MethodInfo.of(method));
-    }
-
-    public static interface Filter<T>
-    {
-        public T methodAnnotated(Class<? extends Annotation>... methodAnnotations);
-
-        public T returnType(Class<?>... returnTypes);
-
-        public T whereMethod(Function<MethodInfo, Boolean> whereMethod);
+        return methodInfo -> {
+            return (whereMethod == null || whereMethod.apply(methodInfo)) &&
+                    checkContainsTrue(returnTypes, (returnType -> returnType.isAssignableFrom(methodInfo.getReturnType()))) &&
+                    checkContainsTrue(methodAnnotations, (ann -> methodInfo.getAnnotation(ann) != null));
+        };
     }
 }

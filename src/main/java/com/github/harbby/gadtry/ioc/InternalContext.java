@@ -20,13 +20,14 @@ import com.github.harbby.gadtry.function.Function;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static com.github.harbby.gadtry.base.Checks.checkState;
-import static com.github.harbby.gadtry.base.Throwables.noCatch;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 class InternalContext
 {
@@ -69,12 +70,18 @@ class InternalContext
 
     private <T> T getInstance(Class<T> driver)
     {
-        return binds.getOrDefault(driver, () -> getNewInstance(driver)).get();
+        Creator<T> creator = binds.getOrDefault(driver, null);
+        return creator == null ? getNewInstance(driver) : creator.get();
     }
 
     private <T> T getNewInstance(Class<T> driver)
     {
-        return noCatch(() -> newInstance(driver));
+        try {
+            return newInstance(driver);
+        }
+        catch (Exception e) {
+            throw throwsException(e);
+        }
     }
 
     private boolean check(Class<?> type)
@@ -134,7 +141,9 @@ class InternalContext
             constructors = (Constructor<T>[]) driver.getDeclaredConstructors();
         }
         else {
-            checkState(!driver.isInterface(), driver + " is Interface, cannot be instantiated");
+            if (driver.isInterface() || Modifier.isAbstract(driver.getModifiers())) {
+                throw new IllegalStateException(driver + " cannot be instantiated, No binding entity class");
+            }
             constructors = (Constructor<T>[]) driver.getConstructors(); //public
         }
 

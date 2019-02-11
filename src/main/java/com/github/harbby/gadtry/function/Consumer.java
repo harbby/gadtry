@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.function;
 
 @FunctionalInterface
-public interface Runnable
+public interface Consumer<T>
 {
-    void apply()
+    void apply(T t)
             throws Exception;
 }

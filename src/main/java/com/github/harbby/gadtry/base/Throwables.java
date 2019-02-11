@@ -76,10 +76,10 @@ public class Throwables
         return throwable;
     }
 
-    public static <T> void noCatch(com.github.harbby.gadtry.function.Runnable callable)
+    public static <T> void noCatch(com.github.harbby.gadtry.function.Runnable runnable)
     {
         try {
-            callable.run();
+            runnable.apply();
         }
         catch (Exception e) {
             throwsException(e);

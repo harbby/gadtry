@@ -51,7 +51,7 @@ public class AopFactoryTest
     {
         return AopFactory.proxy(key).byInstance(instance)
                 .returnType(void.class, Boolean.class)
-                //.methodAnnotated(Override.class)
+                //.methodAnnotated(Override.class, Override.class)
                 .around(proxyContext -> {
                     String name = proxyContext.getInfo().getName();
                     System.out.println("around: " + name);
@@ -64,6 +64,7 @@ public class AopFactoryTest
                             Assert.assertTrue(value instanceof Integer);
                             break;
                     }
+                    return value;
                 });
     }
 
