@@ -18,10 +18,13 @@ package com.github.harbby.gadtry.aop.impl;
 import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
-import com.github.harbby.gadtry.aop.v1.MethodFilter;
+import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.gadtry.function.Consumer;
+import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.Runnable;
 
 import java.lang.reflect.InvocationHandler;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 public class CutModeImpl<T>
         implements CutMode<T>
@@ -31,6 +34,8 @@ public class CutModeImpl<T>
     private final ClassLoader loader;
 
     private final Proxy proxy;
+    private final Supplier<java.util.function.Function<MethodInfo, Boolean>> methodFilter =
+            Lazys.goLazy(this::getMethodFilter);
 
     protected CutModeImpl(Class<T> interfaces, T instance, Proxy proxy)
     {
@@ -45,17 +50,17 @@ public class CutModeImpl<T>
         return new CutModeImpl<>(interfaces, instance, proxy);
     }
 
-    protected MethodFilter getMethodFilter()
+    protected java.util.function.Function<MethodInfo, Boolean> getMethodFilter()
     {
-        return null;
+        return (method) -> true;
     }
 
     private T getProxy(InvocationHandler handler, Class<T> interfaces)
     {
-        final MethodFilter filter = getMethodFilter();
+        java.util.function.Function<MethodInfo, Boolean> filter = this.methodFilter.get();
         InvocationHandler proxyHandler = filter != null ?
                 (proxy, method, args) -> {
-                    if (filter.checkMethod(method)) {
+                    if (filter.apply(MethodInfo.of(method))) {
                         return handler.invoke(proxy, method, args);
                     }
                     else {
@@ -68,10 +73,18 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T around(Handler1<ProxyContext> runnable)
+    public T around(Consumer<ProxyContext> aroundHandler)
+    {
+        return this.around((proxyContext -> {
+            aroundHandler.apply(proxyContext);
+            return null;
+        }));
+    }
+
+    @Override
+    public T around(Function<ProxyContext, Object> aroundHandler)
     {
         InvocationHandler handler = (proxy, method, args) -> {
-            AtomicReference<Object> result = new AtomicReference<>(null);
             ProxyContext context = new ProxyContext()
             {
                 private final MethodInfo info = MethodInfo.of(method);
@@ -93,9 +106,7 @@ public class CutModeImpl<T>
                 public Object proceed(Object[] args)
                         throws Exception
                 {
-                    Object value = method.invoke(instance, args);
-                    result.set(value);
-                    return value;
+                    return method.invoke(instance, args);
                 }
 
                 @Override
@@ -104,15 +115,22 @@ public class CutModeImpl<T>
                     return args;
                 }
             };
-            runnable.apply(context);
-            return result.get();
+            Object returnValue = aroundHandler.apply(context);
+            Class<?> returnType = method.getReturnType();
+
+            if (returnValue == null && returnType != Void.TYPE && returnType.isPrimitive()) {
+                throw new IllegalStateException("Null return value from advice does not match primitive return type for: " + method);
+            }
+            else {
+                return returnValue;
+            }
         };
 
         return getProxy(handler, interfaces);
     }
 
     @Override
-    public T before(Handler0 runnable)
+    public T before(Runnable runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             runnable.apply();
@@ -122,7 +140,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T before(Handler1<MethodInfo> runnable)
+    public T before(Consumer<MethodInfo> runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             runnable.apply(MethodInfo.of(method));
@@ -132,7 +150,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T afterReturning(Handler0 runnable)
+    public T afterReturning(Runnable runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             Object value = method.invoke(instance, args);
@@ -143,7 +161,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T afterReturning(Handler1<MethodInfo> runnable)
+    public T afterReturning(Consumer<MethodInfo> runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             Object value = method.invoke(instance, args);
@@ -154,7 +172,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T after(Handler0 runnable)
+    public T after(Runnable runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             try {
@@ -168,7 +186,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T after(Handler1<MethodInfo> runnable)
+    public T after(Consumer<MethodInfo> runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             Object value = method.invoke(instance, args);
@@ -179,7 +197,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T afterThrowing(Handler0 runnable)
+    public T afterThrowing(Runnable runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             try {
@@ -194,7 +212,7 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T afterThrowing(Handler1<MethodInfo> runnable)
+    public T afterThrowing(Consumer<MethodInfo> runnable)
     {
         InvocationHandler handler = (proxy, method, args) -> {
             try {

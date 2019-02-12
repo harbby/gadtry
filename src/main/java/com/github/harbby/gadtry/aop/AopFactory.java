@@ -91,14 +91,14 @@ public interface AopFactory
 
     public static class ProxyBuilder<T>
             extends CutModeImpl<T>
-            implements MethodFilter.Filter<ProxyBuilder>
+            implements MethodFilter<ProxyBuilder>
     {
         //-- method filter
         private Class<? extends Annotation>[] methodAnnotations;
         private Class<?>[] returnTypes;
         private Function<MethodInfo, Boolean> whereMethod;
 
-        protected ProxyBuilder(Class<T> interfaces, T instance, Proxy proxy)
+        private ProxyBuilder(Class<T> interfaces, T instance, Proxy proxy)
         {
             super(interfaces, instance, proxy);
         }
@@ -126,9 +126,11 @@ public interface AopFactory
         }
 
         @Override
-        public MethodFilter getMethodFilter()
+        protected Function<MethodInfo, Boolean> getMethodFilter()
         {
-            return new MethodFilter(methodAnnotations, returnTypes, whereMethod);
+            return (methodAnnotations == null || methodAnnotations.length == 0) &&
+                    (returnTypes == null || returnTypes.length == 0) ? whereMethod :
+                    MethodFilter.buildFilter(methodAnnotations, returnTypes, whereMethod);
         }
     }
 }

@@ -35,12 +35,27 @@ public class Checks
         }
     }
 
-    public static <T> boolean checkContainsTrue(T[] source, Function<T, Boolean> filter)
+    public static <T> boolean checkContainsTrue(T[] ts, Function<T, Boolean> filter)
     {
-        if (source == null || source.length == 0) {
+        if (ts == null || ts.length == 0) {
             return true;
         }
-        for (T t : source) {
+        checkState(filter != null, "filter is null");
+        for (T t : ts) {
+            if (filter.apply(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static <T> boolean checkContainsTrue(Iterable<T> ts, Function<T, Boolean> filter)
+    {
+        if (ts == null) {
+            return true;
+        }
+        checkState(filter != null, "filter is null");
+        for (T t : ts) {
             if (filter.apply(t)) {
                 return true;
             }

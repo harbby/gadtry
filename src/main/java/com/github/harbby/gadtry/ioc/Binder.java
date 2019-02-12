@@ -24,19 +24,21 @@ public interface Binder
     public <T> BinderBuilder<T> bind(Class<T> key);
 
     public interface BinderBuilder<T>
-            extends BindingSetting
+            extends Scope
     {
-        BindingSetting by(Class<? extends T> createClass);
+        Scope by(Class<? extends T> createClass);
 
         void byInstance(T instance);
 
-        BindingSetting byCreator(Creator<? extends T> creator);
+        Scope byCreator(Creator<? extends T> creator);
 
-        BindingSetting byCreator(Class<? extends Creator<T>> creatorClass);
+        Scope byCreator(Class<? extends Creator<T>> creatorClass);
     }
 
-    public interface BindingSetting
+    public interface Scope
     {
         public void withSingle();
+
+        public default void noScope() {}
     }
 }

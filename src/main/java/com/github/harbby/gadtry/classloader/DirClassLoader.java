@@ -25,6 +25,8 @@ import java.net.URLStreamHandlerFactory;
 import java.text.DateFormat;
 import java.util.Date;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
+
 public class DirClassLoader
         extends URLClassLoader
 {
@@ -61,7 +63,6 @@ public class DirClassLoader
     }
 
     public void addJarFiles(Iterable<File> jarFiles)
-            throws MalformedURLException
     {
         for (File jar : jarFiles) {
             this.addJarFile(jar);
@@ -69,13 +70,16 @@ public class DirClassLoader
     }
 
     public void addJarFile(File jarfile)
-            throws MalformedURLException
     {
-        this.addURL(jarfile.toURI().toURL());
+        try {
+            this.addURL(jarfile.toURI().toURL());
+        }
+        catch (MalformedURLException e) {
+            throwsException(e);
+        }
     }
 
     public void addDir(File path)
-            throws MalformedURLException
     {
         if (!path.exists()) {
             return;

@@ -22,10 +22,10 @@ import java.io.Serializable;
 import java.util.function.UnaryOperator;
 
 /**
- *java8引入了所谓的类型关联（TypeIntersection）
- *
+ * java8引入了所谓的类型关联（TypeIntersection）
+ * <p>
  * TypeIntersection
- * */
+ */
 public class ComparatorTest
 {
     public static UnaryOperator<Integer> makeComparator()

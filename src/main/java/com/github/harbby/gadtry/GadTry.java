@@ -17,11 +17,10 @@ package com.github.harbby.gadtry;
 
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.aop.Aspect;
-import com.github.harbby.gadtry.function.Creator;
-import com.github.harbby.gadtry.function.Function;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.BindMapping;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import com.github.harbby.gadtry.ioc.IocFactoryImpl;
 
 import java.util.Map;
 
@@ -36,12 +35,12 @@ public class GadTry
 
     public static class Builder
     {
-        private IocFactory iocFactory;
+        private Bean[] beans;
         private AopFactory aopFactory;
 
         public Builder(Bean... beans)
         {
-            this.iocFactory = IocFactory.create(beans);
+            this.beans = beans;
         }
 
         public Builder aop(AopFactory aopFactory)
@@ -63,28 +62,16 @@ public class GadTry
 
         public IocFactory initialize()
         {
-            return new IocFactory()
+            IocFactory.ReplaceHandler handler = new IocFactory.ReplaceHandler()
             {
                 @Override
-                public <T> T getInstance(Class<T> driver, Function<Class<?>, ?> userCreator)
+                public <T> T replace(Class<T> key, T instance)
                 {
-                    T value = iocFactory.getInstance(driver, userCreator);
-
-                    return aopFactory == null ? value : aopFactory.proxy(driver, value);
-                }
-
-                @Override
-                public <T> Creator<T> getCreator(Class<T> driver)
-                {
-                    return iocFactory.getCreator(driver);
-                }
-
-                @Override
-                public <T> BindMapping getAllBeans()
-                {
-                    return iocFactory.getAllBeans();
+                    return aopFactory.proxy(key, instance);
                 }
             };
+            BindMapping bindMapping = BindMapping.create(handler, beans);
+            return new IocFactoryImpl(bindMapping);
         }
     }
 }

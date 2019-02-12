@@ -24,7 +24,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Supplier;
 
 public class IocFactoryTest
@@ -37,17 +39,19 @@ public class IocFactoryTest
             binder.bind(HashSet.class).withSingle();
             binder.bind(List.class).byCreator(ArrayList::new);  //Single object
             binder.bind(Object.class, new Object());
+            binder.bind(Queue.class).byInstance(new ArrayBlockingQueue(100));
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
-            binder.bind(TestInject.class);
+            binder.bind(TestInject.class).noScope();
         });
 
         TestInject testInject = iocFactory.getInstance(TestInject.class);
         TestInject testInject2 = iocFactory.getInstance(TestInject.class);
+        Assert.assertTrue(testInject != testInject2);
         //Object a6546 = iocFactory.getAllBeans();
 
         Set a1 = iocFactory.getInstance(Set.class);
         Set a2 = iocFactory.getInstance(Set.class);
-        Assert.assertEquals(true, a1 == a2); // Single object
+        Assert.assertTrue(a1 == a2); // Single object
 
         Map map1 = iocFactory.getInstance(Map.class);
         Map map2 = iocFactory.getInstance(Map.class);
@@ -58,8 +62,8 @@ public class IocFactoryTest
 
         Supplier a5 = iocFactory.getCreator(HashSet.class);
         Supplier a6 = iocFactory.getCreator(HashSet.class);
-        Assert.assertEquals(false, a5 == a6);
-        Assert.assertEquals(true, a5.get() == a6.get());
+        Assert.assertTrue(a5 != a6);
+        Assert.assertTrue(a5.get() == a6.get());
     }
 
     @Test
@@ -70,8 +74,42 @@ public class IocFactoryTest
             binder.bind(Set.class).byCreator(HashSet::new).withSingle();
         });
 
-        StringBuilder stringBuilder = iocFactory.getInstance(StringBuilder.class);
-        Assert.assertNotNull(stringBuilder);
+        StringBuilder instance1 = iocFactory.getInstance(StringBuilder.class);
+        StringBuilder instance2 = iocFactory.getInstance(StringBuilder.class);
+        Assert.assertNotNull(instance1);
+        Assert.assertTrue(instance1 == instance2);  // Single
+
+        Set set1 = iocFactory.getInstance(Set.class);
+        Set set2 = iocFactory.getInstance(Set.class);
+        Assert.assertNotNull(set1);
+        Assert.assertTrue(set1 == set2);  //Single
+    }
+
+    @Test
+    public void privateCreatorClassNoScope()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(StringBuilder.class).byCreator(TestCreator.class);
+            binder.bind(Set.class).byCreator(HashSet::new).withSingle();
+        });
+
+        StringBuilder instance1 = iocFactory.getInstance(StringBuilder.class);
+        StringBuilder instance2 = iocFactory.getInstance(StringBuilder.class);
+        Assert.assertNotNull(instance1);
+        Assert.assertTrue(instance1 != instance2);  //no Single
+    }
+
+    @Test
+    public void privateCreatorNoScope()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(Set.class).byCreator(HashSet::new).noScope();
+        });
+
+        Set set1 = iocFactory.getInstance(Set.class);
+        Set set2 = iocFactory.getInstance(Set.class);
+        Assert.assertNotNull(set1);
+        Assert.assertTrue(set1 != set2);  //no Single
     }
 
     private static class TestCreator
