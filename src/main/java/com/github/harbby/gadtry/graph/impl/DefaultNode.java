@@ -15,16 +15,25 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
+import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
-public class DemoNode
-        extends Node<Void>
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class DefaultNode<T>
+        implements Node<T>
 {
     private final String id;
+    private Map<String, Edge<T>> nextNodes = new HashMap<>();
 
-    public DemoNode(String id)
+    protected DefaultNode(String id) {this.id = id;}
+
+    public static <E> DefaultNode<E> of(String id)
     {
-        this.id = id;
+        return new DefaultNode<E>(id);
     }
 
     @Override
@@ -34,19 +43,25 @@ public class DemoNode
     }
 
     @Override
-    public String getName()
+    public void addNextNode(Edge<T> edge)
     {
-        return getId();
+        nextNodes.put(edge.getOutNode().getId(), edge);
     }
 
     @Override
-    public Void getOutput()
+    public Collection<Edge<T>> nextNodes()
     {
-        return null;
+        return nextNodes.values();
     }
 
     @Override
-    public void action(Node<Void> parentNode)
+    public Optional<Edge<T>> getNextNode(String id)
+    {
+        return Optional.ofNullable(nextNodes.get(id));
+    }
+
+    @Override
+    public void action(Node parentNode)
     {
         if (parentNode == null) { //根节点
             System.out.println("我是: 根节点" + toString());

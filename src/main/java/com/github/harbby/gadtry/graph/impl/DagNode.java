@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.graph.GraphBuilder;
 import com.github.harbby.gadtry.graph.Node;
 
 import java.util.function.UnaryOperator;
@@ -23,9 +22,8 @@ import java.util.function.UnaryOperator;
 import static java.util.Objects.requireNonNull;
 
 public class DagNode<T>
-        extends Node<T>
+        extends DefaultNode<T>
 {
-    private final String id;
     private final String name;
     private final UnaryOperator<T> nodeFunc;
 
@@ -33,35 +31,29 @@ public class DagNode<T>
 
     public DagNode(String id, String name, UnaryOperator<T> nodeFunc)
     {
-        this.id = requireNonNull(id, "node id is null");
+        super(id);
         this.name = requireNonNull(name, "node name is null");
         this.nodeFunc = requireNonNull(nodeFunc, "nodeFunc is null");
     }
 
-    @Override
-    public String getId()
-    {
-        return id;
-    }
-
     public String getName()
     {
-        return name;
+        return this.getId() + "[" + name + "]";
     }
 
-    @Override
     public T getOutput()
     {
         return outData;
     }
 
     @Override
-    public void action(Node<T> parentNode)
+    public void action(Node inParentNode)
     {
-        if (parentNode instanceof GraphBuilder.RootNode) { //根节点
-            this.outData = nodeFunc.apply(null);  //进行变换
+        if ("/".equals(inParentNode.getId())) { //根节点 source
+            this.outData = nodeFunc.apply(null);
         }
-        else {  //叶子节点
+        else {  //子节点 sink and transform
+            DagNode<T> parentNode = (DagNode<T>) inParentNode;
             T parentOutput = requireNonNull(parentNode.getOutput(), parentNode.getId() + " return is null");
             this.outData = nodeFunc.apply(parentOutput);  //进行变换
         }

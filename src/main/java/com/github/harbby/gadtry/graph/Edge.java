@@ -15,28 +15,18 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import java.util.Collection;
-import java.util.Optional;
-
-public interface Node<E>
+public class Edge<E>
 {
-    public abstract String getId();
+    private Node<E> outNode;
 
-    public default String getName() {return getId();}
+    public Node<E> getOutNode()
+    {
+        return outNode;
+    }
 
-    public default void action(Node<E> parentNode) {}
-
-    /**
-     * Get all child nodes of the current node
-     *
-     * @return List child nodes
-     */
-    public Collection<Edge<E>> nextNodes();
-
-    public void addNextNode(Edge<E> node);
-
-    public Optional<Edge<E>> getNextNode(String id);
-
-    @Override
-    public abstract String toString();
+    public Edge setOutNode(Node<E> outNode)
+    {
+        this.outNode = outNode;
+        return this;
+    }
 }
