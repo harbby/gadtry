@@ -15,25 +15,37 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
+import com.github.harbby.gadtry.collection.ImmutableMap;
+import com.github.harbby.gadtry.graph.Data;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class DefaultNode<T>
-        implements Node<T>
+import static com.github.harbby.gadtry.base.Strings.isBlank;
+
+public class NodeImpl<E extends Data, R extends Data>
+        implements Node<E, R>
 {
     private final String id;
-    private Map<String, Edge<T>> nextNodes = new HashMap<>();
+    private final String name;
+    private final Map<String, Edge<E, R>> nextNodes;
+    private final E data;
 
-    protected DefaultNode(String id) {this.id = id;}
-
-    public static <E> DefaultNode<E> of(String id)
+    public NodeImpl(String id, String name, Map<String, Edge<E, R>> nextNodes, E data)
     {
-        return new DefaultNode<E>(id);
+        this.id = id;
+        this.name = name;
+        this.nextNodes = ImmutableMap.copy(nextNodes);
+        this.data = data;
+    }
+
+    @Override
+    public E getData()
+    {
+        return data;
     }
 
     @Override
@@ -43,32 +55,21 @@ public class DefaultNode<T>
     }
 
     @Override
-    public void addNextNode(Edge<T> edge)
+    public String getName()
     {
-        nextNodes.put(edge.getOutNode().getId(), edge);
+        return isBlank(name) ? getId() : getId() + "[" + name + "]";
     }
 
     @Override
-    public Collection<Edge<T>> nextNodes()
+    public Collection<Edge<E, R>> nextNodes()
     {
         return nextNodes.values();
     }
 
     @Override
-    public Optional<Edge<T>> getNextNode(String id)
+    public Optional<Edge<E, R>> getNextNode(String id)
     {
         return Optional.ofNullable(nextNodes.get(id));
-    }
-
-    @Override
-    public void action(Node parentNode)
-    {
-        if (parentNode == null) { //根节点
-            System.out.println("我是: 根节点" + toString());
-        }
-        else {  //叶子节点
-            System.out.println("我是:" + toString() + "来自:" + parentNode.toString() + "-->" + toString());
-        }
     }
 
     @Override

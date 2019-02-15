@@ -15,95 +15,78 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.graph.impl.RouteImpl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
-public class Route
+public interface Route<E extends Data, R extends Data>
 {
-    private final Node begin;
-    private final List<Edge> edges = new ArrayList<>();
+    public List<String> getIds();
 
-    public Route(Node begin) {this.begin = begin;}
+    /**
+     * 检测死递归
+     *
+     * @return true表示不存在死递归
+     */
+    public boolean containsDeadRecursion();
 
-    public void add(Edge edge)
+    public List<Edge<E, R>> getEdges();
+
+    public int size();
+
+    /**
+     * @return 倒数第二个Node
+     */
+    public Node<E, R> getLastNode();
+
+    public Node<E, R> getLastEdge();
+
+    /**
+     * @return return最后一个Node
+     */
+    public Node<E, R> getEndNode();
+
+    public Edge<E, R> getEndEdge();
+
+    public String getEndNodeId();
+
+    public static <E extends Data, R extends Data> Builder<E, R> builder(Node<E, R> begin)
     {
-        edges.add(edge);
+        return new Builder<>(begin);
     }
 
-    public List<String> getIds()
+    public static class Builder<E extends Data, R extends Data>
     {
-        return ImmutableList.<String>builder().add(begin.getId())
-                .addAll(edges.stream().map(x -> x.getOutNode().getId()).collect(Collectors.toList()))
-                .build();
-    }
+        private final Node<E, R> begin;
+        private final List<Edge<E, R>> buffer = new ArrayList<>();
 
-    public List<Edge> getEdges()
-    {
-        return edges;
-    }
-
-    public int size()
-    {
-        return edges.size();
-    }
-
-    public Node getLastNode()
-    {
-        return getLastEdge().getOutNode();
-    }
-
-    public Edge getLastEdge()
-    {
-        return edges.get(edges.size() - 1);
-    }
-
-    public String getLastNodeId()
-    {
-        return getLastNode().getId();
-    }
-
-    @Override
-    public Route clone()
-    {
-        Route route = new Route(begin);
-        route.edges.addAll(this.edges);
-        return route;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(begin, edges);
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj) {
-            return true;
+        public Builder(Node<E, R> begin)
+        {
+            this.begin = begin;
         }
 
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
+        public Builder<E, R> add(Edge<E, R> edge)
+        {
+            buffer.add(edge);
+            return this;
         }
 
-        Route other = (Route) obj;
-        return Objects.equals(this.begin, other.begin) && Objects.equals(this.edges, other.edges);
-    }
+        public Builder<E, R> add(Collection<Edge<E, R>> edges)
+        {
+            buffer.addAll(edges);
+            return this;
+        }
 
-    @Override
-    public String toString()
-    {
-        //todo: use guava toStringHelper()
-        Map<String, Object> string = new HashMap<>();
-        string.put("begin", begin);
-        string.put("route", String.join("-", getIds()));
-        return "(" + this.getClass().getSimpleName() + ")" + string.toString();
+        public Builder<E, R> copy()
+        {
+            return Route.builder(begin).add(this.buffer);
+        }
+
+        public Route<E, R> create()
+        {
+            return new RouteImpl<>(begin, buffer);
+        }
     }
 }

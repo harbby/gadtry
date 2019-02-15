@@ -15,28 +15,57 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.graph.impl.NodeImpl;
+
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
-public interface Node<E>
+public interface Node<NodeData extends Data, EdgeData extends Data>
 {
     public abstract String getId();
 
-    public default String getName() {return getId();}
+    public abstract String getName();
 
-    public default void action(Node<E> parentNode) {}
+    public abstract NodeData getData();
 
     /**
      * Get all child nodes of the current node
      *
      * @return List child nodes
      */
-    public Collection<Edge<E>> nextNodes();
+    public Collection<Edge<NodeData, EdgeData>> nextNodes();
 
-    public void addNextNode(Edge<E> node);
-
-    public Optional<Edge<E>> getNextNode(String id);
+    public Optional<Edge<NodeData, EdgeData>> getNextNode(String id);
 
     @Override
     public abstract String toString();
+
+    public static <E extends Data, R extends Data> Builder<E, R> builder(String id, String name, E nodeData)
+    {
+        return new Builder<>(id, name, nodeData);
+    }
+
+    public static class Builder<E extends Data, R extends Data>
+    {
+        private final Map<String, Edge<E, R>> nextNodes = new HashMap<>();
+        private final Node<E, R> node;
+
+        public Builder(String id, String name, E nodeData)
+        {
+            this.node = new NodeImpl<>(id, name, nextNodes, nodeData);
+        }
+
+        public Builder<E, R> addNextNode(Edge<E, R> edge)
+        {
+            nextNodes.put(edge.getOutNode().getId(), edge);
+            return this;
+        }
+
+        public Node<E, R> build()
+        {
+            return node;
+        }
+    }
 }

@@ -15,27 +15,6 @@
  */
 package com.github.harbby.gadtry.graph;
 
-public interface Edge<E extends Data, R extends Data>
+public interface Data
 {
-    public abstract Node<E, R> getOutNode();
-
-    public abstract R getData();
-
-    static <E extends Data, R extends Data> Edge<E, R> createEdge(Node<E, R> outNode, R edgeData)
-    {
-        return new Edge<E, R>()
-        {
-            @Override
-            public Node<E, R> getOutNode()
-            {
-                return outNode;
-            }
-
-            @Override
-            public R getData()
-            {
-                return edgeData;
-            }
-        };
-    }
 }

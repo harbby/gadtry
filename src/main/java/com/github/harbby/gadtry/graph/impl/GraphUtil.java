@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.graph;
+package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.graph.Edge;
+import com.github.harbby.gadtry.graph.Node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -50,7 +52,7 @@ public class GraphUtil
     private static void printBuilder(List<String> builder, Set<String> looped, List<Node> nodes, String header)
     {
         for (int i = 0; i < nodes.size(); i++) {
-            Node<?> node = nodes.get(i);
+            Node<?, ?> node = nodes.get(i);
 
             if (i == nodes.size() - 1) {  //end
                 header = header.substring(0, header.length() - 1) + "└";
