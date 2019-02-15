@@ -36,6 +36,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,7 @@ public final class JVMLauncher<R extends Serializable>
     private final Consumer<String> consoleHandler;
     private final boolean depThisJvm;
     private final List<String> otherVmOps;
+    private final Map<String, String> environment;
 
     private Process process;
 
@@ -56,13 +58,15 @@ public final class JVMLauncher<R extends Serializable>
             Consumer<String> consoleHandler,
             Collection<URL> userJars,
             boolean depThisJvm,
-            List<String> otherVmOps)
+            List<String> otherVmOps,
+            Map<String, String> environment)
     {
         this.callable = callable;
         this.userJars = userJars;
         this.consoleHandler = consoleHandler;
         this.depThisJvm = depThisJvm;
         this.otherVmOps = otherVmOps;
+        this.environment = environment;
     }
 
     public Process getProcess()
@@ -99,6 +103,7 @@ public final class JVMLauncher<R extends Serializable>
             sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
             ProcessBuilder builder = new ProcessBuilder(buildMainArg(sock.getLocalPort(), otherVmOps))
                     .redirectErrorStream(true);
+            builder.environment().putAll(environment);
 
             this.process = builder.start();
             try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {

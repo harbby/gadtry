@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.util.function.UnaryOperator;
 
 /**
- * java8引入了所谓的类型关联（TypeIntersection）
+ * java8引入了类型关联（TypeIntersection）
  * <p>
  * TypeIntersection
  */

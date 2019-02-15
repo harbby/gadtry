@@ -50,6 +50,31 @@ public class JVMLauncherTest
     }
 
     @Test
+    public void testForkJvmEnv()
+            throws JVMException
+    {
+        String envValue = "value_007";
+        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+                .setCallable(() -> {
+                    //TimeUnit.SECONDS.sleep(1000000);
+                    System.out.println("************ job start ***************");
+                    String env = System.getenv("TestEnv");
+                    System.out.println("get env TestEnv = " + env);
+                    Assert.assertEquals(env, envValue);
+                    return env;
+                })
+                .setEnvironment("TestEnv", envValue)
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole((msg) -> System.out.println(msg))
+                .build();
+
+        VmFuture<String> out = launcher.startAndGet();
+        Assert.assertEquals(out.get().get(), envValue);
+    }
+
+    @Test
     public void test2()
             throws IllegalAccessException
     {

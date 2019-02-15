@@ -21,9 +21,13 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.Strings.isNotBlank;
 import static java.util.Objects.requireNonNull;
 
 public class JVMLaunchers
@@ -37,6 +41,7 @@ public class JVMLaunchers
         private Consumer<String> consoleHandler;
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
+        private final Map<String, String> environment = new HashMap<>();
 
         public VmBuilder<T> setCallable(VmCallable<T> callable)
         {
@@ -84,10 +89,24 @@ public class JVMLaunchers
             return this;
         }
 
+        public VmBuilder<T> setEnvironment(Map<String, String> env)
+        {
+            this.environment.putAll(requireNonNull(env, "env is null"));
+            return this;
+        }
+
+        public VmBuilder<T> setEnvironment(String key, String value)
+        {
+            checkState(isNotBlank(key), "key is null or Empty");
+            checkState(isNotBlank(value), "value is null or Empty");
+            this.environment.put(key, value);
+            return this;
+        }
+
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm, otherVmOps);
+            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment);
         }
     }
 
