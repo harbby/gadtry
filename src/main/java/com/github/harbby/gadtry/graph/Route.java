@@ -29,7 +29,10 @@ public class Route
     private final Node begin;
     private final List<Edge> edges = new ArrayList<>();
 
-    public Route(Node begin) {this.begin = begin;}
+    public Route(Node begin)
+    {
+        this.begin = begin;
+    }
 
     public void add(Edge edge)
     {

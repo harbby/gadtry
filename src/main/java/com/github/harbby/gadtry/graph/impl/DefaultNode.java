@@ -29,7 +29,10 @@ public class DefaultNode<T>
     private final String id;
     private Map<String, Edge<T>> nextNodes = new HashMap<>();
 
-    protected DefaultNode(String id) {this.id = id;}
+    protected DefaultNode(String id)
+    {
+        this.id = id;
+    }
 
     public static <E> DefaultNode<E> of(String id)
     {

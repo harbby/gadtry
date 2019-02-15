@@ -22,7 +22,10 @@ public interface Node<E>
 {
     public abstract String getId();
 
-    public default String getName() {return getId();}
+    public default String getName()
+    {
+        return getId();
+    }
 
     public default void action(Node<E> parentNode) {}
 

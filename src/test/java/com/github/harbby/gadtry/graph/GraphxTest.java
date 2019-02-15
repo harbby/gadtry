@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import com.github.harbby.gadtry.graph.impl.DemoNode;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -28,26 +27,26 @@ public class GraphxTest
     {
         Graph<Void> graph = Graph.<Void>builder()
                 .name("test1")
-                .addNode(new DemoNode("a1"))
-                .addNode(new DemoNode("a0"))
-                .addNode(new DemoNode("a22"))
-                .addNode(new DemoNode("a3"))
+                .addNode("a1")
+                .addNode("a0")
+                .addNode("a22")
+                .addNode("a3")
 
                 .addEdge("a1", "a22")
                 .addEdge("a1", "a3")
                 .addEdge("a0", "a3")
                 //-----------------------------------------
-                .addNode(new DemoNode("a4"))
-                .addNode(new DemoNode("a5"))
-                .addNode(new DemoNode("a6"))
+                .addNode("a4")
+                .addNode("a5")
+                .addNode("a6")
 
                 .addEdge("a22", "a4")
                 .addEdge("a22", "a5")
                 .addEdge("a3", "a6")
-                .build();
+                .create();
 
         //graph.run();
         TimeUnit.MILLISECONDS.sleep(300);
-        graph.show();
+        graph.printShow();
     }
 }
