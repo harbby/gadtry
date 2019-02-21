@@ -15,8 +15,12 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 public interface MethodInfo
 {
@@ -27,6 +31,18 @@ public interface MethodInfo
     int getModifiers();
 
     <T extends Annotation> T getAnnotation(Class<T> annotationClass);
+
+    Class<?>[] getParameterTypes();
+
+    int getParameterCount();
+
+    Class<?>[] getExceptionTypes();
+
+    Annotation[][] getParameterAnnotations();
+
+    boolean isDefault();
+
+    boolean isVarArgs();
 
     public static MethodInfo of(Method method)
     {
@@ -54,6 +70,54 @@ public interface MethodInfo
             public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
             {
                 return method.getAnnotation(annotationClass);
+            }
+
+            @Override
+            public Class<?>[] getParameterTypes()
+            {
+                return method.getParameterTypes();
+            }
+
+            @Override
+            public int getParameterCount()
+            {
+                return method.getParameterCount();
+            }
+
+            @Override
+            public Class<?>[] getExceptionTypes()
+            {
+                return method.getExceptionTypes();
+            }
+
+            @Override
+            public boolean isDefault()
+            {
+                return method.isDefault();
+            }
+
+            @Override
+            public Annotation[][] getParameterAnnotations()
+            {
+                return method.getParameterAnnotations();
+            }
+
+            @Override
+            public boolean isVarArgs()
+            {
+                return method.isVarArgs();
+            }
+
+            @Override
+            public String toString()
+            {
+                Map<String, Object> helper = new HashMap<>();
+                helper.put("name", getName());
+                helper.put("returnType", getReturnType());
+                helper.put("modifiers", getModifiers());
+                helper.put("Annotations", ImmutableList.<Annotation>of(method.getAnnotations()));
+                helper.put("method", method);
+                return super.toString() + helper.toString();
             }
         };
     }

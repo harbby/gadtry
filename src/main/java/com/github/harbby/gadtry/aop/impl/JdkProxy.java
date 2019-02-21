@@ -28,4 +28,9 @@ public class JdkProxy
     {
         return (T) Proxy.newProxyInstance(loader, new Class<?>[] {driver}, handler);
     }
+
+    public static Class<?> getProxyClass(ClassLoader loader, Class<?> parent)
+    {
+        return Proxy.getProxyClass(loader, parent);
+    }
 }

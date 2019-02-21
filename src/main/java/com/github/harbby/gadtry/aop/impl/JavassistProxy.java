@@ -32,7 +32,8 @@ import java.lang.reflect.InvocationHandler;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.util.Objects.requireNonNull;
 
 public class JavassistProxy
         implements Serializable
@@ -71,33 +72,54 @@ public class JavassistProxy
         return ((Proxy.ProxyHandler) proxy).getHandler();
     }
 
-    private static Class<?> getCache(ClassLoader loader, Class<?> parent)
-    {
-        Map<String, Class<?>> classMap = proxyCache.get(loader);
-        if (classMap == null) {
-            synchronized (proxyCache) {
-                classMap = proxyCache.computeIfAbsent(loader, (key) -> new WeakHashMap<>());
-            }
-        }
-        return classMap.get(parent.getName());
-    }
-
-    public static void putCache(ClassLoader loader, String className, Class<?> proxyClass)
-    {
-        synchronized (proxyCache) {
-            proxyCache.get(loader).put(className, proxyClass);
-        }
-    }
-
     public static Class<?> getProxyClass(ClassLoader loader, Class<?> parent)
             throws Exception
     {
         checkState(!java.lang.reflect.Modifier.isFinal(parent.getModifiers()), parent + " is final");
-        Class<?> proxy = getCache(loader, parent);
-        if (proxy != null) {
-            return proxy;
+        return requireNonNull(getCacheOrCreate(loader, parent), "proxyClass is null");
+    }
+
+    private static Class<?> getCacheOrCreate(ClassLoader loader, Class<?> parent)
+            throws Exception
+    {
+        String name = parent.getName();
+        if (loader == null) {
+            //see: javassist.CtClass.toClass()
+            loader = Thread.currentThread().getContextClassLoader();
         }
 
+        Map<String, Class<?>> classMap = proxyCache.get(loader);
+        if (classMap == null) {
+            synchronized (proxyCache) {
+                classMap = proxyCache.get(loader);
+                if (classMap == null) {
+                    Class<?> proxyClass = createProxyClass(loader, parent);
+                    Map<String, Class<?>> tmp = new WeakHashMap<>();  //WeakHashMap
+                    tmp.put(name, proxyClass);
+                    proxyCache.put(loader, tmp);
+                    return proxyClass;
+                }
+            }
+        }
+
+        Class<?> proxy = classMap.get(name);
+        if (proxy == null) {
+            synchronized (classMap) {
+                Class<?> value = classMap.get(name);
+                if (value != null) {
+                    return value;
+                }
+                Class<?> proxyClass = createProxyClass(loader, parent);
+                classMap.put(name, proxyClass);
+                return proxyClass;
+            }
+        }
+        return proxy;
+    }
+
+    private static Class<?> createProxyClass(ClassLoader loader, Class<?> parent)
+            throws Exception
+    {
         ClassPool classPool = new ClassPool(true);
         classPool.appendClassPath(new LoaderClassPath(loader));
 
@@ -106,7 +128,12 @@ public class JavassistProxy
         CtClass parentClass = classPool.get(parent.getName());
 
         // 添加继承父类
-        proxyClass.setSuperclass(parentClass);
+        if (parentClass.isInterface()) {
+            proxyClass.addInterface(parentClass);
+        }
+        else {
+            proxyClass.setSuperclass(parentClass);
+        }
 
         // 添加 ProxyHandler 接口
         installProxyHandlerInterface(classPool, proxyClass);
@@ -125,9 +152,7 @@ public class JavassistProxy
         // 持久化class到硬盘, 可以直接反编译查看
         //proxyClass.writeFile(".");
 
-        Class<?> aClass = proxyClass.toClass();
-        putCache(loader, parent.getName(), aClass);
-        return aClass;
+        return proxyClass.toClass(loader, parent.getProtectionDomain());
     }
 
     private static void installFieldAndMethod(CtClass proxyClass, CtClass parentClass)

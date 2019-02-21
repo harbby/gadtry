@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class FilterBuilder
         implements MethodFilter<FilterBuilder>

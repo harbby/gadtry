@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Checks.checkContainsTrue;
+import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
 
 public interface MethodFilter<T>
 {
