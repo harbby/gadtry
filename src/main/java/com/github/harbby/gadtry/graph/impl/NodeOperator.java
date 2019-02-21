@@ -16,9 +16,11 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.graph.Data;
+import com.github.harbby.gadtry.graph.Graph;
 
 import java.util.function.UnaryOperator;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class NodeOperator<T>
@@ -48,5 +50,15 @@ public class NodeOperator<T>
             T outData = nodeFunc.apply(parentOutput);  //进行变换
             data.set(outData);
         }
+    }
+
+    public static <R> void runGraph(Graph<NodeOperator<R>, Data> graph)
+    {
+        graph.searchRuleRoute(route -> {
+            NodeOperator<R> parentNode = route.getLastNode().getData();
+            route.getEndNode().getData().action(parentNode);
+            checkState(route.containsDeadRecursion(), "The Graph contains Dead Recursion: " + route);
+            return true;
+        });
     }
 }

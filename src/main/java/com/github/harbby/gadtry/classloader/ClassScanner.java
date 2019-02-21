@@ -34,7 +34,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Checks.checkContainsTrue;
+import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class ClassScanner

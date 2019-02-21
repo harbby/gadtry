@@ -20,13 +20,19 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.unmodifiableMap;
+
 public class ImmutableMap
 {
     private ImmutableMap() {}
 
     public static <K, V> Map<K, V> copy(Map<? extends K, ? extends V> map)
     {
-        return Collections.unmodifiableMap(map);
+        ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
+        for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue());
+        }
+        return builder.build();
     }
 
     public static <K, V> Builder<K, V> builder()
@@ -54,7 +60,7 @@ public class ImmutableMap
 
         public Map<K, V> build()
         {
-            return builder.build().collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+            return unmodifiableMap(builder.build().collect(Collectors.toMap(Tuple2::f0, Tuple2::f1)));
         }
     }
 
@@ -65,17 +71,19 @@ public class ImmutableMap
 
     public static <K, V> Map<K, V> of(K k1, V v1)
     {
-        return Stream.of(Tuple2.of(k1, v1)).collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
             K k1, V v1,
             K k2, V v2)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
@@ -83,11 +91,11 @@ public class ImmutableMap
             K k2, V v2,
             K k3, V v3)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2),
-                Tuple2.of(k3, v3))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .put(k3, v3)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
@@ -96,12 +104,12 @@ public class ImmutableMap
             K k3, V v3,
             K k4, V v4)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2),
-                Tuple2.of(k3, v3),
-                Tuple2.of(k4, v4))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .put(k3, v3)
+                .put(k4, v4)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
@@ -111,13 +119,13 @@ public class ImmutableMap
             K k4, V v4,
             K k5, V v5)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2),
-                Tuple2.of(k3, v3),
-                Tuple2.of(k4, v4),
-                Tuple2.of(k5, v5))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .put(k3, v3)
+                .put(k4, v4)
+                .put(k5, v5)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
@@ -128,14 +136,14 @@ public class ImmutableMap
             K k5, V v5,
             K k6, V v6)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2),
-                Tuple2.of(k3, v3),
-                Tuple2.of(k4, v4),
-                Tuple2.of(k5, v5),
-                Tuple2.of(k6, v6))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .put(k3, v3)
+                .put(k4, v4)
+                .put(k5, v5)
+                .put(k6, v6)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
@@ -147,15 +155,15 @@ public class ImmutableMap
             K k6, V v6,
             K k7, V v7)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2),
-                Tuple2.of(k3, v3),
-                Tuple2.of(k4, v4),
-                Tuple2.of(k5, v5),
-                Tuple2.of(k6, v6),
-                Tuple2.of(k7, v7))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .put(k3, v3)
+                .put(k4, v4)
+                .put(k5, v5)
+                .put(k6, v6)
+                .put(k7, v7)
+                .build();
     }
 
     public static <K, V> Map<K, V> of(
@@ -168,15 +176,15 @@ public class ImmutableMap
             K k7, V v7,
             K k8, V v8)
     {
-        return Stream.of(
-                Tuple2.of(k1, v1),
-                Tuple2.of(k2, v2),
-                Tuple2.of(k3, v3),
-                Tuple2.of(k4, v4),
-                Tuple2.of(k5, v5),
-                Tuple2.of(k6, v6),
-                Tuple2.of(k7, v7),
-                Tuple2.of(k8, v8))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+        return ImmutableMap.<K, V>builder()
+                .put(k1, v1)
+                .put(k2, v2)
+                .put(k3, v3)
+                .put(k4, v4)
+                .put(k5, v5)
+                .put(k6, v6)
+                .put(k7, v7)
+                .put(k8, v8)
+                .build();
     }
 }

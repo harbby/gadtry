@@ -15,11 +15,12 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Collections.unmodifiableSet;
 
 public class ImmutableSet
 {
@@ -27,21 +28,26 @@ public class ImmutableSet
 
     public static <T> Set<T> copy(Set<? extends T> set)
     {
-        return Collections.unmodifiableSet(set);
+        ImmutableSet.Builder<T> builder = ImmutableSet.builder();
+        for (T it : set) {
+            builder.add(it);
+        }
+        return builder.build();
     }
 
     public static <T> Set<T> copy(Iterable<? extends T> iterable)
     {
-        Stream.Builder<T> builder = Stream.builder();
+        ImmutableSet.Builder<T> builder = ImmutableSet.builder();
         for (T it : iterable) {
             builder.add(it);
         }
-        return builder.build().collect(Collectors.toSet());
+        return builder.build();
     }
 
+    @SafeVarargs
     public static <T> Set<T> of(T... t)
     {
-        return Stream.of(t).collect(Collectors.toSet());
+        return ImmutableSet.<T>builder().add(t).build();
     }
 
     public static <T> Builder<T> builder()
@@ -86,7 +92,7 @@ public class ImmutableSet
 
         public Set<T> build()
         {
-            return builder.build().collect(Collectors.toSet());
+            return unmodifiableSet(builder.build().collect(Collectors.toSet()));
         }
     }
 }

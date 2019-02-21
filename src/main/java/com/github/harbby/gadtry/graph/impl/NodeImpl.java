@@ -15,12 +15,12 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.collection.ImmutableMap;
 import com.github.harbby.gadtry.graph.Data;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,7 +38,7 @@ public class NodeImpl<E extends Data, R extends Data>
     {
         this.id = id;
         this.name = name;
-        this.nextNodes = ImmutableMap.copy(nextNodes);
+        this.nextNodes = Collections.unmodifiableMap(nextNodes);
         this.data = data;
     }
 

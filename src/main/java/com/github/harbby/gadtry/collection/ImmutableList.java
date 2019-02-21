@@ -15,11 +15,12 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Collections.unmodifiableList;
 
 public class ImmutableList
 {
@@ -27,25 +28,26 @@ public class ImmutableList
 
     public static <T> List<T> copy(List<? extends T> list)
     {
-        return Collections.unmodifiableList(list);
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (T it : list) {
+            builder.add(it);
+        }
+        return builder.build();
     }
 
     public static <T> List<T> copy(Iterable<? extends T> iterable)
     {
-        Stream.Builder<T> builder = Stream.builder();
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (T it : iterable) {
             builder.add(it);
         }
-        return builder.build().collect(Collectors.toList());
+        return builder.build();
     }
 
     @SafeVarargs
     public static <T> List<T> of(T... t)
     {
-        if (t == null) {
-            return Collections.emptyList();
-        }
-        return Stream.of(t).collect(Collectors.toList());
+        return ImmutableList.<T>builder().add(t).build();
     }
 
     public static <T> List<Tuple2<Integer, T>> zipIndex(Iterable<T> iterable)
@@ -124,7 +126,7 @@ public class ImmutableList
 
         public List<T> build()
         {
-            return builder.build().collect(Collectors.toList());
+            return unmodifiableList(builder.build().collect(Collectors.toList()));
         }
     }
 }

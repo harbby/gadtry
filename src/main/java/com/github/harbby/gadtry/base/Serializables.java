@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import static java.util.Objects.requireNonNull;
+
 public class Serializables
 {
     private Serializables() {}
@@ -29,6 +31,7 @@ public class Serializables
     public static byte[] serialize(Serializable serializable)
             throws IOException
     {
+        requireNonNull(serializable, "serializable obj is null");
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 ObjectOutputStream os = new ObjectOutputStream(bos)
         ) {
@@ -59,12 +62,13 @@ public class Serializables
         }
     }
 
-    public static Object byteToObject(InputStream inputStream, ClassLoader classLoader)
+    @SuppressWarnings("unchecked")
+    public static <T> T byteToObject(InputStream inputStream, ClassLoader classLoader)
             throws IOException, ClassNotFoundException
     {
         try (ObjectInputStreamProxy oi = new ObjectInputStreamProxy(inputStream, classLoader)
         ) {
-            return oi.readObject();
+            return (T) oi.readObject();
         }
     }
 }

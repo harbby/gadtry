@@ -21,11 +21,11 @@ import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
 public class RouteImpl<E extends Data, R extends Data>
         implements Route<E, R>
@@ -131,10 +131,9 @@ public class RouteImpl<E extends Data, R extends Data>
     @Override
     public String toString()
     {
-        //todo: use guava toStringHelper()
-        Map<String, Object> string = new HashMap<>();
-        string.put("begin", begin);
-        string.put("route", String.join("-", getIds()));
-        return "(" + this.getClass().getSimpleName() + ")" + string.toString();
+        return toStringHelper(this)
+                .add("begin", begin)
+                .add("route", String.join("-", getIds()))
+                .toString();
     }
 }

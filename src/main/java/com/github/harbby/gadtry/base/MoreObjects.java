@@ -15,11 +15,13 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 
-public class Checks
+public class MoreObjects
 {
-    private Checks() {}
+    private MoreObjects() {}
 
     public static void checkState(boolean ok)
     {
@@ -61,5 +63,62 @@ public class Checks
             }
         }
         return false;
+    }
+
+    public static ToStringBuilder toStringHelper(Object object)
+    {
+        return new ToStringBuilder(object);
+    }
+
+    public static class ToStringBuilder
+    {
+        private final Object object;
+        private final Map<String, Object> builder = new LinkedHashMap<>();
+
+        public ToStringBuilder(Object object)
+        {
+            this.object = object;
+        }
+
+        public ToStringBuilder add(String key, Object value)
+        {
+            builder.put(key, value);
+            return this;
+        }
+
+        public ToStringBuilder add(String key, int value)
+        {
+            builder.put(key, String.valueOf(value));
+            return this;
+        }
+
+        public ToStringBuilder add(String key, long value)
+        {
+            builder.put(key, String.valueOf(value));
+            return this;
+        }
+
+        public ToStringBuilder add(String key, boolean value)
+        {
+            builder.put(key, String.valueOf(value));
+            return this;
+        }
+
+        public ToStringBuilder add(String key, float value)
+        {
+            builder.put(key, String.valueOf(value));
+            return this;
+        }
+
+        public ToStringBuilder add(String key, double value)
+        {
+            builder.put(key, String.valueOf(value));
+            return this;
+        }
+
+        public String toString()
+        {
+            return object.getClass().getSimpleName() + builder;
+        }
     }
 }
