@@ -16,41 +16,121 @@
 package com.github.harbby.gadtry.jvm;
 
 import java.io.Serializable;
-import java.util.Optional;
+import java.lang.reflect.Field;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class VmFuture<V extends Serializable>
-        implements Serializable
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static java.util.Objects.requireNonNull;
+
+public class VmFuture<R extends Serializable>
 {
-    private V result;
-    private String errorMessage;
+    private final Process process;
+    private final Future<VmResult<R>> future;
+    private volatile JVMException error;
 
-    public Optional<V> get()
+    public VmFuture(AtomicReference<Process> processAtomic, Callable<VmResult<R>> callable)
+            throws JVMException, InterruptedException
     {
-        return Optional.ofNullable(result);
+        requireNonNull(processAtomic, "process is null");
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        this.future = service.submit(() -> {
+            try {
+                return callable.call();
+            }
+            catch (JVMException e) {
+                this.error = e;
+                throw error;
+            }
+            catch (Exception e) {
+                this.error = new JVMException(e);
+                throw error;
+            }
+        });
+        service.shutdown();
+
+        while (processAtomic.get() == null) {
+            if (future.isDone()) {
+                throw error;   // this throws ExecutionException
+            }
+
+            TimeUnit.MILLISECONDS.sleep(1);
+        }
+        this.process = processAtomic.get();
     }
 
-    public String getOnFailure()
+    public Process getVmProcess()
     {
-        return errorMessage;
+        return process;
     }
 
-    public VmFuture(Serializable result)
+    public int getPid()
     {
-        this.result = (V) result;
+        Process process = getVmProcess();
+        String system = process.getClass().getName();
+        if ("java.lang.UNIXProcess".equals(system)) {
+            try {
+                Field field = process.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                int pid = (int) field.get(process);
+                return pid;
+            }
+            catch (NoSuchFieldException | IllegalAccessException e) {
+                throw throwsException(e);
+            }
+        }
+        throw new UnsupportedOperationException("Only support for UNIX and Linux systems pid, Your " + system + " is Windows ?");
     }
 
-    public VmFuture(String errorMessage)
+    public R get()
+            throws JVMException
     {
-        this.errorMessage = errorMessage;
+        if (error != null) {
+            throw error;
+        }
+        try {
+            return future.get().get();
+        }
+        catch (InterruptedException | ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof JVMException) {
+                throw (JVMException) cause;
+            }
+            throw new JVMException(cause);
+        }
     }
 
-    public VmFuture(Serializable result, String errorMessage)
+    public R get(long timeout, TimeUnit unit)
+            throws JVMException
     {
-        this.errorMessage = errorMessage;
+        if (error != null) {
+            throw error;
+        }
+        try {
+            return future.get(timeout, unit).get();
+        }
+        catch (InterruptedException | TimeoutException | ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof JVMException) {
+                throw (JVMException) cause;
+            }
+            throw new JVMException(cause);
+        }
     }
 
-    static <V extends Serializable> VmFuture<V> make(Serializable result, String errorMessage)
+    public boolean isRunning()
     {
-        return new VmFuture<>(result, errorMessage);
+        return !future.isDone() && getVmProcess().isAlive();
+    }
+
+    public void cancel()
+    {
+        getVmProcess().destroy();
     }
 }

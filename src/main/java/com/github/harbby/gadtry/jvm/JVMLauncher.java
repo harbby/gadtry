@@ -37,9 +37,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class JVMLauncher<R extends Serializable>
@@ -50,8 +52,7 @@ public final class JVMLauncher<R extends Serializable>
     private final boolean depThisJvm;
     private final List<String> otherVmOps;
     private final Map<String, String> environment;
-
-    private Process process;
+    private final ClassLoader classLoader;
 
     JVMLauncher(
             VmCallable<R> callable,
@@ -59,7 +60,8 @@ public final class JVMLauncher<R extends Serializable>
             Collection<URL> userJars,
             boolean depThisJvm,
             List<String> otherVmOps,
-            Map<String, String> environment)
+            Map<String, String> environment,
+            ClassLoader classLoader)
     {
         this.callable = callable;
         this.userJars = userJars;
@@ -67,47 +69,64 @@ public final class JVMLauncher<R extends Serializable>
         this.depThisJvm = depThisJvm;
         this.otherVmOps = otherVmOps;
         this.environment = environment;
+        this.classLoader = classLoader;
     }
 
-    public Process getProcess()
-    {
-        return process;
-    }
-
-    public VmFuture<R> startAndGet()
+    public R startAndGet()
             throws JVMException
     {
-        return startAndGet(null);
+        return startAndGet(this.callable);
     }
 
-    public VmFuture<R> startAndGet(ClassLoader classLoader)
+    public R startAndGet(VmCallable<R> callable)
             throws JVMException
     {
-        try (Socket socketClient = startAndGetByte();
-                InputStream inputStream = socketClient.getInputStream()) {
-            VmFuture<R> vmFuture = (VmFuture<R>) Serializables.byteToObject(inputStream, classLoader);
-            if (!vmFuture.get().isPresent()) {
-                throw new JVMException(vmFuture.getOnFailure());
-            }
-            return vmFuture;
+        checkState(callable != null, "Fork VM Task callable is null");
+        try {
+            byte[] bytes = Serializables.serialize(callable);
+            AtomicReference<Process> processAtomic = new AtomicReference<>();
+            return this.startAndGetByte(processAtomic, bytes).get();
         }
-        catch (IOException | ClassNotFoundException e) {
-            throw new JVMException("", e);
+        catch (IOException e) {
+            throw new JVMException(e);
         }
     }
 
-    private Socket startAndGetByte()
-            throws IOException, JVMException
+    public VmFuture<R> startAsync()
+            throws JVMException
+    {
+        return startAsync(this.callable);
+    }
+
+    public VmFuture<R> startAsync(VmCallable<R> callable)
+            throws JVMException
+    {
+        checkState(callable != null, "Fork VM Task callable is null");
+        try {
+            byte[] bytes = Serializables.serialize(callable);
+            AtomicReference<Process> processAtomic = new AtomicReference<>();
+            return new VmFuture<>(processAtomic, () -> this.startAndGetByte(processAtomic, bytes));
+        }
+        catch (IOException | InterruptedException e) {
+            throw new JVMException(e);
+        }
+    }
+
+    private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] bytes)
+            throws JVMException
     {
         try (ServerSocket sock = new ServerSocket()) {
             sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+
             ProcessBuilder builder = new ProcessBuilder(buildMainArg(sock.getLocalPort(), otherVmOps))
                     .redirectErrorStream(true);
             builder.environment().putAll(environment);
 
-            this.process = builder.start();
+            Process process = builder.start();
+            processAtomic.set(process);
+
             try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
-                os.write(Serializables.serialize(callable));  //send task
+                os.write(bytes);  //send task
             }
             //IOUtils.copyBytes();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
@@ -121,8 +140,9 @@ public final class JVMLauncher<R extends Serializable>
             //set accept timeOut 3s  //设置最大3秒等待,防止子进程意外退出时 无限等待
             // 正常情况下子进程在退出时,已经回写完数据， 这里需要设置异常退出时 最大等待时间
             sock.setSoTimeout(3000);
-            try {
-                return sock.accept();
+            try (Socket socketClient = sock.accept();
+                    InputStream inputStream = socketClient.getInputStream()) {
+                return Serializables.byteToObject(inputStream, classLoader);
             }
             catch (SocketTimeoutException e) {
                 if (process.isAlive()) {
@@ -130,6 +150,9 @@ public final class JVMLauncher<R extends Serializable>
                 }
                 throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue(), e);
             }
+        }
+        catch (Exception e) {
+            throw new JVMException(e);
         }
     }
 
@@ -171,15 +194,16 @@ public final class JVMLauncher<R extends Serializable>
             throws Exception
     {
         System.out.println("vm start ok ...");
-        VmFuture<? extends Serializable> future;
+        VmResult<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
             System.out.println("vm start init ok ...");
             VmCallable<? extends Serializable> callable = (VmCallable<? extends Serializable>) ois.readObject();
-            future = new VmFuture<>(callable.call());
+            future = new VmResult<>(callable.call());
         }
         catch (Throwable e) {
-            future = new VmFuture<>(Throwables.getStackTraceAsString(e));
+            future = new VmResult<>(Throwables.getStackTraceAsString(e));
+            System.out.println("vm task run error");
         }
 
         try (OutputStream out = chooseOutputStream(args)) {

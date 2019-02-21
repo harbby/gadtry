@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Strings.isNotBlank;
 import static java.util.Objects.requireNonNull;
 
@@ -41,11 +41,18 @@ public class JVMLaunchers
         private Consumer<String> consoleHandler;
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
-        private final Map<String, String> environment = new HashMap<>();
+        private final Map<String, String> environment = new HashMap<>(System.getenv());
+        private ClassLoader classLoader;
 
         public VmBuilder<T> setCallable(VmCallable<T> callable)
         {
             this.callable = requireNonNull(callable, "callable is null");
+            return this;
+        }
+
+        public VmBuilder<T> setClassLoader(ClassLoader classLoader)
+        {
+            this.classLoader = requireNonNull(classLoader, "classLoader is null");
             return this;
         }
 
@@ -106,7 +113,7 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment);
+            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader);
         }
     }
 
