@@ -18,7 +18,6 @@ package com.github.harbby.gadtry.jvm;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -29,8 +28,7 @@ import java.util.Map;
 public class JVMLauncherTest
 {
     @Test
-    public void test1()
-            throws IOException, ClassNotFoundException, JVMException
+    public void testForkJvmReturn1()
     {
         System.out.println("--- vm test ---");
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
@@ -45,8 +43,40 @@ public class JVMLauncherTest
                 .setConsole((msg) -> System.out.println(msg))
                 .build();
 
-        VmFuture<Integer> out = launcher.startAndGet();
-        Assert.assertEquals(out.get().get().intValue(), 1);
+        try {
+            VmFuture<Integer> out = launcher.startAsync();
+            System.out.println(out.getPid());
+            Assert.assertEquals(out.get().intValue(), 1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testForkJvmThrowRuntimeException123()
+    {
+        String f = "testForkJvmThrowRuntimeException123";
+        System.out.println("--- vm test ---");
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .setCallable(() -> {
+                    System.out.println("************ job start ***************");
+                    throw new RuntimeException(f);
+                })
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .build();
+
+        try {
+            VmFuture<Integer> out = launcher.startAsync();
+            out.get();
+        }
+        catch (JVMException e) {
+            Assert.assertTrue(e.getMessage().contains(f));
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -70,8 +100,8 @@ public class JVMLauncherTest
                 .setConsole((msg) -> System.out.println(msg))
                 .build();
 
-        VmFuture<String> out = launcher.startAndGet();
-        Assert.assertEquals(out.get().get(), envValue);
+        String out = launcher.startAndGet();
+        Assert.assertEquals(out, envValue);
     }
 
     @Test

@@ -22,8 +22,6 @@ import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
-
 public class GraphxTest
 {
     @Test
@@ -109,13 +107,8 @@ public class GraphxTest
                 .addEdge("a2", "a3")
                 //.addEdge("a3", "a2")
                 .create();
-        graph.searchRuleRoute(route -> {
-            NodeOperator<Integer> parentNode = route.getLastNode().getData();
-            route.getEndNode().getData().action(parentNode);
-            checkState(route.containsDeadRecursion(), "The Graph contains Dead Recursion: " + route);
-            return true;
-        });
 
+        NodeOperator.runGraph(graph);
         graph.printShow().forEach(System.out::println);
         Assert.assertEquals(6, integer.get());
     }

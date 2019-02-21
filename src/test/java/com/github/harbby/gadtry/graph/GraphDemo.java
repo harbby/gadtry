@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 /**
  * 某图计算题目
@@ -55,6 +55,7 @@ public class GraphDemo
 
         //---打印出已A为起点的网络
         graph.printShow("A").forEach(System.out::println);
+        System.out.println();
     }
 
     private static class EdgeData

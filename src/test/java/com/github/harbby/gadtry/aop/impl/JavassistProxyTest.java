@@ -15,11 +15,19 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.memory.UnsafeHelper;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.misc.Unsafe;
 
 import java.lang.reflect.InvocationHandler;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class JavassistProxyTest
 {
@@ -42,10 +50,56 @@ public class JavassistProxyTest
         Assert.assertEquals(18, age);
         Assert.assertEquals(name, proxy.name());
         Assert.assertTrue(proxy instanceof Proxy.ProxyHandler);
-        Assert.assertEquals(true, atomicBoolean.get());
+        Assert.assertTrue(atomicBoolean.get());
         System.out.println(proxy);
 
         Test1 proxy2 = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), Test1.class, handler);
         System.out.println(proxy2);
+    }
+
+    @Test
+    public void testConcurrent10()
+    {
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        //unsafe.allocateInstance(null); 会让jvm崩溃
+        Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).parallel().forEach(x -> {
+            Class<?> aClass = null;
+            try {
+                if (x % 2 == 0) {
+                    aClass = JavassistProxy.getProxyClass(Runnable.class.getClassLoader(), Runnable.class);
+                }
+                else {
+                    aClass = JavassistProxy.getProxyClass(Runnable.class.getClassLoader(), Callable.class);
+                }
+                Object obj = unsafe.allocateInstance(aClass);
+                Assert.assertNotNull(obj);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                Assert.fail();
+            }
+        });
+    }
+
+    @Test
+    public void testConcurrent_CLass()
+    {
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        //unsafe.allocateInstance(null); 会让jvm崩溃
+        Stream.of(Supplier.class, Supplier.class, Supplier.class, Supplier.class, Supplier.class, Supplier.class,
+                HashMap.class, HashSet.class, ArrayList.class, Test.class, Test1.class, JavassistProxyTest.class)
+                .parallel()
+                .forEach(x -> {
+                    try {
+                        Class<?> aClass = JavassistProxy.getProxyClass(null, x);
+                        Object obj = unsafe.allocateInstance(aClass);
+
+                        Assert.assertEquals(true, x.isInstance(obj));
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                        Assert.fail(e.getMessage());
+                    }
+                });
     }
 }
