@@ -15,27 +15,7 @@
  */
 package com.github.harbby.gadtry.graph;
 
-public interface Edge<E, R>
+public interface ConcurrentGraph<E, R>
+        extends Graph<E, R>
 {
-    public abstract Node<E, R> getOutNode();
-
-    public abstract R getData();
-
-    static <E, R> Edge<E, R> createEdge(Node<E, R> outNode, R edgeData)
-    {
-        return new Edge<E, R>()
-        {
-            @Override
-            public Node<E, R> getOutNode()
-            {
-                return outNode;
-            }
-
-            @Override
-            public R getData()
-            {
-                return edgeData;
-            }
-        };
-    }
 }

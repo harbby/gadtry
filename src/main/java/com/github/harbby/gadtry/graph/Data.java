@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.graph;
 
+@Deprecated
 public interface Data
 {
 }

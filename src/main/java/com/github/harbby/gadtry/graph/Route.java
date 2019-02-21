@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public interface Route<E extends Data, R extends Data>
+public interface Route<E, R>
 {
     public List<String> getIds();
 
@@ -52,12 +52,12 @@ public interface Route<E extends Data, R extends Data>
 
     public String getEndNodeId();
 
-    public static <E extends Data, R extends Data> Builder<E, R> builder(Node<E, R> begin)
+    public static <E, R> Builder<E, R> builder(Node<E, R> begin)
     {
         return new Builder<>(begin);
     }
 
-    public static class Builder<E extends Data, R extends Data>
+    public static class Builder<E, R>
     {
         private final Node<E, R> begin;
         private final List<Edge<E, R>> buffer = new ArrayList<>();

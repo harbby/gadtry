@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.graph.Data;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
-public class RouteImpl<E extends Data, R extends Data>
+public class RouteImpl<E, R>
         implements Route<E, R>
 {
     private final Node<E, R> begin;

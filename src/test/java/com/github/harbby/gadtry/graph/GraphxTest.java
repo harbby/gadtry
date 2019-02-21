@@ -91,7 +91,7 @@ public class GraphxTest
             throws Exception
     {
         AtomicInteger integer = new AtomicInteger();
-        Graph<NodeOperator<Integer>, Data> graph = Graph.<NodeOperator<Integer>, Data>builder()
+        Graph<NodeOperator<Integer>, Void> graph = Graph.<NodeOperator<Integer>, Void>builder()
                 .addNode("a1", "a1", new NodeOperator<>(v -> {
                     return 1;
                 }))

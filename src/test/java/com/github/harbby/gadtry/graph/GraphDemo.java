@@ -30,13 +30,13 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
  */
 public class GraphDemo
 {
-    private Graph<Data, EdgeData> graph;
+    private Graph<Void, EdgeData> graph;
 
     @Before
     public void before()
     {
         //AB5, BC4, CD8, DC8, DE6, AD5, CE2, EB3, AE7
-        this.graph = Graph.<Data, EdgeData>builder()
+        this.graph = Graph.<Void, EdgeData>builder()
                 .addNode("A")
                 .addNode("B")
                 .addNode("C")
@@ -59,7 +59,6 @@ public class GraphDemo
     }
 
     private static class EdgeData
-            implements Data
     {
         private final long distance;
 
@@ -95,7 +94,7 @@ public class GraphDemo
     public void test6SearchMax3Return2CToC()
     {
         //题目6
-        List<Route<Data, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> route.size() <= 3);
+        List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> route.size() <= 3);
         Assert.assertEquals(2, routes.size());
         List<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toList());
         Assert.assertTrue(paths.contains("C-D-C") && paths.contains("C-E-B-C"));
@@ -105,7 +104,7 @@ public class GraphDemo
     public void test7SearchEq4Return3AToC()
     {
         //题目7
-        List<Route<Data, EdgeData>> routes = graph.searchRuleRoute("A", "C", route -> route.size() <= 4)
+        List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("A", "C", route -> route.size() <= 4)
                 .stream().filter(x -> x.size() == 4)
                 .collect(Collectors.toList());
 
@@ -119,7 +118,7 @@ public class GraphDemo
     {
         //题目8 找出A到C的最短距离
         //Route route = graph.searchMinRoute("A", "C");
-        List<Route<Data, EdgeData>> minRoutes = searchMinRoute(graph, "A", "C");
+        List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "A", "C");
         long distances = getRouteDistance(minRoutes.get(0));
 
         Assert.assertEquals(9L, distances);
@@ -129,7 +128,7 @@ public class GraphDemo
     public void test9SearchMinRouteReturn9BToB()
     {
         //题目9 找出B到B的最短距离
-        List<Route<Data, EdgeData>> minRoutes = searchMinRoute(graph, "B", "B");
+        List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "B", "B");
         long distances = getRouteDistance(minRoutes.get(0));
         Assert.assertEquals(9L, distances);
     }
@@ -139,22 +138,22 @@ public class GraphDemo
     {
         //题目10 找出c to c 距离30以内的路程
         //Set<Route> routes = graph.searchMinRoute("C", "C", 30);
-        List<Route<Data, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> {
+        List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> {
             long distances = getRouteDistance(route);
             return distances < 30;
         });
         Assert.assertEquals(7, routes.size());
     }
 
-    private static long getRouteDistance(Route<Data, EdgeData> route)
+    private static long getRouteDistance(Route<Void, EdgeData> route)
     {
         return route.getEdges().stream().mapToLong(x -> x.getData().getDistance()).sum();
     }
 
-    private static List<Route<Data, EdgeData>> searchMinRoute(Graph<Data, EdgeData> graph, String first, String end)
+    private static List<Route<Void, EdgeData>> searchMinRoute(Graph<Void, EdgeData> graph, String first, String end)
     {
-        List<Route<Data, EdgeData>> minRoutes = new ArrayList<>();
-        List<Route<Data, EdgeData>> searchRoutes = graph.searchRuleRoute(first, route -> {
+        List<Route<Void, EdgeData>> minRoutes = new ArrayList<>();
+        List<Route<Void, EdgeData>> searchRoutes = graph.searchRuleRoute(first, route -> {
             if (end.equals(route.getEndNodeId())) {
                 if (minRoutes.isEmpty()) {
                     minRoutes.add(route);

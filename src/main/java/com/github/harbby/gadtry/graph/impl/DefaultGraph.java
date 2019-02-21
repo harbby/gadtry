@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.graph.Data;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.Node;
@@ -36,7 +35,7 @@ import static java.util.Objects.requireNonNull;
  * 采用普通左二叉树遍历法
  * default 采用普通串行遍历(非并行)
  */
-public class DefaultGraph<E extends Data, R extends Data>
+public class DefaultGraph<E, R>
         implements Graph<E, R>
 {
     private final Node<E, R> root;
@@ -118,7 +117,7 @@ public class DefaultGraph<E extends Data, R extends Data>
         return builder;
     }
 
-    private static <E extends Data, R extends Data> void search(List<Route<E, R>> routes,
+    private static <E, R> void search(List<Route<E, R>> routes,
             Node<E, R> node,
             Function<Route<E, R>, Boolean> rule,
             Route.Builder<E, R> header)

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public interface Node<NodeData extends Data, EdgeData extends Data>
+public interface Node<NodeData, EdgeData>
 {
     public abstract String getId();
 
@@ -42,12 +42,12 @@ public interface Node<NodeData extends Data, EdgeData extends Data>
     @Override
     public abstract String toString();
 
-    public static <E extends Data, R extends Data> Builder<E, R> builder(String id, String name, E nodeData)
+    public static <E, R> Builder<E, R> builder(String id, String name, E nodeData)
     {
         return new Builder<>(id, name, nodeData);
     }
 
-    public static class Builder<E extends Data, R extends Data>
+    public static class Builder<E, R>
     {
         private final Map<String, Edge<E, R>> nextNodes = new HashMap<>();
         private final Node<E, R> node;

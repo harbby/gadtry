@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.graph.Data;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
@@ -26,7 +25,7 @@ import java.util.Optional;
 
 import static com.github.harbby.gadtry.base.Strings.isBlank;
 
-public class NodeImpl<E extends Data, R extends Data>
+public class NodeImpl<E, R>
         implements Node<E, R>
 {
     private final String id;

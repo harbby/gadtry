@@ -28,7 +28,7 @@ import static com.github.harbby.gadtry.base.Strings.isNotBlank;
 import static com.github.harbby.gadtry.graph.Edge.createEdge;
 import static java.util.Objects.requireNonNull;
 
-public interface Graph<E extends Data, R extends Data>
+public interface Graph<E, R>
 {
     String getName();
 
@@ -64,12 +64,12 @@ public interface Graph<E extends Data, R extends Data>
 
     Route<E, R> getRoute(String... ids);
 
-    static <E extends Data, R extends Data> GraphBuilder<E, R> builder()
+    static <E, R> GraphBuilder<E, R> builder()
     {
         return new GraphBuilder<>();
     }
 
-    public static class GraphBuilder<E extends Data, R extends Data>
+    public static class GraphBuilder<E, R>
     {
         private final Map<String, Node.Builder<E, R>> rootNodes = new HashMap<>();
         private final Map<String, Node.Builder<E, R>> nodes = new HashMap<>();
@@ -123,10 +123,10 @@ public interface Graph<E extends Data, R extends Data>
         public Graph<E, R> create()
         {
             final Node.Builder<E, R> root = Node.builder("/", "", null);
-            rootNodes.values().forEach(node -> {
+            for (Node.Builder<E, R> node : rootNodes.values()) {
                 Edge<E, R> edge = createEdge(node.build(), null);
                 root.addNextNode(edge);
-            });
+            }
 
             Map<String, Node<E, R>> nodeMap = nodes.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().build()));

@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.graph.Data;
 import com.github.harbby.gadtry.graph.Graph;
 
 import java.util.function.UnaryOperator;
@@ -24,7 +23,6 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class NodeOperator<T>
-        implements Data
 {
     private final UnaryOperator<T> nodeFunc;
     private final ThreadLocal<T> data = new ThreadLocal<>();
@@ -52,7 +50,7 @@ public class NodeOperator<T>
         }
     }
 
-    public static <R> void runGraph(Graph<NodeOperator<R>, Data> graph)
+    public static <R> void runGraph(Graph<NodeOperator<R>, ?> graph)
     {
         graph.searchRuleRoute(route -> {
             NodeOperator<R> parentNode = route.getLastNode().getData();
