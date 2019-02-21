@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.graph.impl.NodeOperator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GraphxTest
@@ -49,7 +48,6 @@ public class GraphxTest
                 .create();
 
         graph.printShow().forEach(System.out::println);
-        TimeUnit.MILLISECONDS.sleep(300);
     }
 
     @Test
@@ -92,20 +90,22 @@ public class GraphxTest
     {
         AtomicInteger integer = new AtomicInteger();
         Graph<NodeOperator<Integer>, Void> graph = Graph.<NodeOperator<Integer>, Void>builder()
-                .addNode("a1", "a1", new NodeOperator<>(v -> {
+                .addNode("a1", "source", new NodeOperator<>(v -> {   //模拟PipeLine管道soruce
                     return 1;
                 }))
-                .addNode("a2", "a2", new NodeOperator<>(v -> {
-                    integer.set(v + 2);
-                    return integer.get();
+                .addNode("a2", "a2", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
+                    return v + 2;
                 }))
-                .addNode("a3", "a3", new NodeOperator<>(v -> {
-                    integer.set(v + 3);
-                    return integer.get();
+                .addNode("a3", "a3", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
+                    return v + 3;
+                }))
+                .addNode("a4", "sink", new NodeOperator<>(v -> {    //模拟PipeLine管道Sink
+                    integer.set(v);
+                    return null;
                 }))
                 .addEdge("a1", "a2")
                 .addEdge("a2", "a3")
-                //.addEdge("a3", "a2")
+                .addEdge("a3", "a4")
                 .create();
 
         NodeOperator.runGraph(graph);

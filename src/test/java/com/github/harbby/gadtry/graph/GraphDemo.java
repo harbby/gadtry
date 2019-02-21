@@ -93,7 +93,7 @@ public class GraphDemo
     @Test
     public void test6SearchMax3Return2CToC()
     {
-        //题目6
+        //题目6  找出C到C经过最多3个点的路线
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> route.size() <= 3);
         Assert.assertEquals(2, routes.size());
         List<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toList());
@@ -103,7 +103,7 @@ public class GraphDemo
     @Test
     public void test7SearchEq4Return3AToC()
     {
-        //题目7
+        //题目7 找出A到C恰好经过4个点的路线
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("A", "C", route -> route.size() <= 4)
                 .stream().filter(x -> x.size() == 4)
                 .collect(Collectors.toList());
@@ -116,7 +116,7 @@ public class GraphDemo
     @Test
     public void test8SearchMinRouteReturn9AToC()
     {
-        //题目8 找出A到C的最短距离
+        //题目8 找出A到C的最短距离线路
         //Route route = graph.searchMinRoute("A", "C");
         List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "A", "C");
         long distances = getRouteDistance(minRoutes.get(0));
@@ -127,7 +127,7 @@ public class GraphDemo
     @Test
     public void test9SearchMinRouteReturn9BToB()
     {
-        //题目9 找出B到B的最短距离
+        //题目9 找出B到B的最短距离线路
         List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "B", "B");
         long distances = getRouteDistance(minRoutes.get(0));
         Assert.assertEquals(9L, distances);
@@ -136,7 +136,7 @@ public class GraphDemo
     @Test
     public void test10SearchMaxDistances30RouteReturn7CToC()
     {
-        //题目10 找出c to c 距离30以内的路程
+        //题目10 找出c to c 距离30以内的线路
         //Set<Route> routes = graph.searchMinRoute("C", "C", 30);
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> {
             long distances = getRouteDistance(route);
@@ -147,7 +147,7 @@ public class GraphDemo
 
     private static long getRouteDistance(Route<Void, EdgeData> route)
     {
-        return route.getEdges().stream().mapToLong(x -> x.getData().getDistance()).sum();
+        return route.getEdges().stream().mapToLong(edge -> edge.getData().getDistance()).sum();
     }
 
     private static List<Route<Void, EdgeData>> searchMinRoute(Graph<Void, EdgeData> graph, String first, String end)
@@ -160,12 +160,12 @@ public class GraphDemo
                     return false;
                 }
 
-                long min = getRouteDistance(minRoutes.get(0));
-                long a = route.getEdges().stream().mapToLong(x -> x.getData().getDistance()).sum();
-                if (a == min) {
+                long minDistance = getRouteDistance(minRoutes.get(0));  //取出目前认为最短的第一个轨迹计算距离
+                long distance = getRouteDistance(route);    //计算出当前轨迹距离
+                if (distance == minDistance) {
                     minRoutes.add(route);  //注意可能有多条
                 }
-                else if (a < min) {
+                else if (distance < minDistance) {
                     minRoutes.clear();
                     minRoutes.add(route);
                 }
