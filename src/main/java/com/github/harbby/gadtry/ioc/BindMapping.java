@@ -22,7 +22,7 @@ import com.github.harbby.gadtry.function.Creator;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public interface BindMapping
