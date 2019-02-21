@@ -19,9 +19,8 @@ IocFactory iocFactory = IocFactory.create(binder -> {
     binder.bind(Set.class).by(HashSet.class).withSingle();
     binder.bind(HashSet.class).withSingle();
     binder.bind(List.class).byCreator(ArrayList::new);  //No Single object
-    binder.bind(Object.class, new Object());
     binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
-    binder.bind(TestInject.class);
+    binder.bind(TestInject.class).noScope();
 });
 
 Set a1 = iocFactory.getInstance(Set.class);
@@ -61,6 +60,7 @@ T proxy = AopFactory.proxy(Class<T>)
                     Assert.assertTrue(value instanceof Integer);
                     break;
             }
+            return value;
     });
 ```
 Dependent on ioc container:
@@ -89,7 +89,7 @@ Dependent on ioc container:
         Set set = iocFactory.getInstance(HashSet.class);
 ```
 
-## Exec New Jvm
+## Multiprocessing Exec Fork New Jvm
 Throw the task to the child process
 ```
 JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
@@ -98,15 +98,85 @@ JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
         System.out.println("************ runing your task ***************");
         return 1;
     })
+    .setEnvironment("TestEnv", envValue)  //set Fork Jvm Env
     .addUserjars(Collections.emptyList())
     .setXms("16m")
     .setXmx("16m")
     .setConsole((msg) -> System.out.println(msg))
     .build();
 
-VmFuture<Integer> out = launcher.startAndGet();
-Assert.assertEquals(out.get().get().intValue(), 1);
+Integer out = launcher.startAndGet();
+Assert.assertEquals(out.intValue(), 1);
 ```
+* Async Api:
+```
+VmFuture<Integer> vmFuture = launcher.startAsync();
+VmFuture<Integer> vmFuture = launcher.startAsync(()->{
+    ...
+    return 0;
+});
+int pid = vmFuture.getPid();  //get pid
+vmFuture.isRunning();
+vmFuture.cancel();
+vmFuture.get() and vmFuture.get(3, TimeUnit.SECONDS);  //block get
+```
+
+## Graph
+* Create ImmutableGraph
+```
+Graph graph = ImmutableGraph.builder()
+                .addNode("Throwable")
+                .addNode("Exception")
+                .addNode("IOException")
+                .addNode("FileNotFoundException")
+
+                .addNode("RuntimeException")
+                .addNode("UnsupportedOperationException")
+                .addNode("IllegalArgumentException")
+
+                .addNode("Error")
+                .addNode("OutOfMemoryError")
+                .addNode("NoClassDefFoundError")
+
+                .addEdge("Throwable", "Exception")
+                .addEdge("Throwable", "Error")
+
+                .addEdge("Exception", "IOException")
+                .addEdge("Exception", "FileNotFoundException")
+                .addEdge("Exception", "RuntimeException")
+                .addEdge("RuntimeException", "UnsupportedOperationException")
+                .addEdge("RuntimeException", "IllegalArgumentException")
+
+                .addEdge("Error", "OutOfMemoryError")
+                .addEdge("Error", "NoClassDefFoundError")
+                .create();
+```
+* Print Graph:
+```
+graph.printShow("Throwable").forEach(System.out::println);
+
+/
+└────Throwable
+     ├────Error
+     │    ├────NoClassDefFoundError
+     │    └────OutOfMemoryError
+     └────Exception
+          ├────RuntimeException
+          │    ├────IllegalArgumentException
+          │    └────UnsupportedOperationException
+          ├────FileNotFoundException
+          └────IOException
+```
+*  Search Graph:        
+Demo: Search for routes with A to C distances less than 30:
+```
+        Graph<Void,EdgeData> graph = ...create...
+        List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("A", "C", route -> {
+            long distances = getRouteDistance(route);
+            return distances < 30;
+        });
+```
+
 
 ## Useful mailing lists
 * yezhixinghai@gmail.com - For discussions about code, design and features
