@@ -58,7 +58,7 @@ public class GraphDemo
         System.out.println();
     }
 
-    private static class EdgeData
+    private class EdgeData
     {
         private final long distance;
 
@@ -77,7 +77,7 @@ public class GraphDemo
     public void test1_5()
             throws Exception
     {
-        //1-5题目
+        //1-5
         Assert.assertEquals(9L, getRouteDistance(graph.getRoute("A", "B", "C")));
         Assert.assertEquals(5L, getRouteDistance(graph.getRoute("A", "D")));
         Assert.assertEquals(13L, getRouteDistance(graph.getRoute("A", "D", "C")));
@@ -93,7 +93,7 @@ public class GraphDemo
     @Test
     public void test6SearchMax3Return2CToC()
     {
-        //题目6  找出C到C经过最多3个点的路线
+        //6  找出C到C经过最多3个点的路线
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> route.size() <= 3);
         Assert.assertEquals(2, routes.size());
         List<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toList());
@@ -103,7 +103,7 @@ public class GraphDemo
     @Test
     public void test7SearchEq4Return3AToC()
     {
-        //题目7 找出A到C恰好经过4个点的路线
+        //7 找出A到C恰好经过4个点的路线
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("A", "C", route -> route.size() <= 4)
                 .stream().filter(x -> x.size() == 4)
                 .collect(Collectors.toList());
@@ -116,7 +116,7 @@ public class GraphDemo
     @Test
     public void test8SearchMinRouteReturn9AToC()
     {
-        //题目8 找出A到C的最短距离线路
+        //8 找出A到C的最短距离线路
         //Route route = graph.searchMinRoute("A", "C");
         List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "A", "C");
         long distances = getRouteDistance(minRoutes.get(0));
@@ -127,7 +127,7 @@ public class GraphDemo
     @Test
     public void test9SearchMinRouteReturn9BToB()
     {
-        //题目9 找出B到B的最短距离线路
+        //9 找出B到B的最短距离线路
         List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "B", "B");
         long distances = getRouteDistance(minRoutes.get(0));
         Assert.assertEquals(9L, distances);
@@ -136,7 +136,7 @@ public class GraphDemo
     @Test
     public void test10SearchMaxDistances30RouteReturn7CToC()
     {
-        //题目10 找出c to c 距离30以内的线路
+        //10 找出c to c 距离30以内的线路
         //Set<Route> routes = graph.searchMinRoute("C", "C", 30);
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> {
             long distances = getRouteDistance(route);
