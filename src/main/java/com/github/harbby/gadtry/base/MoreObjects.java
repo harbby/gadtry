@@ -37,6 +37,20 @@ public class MoreObjects
         }
     }
 
+    public static <T> T firstNonNull(T... values)
+    {
+        if (values == null) {
+            throw new NullPointerException("Both parameters are null");
+        }
+        for (T value : values) {
+            if (value != null) {
+                return value;
+            }
+        }
+
+        throw new NullPointerException("Both parameters are null");
+    }
+
     public static <T> boolean checkContainsTrue(T[] ts, Function<T, Boolean> filter)
     {
         if (ts == null || ts.length == 0) {

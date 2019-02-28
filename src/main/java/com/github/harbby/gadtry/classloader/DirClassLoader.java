@@ -15,8 +15,6 @@
  */
 package com.github.harbby.gadtry.classloader;
 
-import com.github.harbby.gadtry.base.ObjectUtil;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,6 +23,7 @@ import java.net.URLStreamHandlerFactory;
 import java.text.DateFormat;
 import java.util.Date;
 
+import static com.github.harbby.gadtry.base.MoreObjects.firstNonNull;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class DirClassLoader
@@ -34,7 +33,7 @@ public class DirClassLoader
 
     public DirClassLoader(URL[] urls, ClassLoader parent)
     {
-        super(ObjectUtil.firstNonNull(urls, new URL[0]), parent);
+        super(firstNonNull(urls, new URL[0]), parent);
     }
 
     public DirClassLoader(ClassLoader parent)
