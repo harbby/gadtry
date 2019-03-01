@@ -59,10 +59,10 @@ public class Streams
             @Override
             public int nextInt()
             {
-                int _next = next;
+                int tmp = next;
                 next += step;
                 cnt++;
-                return _next;
+                return tmp;
             }
         };
         Spliterator.OfInt a1 = Spliterators.spliterator(ofInt, limit, Spliterator.ORDERED | Spliterator.IMMUTABLE);

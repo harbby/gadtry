@@ -55,7 +55,6 @@ public class GraphDemo
 
         //---打印出已A为起点的网络
         graph.printShow("A").forEach(System.out::println);
-        System.out.println();
     }
 
     private class EdgeData
