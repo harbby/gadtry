@@ -79,7 +79,6 @@ public class StreamsTest
     @Test
     public void parallelRange10()
     {
-
         for (int i = 0; i < 1; i++) {
             Queue<Integer> list = new ArrayBlockingQueue<>(10);
             IntStream stream = null;
