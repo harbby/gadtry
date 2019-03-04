@@ -36,7 +36,7 @@ public class JVMLaunchers
 
     public static class VmBuilder<T extends Serializable>
     {
-        private VmCallable<T> callable;
+        private VmCallable<T> task;
         private boolean depThisJvm = true;
         private Consumer<String> consoleHandler;
         private final List<URL> tmpJars = new ArrayList<>();
@@ -44,9 +44,9 @@ public class JVMLaunchers
         private final Map<String, String> environment = new HashMap<>(System.getenv());
         private ClassLoader classLoader;
 
-        public VmBuilder<T> setCallable(VmCallable<T> callable)
+        public VmBuilder<T> setCallable(VmCallable<T> task)
         {
-            this.callable = requireNonNull(callable, "callable is null");
+            this.task = requireNonNull(task, "task is null");
             return this;
         }
 
@@ -113,7 +113,7 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader);
+            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader);
         }
     }
 

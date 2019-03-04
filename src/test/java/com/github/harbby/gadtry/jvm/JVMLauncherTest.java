@@ -21,9 +21,14 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class JVMLauncherTest
 {
@@ -105,39 +110,106 @@ public class JVMLauncherTest
     }
 
     @Test
-    public void test2()
-            throws IllegalAccessException
+    public void actorModelTest1()
+            throws JVMException, InterruptedException
     {
-        Class<?> class1 = java.io.ObjectInputStream.class;
-        try {
-            Field field = class1.getDeclaredField("primClasses");
-            field.setAccessible(true);
-            Map map = (Map) field.get(class1);
-            System.out.println(field.get(map));
+        String f = "testForkJvmThrowRuntimeException123";
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .setCallable(() -> {
+                    System.out.println("************ job start ***************");
+                    throw new RuntimeException(f);
+                })
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .build();
 
-            System.out.println(field.getName());
-            System.out.println(field.getType());
-        }
-        catch (NoSuchFieldException e) {
-            e.printStackTrace();
+        // 使用如下方式 对actor模型 进行测试
+        final Object lock = new Object();
+        synchronized (lock) {
+            launcher.startAsync((value, error) -> {
+                Assert.assertTrue(error.getMessage().contains(f));
+                error.printStackTrace();
+                synchronized (lock) {
+                    lock.notify();   //唤醒主线程
+                }
+            });
+            lock.wait(500_000); //开始睡眠并让出锁
         }
     }
 
     @Test
-    public void test()
+    public void testActorModelForkReturn2019()
+            throws JVMException, InterruptedException
     {
-        Field[] fields = JVMLauncherTest.class.getDeclaredFields();
-        try {
-            for (Field field : fields) {
-                field.setAccessible(true);
-                if (field.getType().toString().endsWith("java.lang.String") && Modifier.isStatic(field.getModifiers())) {
-                    System.out.println(field.getName() + " , " + field.get(JVMLauncherTest.class));
-                }
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .setCallable(() -> {
+                    System.out.println("************ job start ***************");
+                    return 2019;
+                })
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .build();
+
+        // 使用如下方式 对actor模型 进行测试
+        Lock lock = new ReentrantLock();
+        Condition condition = lock.newCondition();
+
+        lock.lock();
+        launcher.startAsync((value, error) -> {
+            Assert.assertEquals(2019, value.intValue());
+            System.out.println(value);
+            lock.lock();
+            condition.signal();  //唤醒睡眠的主线程
+            lock.unlock();
+        });
+        // LockSupport.class
+        condition.await(600, TimeUnit.SECONDS); //睡眠进入等待池并让出锁
+        lock.unlock();
+    }
+
+    @Test
+    public void testActorModelForkReturnTrue()
+            throws JVMException
+    {
+        JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .build();
+
+        // 使用如下方式 对actor模型 进行测试
+        new ReentrantReadWriteLock().writeLock();
+        Thread main = Thread.currentThread();
+        launcher.startAsync(
+                () -> {
+                    System.out.println("************ job start ***************");
+                    return true;
+                },
+                (value, error) -> {
+                    Assert.assertEquals(true, value);
+                    System.out.println(value);
+                    LockSupport.unpark(main);   //叫醒主线程
+                });
+        LockSupport.park();  //进入阻塞
+    }
+
+    @Test
+    public void test2()
+            throws IllegalAccessException, NoSuchFieldException
+    {
+        Class<?> class1 = java.io.ObjectInputStream.class;
+        Field field = class1.getDeclaredField("primClasses");
+        field.setAccessible(true);
+        Map map = (Map) field.get(class1);
+        Assert.assertTrue(!map.isEmpty());
+
+        System.out.println(field.getName());
+        System.out.println(field.getType());
     }
 
     @Test

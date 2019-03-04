@@ -22,14 +22,20 @@ public class VmResult<V extends Serializable>
 {
     private V result;
     private String errorMessage;
+    private final boolean isFailed;
 
     public V get()
             throws JVMException
     {
-        if (errorMessage != null) {
+        if (isFailed()) {
             throw new JVMException("ForKJVMError: " + errorMessage);
         }
         return result;
+    }
+
+    public boolean isFailed()
+    {
+        return isFailed;
     }
 
     public String getOnFailure()
@@ -40,20 +46,12 @@ public class VmResult<V extends Serializable>
     public VmResult(Serializable result)
     {
         this.result = (V) result;
+        this.isFailed = false;
     }
 
     public VmResult(String errorMessage)
     {
         this.errorMessage = errorMessage;
-    }
-
-    public VmResult(Serializable result, String errorMessage)
-    {
-        this.errorMessage = errorMessage;
-    }
-
-    static <V extends Serializable> VmResult<V> make(Serializable result, String errorMessage)
-    {
-        return new VmResult<>(result, errorMessage);
+        this.isFailed = true;
     }
 }
