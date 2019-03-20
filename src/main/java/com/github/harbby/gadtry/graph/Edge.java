@@ -15,7 +15,10 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import java.io.Serializable;
+
 public interface Edge<E, R>
+        extends Serializable
 {
     public abstract Node<E, R> getOutNode();
 

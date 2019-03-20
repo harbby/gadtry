@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
@@ -35,13 +35,13 @@ public class RouteImpl<E, R>
     public RouteImpl(Node<E, R> begin, List<Edge<E, R>> edges)
     {
         this.begin = begin;
-        this.edges = ImmutableList.copy(edges);
+        this.edges = MutableList.copy(edges);
     }
 
     @Override
     public List<String> getIds()
     {
-        return ImmutableList.<String>builder().add(begin.getId())
+        return MutableList.<String>builder().add(begin.getId())
                 .addAll(edges.stream().map(x -> x.getOutNode().getId()).collect(Collectors.toList()))
                 .build();
     }

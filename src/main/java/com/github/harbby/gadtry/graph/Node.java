@@ -17,12 +17,14 @@ package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.graph.impl.NodeImpl;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public interface Node<NodeData, EdgeData>
+        extends Serializable
 {
     public abstract String getId();
 

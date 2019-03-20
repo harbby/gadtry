@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.graph.impl.NodeOperator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -82,6 +83,8 @@ public class GraphxTest
                 .create();
 
         graph.printShow().forEach(System.out::println);
+        byte[] bytes = Serializables.serialize(graph);
+        Assert.assertNotNull(bytes);
     }
 
     @Test

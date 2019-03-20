@@ -20,7 +20,7 @@ import com.github.harbby.gadtry.aop.model.ClassInfo;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.classloader.ClassScanner;
-import com.github.harbby.gadtry.collection.ImmutableSet;
+import com.github.harbby.gadtry.collection.mutable.MutableSet;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -88,7 +88,7 @@ public class FilterBuilder
 
     public FilterBuilder classes(Class<?>... inputClass)
     {
-        this.inputClass = ImmutableSet.of(inputClass);
+        this.inputClass = MutableSet.of(inputClass);
         return this;
     }
 

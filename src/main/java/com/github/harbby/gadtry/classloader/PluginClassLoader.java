@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.classloader;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -58,7 +58,7 @@ public class PluginClassLoader
         // plugins should not have access to the system (application) class loader
         super(urls.toArray(new URL[0]), parent);
         this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
-        this.spiPackages = ImmutableList.copy(spiPackages);  //== ImmutableList.copyOf()
+        this.spiPackages = MutableList.copy(spiPackages);  //== MutableList.copyOf()
         this.spiResources = spiPackages.stream().map(PluginClassLoader::classNameToResource).collect(Collectors.toList());
     }
 

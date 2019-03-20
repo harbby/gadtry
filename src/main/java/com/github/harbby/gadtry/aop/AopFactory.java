@@ -24,7 +24,7 @@ import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.FilterBuilder;
 import com.github.harbby.gadtry.aop.v1.MethodFilter;
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -70,7 +70,7 @@ public interface AopFactory
             aspect.register(binder);
         }
 
-        return new AopFactoryImpl(ImmutableList.copy(pointcuts));
+        return new AopFactoryImpl(MutableList.copy(pointcuts));
     }
 
     public static <T> ByInstance<T> proxy(Class<T> interfaces)

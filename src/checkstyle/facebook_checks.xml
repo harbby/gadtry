@@ -131,7 +131,7 @@
         <module name="UpperEll" />
         <module name="DefaultComesLast" />
         <module name="ArrayTypeStyle" />
-        <module name="MultipleVariableDeclarations" />
+        <!--<module name="MultipleVariableDeclarations" />  一行不能同时创建多个变量 -->
         <module name="ModifierOrder" />
         <module name="OneStatementPerLine" />
         <module name="StringLiteralEquality" />

@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry;
 
-import com.github.harbby.gadtry.collection.ImmutableMap;
+import com.github.harbby.gadtry.collection.mutable.MutableMap;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import org.junit.Assert;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class GadTryTest
                         Assert.assertTrue(true);
                         System.out.println("after2");
                     });
-        }).setConfigurationProperties(ImmutableMap.of())
+        }).setConfigurationProperties(MutableMap.of())
                 .initialize();
 
         Set set = iocFactory.getInstance(HashSet.class);

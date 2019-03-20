@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.collection;
+package com.github.harbby.gadtry.collection.mutable;
 
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.unmodifiableList;
-
-public class ImmutableList
+public class MutableSet
 {
-    private ImmutableList() {}
+    private MutableSet() {}
 
-    public static <T> List<T> copy(List<? extends T> list)
+    public static <T> Set<T> copy(Set<? extends T> set)
     {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
-        for (T it : list) {
+        MutableSet.Builder<T> builder = MutableSet.builder();
+        for (T it : set) {
             builder.add(it);
         }
         return builder.build();
     }
 
-    public static <T> List<T> copy(Iterable<? extends T> iterable)
+    public static <T> Set<T> copy(Iterable<? extends T> iterable)
     {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        MutableSet.Builder<T> builder = MutableSet.builder();
         for (T it : iterable) {
             builder.add(it);
         }
@@ -45,43 +43,9 @@ public class ImmutableList
     }
 
     @SafeVarargs
-    public static <T> List<T> of(T... t)
+    public static <T> Set<T> of(T... t)
     {
-        return ImmutableList.<T>builder().add(t).build();
-    }
-
-    public static <T> List<Tuple2<Integer, T>> zipIndex(Iterable<T> iterable)
-    {
-        ImmutableList.Builder<Tuple2<Integer, T>> builder = ImmutableList.builder();
-        int i = 0;
-        for (T t : iterable) {
-            builder.add(Tuple2.of(i, t));
-            i++;
-        }
-        return builder.build();
-    }
-
-    @SafeVarargs
-    public static <T> List<Tuple2<Integer, T>> zipIndex(T... ts)
-    {
-        ImmutableList.Builder<Tuple2<Integer, T>> builder = ImmutableList.builder();
-        int i = 0;
-        for (T t : ts) {
-            builder.add(Tuple2.of(i, t));
-            i++;
-        }
-        return builder.build();
-    }
-
-    public static <T> List<Tuple2<Integer, T>> zipIndex(Iterator<T> iterator)
-    {
-        ImmutableList.Builder<Tuple2<Integer, T>> builder = ImmutableList.builder();
-        int i = 0;
-        while (iterator.hasNext()) {
-            builder.add(Tuple2.of(i, iterator.next()));
-            i++;
-        }
-        return builder.build();
+        return MutableSet.<T>builder().add(t).build();
     }
 
     public static <T> Builder<T> builder()
@@ -124,9 +88,9 @@ public class ImmutableList
             return this;
         }
 
-        public List<T> build()
+        public Set<T> build()
         {
-            return unmodifiableList(builder.build().collect(Collectors.toList()));
+            return builder.build().collect(Collectors.toSet());
         }
     }
 }

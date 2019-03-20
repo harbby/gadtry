@@ -71,7 +71,7 @@ public class GadTry
                 }
             };
             BindMapping bindMapping = BindMapping.create(handler, beans);
-            return new IocFactoryImpl(bindMapping);
+            return new IocFactoryImpl(bindMapping, beans);
         }
     }
 }

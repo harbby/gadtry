@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.Node;
@@ -67,7 +67,7 @@ public class DefaultGraph<E, R>
 
         search(routes, begin, rule, header);
 
-        return ImmutableList.copy(routes);
+        return MutableList.copy(routes);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class DefaultGraph<E, R>
         Route.Builder<E, R> header = Route.builder(root);
 
         search(routes, root, rule, header);
-        return ImmutableList.copy(routes);
+        return MutableList.copy(routes);
     }
 
     @Override

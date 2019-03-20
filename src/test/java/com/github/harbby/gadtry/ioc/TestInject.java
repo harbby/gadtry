@@ -17,14 +17,21 @@ package com.github.harbby.gadtry.ioc;
 
 import java.util.HashMap;
 
+import static java.util.Objects.requireNonNull;
+
 public class TestInject
 {
     @Autowired
     private TestInject test;
 
+    public TestInject getTest()
+    {
+        return test;
+    }
+
     @Autowired
     public TestInject(HashMap set)
     {
-        System.out.println(set);
+        requireNonNull(set, "set is null");
     }
 }

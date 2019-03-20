@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
@@ -41,12 +41,12 @@ public class GraphUtil
     public static void printShow(List<String> builder, List<Node> firstNodes)
     {
         Set<String> looped = new HashSet<>();
-        printBuilder(builder, looped, ImmutableList.copy(firstNodes), "├");  //ImmutableList.copyOf()
+        printBuilder(builder, looped, MutableList.copy(firstNodes), "├");  //MutableList.copyOf()
     }
 
     public static void printShow(List<String> builder, Node... firstNodes)
     {
-        printShow(builder, ImmutableList.of(firstNodes));
+        printShow(builder, MutableList.of(firstNodes));
     }
 
     private static void printBuilder(List<String> builder, Set<String> looped, List<Node> nodes, String header)

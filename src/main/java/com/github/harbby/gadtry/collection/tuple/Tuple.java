@@ -13,28 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.collection;
+package com.github.harbby.gadtry.collection.tuple;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.Serializable;
 
-import java.util.Map;
-
-public class ImmutableMapTest
+public interface Tuple
+        extends Serializable
 {
-    @Test
-    public void builder()
-    {
-        Map<String, String> map = ImmutableMap.<String, String>builder()
-                .put("a1", "v1")
-                .build();
-        try {
-            map.put("a1", "a2");
-            Assert.fail();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            Assert.assertTrue(e instanceof UnsupportedOperationException);
-        }
-    }
+    int getArity();
+
+    public <T> T getField(int pos);
+
+    public abstract <T extends Tuple> T copy();
 }

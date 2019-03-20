@@ -32,7 +32,54 @@ import java.util.function.Supplier;
 public class IocFactoryTest
 {
     @Test
-    public void create()
+    public void testNoScopeTestInject()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(TestInject.class).noScope();
+        });
+
+        TestInject testInject = iocFactory.getInstance(TestInject.class);
+        TestInject testInject2 = iocFactory.getInstance(TestInject.class);
+        Assert.assertTrue(testInject != testInject2);
+        Assert.assertTrue(testInject == testInject.getTest());
+    }
+
+    @Test
+    public void testNoScopeList()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(List.class).byCreator(ArrayList::new);  //Single object
+        });
+
+        Assert.assertTrue(iocFactory.getInstance(List.class) != iocFactory.getInstance(List.class));
+    }
+
+    @Test
+    public void testSingleSet()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(Set.class).by(HashSet.class).withSingle();
+        });
+
+        Set a1 = iocFactory.getInstance(Set.class);
+        Set a2 = iocFactory.getInstance(Set.class);
+        Assert.assertTrue(a1 == a2); // Single object
+    }
+
+    @Test
+    public void testSingleMap()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
+        });
+
+        Map map1 = iocFactory.getInstance(Map.class);
+        Map map2 = iocFactory.getInstance(Map.class);
+        Assert.assertEquals(true, map1 == map2);  //Single object,单例对象
+    }
+
+    @Test
+    public void testCreator()
     {
         IocFactory iocFactory = IocFactory.create(binder -> {
             binder.bind(Set.class).by(HashSet.class).withSingle();
@@ -41,22 +88,7 @@ public class IocFactoryTest
             binder.bind(Object.class, new Object());
             binder.bind(Queue.class).byInstance(new ArrayBlockingQueue(100));
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
-            binder.bind(TestInject.class).noScope();
         });
-
-        TestInject testInject = iocFactory.getInstance(TestInject.class);
-        TestInject testInject2 = iocFactory.getInstance(TestInject.class);
-        Assert.assertTrue(testInject != testInject2);
-        //Object a6546 = iocFactory.getAllBeans();
-
-        Set a1 = iocFactory.getInstance(Set.class);
-        Set a2 = iocFactory.getInstance(Set.class);
-        Assert.assertTrue(a1 == a2); // Single object
-
-        Map map1 = iocFactory.getInstance(Map.class);
-        Map map2 = iocFactory.getInstance(Map.class);
-        Assert.assertEquals(true, map1 == map2);  //Single object,单例对象
-        Assert.assertEquals(false, iocFactory.getInstance(List.class) == iocFactory.getInstance(List.class));
 
         Assert.assertNotNull(iocFactory.getInstance(HashSet.class));
 

@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.classloader;
 
 import com.github.harbby.gadtry.base.Files;
-import com.github.harbby.gadtry.collection.ImmutableSet;
+import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.InjectorException;
 
 import java.io.File;
@@ -157,7 +157,7 @@ public class ClassScanner
     {
         Set<String> classStrings = scanClasses(basePackage, classLoader);
 
-        ImmutableSet.Builder<Class<?>> classes = ImmutableSet.builder();
+        MutableSet.Builder<Class<?>> classes = MutableSet.builder();
         for (String it : classStrings) {
             String classString = it.substring(0, it.length() - 6).replace("/", ".");
 
@@ -177,7 +177,7 @@ public class ClassScanner
     {
         String packagePath = basePackage.replace('.', '/');
 
-        ImmutableSet.Builder<String> classStrings = ImmutableSet.builder();
+        MutableSet.Builder<String> classStrings = MutableSet.builder();
         Enumeration<URL> resources = classLoader.getResources(packagePath);
         while (resources.hasMoreElements()) {
             URL url = resources.nextElement();

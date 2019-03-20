@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.classloader;
 
 import com.github.harbby.gadtry.base.Files;
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.function.Function;
 
 import java.io.File;
@@ -57,7 +57,7 @@ public final class PluginLoader<T>
 
     public List<Module<T>> getModules()
     {
-        return ImmutableList.copy(modules.values());
+        return MutableList.copy(modules.values());
     }
 
     public Module<T> getModule(String id)
@@ -180,7 +180,7 @@ public final class PluginLoader<T>
                 spiLoader = pluginClass.getClassLoader();
             }
 
-            ImmutableList.Builder<Module<T>> builder = ImmutableList.builder();
+            MutableList.Builder<Module<T>> builder = MutableList.builder();
             for (File dir : scanner.get()) {
                 Module<T> module = this.loadModule(dir);
                 builder.add(module);
@@ -196,7 +196,7 @@ public final class PluginLoader<T>
             URLClassLoader moduleClassLoader = buildClassLoaderFromDirectory(moduleDir);
             try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(moduleClassLoader)) {
                 ServiceLoader<T> serviceLoader = ServiceLoader.load(pluginClass, moduleClassLoader);
-                List<T> plugins = ImmutableList.copy(serviceLoader);
+                List<T> plugins = MutableList.copy(serviceLoader);
                 Module<T> module = new Module<>(moduleDir, loadTime, plugins, moduleClassLoader, closeHandler);
                 loadHandler.accept(module);
                 return module;

@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.graph.impl.DefaultGraph;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +30,11 @@ import static com.github.harbby.gadtry.graph.Edge.createEdge;
 import static java.util.Objects.requireNonNull;
 
 public interface Graph<E, R>
+        extends Serializable
 {
     String getName();
 
-    Iterable<String> printShow()
-            throws Exception;
+    Iterable<String> printShow();
 
     /**
      * 打印graph结构
@@ -94,9 +95,11 @@ public interface Graph<E, R>
         public GraphBuilder<E, R> addNode(String nodeId, String name, E nodeData)
         {
             checkState(isNotBlank(nodeId), "nodeId is null or empty");
-            Node.Builder<E, R> node = Node.builder(nodeId, name, nodeData);
-            nodes.put(nodeId, node);
-            rootNodes.put(nodeId, node);
+            nodes.computeIfAbsent(nodeId, key -> {
+                Node.Builder<E, R> node = Node.builder(nodeId, name, nodeData);
+                rootNodes.put(nodeId, node);
+                return node;
+            });
             return this;
         }
 

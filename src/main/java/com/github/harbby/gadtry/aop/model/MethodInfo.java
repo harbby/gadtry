@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -115,7 +115,7 @@ public interface MethodInfo
                 helper.put("name", getName());
                 helper.put("returnType", getReturnType());
                 helper.put("modifiers", getModifiers());
-                helper.put("Annotations", ImmutableList.<Annotation>of(method.getAnnotations()));
+                helper.put("Annotations", MutableList.<Annotation>of(method.getAnnotations()));
                 helper.put("method", method);
                 return super.toString() + helper.toString();
             }

@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.graph.Graph;
 
 /**
  * harbby ioc
@@ -47,10 +48,12 @@ public interface IocFactory
 
     public <T> BindMapping getAllBeans();
 
+    Graph<Void, Void> analysis();
+
     public static IocFactory create(Bean... beans)
     {
         BindMapping bindMapping = BindMapping.create(ReplaceHandler.INSTANCE, beans);
-        return new IocFactoryImpl(bindMapping);
+        return new IocFactoryImpl(bindMapping, beans);
     }
 
     public interface ReplaceHandler

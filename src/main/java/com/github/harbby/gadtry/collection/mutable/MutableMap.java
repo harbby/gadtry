@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.collection;
+package com.github.harbby.gadtry.collection.mutable;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static java.util.Collections.unmodifiableMap;
-
-public class ImmutableMap
+public class MutableMap
 {
-    private ImmutableMap() {}
+    private MutableMap() {}
 
     public static <K, V> Map<K, V> copy(Map<? extends K, ? extends V> map)
     {
-        ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
+        MutableMap.Builder<K, V> builder = MutableMap.builder();
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             builder.put(entry.getKey(), entry.getValue());
         }
@@ -42,25 +39,23 @@ public class ImmutableMap
 
     public static class Builder<K, V>
     {
-        private Stream.Builder<Tuple2<K, V>> builder = Stream.builder();
+        private Map<K, V> builder = new HashMap<>();
 
         public Builder<K, V> put(K k, V v)
         {
-            builder.add(Tuple2.of(k, v));
+            builder.put(k, v);
             return this;
         }
 
         public Builder<K, V> putAll(Map<K, V> map)
         {
-            for (Map.Entry<K, V> entry : map.entrySet()) {
-                builder.add(Tuple2.of(entry.getKey(), entry.getValue()));
-            }
+            builder.putAll(map);
             return this;
         }
 
         public Map<K, V> build()
         {
-            return unmodifiableMap(builder.build().collect(Collectors.toMap(Tuple2::f0, Tuple2::f1)));
+            return builder;
         }
     }
 
@@ -71,7 +66,7 @@ public class ImmutableMap
 
     public static <K, V> Map<K, V> of(K k1, V v1)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .build();
     }
@@ -80,7 +75,7 @@ public class ImmutableMap
             K k1, V v1,
             K k2, V v2)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .build();
@@ -91,7 +86,7 @@ public class ImmutableMap
             K k2, V v2,
             K k3, V v3)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .put(k3, v3)
@@ -104,7 +99,7 @@ public class ImmutableMap
             K k3, V v3,
             K k4, V v4)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .put(k3, v3)
@@ -119,7 +114,7 @@ public class ImmutableMap
             K k4, V v4,
             K k5, V v5)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .put(k3, v3)
@@ -136,7 +131,7 @@ public class ImmutableMap
             K k5, V v5,
             K k6, V v6)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .put(k3, v3)
@@ -155,7 +150,7 @@ public class ImmutableMap
             K k6, V v6,
             K k7, V v7)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .put(k3, v3)
@@ -176,7 +171,7 @@ public class ImmutableMap
             K k7, V v7,
             K k8, V v8)
     {
-        return ImmutableMap.<K, V>builder()
+        return MutableMap.<K, V>builder()
                 .put(k1, v1)
                 .put(k2, v2)
                 .put(k3, v3)
