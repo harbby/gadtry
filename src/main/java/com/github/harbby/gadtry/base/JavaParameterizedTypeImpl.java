@@ -36,14 +36,14 @@ import java.util.Objects;
  * demo : Type type = JavaType.make(Map.class, new Type[]{String.class, String.class}, null)
  */
 
-public class JavaType
+final class JavaParameterizedTypeImpl
         implements ParameterizedType
 {
     private final Type[] actualTypeArguments;
     private final Class<?> rawType;
     private final Type ownerType;
 
-    private JavaType(Class<?> rawType,
+    JavaParameterizedTypeImpl(Class<?> rawType,
             Type[] actualTypeArguments,
             Type ownerType)
     {
@@ -51,6 +51,14 @@ public class JavaType
         this.rawType = rawType;
         this.ownerType = (ownerType != null) ? ownerType : rawType.getDeclaringClass();
         validateConstructorArguments();
+    }
+
+    public static JavaParameterizedTypeImpl make(Class<?> rawType,
+            Type[] actualTypeArguments,
+            Type ownerType)
+    {
+        return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
+                ownerType);
     }
 
     private void validateConstructorArguments()
@@ -63,39 +71,6 @@ public class JavaType
         for (int i = 0; i < actualTypeArguments.length; i++) {
             // check actuals against formals' bounds
         }
-    }
-
-    /**
-     * Static factory. Given a (generic) class, actual type arguments
-     * and an owner type, creates a parameterized type.
-     * This class can be instantiated with a a raw type that does not
-     * represent a generic type, provided the list of actual type
-     * arguments is empty.
-     * If the ownerType argument is null, the declaring class of the
-     * raw type is used as the owner type.
-     * <p> This method throws a MalformedParameterizedTypeException
-     * under the following circumstances:
-     * If the number of actual type arguments (i.e., the size of the
-     * array <tt>typeArgs</tt>) does not correspond to the number of
-     * formal type arguments.
-     * If any of the actual type arguments is not an instance of the
-     * bounds on the corresponding formal.
-     *
-     * @param rawType the Class representing the generic type declaration being
-     * instantiated
-     * @param actualTypeArguments - a (possibly empty) array of types
-     * representing the actual type arguments to the parameterized type
-     * @param ownerType - the enclosing type, if known.
-     * @return An instance of <tt>ParameterizedType</tt>
-     * @throws MalformedParameterizedTypeException - if the instantiation
-     * is invalid
-     */
-    public static JavaType make(Class<?> rawType,
-            Type[] actualTypeArguments,
-            Type ownerType)
-    {
-        return new JavaType(rawType, actualTypeArguments,
-                ownerType);
     }
 
     /**
@@ -225,10 +200,10 @@ public class JavaType
 
             sb.append(".");
 
-            if (ownerType instanceof JavaType) {
+            if (ownerType instanceof JavaParameterizedTypeImpl) {
                 // Find simple name of nested type by removing the
                 // shared prefix with owner.
-                sb.append(rawType.getName().replace(((JavaType) ownerType).rawType.getName() + "$",
+                sb.append(rawType.getName().replace(((JavaParameterizedTypeImpl) ownerType).rawType.getName() + "$",
                         ""));
             }
             else {
