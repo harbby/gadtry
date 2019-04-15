@@ -222,7 +222,7 @@ public final class JVMLauncherImpl<R extends Serializable>
         //ops.add(System.getProperty("java.class.path"));
         String userSdkJars = getUserAddClasspath(); //编译时还需要 用户的额外jar依赖
         if (depThisJvm) {
-            ops.add(System.getProperty("java.class.path") + ":" + userSdkJars);
+            ops.add(System.getProperty("java.class.path") + File.pathSeparator + userSdkJars);
         }
         else {
             ops.add(userSdkJars);
