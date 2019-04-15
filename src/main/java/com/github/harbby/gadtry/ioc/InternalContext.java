@@ -20,6 +20,7 @@ import com.github.harbby.gadtry.function.Function;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import java.util.Set;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 class InternalContext
 {
@@ -78,6 +80,9 @@ class InternalContext
     {
         try {
             return newInstance(driver);
+        }
+        catch (InvocationTargetException e) {
+            throw throwsThrowable(e.getTargetException());
         }
         catch (Exception e) {
             throw throwsException(e);
