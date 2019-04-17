@@ -23,7 +23,7 @@ public class JdkProxy
     private JdkProxy() {}
 
     @SuppressWarnings("unchecked")
-    public static <T> T newProxyInstance(ClassLoader loader, Class<T> driver, InvocationHandler handler)
+    public static <T> T newProxyInstance(ClassLoader loader, Class<?> driver, InvocationHandler handler)
             throws IllegalArgumentException
     {
         return (T) Proxy.newProxyInstance(loader, new Class<?>[] {driver}, handler);

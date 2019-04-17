@@ -19,7 +19,7 @@ import java.lang.reflect.InvocationHandler;
 
 public interface Proxy
 {
-    <T> T getProxy(ClassLoader loader, Class<T> interfaces, InvocationHandler handler);
+    <T> T getProxy(ClassLoader loader, Class<?> interfaces, InvocationHandler handler);
 
     public static interface ProxyHandler
     {

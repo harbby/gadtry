@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 public class CutModeImpl<T>
         implements CutMode<T>
 {
-    private final Class<T> interfaces;
+    private final Class<?> interfaces;
     private final T instance;
     private final ClassLoader loader;
 
@@ -37,7 +37,7 @@ public class CutModeImpl<T>
     private final Supplier<java.util.function.Function<MethodInfo, Boolean>> methodFilter =
             Lazys.goLazy(this::getMethodFilter);
 
-    protected CutModeImpl(Class<T> interfaces, T instance, Proxy proxy)
+    protected CutModeImpl(Class<?> interfaces, T instance, Proxy proxy)
     {
         this.interfaces = interfaces;
         this.instance = instance;
@@ -55,7 +55,7 @@ public class CutModeImpl<T>
         return (method) -> true;
     }
 
-    private T getProxy(InvocationHandler handler, Class<T> interfaces)
+    private T getProxy(InvocationHandler handler, Class<?> interfaces)
     {
         java.util.function.Function<MethodInfo, Boolean> filter = this.methodFilter.get();
         InvocationHandler proxyHandler = filter != null ?

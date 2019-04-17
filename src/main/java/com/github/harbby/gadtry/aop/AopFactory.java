@@ -84,6 +84,25 @@ public interface AopFactory
         }
     }
 
+    public static <T> ByClass<T> proxyInstance(T instance)
+    {
+        return aClass -> {
+            checkState(aClass.isInstance(instance), instance + " not instanceof " + aClass);
+            if (aClass.isInterface()) {
+                return new ProxyBuilder<T>(aClass, instance, JdkProxy::newProxyInstance);
+            }
+            else {
+                checkState(!Modifier.isFinal(aClass.getModifiers()), aClass + " is final");
+                return new ProxyBuilder<T>(aClass, instance, JavassistProxy::newProxyInstance);
+            }
+        };
+    }
+
+    public interface ByClass<T>
+    {
+        public ProxyBuilder<T> byClass(Class<?> aclass);
+    }
+
     public interface ByInstance<T>
     {
         public ProxyBuilder<T> byInstance(T instance);
@@ -98,7 +117,7 @@ public interface AopFactory
         private Class<?>[] returnTypes;
         private Function<MethodInfo, Boolean> whereMethod;
 
-        private ProxyBuilder(Class<T> interfaces, T instance, Proxy proxy)
+        private ProxyBuilder(Class<?> interfaces, T instance, Proxy proxy)
         {
             super(interfaces, instance, proxy);
         }
