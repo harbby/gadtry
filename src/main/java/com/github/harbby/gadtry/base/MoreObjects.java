@@ -37,6 +37,27 @@ public class MoreObjects
         }
     }
 
+    public static void checkState(boolean ok, String error, Object... args)
+    {
+        if (!ok) {
+            throw new IllegalStateException(String.format(error, args));
+        }
+    }
+
+    public static void checkArgument(boolean ok, String error)
+    {
+        if (!ok) {
+            throw new IllegalStateException(error);
+        }
+    }
+
+    public static void checkArgument(boolean ok, String error, Object... args)
+    {
+        if (!ok) {
+            throw new IllegalStateException(String.format(error, args));
+        }
+    }
+
     public static <T> T firstNonNull(T... values)
     {
         if (values == null) {
