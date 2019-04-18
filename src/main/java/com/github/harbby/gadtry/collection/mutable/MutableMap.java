@@ -47,7 +47,7 @@ public class MutableMap
             return this;
         }
 
-        public Builder<K, V> putAll(Map<K, V> map)
+        public Builder<K, V> putAll(Map<? extends K, ? extends V> map)
         {
             builder.putAll(map);
             return this;

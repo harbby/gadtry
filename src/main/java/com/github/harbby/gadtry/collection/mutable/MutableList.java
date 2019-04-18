@@ -47,7 +47,7 @@ public class MutableList
     @SafeVarargs
     public static <T> List<T> of(T... t)
     {
-        return MutableList.<T>builder().add(t).build();
+        return MutableList.<T>builder().addAll(t).build();
     }
 
     public static <T> List<Tuple2<Integer, T>> zipIndex(Iterable<T> iterable)
@@ -100,7 +100,7 @@ public class MutableList
         }
 
         @SafeVarargs
-        public final Builder<T> add(T... ts)
+        public final Builder<T> addAll(T... ts)
         {
             for (T it : ts) {
                 builder.add(it);
@@ -108,7 +108,7 @@ public class MutableList
             return this;
         }
 
-        public Builder<T> addAll(Iterable<T> iterable)
+        public Builder<T> addAll(Iterable<? extends T> iterable)
         {
             for (T it : iterable) {
                 builder.add(it);
@@ -116,7 +116,7 @@ public class MutableList
             return this;
         }
 
-        public Builder<T> addAll(Iterator<T> iterator)
+        public Builder<T> addAll(Iterator<? extends T> iterator)
         {
             while (iterator.hasNext()) {
                 builder.add(iterator.next());
