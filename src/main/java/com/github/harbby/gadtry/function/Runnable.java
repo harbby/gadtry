@@ -15,8 +15,11 @@
  */
 package com.github.harbby.gadtry.function;
 
+import java.io.Serializable;
+
 @FunctionalInterface
 public interface Runnable
+        extends Serializable
 {
     void apply()
             throws Exception;

@@ -15,8 +15,11 @@
  */
 package com.github.harbby.gadtry.function;
 
+import java.io.Serializable;
+
 @FunctionalInterface
 public interface Consumer<T>
+        extends Serializable
 {
     void apply(T t)
             throws Exception;
