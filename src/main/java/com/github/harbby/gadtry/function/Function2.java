@@ -18,9 +18,9 @@ package com.github.harbby.gadtry.function;
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface Function<F1, R>
+public interface Function2<F1, F2, R>
         extends Serializable
 {
-    R apply(F1 f1)
+    R apply(F1 f1, F2 f2)
             throws Exception;
 }
