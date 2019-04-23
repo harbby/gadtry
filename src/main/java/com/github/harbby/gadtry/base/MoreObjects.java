@@ -44,6 +44,13 @@ public class MoreObjects
         }
     }
 
+    public static void checkArgument(boolean ok)
+    {
+        if (!ok) {
+            throw new IllegalStateException();
+        }
+    }
+
     public static void checkArgument(boolean ok, String error)
     {
         if (!ok) {
