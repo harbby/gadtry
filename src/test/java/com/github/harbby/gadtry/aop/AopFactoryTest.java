@@ -15,12 +15,9 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.function.Function;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,22 +45,6 @@ public class AopFactoryTest
 
         Set set = aopFactory.proxy(Set.class, new HashSet());
         set.clear();
-    }
-
-    @Test
-    public void proxySerializeTest()
-            throws IOException, ClassNotFoundException
-    {
-        Function<String, Integer> function = (str) -> str.length();
-
-        Function<String, Integer> proxy = AopFactory.proxyInstance(function)
-                .byClass(Function.class)
-                .after(methodInfo -> {
-                    System.out.println(methodInfo);
-                });
-
-        byte[] bytes = Serializables.serialize(proxy);
-        Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
     private static <T> T getProxy(Class<T> key, T instance)

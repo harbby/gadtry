@@ -20,11 +20,11 @@ import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Consumer;
-import com.github.harbby.gadtry.function.Function;
 import com.github.harbby.gadtry.function.Runnable;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CutModeImpl<T>
@@ -56,9 +56,20 @@ public class CutModeImpl<T>
         return (method) -> true;
     }
 
-    private static <T> T getProxy(InvocationHandler handler, Class<?> interfaces)
+    private T getProxy(InvocationHandler handler, Class<?> interfaces)
     {
         Function<MethodInfo, Boolean> filter = this.methodFilter.get();
+        return getProxyStatic(proxy, loader, interfaces, handler, instance, filter);
+    }
+
+    private static <T> T getProxyStatic(
+            Proxy proxyContext,
+            ClassLoader loader,
+            Class<?> interfaces,
+            InvocationHandler handler,
+            T instance,
+            Function<MethodInfo, Boolean> filter)
+    {
         InvocationHandler proxyHandler = filter != null ?
                 (InvocationHandler & Serializable) (proxy, method, args) -> {
                     if (filter.apply(MethodInfo.of(method))) {
@@ -70,7 +81,7 @@ public class CutModeImpl<T>
                 }
                 : handler;
 
-        return proxy.getProxy(loader, interfaces, proxyHandler);
+        return proxyContext.getProxy(loader, interfaces, proxyHandler);
     }
 
     @Override
@@ -83,7 +94,13 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T around(Function<ProxyContext, Object> aroundHandler)
+    public T around(com.github.harbby.gadtry.function.Function<ProxyContext, Object> aroundHandler)
+    {
+        InvocationHandler handler = aroundStatic(aroundHandler, instance);
+        return this.getProxy(handler, interfaces);
+    }
+
+    private static <T> InvocationHandler aroundStatic(com.github.harbby.gadtry.function.Function<ProxyContext, Object> aroundHandler, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             ProxyContext context = new ProxyContext()
@@ -126,8 +143,7 @@ public class CutModeImpl<T>
                 return returnValue;
             }
         };
-
-        return getProxy(handler, interfaces);
+        return handler;
     }
 
     @Override
@@ -139,11 +155,17 @@ public class CutModeImpl<T>
     @Override
     public T before(Consumer<MethodInfo> runnable)
     {
-        InvocationHandler handler = (proxy, method, args) -> {
+        InvocationHandler handler = beforeStatic(runnable, instance);
+        return getProxy(handler, interfaces);
+    }
+
+    private static <T> InvocationHandler beforeStatic(Consumer<MethodInfo> runnable, T instance)
+    {
+        InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             runnable.apply(MethodInfo.of(method));
             return method.invoke(instance, args);
         };
-        return getProxy(handler, interfaces);
+        return handler;
     }
 
     @Override
@@ -155,12 +177,18 @@ public class CutModeImpl<T>
     @Override
     public T afterReturning(Consumer<MethodInfo> runnable)
     {
+        InvocationHandler handler = afterReturningStatic(runnable, instance);
+        return getProxy(handler, interfaces);
+    }
+
+    private static <T> InvocationHandler afterReturningStatic(Consumer<MethodInfo> runnable, T instance)
+    {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             Object value = method.invoke(instance, args);
             runnable.apply(MethodInfo.of(method));
             return value;
         };
-        return getProxy(handler, interfaces);
+        return handler;
     }
 
     @Override
@@ -172,23 +200,21 @@ public class CutModeImpl<T>
     @Override
     public T after(Consumer<MethodInfo> runnable)
     {
-        return afterStatic(loader, runnable, instance, interfaces, methodFilter.get());
+        InvocationHandler handler = afterStatic(runnable, instance);
+        return getProxy(handler, interfaces);
     }
 
-    private static <T> T afterStatic(ClassLoader classLoader, Consumer<MethodInfo> runnable,
-            T instance,
-            Class<?> interfaces,
-            Function<MethodInfo, Boolean> filter)
+    private static <T> InvocationHandler afterStatic(Consumer<MethodInfo> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
-                try {
-                    return method.invoke(instance, args);
-                }
-                finally {
-                    runnable.apply(MethodInfo.of(method));
-                }
+            try {
+                return method.invoke(instance, args);
+            }
+            finally {
+                runnable.apply(MethodInfo.of(method));
+            }
         };
-        return getProxy(handler, interfaces);
+        return handler;
     }
 
     @Override
@@ -200,6 +226,12 @@ public class CutModeImpl<T>
     @Override
     public T afterThrowing(Consumer<MethodInfo> runnable)
     {
+        InvocationHandler handler = afterThrowingStatic(runnable, instance);
+        return getProxy(handler, interfaces);
+    }
+
+    private static <T> InvocationHandler afterThrowingStatic(Consumer<MethodInfo> runnable, T instance)
+    {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             try {
                 return method.invoke(instance, args);
@@ -209,6 +241,6 @@ public class CutModeImpl<T>
                 throw e;
             }
         };
-        return getProxy(handler, interfaces);
+        return handler;
     }
 }
