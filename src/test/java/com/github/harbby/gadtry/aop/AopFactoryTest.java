@@ -18,9 +18,7 @@ package com.github.harbby.gadtry.aop;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class AopFactoryTest
@@ -47,17 +45,6 @@ public class AopFactoryTest
 
         Set set = aopFactory.proxy(Set.class, new HashSet());
         set.clear();
-    }
-
-    @Test
-    public void proxyInstanceTest()
-    {
-        Map<String, Integer> map = AopFactory.proxyInstance(new HashMap<String, Integer>())
-                .byClass(Map.class)
-                .after(methodInfo -> {
-                    System.out.println(methodInfo);
-                });
-        Assert.assertEquals(map, new HashMap<>());
     }
 
     private static <T> T getProxy(Class<T> key, T instance)
