@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.io.Serializable;
 import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -37,7 +38,7 @@ import java.util.Objects;
  */
 
 final class JavaParameterizedTypeImpl
-        implements ParameterizedType
+        implements ParameterizedType, Serializable
 {
     private final Type[] actualTypeArguments;
     private final Class<?> rawType;

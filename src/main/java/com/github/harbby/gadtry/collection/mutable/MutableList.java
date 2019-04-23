@@ -17,6 +17,8 @@ package com.github.harbby.gadtry.collection.mutable;
 
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,17 +28,16 @@ public class MutableList
 {
     private MutableList() {}
 
-    public static <T> List<T> copy(List<? extends T> list)
+    public static <T> List<T> asList(T first, T[] rest)
     {
-        MutableList.Builder<T> builder = MutableList.builder();
-        for (T it : list) {
-            builder.add(it);
-        }
-        return builder.build();
+        return MutableList.<T>builder().add(first).addAll(rest).build();
     }
 
     public static <T> List<T> copy(Iterable<? extends T> iterable)
     {
+        if (iterable instanceof Collection) {
+            return new ArrayList<>((Collection<? extends T>) iterable);
+        }
         MutableList.Builder<T> builder = MutableList.builder();
         for (T it : iterable) {
             builder.add(it);
@@ -47,7 +48,7 @@ public class MutableList
     @SafeVarargs
     public static <T> List<T> of(T... t)
     {
-        return MutableList.<T>builder().add(t).build();
+        return MutableList.<T>builder().addAll(t).build();
     }
 
     public static <T> List<Tuple2<Integer, T>> zipIndex(Iterable<T> iterable)
@@ -100,7 +101,7 @@ public class MutableList
         }
 
         @SafeVarargs
-        public final Builder<T> add(T... ts)
+        public final Builder<T> addAll(T... ts)
         {
             for (T it : ts) {
                 builder.add(it);
@@ -108,7 +109,7 @@ public class MutableList
             return this;
         }
 
-        public Builder<T> addAll(Iterable<T> iterable)
+        public Builder<T> addAll(Iterable<? extends T> iterable)
         {
             for (T it : iterable) {
                 builder.add(it);
@@ -116,7 +117,7 @@ public class MutableList
             return this;
         }
 
-        public Builder<T> addAll(Iterator<T> iterator)
+        public Builder<T> addAll(Iterator<? extends T> iterator)
         {
             while (iterator.hasNext()) {
                 builder.add(iterator.next());

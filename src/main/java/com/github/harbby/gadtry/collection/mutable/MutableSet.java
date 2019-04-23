@@ -45,7 +45,7 @@ public class MutableSet
     @SafeVarargs
     public static <T> Set<T> of(T... t)
     {
-        return MutableSet.<T>builder().add(t).build();
+        return MutableSet.<T>builder().addAll(t).build();
     }
 
     public static <T> Builder<T> builder()
@@ -64,7 +64,7 @@ public class MutableSet
         }
 
         @SafeVarargs
-        public final Builder<T> add(T... ts)
+        public final Builder<T> addAll(T... ts)
         {
             for (T it : ts) {
                 builder.add(it);
@@ -72,7 +72,7 @@ public class MutableSet
             return this;
         }
 
-        public Builder<T> addAll(Iterable<T> iterable)
+        public Builder<T> addAll(Iterable<? extends T> iterable)
         {
             for (T it : iterable) {
                 builder.add(it);
@@ -80,7 +80,7 @@ public class MutableSet
             return this;
         }
 
-        public Builder<T> addAll(Iterator<T> iterator)
+        public Builder<T> addAll(Iterator<? extends T> iterator)
         {
             while (iterator.hasNext()) {
                 builder.add(iterator.next());
