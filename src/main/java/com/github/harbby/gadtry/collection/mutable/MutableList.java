@@ -17,6 +17,8 @@ package com.github.harbby.gadtry.collection.mutable;
 
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,17 +28,16 @@ public class MutableList
 {
     private MutableList() {}
 
-    public static <T> List<T> copy(List<? extends T> list)
+    public static <T> List<T> asList(T first, T[] rest)
     {
-        MutableList.Builder<T> builder = MutableList.builder();
-        for (T it : list) {
-            builder.add(it);
-        }
-        return builder.build();
+        return MutableList.<T>builder().add(first).addAll(rest).build();
     }
 
     public static <T> List<T> copy(Iterable<? extends T> iterable)
     {
+        if (iterable instanceof Collection) {
+            return new ArrayList<>((Collection<? extends T>) iterable);
+        }
         MutableList.Builder<T> builder = MutableList.builder();
         for (T it : iterable) {
             builder.add(it);
