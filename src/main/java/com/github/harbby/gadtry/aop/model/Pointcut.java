@@ -31,7 +31,7 @@ public class Pointcut
     private Consumer<MethodInfo> afterReturning;
 
     private final String pointName;
-    private java.util.function.Function<MethodInfo, Boolean> methodFilter;
+    private Function<MethodInfo, Boolean> methodFilter;
     private Set<Class<?>> searchClass;
 
     public Pointcut(String pointName)
@@ -44,12 +44,12 @@ public class Pointcut
         return pointName;
     }
 
-    public java.util.function.Function<MethodInfo, Boolean> getMethodFilter()
+    public Function<MethodInfo, Boolean> getMethodFilter()
     {
         return methodFilter;
     }
 
-    public void setLocation(java.util.function.Function<MethodInfo, Boolean> methodFilter)
+    public void setLocation(Function<MethodInfo, Boolean> methodFilter)
     {
         this.methodFilter = methodFilter;
     }

@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry;
+package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.function.Function;
 import org.junit.Assert;
@@ -26,6 +25,23 @@ import java.io.IOException;
 @SuppressWarnings("unchecked")
 public class ProxySerializeTest
 {
+    @Test
+    public void beforeSerializeTest0()
+            throws IOException, ClassNotFoundException
+    {
+        Function<String, Integer> function = (str) -> str.length();
+
+        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+                .byInstance(function)
+                .whereMethod(methodInfo -> true)
+                .before(() -> {
+                    System.out.println("beforeSerializeTest1");
+                });
+
+        byte[] bytes = Serializables.serialize(proxy);
+        Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
+    }
+
     @Test
     public void beforeSerializeTest1()
             throws IOException, ClassNotFoundException

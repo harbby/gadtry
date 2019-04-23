@@ -20,11 +20,11 @@ import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Consumer;
+import com.github.harbby.gadtry.function.Function;
 import com.github.harbby.gadtry.function.Runnable;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CutModeImpl<T>

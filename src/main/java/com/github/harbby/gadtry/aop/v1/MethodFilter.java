@@ -16,10 +16,10 @@
 package com.github.harbby.gadtry.aop.v1;
 
 import com.github.harbby.gadtry.aop.model.MethodInfo;
+import com.github.harbby.gadtry.function.Function;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
