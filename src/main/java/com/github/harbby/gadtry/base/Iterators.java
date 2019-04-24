@@ -22,6 +22,12 @@ import java.util.NoSuchElementException;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Love Iterator
+ */
 public class Iterators
 {
     private Iterators() {}
@@ -188,6 +194,34 @@ public class Iterators
             }
         }
         return lastValue;
+    }
+
+    public static <T> Iterator<T> limit(Iterator<T> iterator, int limit)
+    {
+        requireNonNull(iterator);
+        checkArgument(limit >= 0, "limit must >= 0");
+        return new Iterator<T>()
+        {
+            private int number;
+
+            @Override
+            public boolean hasNext()
+            {
+                return number < limit && iterator.hasNext();
+            }
+
+            @Override
+            public T next()
+            {
+                if (!this.hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                else {
+                    number++;
+                    return iterator.next();
+                }
+            }
+        };
     }
 
     public static <F1, F2> Iterator<F2> flatMap(Iterator<F1> iterator, Function<F1, F2[]> function)
