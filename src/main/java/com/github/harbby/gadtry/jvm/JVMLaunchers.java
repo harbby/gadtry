@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -43,6 +44,7 @@ public class JVMLaunchers
         private final List<String> otherVmOps = new ArrayList<>();
         private final Map<String, String> environment = new HashMap<>(System.getenv());
         private ClassLoader classLoader;
+        private File workDir;
 
         public VmBuilder<T> setCallable(VmCallable<T> task)
         {
@@ -53,6 +55,14 @@ public class JVMLaunchers
         public VmBuilder<T> setClassLoader(ClassLoader classLoader)
         {
             this.classLoader = requireNonNull(classLoader, "classLoader is null");
+            return this;
+        }
+
+        public VmBuilder<T> setWorkDirectory(File workDirectory)
+        {
+            checkState(workDirectory.exists(), workDirectory + " not exists");
+            checkState(workDirectory.isDirectory(), workDirectory + " not is Directory");
+            this.workDir = workDirectory;
             return this;
         }
 
@@ -113,7 +123,7 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader);
+            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader, workDir);
         }
     }
 
