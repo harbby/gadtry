@@ -52,6 +52,7 @@ public final class JVMLauncherImpl<R extends Serializable>
     private final List<String> otherVmOps;
     private final Map<String, String> environment;
     private final ClassLoader classLoader;
+    private final File workDirectory;
 
     JVMLauncherImpl(
             VmCallable<R> task,
@@ -60,7 +61,8 @@ public final class JVMLauncherImpl<R extends Serializable>
             boolean depThisJvm,
             List<String> otherVmOps,
             Map<String, String> environment,
-            ClassLoader classLoader)
+            ClassLoader classLoader,
+            File workDirectory)
     {
         this.task = task;
         this.userJars = userJars;
@@ -69,6 +71,7 @@ public final class JVMLauncherImpl<R extends Serializable>
         this.otherVmOps = otherVmOps;
         this.environment = environment;
         this.classLoader = classLoader;
+        this.workDirectory = workDirectory;
     }
 
     @Override
@@ -126,6 +129,9 @@ public final class JVMLauncherImpl<R extends Serializable>
 
             ProcessBuilder builder = new ProcessBuilder(buildMainArg(sock.getLocalPort(), otherVmOps))
                     .redirectErrorStream(true);
+            if (workDirectory != null && workDirectory.exists() && workDirectory.isDirectory()) {
+                builder.directory(workDirectory);
+            }
             builder.environment().putAll(environment);
 
             Process process = builder.start();

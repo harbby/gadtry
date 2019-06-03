@@ -18,6 +18,7 @@ package com.github.harbby.gadtry.jvm;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -197,5 +198,25 @@ public class JVMLauncherTest
         method.setAccessible(true);  //必须要加这个才能
         Object a1 = method.invoke(null);
         Assert.assertTrue(a1 instanceof ClassLoader);
+    }
+
+    @Test
+    public void workDirTest()
+            throws JVMException
+    {
+        File dir = new File("/tmp");
+        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setWorkDirectory(dir)
+                .setConsole(System.out::println)
+                .build();
+
+        String jvmWorkDir = launcher.startAndGet(()-> {
+            return System.getProperty("user.dir");
+        });
+
+        Assert.assertArrayEquals(dir.list(), new File(jvmWorkDir).list());
     }
 }
