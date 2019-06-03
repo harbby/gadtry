@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.jvm;
 
 public class JVMException
-        extends Exception
+        extends RuntimeException
 {
     private static final long serialVersionUID = -1L;
 

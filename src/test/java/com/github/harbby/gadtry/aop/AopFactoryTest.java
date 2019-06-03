@@ -16,75 +16,144 @@
 package com.github.harbby.gadtry.aop;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 public class AopFactoryTest
+        implements Supplier<String>
 {
+    @Override
+    @Ignore
+    public String get()
+    {
+        return "hello";
+    }
+
     @Test
     public void aopCreate()
     {
-        AopFactory aopFactory = AopFactory.create(binder -> {
+        List<String> actions = new ArrayList<>();
+        AopFactory aopTest = AopFactory.create(binder -> {
             binder.bind("anyMethod")
                     .withPackage("com.github.harbby")
                     .classes(HashSet.class) // or Set
-                    .whereMethod(method -> method.getName().startsWith("cle"))
+                    .whereMethod(method -> method.getName().startsWith(""))
                     .build()
-                    .before(() -> {
-                        System.out.println("before");
+                    .before(methodInfo -> {
+                        Assert.assertTrue(actions.isEmpty());
+                        actions.add("before");
                     })
-                    .after(() -> {
-                        System.out.println("after");
+                    .afterReturning(methodInfo -> {
+                        Assert.assertEquals(actions, Arrays.asList("before"));
+                        actions.add("afterReturning");
+                    })
+                    .afterThrowing(methodInfo -> {
+                        Assert.assertEquals(actions, Arrays.asList("before"));
+                        actions.add("afterThrowing");
+                    })
+                    .after(methodInfo -> {
+                        Assert.assertEquals(actions.size(), 2);
+                        actions.add("after");
+                    });
+        });
+        Set set = aopTest.proxy(Set.class, new HashSet()
+        {
+            @Override
+            public void clear()
+            {
+                throw new UnsupportedOperationException("aop_test");
+            }
+        });
+        set.isEmpty();
+        Assert.assertEquals(actions, Arrays.asList("before", "afterReturning", "after"));
+
+        //
+        actions.clear();
+        try {
+            set.clear();
+            Assert.fail();
+        }
+        catch (UnsupportedOperationException e) {
+            Assert.assertEquals(e.getMessage(), "aop_test");
+        }
+        Assert.assertEquals(actions, Arrays.asList("before", "afterThrowing", "after"));
+    }
+
+    @Test
+    public void aopAroundTest()
+    {
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        AopFactory aopFactory = AopFactory.create(binder -> {
+            binder.bind("anyMethod")
+                    .withPackage("com.github.harbby")
+                    .classes(AopFactoryTest.class) // or Set
+                    .methodAnnotated(Ignore.class)
+                    .whereMethod(method -> method.getName().startsWith("get"))
+                    .build()
+                    .around(proxyContext -> {
+                        atomicBoolean.set(true);
+                        Assert.assertEquals(proxyContext.getInfo().getName(), "get");
+                        return proxyContext.proceed();
                     });
         });
 
-        Assert.assertNotNull(aopFactory);
-        System.out.println(aopFactory);
+        AopFactoryTest aopTest = aopFactory.proxy(AopFactoryTest.class, new AopFactoryTest());
 
-        Set set = aopFactory.proxy(Set.class, new HashSet());
-        set.clear();
-    }
-
-    private static <T> T getProxy(Class<T> key, T instance)
-    {
-        return AopFactory.proxy(key).byInstance(instance)
-                .returnType(void.class, Boolean.class)
-                //.methodAnnotated(Override.class, Override.class)
-                .around(proxyContext -> {
-                    String name = proxyContext.getInfo().getName();
-                    System.out.println("around: " + name);
-                    Object value = proxyContext.proceed();
-                    switch (name) {
-                        case "add":
-                            Assert.assertEquals(true, value);  //Set or List
-                            break;
-                        case "size":
-                            Assert.assertTrue(value instanceof Integer);
-                            break;
-                    }
-                    return value;
-                });
+        Assert.assertEquals(aopTest.get(), "hello");
+        Assert.assertTrue(atomicBoolean.get());
     }
 
     @Test
-    public void jdkPropyTest()
+    public void aopAfterReturningTest()
     {
-        Set set = getProxy(Set.class, new HashSet<String>());
-        set.clear();
-        set.add("t1");
-        Assert.assertEquals(1, set.size());
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        AopFactory aopFactory = AopFactory.create(binder -> {
+            binder.bind("anyMethod")
+                    .withPackage("com.github.harbby")
+                    .classes(AopFactoryTest.class) // or Set
+                    .methodAnnotated(Ignore.class)
+                    .whereMethod(method -> method.getName().startsWith("get"))
+                    .build()
+                    .afterReturning(methodInfo -> {
+                        atomicBoolean.set(true);
+                        Assert.assertEquals(methodInfo.getName(), "get");
+                    });
+        });
+
+        AopFactoryTest aopTest = aopFactory.proxy(AopFactoryTest.class, new AopFactoryTest());
+
+        Assert.assertEquals(aopTest.get(), "hello");
+        Assert.assertTrue(atomicBoolean.get());
     }
 
     @Test
-    public void noJdkPropyTest()
+    public void aopBeforeTest()
     {
-        Set set = getProxy(HashSet.class, new HashSet<String>());
-        set.clear();
-        set.add("t1");
-        Assert.assertEquals(1, set.size());
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        AopFactory aopFactory = AopFactory.create(binder -> {
+            binder.bind("anyMethod")
+                    .withPackage("com.github.harbby")
+                    .classes(AopFactoryTest.class) // or Set
+                    .methodAnnotated(Ignore.class)
+                    .whereMethod(method -> method.getName().startsWith("get"))
+                    .build()
+                    .before(methodInfo -> {
+                        atomicBoolean.set(true);
+                        Assert.assertEquals(methodInfo.getName(), "get");
+                    });
+        });
 
-        System.out.println();
+        AopFactoryTest aopTest = aopFactory.proxy(AopFactoryTest.class, new AopFactoryTest());
+
+        Assert.assertEquals(aopTest.get(), "hello");
+        Assert.assertTrue(atomicBoolean.get());
     }
 }

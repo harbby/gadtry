@@ -34,7 +34,7 @@ public class ProxySerializeTest
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .whereMethod(methodInfo -> true)
-                .before(() -> {
+                .before(methodInfo -> {
                     System.out.println("beforeSerializeTest1");
                 });
 
@@ -50,7 +50,7 @@ public class ProxySerializeTest
 
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
-                .before(() -> {
+                .before(methodInfo -> {
                     System.out.println("beforeSerializeTest1");
                 });
 
@@ -82,7 +82,7 @@ public class ProxySerializeTest
 
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
-                .afterReturning(() -> {
+                .afterReturning(methodInfo -> {
                     System.out.println("afterReturningSerializeTest1");
                 });
 
@@ -133,6 +133,7 @@ public class ProxySerializeTest
                 .around(proxyContext -> {
                     Object value = proxyContext.proceed();
                     System.out.println(value);
+                    return value;
                 });
 
         byte[] bytes = Serializables.serialize(proxy);
@@ -147,7 +148,7 @@ public class ProxySerializeTest
 
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
-                .after(() -> {
+                .after(methodInfo -> {
                     System.out.println("afterSerializeTest1");
                 });
 

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
@@ -32,6 +33,21 @@ public class Iterators
 {
     private Iterators() {}
 
+    private static final Iterator EMPTY_ITERATOR = new Iterator()
+    {
+        @Override
+        public boolean hasNext()
+        {
+            return false;
+        }
+
+        @Override
+        public Object next()
+        {
+            throw new NoSuchElementException();
+        }
+    };
+
     public static <E> Iterator<E> of(E... values)
     {
         return new Iterator<E>()
@@ -41,19 +57,26 @@ public class Iterators
             @Override
             public boolean hasNext()
             {
-                return cnt++ < values.length;
+                return cnt < values.length;
             }
 
             @Override
             public E next()
             {
-                return values[cnt];
+                return values[cnt++];
             }
         };
     }
 
+    @SuppressWarnings("unchecked")
+    public static <E> Iterator<E> empty()
+    {
+        return (Iterator<E>) EMPTY_ITERATOR;
+    }
+
     public static boolean isEmpty(Iterable<?> iterable)
     {
+        requireNonNull(iterable);
         if (iterable instanceof Collection) {
             return ((Collection<?>) iterable).isEmpty();
         }
@@ -62,11 +85,13 @@ public class Iterators
 
     public static boolean isEmpty(Iterator<?> iterator)
     {
+        requireNonNull(iterator);
         return !iterator.hasNext();
     }
 
     public static <T> T getLast(Iterator<T> iterator)
     {
+        requireNonNull(iterator);
         T value = iterator.next();
         while (iterator.hasNext()) {
             value = iterator.next();
@@ -76,6 +101,7 @@ public class Iterators
 
     public static <T> T getLast(Iterator<T> iterator, T defaultValue)
     {
+        requireNonNull(iterator);
         if (!iterator.hasNext()) {
             return defaultValue;
         }
@@ -84,6 +110,7 @@ public class Iterators
 
     public static <T> T getLast(Iterable<T> iterable)
     {
+        requireNonNull(iterable);
         if (iterable instanceof List) {
             List<T> list = (List<T>) iterable;
             if (list.isEmpty()) {
@@ -98,6 +125,7 @@ public class Iterators
 
     public static <T> T getLast(Iterable<T> iterable, T defaultValue)
     {
+        requireNonNull(iterable);
         if (iterable instanceof List) {
             List<T> list = (List<T>) iterable;
             if (list.isEmpty()) {
@@ -110,8 +138,9 @@ public class Iterators
         }
     }
 
-    public static long size(Iterator iterator)
+    public static long size(Iterator<?> iterator)
     {
+        requireNonNull(iterator);
         long i;
         for (i = 0; iterator.hasNext(); i++) {
             iterator.next();
@@ -121,11 +150,15 @@ public class Iterators
 
     public static <F1, F2> Iterable<F2> map(Iterable<F1> iterable, Function<F1, F2> function)
     {
+        requireNonNull(iterable);
+        requireNonNull(function);
         return () -> map(iterable.iterator(), function);
     }
 
     public static <F1, F2> Iterator<F2> map(Iterator<F1> iterator, Function<F1, F2> function)
     {
+        requireNonNull(iterator);
+        requireNonNull(function);
         return new Iterator<F2>()
         {
             @Override
@@ -148,41 +181,15 @@ public class Iterators
         };
     }
 
-    public static <E> Iterator<E> empty()
-    {
-        return new Iterator<E>()
-        {
-            @Override
-            public boolean hasNext()
-            {
-                return false;
-            }
-
-            @Override
-            public E next()
-            {
-                throw new NoSuchElementException();
-            }
-        };
-    }
-
     public static <F1, F2> F2 reduce(Iterator<F1> iterator, Function<F1, F2> mapper, BinaryOperator<F2> reducer)
     {
-        F2 lastValue = null;
-        while (iterator.hasNext()) {
-            F2 value = mapper.apply(iterator.next());
-            if (lastValue != null) {
-                lastValue = reducer.apply(lastValue, value);
-            }
-            else {
-                lastValue = value;
-            }
-        }
-        return lastValue;
+        return reduce(map(iterator, mapper), reducer);
     }
 
     public static <T> T reduce(Iterator<T> iterator, BinaryOperator<T> reducer)
     {
+        requireNonNull(iterator);
+        requireNonNull(reducer);
         T lastValue = null;
         while (iterator.hasNext()) {
             T value = iterator.next();
@@ -222,6 +229,12 @@ public class Iterators
                 }
             }
         };
+    }
+
+    public static <T> void foreach(Iterator<T> iterator, Consumer<T> function)
+    {
+        requireNonNull(iterator);
+        iterator.forEachRemaining(function);
     }
 
     public static <F1, F2> Iterator<F2> flatMap(Iterator<F1> iterator, Function<F1, F2[]> function)

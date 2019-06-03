@@ -18,27 +18,16 @@ package com.github.harbby.gadtry.aop;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.function.Consumer;
 import com.github.harbby.gadtry.function.Function;
-import com.github.harbby.gadtry.function.Runnable;
 
 public interface CutMode<T>
 {
-    public T around(Consumer<ProxyContext> runnable);
-
     public T around(Function<ProxyContext, Object> runnable);
-
-    public T before(Runnable runnable);
 
     public T before(Consumer<MethodInfo> runnable);
 
-    public T afterReturning(Runnable runnable);
-
     public T afterReturning(Consumer<MethodInfo> runnable);
 
-    public T after(Runnable runnable);
-
     public T after(Consumer<MethodInfo> runnable);
-
-    public T afterThrowing(Runnable runnable);
 
     public T afterThrowing(Consumer<MethodInfo> runnable);
 }

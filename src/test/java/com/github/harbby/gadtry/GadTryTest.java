@@ -45,7 +45,7 @@ public class GadTryTest
                         Assert.assertEquals("add", info.getName());
                         System.out.println("before1");
                     })
-                    .after(() -> {
+                    .after(methodInfo -> {
                         Assert.assertTrue(true);
                         System.out.println("after2");
                     });

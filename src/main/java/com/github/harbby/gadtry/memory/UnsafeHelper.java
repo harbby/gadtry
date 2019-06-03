@@ -47,6 +47,12 @@ public final class UnsafeHelper
         return _UNSAFE;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> defineClass(byte[] classBytes, ClassLoader classLoader)
+    {
+        return (Class<T>) _UNSAFE.defineClass(null, classBytes, 0, classBytes.length, classLoader, classLoader.getClass().getProtectionDomain());
+    }
+
     public static long reallocateMemory(long address, long oldSize, long newSize)
     {
         long newMemory = _UNSAFE.allocateMemory(newSize);

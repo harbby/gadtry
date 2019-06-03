@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.classloader;
 
+import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.function.Function;
@@ -72,7 +73,7 @@ public final class PluginLoader<T>
                 .collect(Collectors.toList());
     }
 
-    public void refresh()
+    public void reload()
     {
         try {
             Iterator<Module<T>> it = modules.values().iterator();
@@ -119,7 +120,7 @@ public final class PluginLoader<T>
         private Consumer<Module<T>> loadHandler = plugins -> {};
         private ClassLoader spiLoader;
 
-        public Builder<T> setSpiPackages(List<String> spiPackages)
+        public Builder<T> onlyAccessSpiPackages(List<String> spiPackages)
         {
             this.spiPackages = requireNonNull(spiPackages, "spiPackages is null");
             return this;
@@ -153,7 +154,7 @@ public final class PluginLoader<T>
             return this;
         }
 
-        public Builder<T> setDepFilter(java.util.function.Function<File, List<File>> filter)
+        public Builder<T> setModuleDepFilter(java.util.function.Function<File, List<File>> filter)
         {
             this.filter = requireNonNull(filter, "Depend filter is null");
             return this;
@@ -171,13 +172,16 @@ public final class PluginLoader<T>
             return this;
         }
 
-        public PluginLoader<T> build()
+        public PluginLoader<T> load()
                 throws IOException
         {
             checkState(scanner != null, "scanner is null,your must setScanDir()");
             checkState(pluginClass != null, "pluginClass is null,your must setPlugin()");
             if (spiLoader == null) {
                 spiLoader = pluginClass.getClassLoader();
+            }
+            if (spiLoader == null) {
+                spiLoader = sun.misc.VM.latestUserDefinedLoader();
             }
 
             MutableList.Builder<Module<T>> builder = MutableList.builder();
@@ -194,7 +198,7 @@ public final class PluginLoader<T>
         {
             long loadTime = moduleDir.lastModified();
             URLClassLoader moduleClassLoader = buildClassLoaderFromDirectory(moduleDir);
-            try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(moduleClassLoader)) {
+            try (Closeables ignored = Closeables.openThreadContextClassLoader(moduleClassLoader)) {
                 ServiceLoader<T> serviceLoader = ServiceLoader.load(pluginClass, moduleClassLoader);
                 List<T> plugins = MutableList.copy(serviceLoader);
                 Module<T> module = new Module<>(moduleDir, loadTime, plugins, moduleClassLoader, closeHandler);

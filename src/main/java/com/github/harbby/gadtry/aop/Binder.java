@@ -20,7 +20,6 @@ import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.FilterBuilder;
 import com.github.harbby.gadtry.function.Consumer;
 import com.github.harbby.gadtry.function.Function;
-import com.github.harbby.gadtry.function.Runnable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -55,25 +54,10 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder around(Consumer<ProxyContext> aroundHandler)
-        {
-            requireNonNull(aroundHandler, "aroundHandler is null");
-            pointcut.setAround(aroundHandler);
-            return new PointBuilder(pointcut);
-        }
-
-        @Override
         public PointBuilder around(Function<ProxyContext, Object> aroundHandler)
         {
             requireNonNull(aroundHandler, "aroundHandler is null");
             pointcut.setAround(aroundHandler);
-            return new PointBuilder(pointcut);
-        }
-
-        @Override
-        public PointBuilder before(Runnable runnable)
-        {
-            pointcut.setBefore(info -> runnable.apply());
             return new PointBuilder(pointcut);
         }
 
@@ -85,13 +69,6 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder afterReturning(Runnable runnable)
-        {
-            pointcut.setAfterReturning(info -> runnable.apply());
-            return new PointBuilder(pointcut);
-        }
-
-        @Override
         public PointBuilder afterReturning(Consumer<MethodInfo> runnable)
         {
             pointcut.setAfterReturning(runnable);
@@ -99,23 +76,9 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder after(Runnable runnable)
-        {
-            pointcut.setAfter(info -> runnable.apply());
-            return new PointBuilder(pointcut);
-        }
-
-        @Override
         public PointBuilder after(Consumer<MethodInfo> runnable)
         {
             pointcut.setAfter(runnable);
-            return new PointBuilder(pointcut);
-        }
-
-        @Override
-        public PointBuilder afterThrowing(Runnable runnable)
-        {
-            pointcut.setAfterThrowing(info -> runnable.apply());
             return new PointBuilder(pointcut);
         }
 

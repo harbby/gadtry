@@ -32,6 +32,8 @@ public interface MethodInfo
 
     <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
+    public Annotation[] getAnnotations();
+
     Class<?>[] getParameterTypes();
 
     int getParameterCount();
@@ -70,6 +72,12 @@ public interface MethodInfo
             public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
             {
                 return method.getAnnotation(annotationClass);
+            }
+
+            @Override
+            public Annotation[] getAnnotations()
+            {
+                return method.getAnnotations();
             }
 
             @Override

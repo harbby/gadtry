@@ -21,7 +21,6 @@ import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Consumer;
 import com.github.harbby.gadtry.function.Function;
-import com.github.harbby.gadtry.function.Runnable;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -85,15 +84,6 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T around(Consumer<ProxyContext> aroundHandler)
-    {
-        return this.around((proxyContext -> {
-            aroundHandler.apply(proxyContext);
-            return null;
-        }));
-    }
-
-    @Override
     public T around(com.github.harbby.gadtry.function.Function<ProxyContext, Object> aroundHandler)
     {
         InvocationHandler handler = aroundStatic(aroundHandler, instance);
@@ -147,12 +137,6 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T before(Runnable runnable)
-    {
-        return this.before((a) -> runnable.apply());
-    }
-
-    @Override
     public T before(Consumer<MethodInfo> runnable)
     {
         InvocationHandler handler = beforeStatic(runnable, instance);
@@ -166,12 +150,6 @@ public class CutModeImpl<T>
             return method.invoke(instance, args);
         };
         return handler;
-    }
-
-    @Override
-    public T afterReturning(Runnable runnable)
-    {
-        return this.afterReturning((a) -> runnable.apply());
     }
 
     @Override
@@ -192,12 +170,6 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T after(Runnable runnable)
-    {
-        return this.after((a) -> runnable.apply());
-    }
-
-    @Override
     public T after(Consumer<MethodInfo> runnable)
     {
         InvocationHandler handler = afterStatic(runnable, instance);
@@ -215,12 +187,6 @@ public class CutModeImpl<T>
             }
         };
         return handler;
-    }
-
-    @Override
-    public T afterThrowing(Runnable runnable)
-    {
-        return this.afterThrowing((a) -> runnable.apply());
     }
 
     @Override

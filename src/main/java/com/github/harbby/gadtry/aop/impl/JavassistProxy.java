@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -25,10 +26,14 @@ import javassist.CtMethod;
 import javassist.LoaderClassPath;
 import javassist.Modifier;
 import javassist.NotFoundException;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.annotation.Annotation;
 import sun.reflect.CallerSensitive;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
+import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -158,15 +163,21 @@ public class JavassistProxy
     private static void installFieldAndMethod(CtClass proxyClass, CtClass parentClass)
             throws NotFoundException, CannotCompileException
     {
-        int methodIndex = 0;
-        for (CtMethod ctMethod : parentClass.getMethods()) {
+        Map<CtMethod, String> methods = new IdentityHashMap<>();
+        List<CtMethod> methodList = MutableList.<CtMethod>builder()
+                .addAll(parentClass.getMethods())
+                .addAll(parentClass.getDeclaredMethods())
+                .build();
+
+        methodList.stream().filter(ctMethod -> {
             //final or private or static 的方法都不会继承和代理
-            if (Modifier.isFinal(ctMethod.getModifiers()) ||
+            return !(Modifier.isFinal(ctMethod.getModifiers()) ||
                     Modifier.isPrivate(ctMethod.getModifiers()) ||
-                    Modifier.isStatic(ctMethod.getModifiers())
-            ) {
-                continue;
-            }
+                    Modifier.isStatic(ctMethod.getModifiers()));
+        }).forEach(ctMethod -> methods.put(ctMethod, ""));
+
+        int methodIndex = 0;
+        for (CtMethod ctMethod : methods.keySet()) {
             final String methodFieldName = "_method" + methodIndex++;
 
             // 添加字段
@@ -211,6 +222,13 @@ public class JavassistProxy
         CtMethod proxyMethod = new CtMethod(parentMethod.getReturnType(), parentMethod.getName(), parentMethod.getParameterTypes(), proxy);
         proxyMethod.setModifiers(mod);
         proxyMethod.setBody(methodBody);
+
+        //add Override
+        Annotation annotation = new Annotation(Override.class.getName(), proxyMethod.getMethodInfo().getConstPool());
+        AnnotationsAttribute attribute = new AnnotationsAttribute(proxyMethod.getMethodInfo().getConstPool(), AnnotationsAttribute.visibleTag);
+        attribute.addAnnotation(annotation);
+        proxyMethod.getMethodInfo().addAttribute(attribute);
+
         proxy.addMethod(proxyMethod);
     }
 

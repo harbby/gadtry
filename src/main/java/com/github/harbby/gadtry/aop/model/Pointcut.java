@@ -19,7 +19,10 @@ import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.function.Consumer;
 import com.github.harbby.gadtry.function.Function;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
+
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class Pointcut
 {
@@ -104,14 +107,6 @@ public class Pointcut
         this.after = after;
     }
 
-    public void setAround(Consumer<ProxyContext> aroundHandler)
-    {
-        this.around = proxyContext -> {
-            aroundHandler.apply(proxyContext);
-            return null;
-        };
-    }
-
     public void setAround(Function<ProxyContext, Object> aroundHandler)
     {
         this.around = aroundHandler;
@@ -142,7 +137,12 @@ public class Pointcut
                 if (this.getAfterThrowing() != null) {
                     this.getAfterThrowing().apply(proxyContext.getInfo());
                 }
-                throw e;
+                if (e instanceof InvocationTargetException) {
+                    throw throwsThrowable(((InvocationTargetException) e).getTargetException());
+                }
+                else {
+                    throw e;
+                }
             }
             finally {
                 if (this.getAfter() != null) {

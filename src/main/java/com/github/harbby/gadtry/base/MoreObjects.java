@@ -19,6 +19,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
+
 public class MoreObjects
 {
     private MoreObjects() {}
@@ -79,13 +81,23 @@ public class MoreObjects
         throw new NullPointerException("Both parameters are null");
     }
 
-    public static <T> boolean checkContainsTrue(T[] ts, Function<T, Boolean> filter)
+    public static <T> boolean checkNonFalse(T[] values, Function<T, Boolean> filter)
     {
-        if (ts == null || ts.length == 0) {
-            return true;
+        requireNonNull(values, "values is null");
+        requireNonNull(filter, "filter is null");
+        for (T t : values) {
+            if (!filter.apply(t)) {
+                return false;
+            }
         }
-        checkState(filter != null, "filter is null");
-        for (T t : ts) {
+        return true;
+    }
+
+    public static <T> boolean checkContainsTrue(T[] values, Function<T, Boolean> filter)
+    {
+        requireNonNull(values, "values is null");
+        requireNonNull(filter, "filter is null");
+        for (T t : values) {
             if (filter.apply(t)) {
                 return true;
             }

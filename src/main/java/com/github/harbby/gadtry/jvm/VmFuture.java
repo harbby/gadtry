@@ -48,7 +48,7 @@ public class VmFuture<R extends Serializable>
                 this.error = e;
                 throw error;
             }
-            catch (Exception e) {
+            catch (Throwable e) {
                 this.error = new JVMException(e);
                 throw error;
             }
@@ -89,7 +89,7 @@ public class VmFuture<R extends Serializable>
     }
 
     public R get()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         if (error != null) {
             throw error;
@@ -97,17 +97,17 @@ public class VmFuture<R extends Serializable>
         try {
             return future.get().get();
         }
-        catch (InterruptedException | ExecutionException e) {
+        catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof JVMException) {
                 throw (JVMException) cause;
             }
-            throw new JVMException(cause);
+            throw new JVMException(e);
         }
     }
 
     public R get(long timeout, TimeUnit unit)
-            throws JVMException
+            throws JVMException, InterruptedException, TimeoutException
     {
         if (error != null) {
             throw error;
@@ -115,12 +115,12 @@ public class VmFuture<R extends Serializable>
         try {
             return future.get(timeout, unit).get();
         }
-        catch (InterruptedException | TimeoutException | ExecutionException e) {
+        catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof JVMException) {
                 throw (JVMException) cause;
             }
-            throw new JVMException(cause);
+            throw new JVMException(e);
         }
     }
 

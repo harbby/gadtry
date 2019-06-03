@@ -20,9 +20,11 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class ThrowablesTest
 {
@@ -38,6 +40,32 @@ public class ThrowablesTest
         }
         catch (Exception e) {
             Assert.assertTrue(e instanceof IOException);
+        }
+    }
+
+    @Test
+    public void testThrowsException1()
+    {
+        try {
+            throwsException(new IOException("IO_test"));
+            Assert.fail();
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e instanceof IOException);
+            Assert.assertEquals("IO_test", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testThrowsException2()
+    {
+        try {
+            throwsThrowable(new IOException("IO_test"));
+            Assert.fail();
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e instanceof IOException);
+            Assert.assertEquals("IO_test", e.getMessage());
         }
     }
 
@@ -71,5 +99,25 @@ public class ThrowablesTest
     {
         //强制 抛出IOException个异常
         throwsException(IOException.class);
+    }
+
+    @Test
+    public void getRootCauseTest()
+    {
+        Throwable error = new ClassCastException("cast error");
+        error = new IOException(error);
+        error = new SQLException(error);
+        Throwable rootCause = Throwables.getRootCause(error);
+        Assert.assertTrue(rootCause instanceof ClassCastException);
+    }
+
+    @Test
+    public void getStackTraceAsStringTest()
+    {
+        Throwable error = new ClassCastException("cast error");
+        error = new IOException(error);
+        error = new SQLException(error);
+        String msg = Throwables.getStackTraceAsString(error);
+        Assert.assertTrue(msg.contains("cast error"));
     }
 }

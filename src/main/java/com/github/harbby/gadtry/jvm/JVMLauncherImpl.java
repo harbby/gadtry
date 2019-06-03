@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -89,7 +88,10 @@ public final class JVMLauncherImpl<R extends Serializable>
             AtomicReference<Process> processAtomic = new AtomicReference<>();
             return this.startAndGetByte(processAtomic, bytes).get();
         }
-        catch (IOException e) {
+        catch (JVMException e) {
+            throw e;
+        }
+        catch (Exception e) {
             throw new JVMException(e);
         }
     }
@@ -99,49 +101,6 @@ public final class JVMLauncherImpl<R extends Serializable>
             throws JVMException
     {
         return startAsync(this.task);
-    }
-
-    /**
-     * @since 1.4
-     */
-    @Override
-    public void startAsync(BiConsumer<R, Exception> callback)
-            throws JVMException
-    {
-        startAsync(task, callback);
-    }
-
-    /**
-     * @since 1.4
-     */
-    @Override
-    public void startAsync(VmCallable<R> task, BiConsumer<R, Exception> callback)
-            throws JVMException
-    {
-        checkState(task != null, "Fork VM Task is null");
-        try {
-            byte[] bytes = Serializables.serialize(task);
-            AtomicReference<Process> processAtomic = new AtomicReference<>();
-            new VmFuture<>(processAtomic, () -> {
-                try {
-                    VmResult<R> result = this.startAndGetByte(processAtomic, bytes);
-                    if (result.isFailed()) {
-                        callback.accept(null, new JVMException(result.getOnFailure()));
-                    }
-                    else {
-                        callback.accept(result.get(), null);
-                    }
-                    return result;
-                }
-                catch (Exception e) {
-                    callback.accept(null, e);
-                    throw e;
-                }
-            });
-        }
-        catch (IOException | InterruptedException e) {
-            throw new JVMException(e);
-        }
     }
 
     @Override
@@ -160,7 +119,7 @@ public final class JVMLauncherImpl<R extends Serializable>
     }
 
     private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] bytes)
-            throws JVMException
+            throws Exception
     {
         try (ServerSocket sock = new ServerSocket()) {
             sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
@@ -184,9 +143,10 @@ public final class JVMLauncherImpl<R extends Serializable>
             }
             //---return Socket io Stream
             // 能执行到这里 并跳出上面的where 则说明子进程已经退出
-            //set accept timeOut 3s  //设置最大3秒等待,防止子进程意外退出时 无限等待
+            //set accept timeOut 100ms  //设置最大100ms等待,防止子进程意外退出时 无限等待
             // 正常情况下子进程在退出时,已经回写完数据， 这里需要设置异常退出时 最大等待时间
-            sock.setSoTimeout(3000);
+            //sock.setSoTimeout(3000);
+            sock.setSoTimeout(100);
             try (Socket socketClient = sock.accept();
                     InputStream inputStream = socketClient.getInputStream()) {
                 return Serializables.byteToObject(inputStream, classLoader);
@@ -197,9 +157,6 @@ public final class JVMLauncherImpl<R extends Serializable>
                 }
                 throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue(), e);
             }
-        }
-        catch (Exception e) {
-            throw new JVMException(e);
         }
     }
 

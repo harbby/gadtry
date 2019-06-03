@@ -16,14 +16,18 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.memory.UnsafeHelper;
+import javassist.ClassPool;
+import javassist.CtClass;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
 
+import java.io.File;
 import java.lang.reflect.InvocationHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -55,6 +59,19 @@ public class JavassistProxyTest
 
         Test1 proxy2 = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), Test1.class, handler);
         System.out.println(proxy2);
+    }
+
+    @Test
+    public void getProxyClassTest()
+            throws Exception
+    {
+        File workDir = new File(System.getProperty("java.io.tmpdir"), "pluginLoaderTest_342634345");
+        Class<?> proxyClass = JavassistProxy.getProxyClass(this.getClass().getClassLoader(), List.class);
+        ClassPool classPool = ClassPool.getDefault();
+        CtClass ctClass = classPool.makeClass(proxyClass.getName());
+
+        byte[] bytes = ctClass.toBytecode();
+        Assert.assertTrue(bytes.length > 0);
     }
 
     @Test

@@ -40,10 +40,10 @@ public class Serializables
         }
     }
 
-    public static Object byteToObject(byte[] bytes)
+    public static <T> T byteToObject(byte[] bytes)
             throws IOException, ClassNotFoundException
     {
-        return byteToObject(bytes, null);
+        return (T) byteToObject(bytes, null);
     }
 
     public static Object byteToObject(InputStream inputStream)

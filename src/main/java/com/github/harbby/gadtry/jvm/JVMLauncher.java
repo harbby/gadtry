@@ -25,7 +25,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.function.BiConsumer;
 
 public interface JVMLauncher<R extends Serializable>
 {
@@ -45,18 +44,6 @@ public interface JVMLauncher<R extends Serializable>
      * @since 1.4
      */
     public VmFuture<R> startAsync(VmCallable<R> task)
-            throws JVMException;
-
-    /**
-     * @since 1.4
-     */
-    public void startAsync(BiConsumer<R, Exception> callback)
-            throws JVMException;
-
-    /**
-     * @since 1.4
-     */
-    public void startAsync(VmCallable<R> task, BiConsumer<R, Exception> callback)
             throws JVMException;
 
     public static void main(String[] args)

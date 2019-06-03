@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.util.Objects.requireNonNull;
 
 public interface AopFactory
 {
@@ -73,14 +74,14 @@ public interface AopFactory
         return new AopFactoryImpl(MutableList.copy(pointcuts));
     }
 
-    public static <T> ByInstance<T> proxy(Class<T> interfaces)
+    public static <T> ByInstance<T> proxy(Class<T> pClass)
     {
-        if (interfaces.isInterface()) {
-            return instance -> new ProxyBuilder<>(interfaces, instance, JdkProxy::newProxyInstance);
+        if (pClass.isInterface()) {
+            return instance -> new ProxyBuilder<>(pClass, instance, JdkProxy::newProxyInstance);
         }
         else {
-            checkState(!Modifier.isFinal(interfaces.getModifiers()), interfaces + " is final");
-            return instance -> new ProxyBuilder<>(interfaces, instance, JavassistProxy::newProxyInstance);
+            checkState(!Modifier.isFinal(pClass.getModifiers()), pClass + " is final");
+            return instance -> new ProxyBuilder<>(pClass, instance, JavassistProxy::newProxyInstance);
         }
     }
 
@@ -94,8 +95,8 @@ public interface AopFactory
             implements MethodFilter<ProxyBuilder>
     {
         //-- method filter
-        private Class<? extends Annotation>[] methodAnnotations;
-        private Class<?>[] returnTypes;
+        private Class<? extends Annotation>[] methodAnnotations = new Class[0];
+        private Class<?>[] returnTypes = new Class<?>[0];
         private Function<MethodInfo, Boolean> whereMethod;
 
         private ProxyBuilder(Class<?> interfaces, T instance, Proxy proxy)
@@ -107,14 +108,14 @@ public interface AopFactory
         @SafeVarargs
         public final ProxyBuilder<T> methodAnnotated(Class<? extends Annotation>... methodAnnotations)
         {
-            this.methodAnnotations = methodAnnotations;
+            this.methodAnnotations = requireNonNull(methodAnnotations, "methodAnnotations is null");
             return this;
         }
 
         @Override
         public ProxyBuilder<T> returnType(Class<?>... returnTypes)
         {
-            this.returnTypes = returnTypes;
+            this.returnTypes = requireNonNull(returnTypes, "returnTypes is null");
             return this;
         }
 
@@ -128,9 +129,7 @@ public interface AopFactory
         @Override
         protected Function<MethodInfo, Boolean> getMethodFilter()
         {
-            return (methodAnnotations == null || methodAnnotations.length == 0) &&
-                    (returnTypes == null || returnTypes.length == 0) ? whereMethod :
-                    MethodFilter.buildFilter(methodAnnotations, returnTypes, whereMethod);
+            return MethodFilter.buildMethodFilter(methodAnnotations, returnTypes, whereMethod);
         }
     }
 }

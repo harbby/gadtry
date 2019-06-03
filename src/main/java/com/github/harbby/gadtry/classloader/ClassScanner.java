@@ -33,9 +33,11 @@ import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
+import static java.util.Objects.requireNonNull;
 
 public class ClassScanner
 {
@@ -54,15 +56,23 @@ public class ClassScanner
     @SafeVarargs
     public final Set<Class<?>> getClassWithAnnotated(Class<? extends Annotation>... annotations)
     {
+        requireNonNull(annotations);
+        if (annotations.length == 0) {
+            return classSet;
+        }
         return classSet.stream()
-                .filter(aClass -> checkContainsTrue(annotations, (ann) -> aClass.getAnnotation(ann) != null))
+                .filter(aClass -> checkContainsTrue(annotations, ann -> aClass.getAnnotation(ann) != null))
                 .collect(Collectors.toSet());
     }
 
     public Set<Class<?>> getClassWithSubclassOf(Class<?>... subclasses)
     {
+        requireNonNull(subclasses);
+        if (subclasses.length == 0) {
+            return classSet;
+        }
         return classSet.stream()
-                .filter(aClass -> checkContainsTrue(subclasses, aClass::isAssignableFrom))
+                .filter(aClass -> checkContainsTrue(subclasses, sub -> sub.isAssignableFrom(aClass)))
                 .collect(Collectors.toSet());
     }
 
@@ -76,11 +86,11 @@ public class ClassScanner
         private final String basePackage;
 
         private ClassLoader classLoader;
-        private Class<?>[] subclasses;
-        private Class<? extends Annotation>[] annotations;
+        private Class<?>[] subclasses = new Class[0];
+        private Class<? extends Annotation>[] annotations = new Class[0];
         private BiConsumer<String, Throwable> errorHandler = (classString, error) -> throwsThrowable(error);
 
-        private Function<Class<?>, Boolean> classFilter = aClass -> true;
+        private Function<Class<?>, Boolean> classFilter;
 
         public Builder(String basePackage)
         {
@@ -89,32 +99,32 @@ public class ClassScanner
 
         public Builder classLoader(ClassLoader classLoader)
         {
-            this.classLoader = classLoader;
+            this.classLoader = requireNonNull(classLoader);
             return this;
         }
 
         public Builder subclassOf(Class<?>... subclasses)
         {
-            this.subclasses = subclasses;
+            this.subclasses = requireNonNull(subclasses);
             return this;
         }
 
         @SafeVarargs
         public final Builder annotated(Class<? extends Annotation>... annotations)
         {
-            this.annotations = annotations;
+            this.annotations = requireNonNull(annotations);
             return this;
         }
 
-        public Builder filter(Function<Class<?>, Boolean> filter)
+        public Builder filter(Function<Class<?>, Boolean> classFilter)
         {
-            this.classFilter = filter;
+            this.classFilter = requireNonNull(classFilter);
             return this;
         }
 
-        public Builder loadError(BiConsumer<String, Throwable> handler)
+        public Builder loadError(BiConsumer<String, Throwable> errorHandler)
         {
-            this.errorHandler = handler;
+            this.errorHandler = requireNonNull(errorHandler);
             return this;
         }
 
@@ -125,37 +135,45 @@ public class ClassScanner
                 if (classLoader == null) {
                     classLoader = sun.misc.VM.latestUserDefinedLoader();
                 }
-                classSet = getClasses(basePackage, classLoader, errorHandler);
+                classSet = scanClasses(basePackage, classLoader, errorHandler);
             }
             catch (IOException e) {
                 throw new InjectorException(e);
             }
 
-            classSet = classSet.stream()
-                    .filter(aClass -> checkContainsTrue(annotations, (ann) -> aClass.getAnnotation(ann) != null))
-                    .filter(aClass -> checkContainsTrue(subclasses, (sub) -> sub.isAssignableFrom(aClass)))
-                    .filter(aClass -> classFilter.apply(aClass))
-                    .collect(Collectors.toSet());
+            Stream<Class<?>> classStream = classSet.stream();
+            if (annotations.length > 0) {
+                classStream = classStream.filter(aClass -> checkContainsTrue(annotations, ann -> aClass.getAnnotation(ann) != null));
+            }
+            if (subclasses.length > 0) {
+                classStream = classStream.filter(aClass -> checkContainsTrue(subclasses, sub -> sub.isAssignableFrom(aClass)));
+            }
+            if (classFilter != null) {
+                classStream = classStream.filter(aClass -> classFilter.apply(aClass));
+            }
+
+            classSet = classStream.collect(Collectors.toSet());
             return new ClassScanner(classSet);
         }
     }
 
-    public static Set<Class<?>> getClasses(String basePackage)
-            throws InjectorException
-    {
-        ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
-        try {
-            return getClasses(basePackage, classLoader, (classString, error) -> throwsThrowable(error));
-        }
-        catch (IOException e) {
-            throw new InjectorException(e);
-        }
-    }
-
-    private static Set<Class<?>> getClasses(String basePackage, ClassLoader classLoader, BiConsumer<String, Throwable> handler)
+    public static Set<Class<?>> scanClasses(String basePackage)
             throws IOException
     {
-        Set<String> classStrings = scanClasses(basePackage, classLoader);
+        ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
+        return scanClasses(basePackage, classLoader);
+    }
+
+    public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader)
+            throws IOException
+    {
+        return scanClasses(basePackage, classLoader, (classString, error) -> throwsThrowable(error));
+    }
+
+    public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader, BiConsumer<String, Throwable> loadErrorHandler)
+            throws IOException
+    {
+        Set<String> classStrings = scanClassNames(basePackage, classLoader);
 
         MutableSet.Builder<Class<?>> classes = MutableSet.builder();
         for (String it : classStrings) {
@@ -166,13 +184,13 @@ public class ClassScanner
                 classes.add(driver);  //
             }
             catch (Throwable e) {
-                handler.accept(classString, e);
+                loadErrorHandler.accept(classString, e);
             }
         }
         return classes.build();
     }
 
-    public static Set<String> scanClasses(String basePackage, ClassLoader classLoader)
+    public static Set<String> scanClassNames(String basePackage, ClassLoader classLoader)
             throws IOException
     {
         String packagePath = basePackage.replace('.', '/');

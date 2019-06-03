@@ -15,9 +15,14 @@
  */
 package com.github.harbby.gadtry.base;
 
+import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
+
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class JavaTypes
 {
@@ -48,10 +53,20 @@ public class JavaTypes
      * @throws MalformedParameterizedTypeException - if the instantiation
      * is invalid
      */
-    public static ParameterizedType make(Class<?> rawType,
+    public static Type make(Class<?> rawType,
             Type[] actualTypeArguments,
             Type ownerType)
     {
+        for (Type type : actualTypeArguments) {
+            if (type instanceof Class<?>) {
+                checkState(!((Class) type).isPrimitive(), "Java Generic Type not support PrimitiveType");
+            }
+        }
+        checkState(!rawType.isPrimitive(), "rawType %s must not PrimitiveType", rawType);
+
+        if (rawType.isArray()) {
+            return GenericArrayTypeImpl.make(make(rawType.getComponentType(), actualTypeArguments, null));
+        }
         return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
                 ownerType);
     }
@@ -67,6 +82,10 @@ public class JavaTypes
         else if (type instanceof ParameterizedType) {
             return ((Class<?>) ((ParameterizedType) type).getRawType());
         }
+        else if (type instanceof GenericArrayType) {
+            Class typeToClass = typeToClass(((GenericArrayType) type).getGenericComponentType());
+            return Arrays.getArrayClass(typeToClass);
+        }
         throw new IllegalArgumentException("Cannot convert type to class");
     }
 
@@ -75,6 +94,46 @@ public class JavaTypes
      */
     public static boolean isClassType(Type type)
     {
-        return type instanceof Class<?> || type instanceof ParameterizedType;
+        return type instanceof Class<?> || type instanceof ParameterizedType || type
+                instanceof GenericArrayType;
+    }
+
+    /**
+     * return primitive wrapper
+     */
+    public static Class<?> getWrapperClass(Class<?> aClass)
+    {
+        checkState(aClass.isPrimitive(), "%s not is Primitive", aClass);
+
+        if (aClass == int.class) {  //Integer.TYPE
+            return Integer.class;
+        }
+        else if (aClass == short.class) {
+            return Short.class;
+        }
+        else if (aClass == long.class) {
+            return Long.class;
+        }
+        else if (aClass == float.class) {
+            return Float.class;
+        }
+        else if (aClass == double.class) {
+            return Double.class;
+        }
+        else if (aClass == byte.class) {
+            return Byte.class;
+        }
+        else if (aClass == boolean.class) {
+            return Boolean.class;
+        }
+        else if (aClass == char.class) {
+            return Character.class;
+        }
+        else if (aClass == void.class) {
+            return Void.class;
+        }
+        else {
+            throw new UnsupportedOperationException("this " + aClass + " have't support!");
+        }
     }
 }

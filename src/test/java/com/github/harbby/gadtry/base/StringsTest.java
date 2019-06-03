@@ -13,24 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.classloader;
+package com.github.harbby.gadtry.base;
 
-import java.io.Closeable;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class ThreadContextClassLoader
-        implements Closeable
+public class StringsTest
 {
-    private final ClassLoader originalThreadContextClassLoader;
-
-    public ThreadContextClassLoader(ClassLoader newThreadContextClassLoader)
+    @Test
+    public void isNotBlank()
     {
-        this.originalThreadContextClassLoader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(newThreadContextClassLoader);
+        Assert.assertFalse(Strings.isNotBlank(""));
+        Assert.assertFalse(Strings.isNotBlank(null));
+        Assert.assertFalse(Strings.isNotBlank("   "));
+
+        Assert.assertTrue(Strings.isNotBlank(" dwa "));
     }
 
-    @Override
-    public void close()
+    @Test
+    public void isBlank()
     {
-        Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
+        Assert.assertTrue(Strings.isBlank(""));
+        Assert.assertTrue(Strings.isBlank(null));
+        Assert.assertTrue(Strings.isBlank("   "));
     }
 }

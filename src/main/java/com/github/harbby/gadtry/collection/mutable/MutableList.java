@@ -15,8 +15,6 @@
  */
 package com.github.harbby.gadtry.collection.mutable;
 
-import com.github.harbby.gadtry.collection.tuple.Tuple2;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,40 +47,6 @@ public class MutableList
     public static <T> List<T> of(T... t)
     {
         return MutableList.<T>builder().addAll(t).build();
-    }
-
-    public static <T> List<Tuple2<Integer, T>> zipIndex(Iterable<T> iterable)
-    {
-        MutableList.Builder<Tuple2<Integer, T>> builder = MutableList.builder();
-        int i = 0;
-        for (T t : iterable) {
-            builder.add(Tuple2.of(i, t));
-            i++;
-        }
-        return builder.build();
-    }
-
-    @SafeVarargs
-    public static <T> List<Tuple2<Integer, T>> zipIndex(T... ts)
-    {
-        MutableList.Builder<Tuple2<Integer, T>> builder = MutableList.builder();
-        int i = 0;
-        for (T t : ts) {
-            builder.add(Tuple2.of(i, t));
-            i++;
-        }
-        return builder.build();
-    }
-
-    public static <T> List<Tuple2<Integer, T>> zipIndex(Iterator<T> iterator)
-    {
-        MutableList.Builder<Tuple2<Integer, T>> builder = MutableList.builder();
-        int i = 0;
-        while (iterator.hasNext()) {
-            builder.add(Tuple2.of(i, iterator.next()));
-            i++;
-        }
-        return builder.build();
     }
 
     public static <T> Builder<T> builder()

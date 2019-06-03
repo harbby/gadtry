@@ -15,10 +15,18 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.function.Creator;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class Lazys
@@ -35,6 +43,37 @@ public class Lazys
     public static <T> Creator<T> goLazy(Creator<T> delegate)
     {
         return memoize(delegate);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T goLazy(T lambda)
+    {
+        checkState(lambda.getClass().getSuperclass() == Object.class);
+        Class<?>[] interfaces = lambda.getClass().getInterfaces();
+        List<Class<?>> interfaceList = Arrays.stream(interfaces)
+                .filter(aClass -> Arrays.stream(aClass.getMethods()).anyMatch(method -> !method.isDefault()))
+                .collect(Collectors.toList());
+        checkState(interfaceList.size() > 0);
+
+        Method[] methods = Arrays.stream(lambda.getClass().getDeclaredMethods()).filter(method -> {
+            return Modifier.isPublic(method.getModifiers()) && !method.isDefault();
+        }).toArray(Method[]::new);
+        checkState(methods.length == 1, "must is lambda");
+
+        AtomicReference<Object> atomicReference = new AtomicReference<>();
+        return (T) AopFactory.proxy((Class<Object>) interfaceList.get(0))
+                .byInstance(lambda)
+                .whereMethod(methodInfo -> Modifier.isPublic(methodInfo.getModifiers()) && !methodInfo.isDefault())
+                .around(proxyContext -> {
+                    if (atomicReference.get() == null) {
+                        Object object = proxyContext.proceed();
+                        atomicReference.compareAndSet(null, object);
+                        return object;
+                    }
+                    else {
+                        return atomicReference.get();
+                    }
+                });
     }
 
     public static class LazySupplier<T>

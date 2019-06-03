@@ -17,19 +17,19 @@ package com.github.harbby.gadtry.memory.collection;
 
 import com.github.harbby.gadtry.memory.MemoryBlock;
 
-import java.lang.reflect.Modifier;
+import java.util.AbstractMap;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class OffHeapMap<K, V>
-        implements Map<K, V>
+        extends AbstractMap<K, V>
 {
     private final Function<V, byte[]> serialization;
     private final Function<byte[], V> deserialization;
@@ -39,27 +39,19 @@ public class OffHeapMap<K, V>
             Function<V, byte[]> serialization,
             Function<byte[], V> deserialization)
     {
-        this.serialization = requireNonNull(serialization, "serialization is null");
-        this.deserialization = requireNonNull(deserialization, "serialization is null");
-        this.blockMap = new ConcurrentHashMap<>();
+        this(serialization, deserialization, HashMap::new);
     }
 
+    @SuppressWarnings("unchecked")
     public OffHeapMap(
             Function<V, byte[]> serialization,
             Function<byte[], V> deserialization,
-            Class<? extends Map> blockMapClass)
+            Supplier<Map<K, ?>> blockMapSupplier)
     {
         this.serialization = requireNonNull(serialization, "serialization is null");
         this.deserialization = requireNonNull(deserialization, "serialization is null");
-        requireNonNull(blockMapClass, "blockMapClass is null");
-        checkState(!blockMapClass.isInterface(), "blockMapClass is Interface");
-        checkState(!Modifier.isAbstract(blockMapClass.getModifiers()), "blockMapClass is Abstract");
-        try {
-            this.blockMap = (Map<K, MemoryBlock>) blockMapClass.newInstance();
-        }
-        catch (InstantiationException | IllegalAccessException e) {
-            throw new IllegalArgumentException("blockMapClass init failed", e);
-        }
+        requireNonNull(blockMapSupplier, "blockMapClass is null");
+        this.blockMap = (Map<K, MemoryBlock>) blockMapSupplier.get();
     }
 
     @Override
@@ -120,8 +112,8 @@ public class OffHeapMap<K, V>
             if (memoryBlock != null) {
                 return deserialization.apply(memoryBlock.getByteValue());
             }
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -136,10 +128,8 @@ public class OffHeapMap<K, V>
     @Override
     public void clear()
     {
-        synchronized (blockMap) {
-            for (K k : blockMap.keySet()) {
-                this.remove(k);
-            }
+        for (K k : blockMap.keySet()) {
+            this.remove(k);
         }
     }
 
@@ -155,9 +145,9 @@ public class OffHeapMap<K, V>
     @Override
     public Collection<V> values()
     {
-        return this.keySet()
+        return this.blockMap.values()
                 .stream()
-                .map(this::get)
+                .map(block -> deserialization.apply(block.getByteValue()))
                 .collect(Collectors.toList());
     }
 

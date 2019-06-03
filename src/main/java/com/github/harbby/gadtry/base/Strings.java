@@ -15,8 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import java.util.Arrays;
-
 public class Strings
 {
     private Strings() {}
@@ -42,105 +40,5 @@ public class Strings
             }
         }
         return true;
-    }
-
-    /**
-     * Returns a string representation of the given array. This method takes an Object
-     * to allow also all types of primitive type arrays.
-     *
-     * @param array The array to create a string representation for.
-     * @return The string representation of the array.
-     * @throws IllegalArgumentException If the given object is no array.
-     */
-    public static String arrayToString(Object array)
-    {
-        if (array == null) {
-            throw new NullPointerException();
-        }
-
-        if (array instanceof int[]) {
-            return Arrays.toString((int[]) array);
-        }
-        if (array instanceof long[]) {
-            return Arrays.toString((long[]) array);
-        }
-        if (array instanceof Object[]) {
-            return Arrays.toString((Object[]) array);
-        }
-        if (array instanceof byte[]) {
-            return Arrays.toString((byte[]) array);
-        }
-        if (array instanceof double[]) {
-            return Arrays.toString((double[]) array);
-        }
-        if (array instanceof float[]) {
-            return Arrays.toString((float[]) array);
-        }
-        if (array instanceof boolean[]) {
-            return Arrays.toString((boolean[]) array);
-        }
-        if (array instanceof char[]) {
-            return Arrays.toString((char[]) array);
-        }
-        if (array instanceof short[]) {
-            return Arrays.toString((short[]) array);
-        }
-
-        if (array.getClass().isArray()) {
-            return "<unknown array type>";
-        }
-        else {
-            throw new IllegalArgumentException("The given argument is no array.");
-        }
-    }
-
-    /**
-     * Returns a string representation of the given array. This method takes an Object
-     * to allow also all types of primitive type arrays.
-     *
-     * @param array The array to create a string representation for.
-     * @return The string representation of the array.
-     * @throws IllegalArgumentException If the given object is no array.
-     */
-    public static String arrayClass(Object array)
-    {
-        if (array == null) {
-            throw new NullPointerException();
-        }
-
-        if (array instanceof int[]) {
-            return Arrays.toString((int[]) array);
-        }
-        if (array instanceof long[]) {
-            return Arrays.toString((long[]) array);
-        }
-        if (array instanceof Object[]) {
-            return Arrays.toString((Object[]) array);
-        }
-        if (array instanceof byte[]) {
-            return Arrays.toString((byte[]) array);
-        }
-        if (array instanceof double[]) {
-            return Arrays.toString((double[]) array);
-        }
-        if (array instanceof float[]) {
-            return Arrays.toString((float[]) array);
-        }
-        if (array instanceof boolean[]) {
-            return Arrays.toString((boolean[]) array);
-        }
-        if (array instanceof char[]) {
-            return Arrays.toString((char[]) array);
-        }
-        if (array instanceof short[]) {
-            return Arrays.toString((short[]) array);
-        }
-
-        if (array.getClass().isArray()) {
-            return "<unknown array type>";
-        }
-        else {
-            throw new IllegalArgumentException("The given argument is no array.");
-        }
     }
 }

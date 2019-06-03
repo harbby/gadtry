@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
+import com.github.harbby.gadtry.graph.Graph;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -142,6 +143,18 @@ public class IocFactoryTest
         Set set2 = iocFactory.getInstance(Set.class);
         Assert.assertNotNull(set1);
         Assert.assertTrue(set1 != set2);  //no Single
+    }
+
+    @Test
+    public void iocAnalysis()
+    {
+        IocFactory iocFactory = IocFactory.create(binder -> {
+            binder.bind(Set.class).byCreator(HashSet::new).noScope();
+            binder.bind(StringBuilder.class).byCreator(TestCreator.class).withSingle();
+        });
+
+        Graph<Void, Void> graph = iocFactory.analysis();
+        graph.printShow().forEach(System.out::println);
     }
 
     private static class TestCreator

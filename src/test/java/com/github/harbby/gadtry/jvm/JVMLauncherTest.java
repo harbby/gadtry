@@ -23,12 +23,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class JVMLauncherTest
 {
@@ -60,6 +60,7 @@ public class JVMLauncherTest
 
     @Test
     public void testForkJvmThrowRuntimeException123()
+            throws TimeoutException, InterruptedException
     {
         String f = "testForkJvmThrowRuntimeException123";
         System.out.println("--- vm test ---");
@@ -111,7 +112,7 @@ public class JVMLauncherTest
 
     @Test
     public void actorModelTest1()
-            throws JVMException, InterruptedException
+            throws InterruptedException
     {
         String f = "testForkJvmThrowRuntimeException123";
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
@@ -128,7 +129,7 @@ public class JVMLauncherTest
         // 使用如下方式 对actor模型 进行测试
         final Object lock = new Object();
         synchronized (lock) {
-            launcher.startAsync((value, error) -> {
+            CompletableFuture.runAsync(launcher::startAndGet).whenComplete((value, error) -> {
                 Assert.assertTrue(error.getMessage().contains(f));
                 error.printStackTrace();
                 synchronized (lock) {
@@ -157,45 +158,20 @@ public class JVMLauncherTest
         // 使用如下方式 对actor模型 进行测试
         Lock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
-
         lock.lock();
-        launcher.startAsync((value, error) -> {
-            Assert.assertEquals(2019, value.intValue());
-            System.out.println(value);
-            lock.lock();
-            condition.signal();  //唤醒睡眠的主线程
-            lock.unlock();
-        });
+
+        CompletableFuture.supplyAsync(launcher::startAndGet)
+                .whenComplete((value, error) -> {
+                    Assert.assertEquals(2019, value.intValue());
+                    System.out.println(value);
+                    lock.lock();
+                    condition.signal();  //唤醒睡眠的主线程
+                    lock.unlock();
+                });
+
         // LockSupport.class
         condition.await(600, TimeUnit.SECONDS); //睡眠进入等待池并让出锁
         lock.unlock();
-    }
-
-    @Test
-    public void testActorModelForkReturnTrue()
-            throws JVMException
-    {
-        JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                .addUserjars(Collections.emptyList())
-                .setXms("16m")
-                .setXmx("16m")
-                .setConsole(System.out::println)
-                .build();
-
-        // 使用如下方式 对actor模型 进行测试
-        new ReentrantReadWriteLock().writeLock();
-        Thread main = Thread.currentThread();
-        launcher.startAsync(
-                () -> {
-                    System.out.println("************ job start ***************");
-                    return true;
-                },
-                (value, error) -> {
-                    Assert.assertEquals(true, value);
-                    System.out.println(value);
-                    LockSupport.unpark(main);   //叫醒主线程
-                });
-        LockSupport.park();  //进入阻塞
     }
 
     @Test

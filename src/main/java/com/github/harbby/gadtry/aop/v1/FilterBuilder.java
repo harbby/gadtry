@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static java.util.Objects.requireNonNull;
 
 public class FilterBuilder
         implements MethodFilter<FilterBuilder>, ClassFilter<FilterBuilder>
@@ -39,12 +40,12 @@ public class FilterBuilder
     private Set<Class<?>> inputClass = new HashSet<>();
     //class filter
     private String packageName;
-    private Class<? extends Annotation>[] classAnnotations;
-    private Class<?>[] subclasses;
+    private Class<? extends Annotation>[] classAnnotations = new Class[0];
+    private Class<?>[] subclasses = new Class[0];
     private java.util.function.Function<Class<?>, Boolean> whereClass = aClass -> true;
     //-- method filter
-    private Class<? extends Annotation>[] methodAnnotations;
-    private Class<?>[] returnTypes;
+    private Class<? extends Annotation>[] methodAnnotations = new Class[0];
+    private Class<?>[] returnTypes = new Class[0];
     private Function<MethodInfo, Boolean> whereMethod;
 
     public FilterBuilder(Pointcut pointcut)
@@ -56,27 +57,27 @@ public class FilterBuilder
     @SafeVarargs
     public final FilterBuilder methodAnnotated(Class<? extends Annotation>... methodAnnotations)
     {
-        this.methodAnnotations = methodAnnotations;
+        this.methodAnnotations = requireNonNull(methodAnnotations);
         return this;
     }
 
     @Override
     public FilterBuilder returnType(Class<?>... returnTypes)
     {
-        this.returnTypes = returnTypes;
+        this.returnTypes = requireNonNull(returnTypes);
         return this;
     }
 
     @Override
     public FilterBuilder whereMethod(Function<MethodInfo, Boolean> whereMethod)
     {
-        this.whereMethod = whereMethod;
+        this.whereMethod = requireNonNull(whereMethod);
         return this;
     }
 
     public FilterBuilder withPackage(String packageName)
     {
-        this.packageName = packageName;
+        this.packageName = requireNonNull(packageName);
         return this;
     }
 
@@ -84,14 +85,14 @@ public class FilterBuilder
     @SafeVarargs
     public final FilterBuilder classAnnotated(Class<? extends Annotation>... classAnnotations)
     {
-        this.classAnnotations = classAnnotations;
+        this.classAnnotations = requireNonNull(classAnnotations);
         return this;
     }
 
     @Override
     public FilterBuilder classes(Class<?>... inputClass)
     {
-        this.inputClass = MutableSet.of(inputClass);
+        this.inputClass = MutableSet.of(requireNonNull(inputClass));
         return this;
     }
 
@@ -136,7 +137,7 @@ public class FilterBuilder
         }
         scanClass.addAll(inputClass);
 
-        Function<MethodInfo, Boolean> methodFilter = MethodFilter.buildFilter(methodAnnotations, returnTypes, whereMethod);
+        Function<MethodInfo, Boolean> methodFilter = MethodFilter.buildMethodFilter(methodAnnotations, returnTypes, whereMethod);
 
         //---class filter
         Set<Class<?>> searchClass = scanClass.stream().filter(

@@ -43,7 +43,6 @@ public class TupleTest
             Assert.assertEquals(str, tuple.toString());
             System.out.println(tuple);
             //------fields length test
-            Assert.assertEquals(aClass.getDeclaredFields().length, tuple.getArity());
             Assert.assertEquals(columnCnt, tuple.getArity());
             //---- copy test
             Tuple copy = tuple.copy();

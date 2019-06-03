@@ -24,15 +24,6 @@ public class MutableSet
 {
     private MutableSet() {}
 
-    public static <T> Set<T> copy(Set<? extends T> set)
-    {
-        MutableSet.Builder<T> builder = MutableSet.builder();
-        for (T it : set) {
-            builder.add(it);
-        }
-        return builder.build();
-    }
-
     public static <T> Set<T> copy(Iterable<? extends T> iterable)
     {
         MutableSet.Builder<T> builder = MutableSet.builder();
