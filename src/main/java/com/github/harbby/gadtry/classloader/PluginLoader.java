@@ -18,7 +18,7 @@ package com.github.harbby.gadtry.classloader;
 import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.io.File;
 import java.io.IOException;

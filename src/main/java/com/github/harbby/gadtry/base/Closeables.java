@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Consumer;
+import com.github.harbby.gadtry.function.exception.Consumer;
 
 import java.io.Closeable;
 import java.io.Serializable;

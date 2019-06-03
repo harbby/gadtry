@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.aop;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.FilterBuilder;
-import com.github.harbby.gadtry.function.Consumer;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import static java.util.Objects.requireNonNull;
 

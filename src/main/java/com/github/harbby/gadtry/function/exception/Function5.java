@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.function;
+package com.github.harbby.gadtry.function.exception;
 
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface Function<F1, R>
+public interface Function5<F1, F2, F3, F4, F5, R>
         extends Serializable
 {
-    R apply(F1 f1)
+    R apply(F1 f1, F2 f2, F3 f3, F4 f4, F5 f5)
             throws Exception;
 }

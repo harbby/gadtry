@@ -25,7 +25,7 @@ import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.FilterBuilder;
 import com.github.harbby.gadtry.aop.v1.MethodFilter;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;

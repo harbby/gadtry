@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 import com.github.harbby.gadtry.graph.Graph;
 
 import java.lang.reflect.Constructor;

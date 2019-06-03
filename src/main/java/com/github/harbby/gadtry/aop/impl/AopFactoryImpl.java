@@ -18,7 +18,7 @@ package com.github.harbby.gadtry.aop.impl;
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.Pointcut;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.util.HashMap;
 import java.util.List;

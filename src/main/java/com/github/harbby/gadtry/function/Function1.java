@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.function;
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface Function9<F1, F2, F3, F4, F5, F6, F7, F8, F9, R>
+public interface Function1<F1, R>
         extends Serializable
 {
-    R apply(F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9);
+    R apply(F1 f1);
 }

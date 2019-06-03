@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.v1;
 
 import com.github.harbby.gadtry.aop.model.ClassInfo;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.lang.annotation.Annotation;
 

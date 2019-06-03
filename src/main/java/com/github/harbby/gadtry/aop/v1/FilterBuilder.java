@@ -21,7 +21,7 @@ import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.classloader.ClassScanner;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;

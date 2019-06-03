@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Function;
 import org.junit.Assert;
 import org.junit.Test;
 

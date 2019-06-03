@@ -19,8 +19,8 @@ import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.function.Consumer;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -84,13 +84,13 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T around(com.github.harbby.gadtry.function.Function<ProxyContext, Object> aroundHandler)
+    public T around(Function<ProxyContext, Object> aroundHandler)
     {
         InvocationHandler handler = aroundStatic(aroundHandler, instance);
         return this.getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler aroundStatic(com.github.harbby.gadtry.function.Function<ProxyContext, Object> aroundHandler, T instance)
+    private static <T> InvocationHandler aroundStatic(Function<ProxyContext, Object> aroundHandler, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             ProxyContext context = new ProxyContext()

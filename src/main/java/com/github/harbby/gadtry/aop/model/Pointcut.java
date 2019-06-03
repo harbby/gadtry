@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.model;
 
 import com.github.harbby.gadtry.aop.ProxyContext;
-import com.github.harbby.gadtry.function.Consumer;
-import com.github.harbby.gadtry.function.Function;
+import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.function.exception.Function;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Set;

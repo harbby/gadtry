@@ -21,6 +21,5 @@ import java.io.Serializable;
 public interface Function3<F1, F2, F3, R>
         extends Serializable
 {
-    R apply(F1 f1, F2 f2, F3 f3)
-            throws Exception;
+    R apply(F1 f1, F2 f2, F3 f3);
 }

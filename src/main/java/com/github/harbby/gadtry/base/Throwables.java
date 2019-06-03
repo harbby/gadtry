@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.function.exception.Runnable;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.Callable;
@@ -76,7 +78,7 @@ public class Throwables
         return throwable;
     }
 
-    public static <T> void noCatch(com.github.harbby.gadtry.function.Runnable runnable)
+    public static <T> void noCatch(Runnable runnable)
     {
         try {
             runnable.apply();
