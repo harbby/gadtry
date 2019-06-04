@@ -90,6 +90,12 @@ public final class UnsafeHelper
         throw new IllegalStateException("unreachable");
     }
 
+    public static <T> T allocateInstance(Class<T> tClass)
+            throws InstantiationException
+    {
+        return (T) _UNSAFE.allocateInstance(tClass);
+    }
+
     public static void copyMemory(
             Object src, long srcOffset, Object dst, long dstOffset, long length)
     {

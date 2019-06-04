@@ -17,14 +17,15 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.function.Creator;
+import com.github.harbby.gadtry.function.Function1;
+import com.github.harbby.gadtry.function.Function2;
+import com.github.harbby.gadtry.function.Function3;
+import com.github.harbby.gadtry.function.Function4;
+import com.github.harbby.gadtry.function.Function5;
+import com.github.harbby.gadtry.memory.UnsafeHelper;
 
 import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
@@ -45,30 +46,48 @@ public class Lazys
         return memoize(delegate);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T goLazy(T lambda)
+    public static <F1, R> Function1<F1, R> goLazy(Function1<F1, R> lambda)
     {
-        checkState(lambda.getClass().getSuperclass() == Object.class);
-        Class<?>[] interfaces = lambda.getClass().getInterfaces();
-        List<Class<?>> interfaceList = Arrays.stream(interfaces)
-                .filter(aClass -> Arrays.stream(aClass.getMethods()).anyMatch(method -> !method.isDefault()))
-                .collect(Collectors.toList());
-        checkState(interfaceList.size() > 0);
+        return functionGo(Function1.class, lambda);
+    }
 
-        Method[] methods = Arrays.stream(lambda.getClass().getDeclaredMethods()).filter(method -> {
-            return Modifier.isPublic(method.getModifiers()) && !method.isDefault();
-        }).toArray(Method[]::new);
-        checkState(methods.length == 1, "must is lambda");
+    public static <F1, F2, R> Function2<F1, F2, R> goLazy(Function2<F1, F2, R> lambda)
+    {
+        return functionGo(Function2.class, lambda);
+    }
 
+    public static <F1, F2, F3, R> Function3<F1, F2, F3, R> goLazy(Function3<F1, F2, F3, R> lambda)
+    {
+        return functionGo(Function3.class, lambda);
+    }
+
+    public static <F1, F2, F3, F4, R> Function4<F1, F2, F3, F4, R> goLazy(Function4<F1, F2, F3, F4, R> lambda)
+    {
+        return functionGo(Function4.class, lambda);
+    }
+
+    public static <F1, F2, F3, F4, F5, R> Function5<F1, F2, F3, F4, F5, R> goLazy(Function5<F1, F2, F3, F4, F5, R> lambda)
+    {
+        return functionGo(Function5.class, lambda);
+    }
+
+    private static <T> T functionGo(Class<T> interfaceClass, T lambda)
+    {
         AtomicReference<Object> atomicReference = new AtomicReference<>();
-        return (T) AopFactory.proxy((Class<Object>) interfaceList.get(0))
+        return AopFactory.proxy(interfaceClass)
                 .byInstance(lambda)
-                .whereMethod(methodInfo -> Modifier.isPublic(methodInfo.getModifiers()) && !methodInfo.isDefault())
                 .around(proxyContext -> {
                     if (atomicReference.get() == null) {
-                        Object object = proxyContext.proceed();
-                        atomicReference.compareAndSet(null, object);
-                        return object;
+                        synchronized (atomicReference) {
+                            if (atomicReference.get() != null) {
+                                return atomicReference.get();
+                            }
+                            UnsafeHelper.getUnsafe().fullFence();
+                            Object object = proxyContext.proceed();
+                            checkState(atomicReference.compareAndSet(null, object), "not Single");
+                            UnsafeHelper.getUnsafe().fullFence();
+                            return object;
+                        }
                     }
                     else {
                         return atomicReference.get();
@@ -107,7 +126,7 @@ public class Lazys
 
         public String toString()
         {
-            return "Lazys.memoize(" + this.delegate + ")";
+            return "Lazys.goLazy(" + this.delegate + ")";
         }
     }
 }

@@ -17,9 +17,13 @@ package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.graph.Graph;
+import com.github.harbby.gadtry.memory.MemoryBlock;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -169,5 +173,49 @@ public class IocFactoryTest
             Assert.assertNotNull(set);
             return new StringBuilder();
         }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getNotRegisteredMoreConstructorReturnError()
+    {
+        IocFactory iocFactory = IocFactory.create();
+        iocFactory.getInstance(PrintStream.class);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getNotRegisteredReturnError()
+    {
+        IocFactory iocFactory = IocFactory.create();
+        try {
+            iocFactory.getInstance(Supplier.class);
+            Assert.fail();
+        }
+        catch (IllegalStateException ignored) {
+        }
+        iocFactory.getInstance(MemoryBlock.class);
+    }
+
+    @Test
+    public void UserCreatorReturnError()
+    {
+        IocFactory iocFactory = IocFactory.create();
+
+        iocFactory.getInstance(MemoryBlock.class, aClass -> {
+            if (aClass == byte[].class) {
+                return "done".getBytes();
+            }
+            return null;
+            //throw new InvocationTargetException(new RuntimeException());
+        });
+    }
+
+    @Test(expected = SQLException.class)
+    public void UserCreatorReturnInvocationTargetException()
+    {
+        IocFactory iocFactory = IocFactory.create();
+
+        iocFactory.getInstance(MemoryBlock.class, aClass -> {
+            throw new InvocationTargetException(new SQLException());
+        });
     }
 }

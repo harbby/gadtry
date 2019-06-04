@@ -17,11 +17,18 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Closeables;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 public class VmFutureTest
@@ -91,7 +98,7 @@ public class VmFutureTest
 
     @Test
     public void getTimeOut()
-            throws JVMException, InterruptedException
+            throws JVMException, InterruptedException, ExecutionException
     {
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
@@ -106,18 +113,17 @@ public class VmFutureTest
     }
 
     @Test
-    public void getVmProcess()
+    public void isRunning()
     {
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole(System.out::println)
                 .setCallable(() -> {
                     LockSupport.park();
                     return "done";
                 }).build();
 
         try (Closeables<VmFuture<String>> vmFuture = Closeables.autoClose(launcher.startAsync(), VmFuture::cancel)) {
-            Assert.assertTrue(vmFuture.get().getVmProcess().isAlive());
             Assert.assertTrue(vmFuture.get().isRunning());
         }
     }
@@ -135,6 +141,72 @@ public class VmFutureTest
 
         try (Closeables<VmFuture<String>> vmFuture = Closeables.autoClose(launcher.startAsync(), VmFuture::cancel)) {
             Assert.assertTrue(vmFuture.get().getPid() > 0);
+        }
+    }
+
+    @Test
+    public void getTestGiveDone()
+    {
+        AtomicReference<Process> processAtomic = new AtomicReference<>();
+        try {
+            new VmFuture<>(processAtomic, () -> new VmResult<>((Serializable) "done"));
+            Assert.fail();
+        }
+        catch (Exception e) {
+            Assert.assertEquals(e.getMessage(), "Async failed! future.isDone() result:done");
+        }
+    }
+
+    @Test
+    public void getTestGiveRuntimeException()
+            throws InterruptedException
+    {
+        AtomicReference<Process> processAtomic = new AtomicReference<>();
+        try {
+            new VmFuture<>(processAtomic, () -> {
+                throw new RuntimeException("Async failed! future.isDone() result:done");
+            });
+            Assert.fail();
+        }
+        catch (JVMException e) {
+            Assert.assertEquals(e.getMessage(), "java.lang.RuntimeException: Async failed! future.isDone() result:done");
+        }
+    }
+
+    @Test
+    public void getTest()
+            throws InterruptedException, IOException, TimeoutException, ExecutionException
+    {
+        File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
+        Process process = Runtime.getRuntime().exec(java.toString() + " --version");
+        AtomicReference<Process> processAtomic = new AtomicReference<>(process);
+
+        VmFuture<String> vmFuture = new VmFuture<>(processAtomic, () -> new VmResult<>((Serializable) "done"));
+        String result = vmFuture.get(100, TimeUnit.MILLISECONDS);
+        Assert.assertEquals(result, "done");
+        Assert.assertFalse(vmFuture.isRunning());
+    }
+
+    @Mock private Process process;
+
+    @Before
+    public void setUp()
+    {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void getVmProcess()
+            throws InterruptedException
+    {
+        AtomicReference<Process> processAtomic = new AtomicReference<>(process);
+        VmFuture<String> vmFuture = new VmFuture<>(processAtomic, () -> new VmResult<>((Serializable) "done"));
+        try {
+            vmFuture.getPid();
+            Assert.fail();
+        }
+        catch (UnsupportedOperationException e) {
+            Assert.assertTrue(e.getMessage().contains("Only support for UNIX and Linux systems pid"));
         }
     }
 }

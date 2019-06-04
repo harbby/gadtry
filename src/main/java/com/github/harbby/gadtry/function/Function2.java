@@ -16,10 +16,11 @@
 package com.github.harbby.gadtry.function;
 
 import java.io.Serializable;
+import java.util.function.BiFunction;
 
 @FunctionalInterface
 public interface Function2<F1, F2, R>
-        extends Serializable
+        extends Serializable, BiFunction<F1, F2, R>
 {
     R apply(F1 f1, F2 f2);
 }

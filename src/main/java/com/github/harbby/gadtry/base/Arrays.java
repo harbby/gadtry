@@ -18,10 +18,14 @@ package com.github.harbby.gadtry.base;
 import java.util.List;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.util.Objects.requireNonNull;
 
 public class Arrays
 {
     private Arrays() {}
+
+    public static final List<Class<?>> PRIMITIVE_TYPES = java.util.Arrays.asList(int.class, short.class, long.class,
+            float.class, double.class, boolean.class, byte.class, char.class, void.class);
 
     /**
      * @param arrayType String.class Integer.class ...
@@ -118,10 +122,6 @@ public class Arrays
         }
 
         Class<?> aClass = arrayClass.getComponentType();
-        if (!aClass.isPrimitive()) {
-            return (T) list.toArray(createArray(aClass, list.size()));
-        }
-
         if (aClass == int.class) {
             return (T) list.stream().mapToInt(x -> (Integer) x).toArray();
         }
@@ -186,9 +186,7 @@ public class Arrays
      */
     public static String arrayToString(Object array)
     {
-        if (array == null) {
-            throw new NullPointerException();
-        }
+        requireNonNull(array);
 
         if (array instanceof int[]) {
             return java.util.Arrays.toString((int[]) array);
@@ -218,11 +216,6 @@ public class Arrays
             return java.util.Arrays.toString((short[]) array);
         }
 
-        if (array.getClass().isArray()) {
-            return "<unknown array type>";
-        }
-        else {
-            throw new IllegalArgumentException("The given argument is no array.");
-        }
+        throw new IllegalArgumentException("The given argument is no array.");
     }
 }

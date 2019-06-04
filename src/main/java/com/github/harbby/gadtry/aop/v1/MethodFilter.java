@@ -76,10 +76,10 @@ public interface MethodFilter<T>
             filters.add(whereMethod);
         }
         if (returnTypes != null && returnTypes.length > 0) {
-            filters.add(methodInfo -> checkContainsTrue(returnTypes, returnType -> returnType.isAssignableFrom(methodInfo.getReturnType())));
+            filters.add(methodInfo -> checkContainsTrue(returnType -> returnType.isAssignableFrom(methodInfo.getReturnType()), returnTypes));
         }
         if (methodAnnotations != null && methodAnnotations.length > 0) {
-            filters.add(methodInfo -> checkContainsTrue(methodAnnotations, ann -> methodInfo.getAnnotation(ann) != null));
+            filters.add(methodInfo -> checkContainsTrue(ann -> methodInfo.getAnnotation(ann) != null, methodAnnotations));
         }
 
         return methodInfo -> {

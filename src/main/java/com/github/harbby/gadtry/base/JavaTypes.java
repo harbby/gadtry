@@ -103,8 +103,6 @@ public class JavaTypes
      */
     public static Class<?> getWrapperClass(Class<?> aClass)
     {
-        checkState(aClass.isPrimitive(), "%s not is Primitive", aClass);
-
         if (aClass == int.class) {  //Integer.TYPE
             return Integer.class;
         }
@@ -133,6 +131,7 @@ public class JavaTypes
             return Void.class;
         }
         else {
+            //checkState(aClass.isPrimitive(), "%s not is Primitive", aClass);
             throw new UnsupportedOperationException("this " + aClass + " have't support!");
         }
     }

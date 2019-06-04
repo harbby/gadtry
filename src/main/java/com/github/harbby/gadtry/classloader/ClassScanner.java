@@ -61,7 +61,7 @@ public class ClassScanner
             return classSet;
         }
         return classSet.stream()
-                .filter(aClass -> checkContainsTrue(annotations, ann -> aClass.getAnnotation(ann) != null))
+                .filter(aClass -> checkContainsTrue(ann -> aClass.getAnnotation(ann) != null, annotations))
                 .collect(Collectors.toSet());
     }
 
@@ -72,7 +72,7 @@ public class ClassScanner
             return classSet;
         }
         return classSet.stream()
-                .filter(aClass -> checkContainsTrue(subclasses, sub -> sub.isAssignableFrom(aClass)))
+                .filter(aClass -> checkContainsTrue(sub -> sub.isAssignableFrom(aClass), subclasses))
                 .collect(Collectors.toSet());
     }
 
@@ -143,10 +143,10 @@ public class ClassScanner
 
             Stream<Class<?>> classStream = classSet.stream();
             if (annotations.length > 0) {
-                classStream = classStream.filter(aClass -> checkContainsTrue(annotations, ann -> aClass.getAnnotation(ann) != null));
+                classStream = classStream.filter(aClass -> checkContainsTrue(ann -> aClass.getAnnotation(ann) != null, annotations));
             }
             if (subclasses.length > 0) {
-                classStream = classStream.filter(aClass -> checkContainsTrue(subclasses, sub -> sub.isAssignableFrom(aClass)));
+                classStream = classStream.filter(aClass -> checkContainsTrue(sub -> sub.isAssignableFrom(aClass), subclasses));
             }
             if (classFilter != null) {
                 classStream = classStream.filter(aClass -> classFilter.apply(aClass));

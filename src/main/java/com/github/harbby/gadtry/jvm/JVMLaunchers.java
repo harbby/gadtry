@@ -42,7 +42,7 @@ public class JVMLaunchers
         private Consumer<String> consoleHandler;
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
-        private final Map<String, String> environment = new HashMap<>(System.getenv());
+        private final Map<String, String> environment = new HashMap<>();
         private ClassLoader classLoader;
         private File workDir;
 

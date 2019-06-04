@@ -18,7 +18,11 @@ package com.github.harbby.gadtry.base;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
 
 public class ArraysTest
 {
@@ -28,6 +32,13 @@ public class ArraysTest
         Integer[] a2 = Arrays.createArray(Integer.class, 2);
         Assert.assertEquals(a2.length, 2);
         Assert.assertEquals(a2.getClass(), Integer[].class);
+
+        try {
+            Arrays.createArray(int.class, 0);
+            Assert.fail();
+        }
+        catch (UnsupportedOperationException ignored) {
+        }
     }
 
     @Test
@@ -48,6 +59,7 @@ public class ArraysTest
         int[] array2 = Arrays.createPrimitiveByArrayClass(int[].class, 2);
         Assert.assertEquals(array2.length, 2);
         Assert.assertEquals(array2.getClass(), int[].class);
+        Assert.assertEquals(Arrays.createPrimitiveByArrayClass(Object[].class, 0).getClass(), Object[].class);
     }
 
     @Test
@@ -65,15 +77,22 @@ public class ArraysTest
         List<Integer> list = java.util.Arrays.asList(1, 2, 3, 4);
         Integer[] out = Arrays.toArray(list, Integer[].class);
         Assert.assertArrayEquals(out, list.toArray());
+        Assert.assertArrayEquals(Arrays.toArray(new ArrayList<>(), Object[].class), new ArrayList<>().toArray());
     }
 
     @Test
     public void toPrimitiveIntegerArrayTest()
     {
         List<Integer> list = java.util.Arrays.asList(1, 2, 3, 4);
-        Integer[] out = Arrays.toPrimitiveArray(list, Integer[].class);
-
+        Integer[] out = Arrays.toArray(list, Integer[].class);
         Assert.assertArrayEquals(out, new Integer[] {1, 2, 3, 4});
+
+        try {
+            Arrays.toPrimitiveArray(list, Integer[].class);
+            Assert.fail();
+        }
+        catch (UnsupportedOperationException e) {
+        }
     }
 
     @Test
@@ -149,6 +168,15 @@ public class ArraysTest
     }
 
     @Test
+    public void toPrimitiveObjectArrayTest()
+    {
+        List<Character> list = java.util.Arrays.asList('a', 'b', 'c', 'd');
+        Object[] out = Arrays.toPrimitiveArray(list, Object[].class);
+
+        Assert.assertArrayEquals(out, new Object[] {'a', 'b', 'c', 'd'});
+    }
+
+    @Test
     public void getArrayClassTest()
     {
         Class<?> arrayClass = Arrays.getArrayClass(int.class);
@@ -156,5 +184,27 @@ public class ArraysTest
 
         Class<?> arrayClass2 = Arrays.getArrayClass(Integer.class);
         Assert.assertEquals(Integer[].class, arrayClass2);
+    }
+
+    @Test
+    public void arrayToString()
+    {
+        List<String> arrStr = PRIMITIVE_TYPES.stream()
+                .filter(x -> x != void.class)
+                .map(x -> Arrays.createPrimitiveArray(x, 0))
+                .map(Arrays::arrayToString)
+                .collect(Collectors.toList());
+        Assert.assertEquals(arrStr.size(), PRIMITIVE_TYPES.size() - 1);
+        arrStr.forEach(x -> Assert.assertEquals("[]", x));
+
+        Assert.assertEquals(Arrays.arrayToString(new Object[] {1}), "[1]");
+
+        try {
+            Arrays.arrayToString("1");
+            Assert.fail();
+        }
+        catch (IllegalArgumentException e) {
+            Assert.assertEquals("The given argument is no array.", e.getMessage());
+        }
     }
 }

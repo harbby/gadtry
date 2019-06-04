@@ -16,10 +16,11 @@
 package com.github.harbby.gadtry.function;
 
 import java.io.Serializable;
+import java.util.function.Function;
 
 @FunctionalInterface
 public interface Function1<F1, R>
-        extends Serializable
+        extends Serializable, Function<F1, R>
 {
     R apply(F1 f1);
 }

@@ -69,9 +69,7 @@ public class MoreObjects
 
     public static <T> T firstNonNull(T... values)
     {
-        if (values == null) {
-            throw new NullPointerException("Both parameters are null");
-        }
+        requireNonNull(values, "Both parameters are null");
         for (T value : values) {
             if (value != null) {
                 return value;
@@ -93,7 +91,7 @@ public class MoreObjects
         return true;
     }
 
-    public static <T> boolean checkContainsTrue(T[] values, Function<T, Boolean> filter)
+    public static <T> boolean checkContainsTrue(Function<T, Boolean> filter, T... values)
     {
         requireNonNull(values, "values is null");
         requireNonNull(filter, "filter is null");
@@ -105,13 +103,11 @@ public class MoreObjects
         return false;
     }
 
-    public static <T> boolean checkContainsTrue(Iterable<T> ts, Function<T, Boolean> filter)
+    public static <T> boolean checkContainsTrue(Function<T, Boolean> filter, Iterable<T> values)
     {
-        if (ts == null) {
-            return true;
-        }
-        checkState(filter != null, "filter is null");
-        for (T t : ts) {
+        requireNonNull(values, "values is null");
+        requireNonNull(filter, "filter is null");
+        for (T t : values) {
             if (filter.apply(t)) {
                 return true;
             }

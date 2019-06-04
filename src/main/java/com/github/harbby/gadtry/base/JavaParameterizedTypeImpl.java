@@ -54,14 +54,6 @@ final class JavaParameterizedTypeImpl
         validateConstructorArguments();
     }
 
-    public static JavaParameterizedTypeImpl make(Class<?> rawType,
-            Type[] actualTypeArguments,
-            Type ownerType)
-    {
-        return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
-                ownerType);
-    }
-
     private void validateConstructorArguments()
     {
         TypeVariable<?>[] formals = rawType.getTypeParameters();

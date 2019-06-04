@@ -15,27 +15,22 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class JVMUtil
+public class VmResultTest
 {
-    private JVMUtil() {}
+    private final VmResult<String> vmResult = new VmResult<>("error");
 
-    /**
-     * get this jvm class.path all jars
-     *
-     * @return Set File
-     */
-    public static Set<File> systemJars()
+    @Test
+    public void getOnFailure()
     {
-        String[] jars = System.getProperty("java.class.path")
-                .split(Pattern.quote(File.pathSeparator));
-        Set<File> res = Arrays.stream(jars).map(File::new).filter(File::isFile)
-                .collect(Collectors.toSet());
-        return res;
+        Assert.assertEquals(vmResult.getOnFailure(), "error");
+    }
+
+    @Test
+    public void isFailed()
+    {
+        Assert.assertTrue(vmResult.isFailed());
     }
 }

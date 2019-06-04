@@ -15,19 +15,23 @@
  */
 package com.github.harbby.gadtry.io;
 
+import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.memory.UnsafeHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class IOUtilsTest
 {
     @Test
-    public void copyByTest()
+    public void copyByTestCloseGiveTrue()
             throws IOException
     {
         ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8));
@@ -35,5 +39,47 @@ public class IOUtilsTest
         IOUtils.copyBytes(inputStream, outputStream, 1024, true);
 
         Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+    }
+
+    @Test
+    public void copyByTestGiveFalse()
+            throws IOException, InstantiationException
+    {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = AopFactory.proxy(PrintStream.class)
+                .byInstance(UnsafeHelper.allocateInstance(PrintStream.class))
+                .whereMethod(methodInfo -> methodInfo.getName().equals("write") &&
+                        Arrays.equals(methodInfo.getParameterTypes(),
+                                new Class[] {byte[].class, int.class, int.class}))
+                .around(proxyContext -> {
+                    byte[] buf = (byte[]) proxyContext.getArgs()[0];
+                    outputStream.write(buf, (int) proxyContext.getArgs()[1], (int) proxyContext.getArgs()[2]);
+                    return null;
+                });
+
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
+            IOUtils.copyBytes(inputStream, printStream, 1024, false);
+            Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+        }
+    }
+
+    @Test
+    public void copyByTestReturnCheckError()
+            throws InstantiationException
+    {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = AopFactory.proxy(PrintStream.class)
+                .byInstance(UnsafeHelper.allocateInstance(PrintStream.class))
+                .whereMethod(methodInfo -> methodInfo.getName().equals("checkError"))
+                .around(proxyContext -> true);
+
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
+            IOUtils.copyBytes(inputStream, printStream, 1024, false);
+            Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+            Assert.fail();
+        }
+        catch (IOException e) {
+            Assert.assertEquals(e.getMessage(), "Unable to write to output stream.");
+        }
     }
 }

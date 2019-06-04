@@ -33,31 +33,25 @@ public class VmFuture<R extends Serializable>
 {
     private final Process process;
     private final Future<VmResult<R>> future;
-    private volatile JVMException error;
 
     public VmFuture(AtomicReference<Process> processAtomic, Callable<VmResult<R>> callable)
             throws JVMException, InterruptedException
     {
         requireNonNull(processAtomic, "process is null");
         ExecutorService service = Executors.newSingleThreadExecutor();
-        this.future = service.submit(() -> {
-            try {
-                return callable.call();
-            }
-            catch (JVMException e) {
-                this.error = e;
-                throw error;
-            }
-            catch (Throwable e) {
-                this.error = new JVMException(e);
-                throw error;
-            }
-        });
+        this.future = service.submit(callable);
         service.shutdown();
 
         while (processAtomic.get() == null) {
             if (future.isDone()) {
-                throw error;   // this throws ExecutionException
+                try {
+                    R r = future.get().get();
+                    throw new JVMException("Async failed! future.isDone() result:" + r);
+                }
+                catch (ExecutionException e) {
+                    // this throws ExecutionException
+                    throw new JVMException(e.getCause());
+                }
             }
 
             TimeUnit.MILLISECONDS.sleep(1);
@@ -89,44 +83,23 @@ public class VmFuture<R extends Serializable>
     }
 
     public R get()
-            throws JVMException, InterruptedException
+            throws JVMException, InterruptedException, ExecutionException
     {
-        if (error != null) {
-            throw error;
-        }
-        try {
-            return future.get().get();
-        }
-        catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof JVMException) {
-                throw (JVMException) cause;
-            }
-            throw new JVMException(e);
-        }
+        return future.get().get();
     }
 
     public R get(long timeout, TimeUnit unit)
-            throws JVMException, InterruptedException, TimeoutException
+            throws JVMException, InterruptedException, TimeoutException, ExecutionException
     {
-        if (error != null) {
-            throw error;
-        }
-        try {
-            return future.get(timeout, unit).get();
-        }
-        catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof JVMException) {
-                throw (JVMException) cause;
-            }
-            throw new JVMException(e);
-        }
+        return future.get(timeout, unit).get();
     }
 
     public boolean isRunning()
     {
-        return !future.isDone() && getVmProcess().isAlive();
+        if (future.isDone()) {
+            return false;
+        }
+        return getVmProcess().isAlive();
     }
 
     public void cancel()

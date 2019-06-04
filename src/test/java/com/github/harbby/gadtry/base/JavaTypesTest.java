@@ -15,14 +15,21 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.aop.AopFactory;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
+import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavaTypesTest
 {
@@ -30,20 +37,30 @@ public class JavaTypesTest
     public void make()
             throws IOException
     {
-        Type type = JavaTypes.make(List.class, new Type[] {String.class}, Map.class);
-        Assert.assertTrue(Serializables.serialize((Serializable) type).length > 0);
-        Assert.assertTrue(type.toString().length() > 0);
+        Type listType = JavaTypes.make(List.class, new Type[] {String.class}, null);
+        Type maType = JavaTypes.make(Map.class, new Type[] {String.class, listType}, null);
+
+        Assert.assertTrue(Serializables.serialize((Serializable) maType).length > 0);
+        Assert.assertTrue(maType.toString().length() > 0);
     }
 
     @Test
     public void makePrimitive()
     {
         try {
-            Type type = JavaTypes.make(List.class, new Type[] {int.class}, null);
+            JavaTypes.make(List.class, new Type[] {int.class}, null);
             Assert.fail();
         }
         catch (IllegalStateException e) {
             Assert.assertEquals(e.getMessage(), "Java Generic Type not support PrimitiveType");
+        }
+
+        try {
+            JavaTypes.make(int.class, new Type[] {String.class}, null);
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "rawType int must not PrimitiveType");
         }
     }
 
@@ -55,6 +72,15 @@ public class JavaTypesTest
     }
 
     @Test
+    public void isClassType()
+    {
+        Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
+        Assert.assertTrue(JavaTypes.isClassType(type));
+        Assert.assertFalse(JavaTypes.isClassType(AopFactory.proxy(Type.class).byInstance(String.class).before(a -> {})));
+        Assert.assertTrue(JavaTypes.isClassType(String.class));
+    }
+
+    @Test
     public void typeToClass()
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
@@ -63,18 +89,28 @@ public class JavaTypesTest
     }
 
     @Test
+    public void typeToClassGiveGenericArrayType()
+    {
+        Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
+        Type arrayType = GenericArrayTypeImpl.make(type);
+
+        Assert.assertTrue(JavaTypes.isClassType(arrayType));
+        Assert.assertEquals(JavaTypes.typeToClass(arrayType), List[].class);
+
+        try {
+            JavaTypes.typeToClass(AopFactory.proxy(Type.class).byInstance(String.class).before(a -> {}));
+            Assert.fail();
+        }
+        catch (IllegalArgumentException e) {
+            Assert.assertEquals("Cannot convert type to class", e.getMessage());
+        }
+    }
+
+    @Test
     public void arrayTypeToClass()
     {
         Type type = JavaTypes.make(List[].class, new Type[] {String.class}, null);
         Assert.assertEquals(JavaTypes.typeToClass(type), List[].class);
-    }
-
-    @Test
-    public void isClassType()
-    {
-        Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
-        Assert.assertTrue(JavaTypes.isClassType(type));
-        Assert.assertTrue(JavaTypes.isClassType(String.class));
     }
 
     @Test
@@ -93,14 +129,26 @@ public class JavaTypesTest
         Assert.assertEquals(type.hashCode(), type2.hashCode());
     }
 
-//    @Test
-//    public void typeGenericSignatureTest()
-//            throws NoSuchMethodException
-//    {
-//        //see:  java.lang.reflect.Field.class.getDeclaredMethod("getGenericSignature");
-//
-//        Type mapType = JavaTypes.make(HashMap.class, new Type[] {String.class, Double.class}, null);
-//        String signature = TypeFactory.defaultInstance().constructType(mapType).getGenericSignature();
-//        Assert.assertEquals(signature, "Ljava/util/HashMap<Ljava/lang/String;Ljava/lang/Double;>;");
-//    }
+    @Test
+    public void getWrapperClass()
+    {
+        List<Class<?>> pack = PRIMITIVE_TYPES.stream()
+                .map(JavaTypes::getWrapperClass)
+                .collect(Collectors.toList());
+
+        List<Class<?>> typeClassList = pack.stream().map(x -> noCatch(() -> {
+            Field field = x.getField("TYPE");
+            field.setAccessible(true);
+            return (Class<?>) field.get(null);
+        })).collect(Collectors.toList());
+
+        Assert.assertEquals(PRIMITIVE_TYPES, typeClassList);
+
+        try {
+            JavaTypes.getWrapperClass(Object.class);
+            Assert.fail();
+        }
+        catch (UnsupportedOperationException ignored) {
+        }
+    }
 }
