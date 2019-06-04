@@ -34,7 +34,7 @@ public interface Graph<E, R>
 {
     String getName();
 
-    Iterable<String> printShow();
+    List<String> printShow();
 
     /**
      * 打印graph结构

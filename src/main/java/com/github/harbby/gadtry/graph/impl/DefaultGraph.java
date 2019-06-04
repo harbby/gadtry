@@ -94,7 +94,7 @@ public class DefaultGraph<E, R>
     }
 
     @Override
-    public Iterable<String> printShow()
+    public List<String> printShow()
     {
         List<String> builder = new ArrayList<>();
         builder.add("/");

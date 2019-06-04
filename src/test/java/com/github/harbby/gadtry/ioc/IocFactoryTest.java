@@ -47,6 +47,7 @@ public class IocFactoryTest
         TestInject testInject2 = iocFactory.getInstance(TestInject.class);
         Assert.assertTrue(testInject != testInject2);
         Assert.assertTrue(testInject == testInject.getTest());
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -57,6 +58,7 @@ public class IocFactoryTest
         });
 
         Assert.assertTrue(iocFactory.getInstance(List.class) != iocFactory.getInstance(List.class));
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -69,6 +71,7 @@ public class IocFactoryTest
         Set a1 = iocFactory.getInstance(Set.class);
         Set a2 = iocFactory.getInstance(Set.class);
         Assert.assertTrue(a1 == a2); // Single object
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -81,6 +84,7 @@ public class IocFactoryTest
         Map map1 = iocFactory.getInstance(Map.class);
         Map map2 = iocFactory.getInstance(Map.class);
         Assert.assertEquals(true, map1 == map2);  //Single object,单例对象
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -101,6 +105,7 @@ public class IocFactoryTest
         Supplier a6 = iocFactory.getCreator(HashSet.class);
         Assert.assertTrue(a5 != a6);
         Assert.assertTrue(a5.get() == a6.get());
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -120,6 +125,7 @@ public class IocFactoryTest
         Set set2 = iocFactory.getInstance(Set.class);
         Assert.assertNotNull(set1);
         Assert.assertTrue(set1 == set2);  //Single
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -134,6 +140,7 @@ public class IocFactoryTest
         StringBuilder instance2 = iocFactory.getInstance(StringBuilder.class);
         Assert.assertNotNull(instance1);
         Assert.assertTrue(instance1 != instance2);  //no Single
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test
@@ -147,6 +154,7 @@ public class IocFactoryTest
         Set set2 = iocFactory.getInstance(Set.class);
         Assert.assertNotNull(set1);
         Assert.assertTrue(set1 != set2);  //no Single
+        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
     }
 
     @Test

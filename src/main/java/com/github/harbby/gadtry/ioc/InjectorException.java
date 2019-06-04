@@ -18,6 +18,8 @@ package com.github.harbby.gadtry.ioc;
 public class InjectorException
         extends RuntimeException
 {
+    static final long serialVersionUID = -77774732743L;
+
     public InjectorException(String message)
     {
         super(message);
