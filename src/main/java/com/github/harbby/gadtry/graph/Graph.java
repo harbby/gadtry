@@ -65,6 +65,8 @@ public interface Graph<E, R>
 
     Route<E, R> getRoute(String... ids);
 
+    public Node<E, R> getNode(String id);
+
     static <E, R> GraphBuilder<E, R> builder()
     {
         return new GraphBuilder<>();

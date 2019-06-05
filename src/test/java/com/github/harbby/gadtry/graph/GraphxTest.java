@@ -52,6 +52,16 @@ public class GraphxTest
         List<? extends Route<?, ?>> list = graph.searchRuleRoute(route -> true);
         Assert.assertEquals(list.size(), 6);
         graph.printShow().forEach(System.out::println);
+
+        Assert.assertEquals(graph.getNode("a2").nextNodes().size(), 2);
+
+        try {
+            graph.getNode("a100");
+            Assert.fail();
+        }
+        catch (NullPointerException e) {
+            Assert.assertEquals(e.getMessage(), "NO SUCH Node a100");
+        }
     }
 
     @Test

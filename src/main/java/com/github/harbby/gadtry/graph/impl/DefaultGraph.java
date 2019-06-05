@@ -96,6 +96,12 @@ public class DefaultGraph<E, R>
     }
 
     @Override
+    public Node<E, R> getNode(String id)
+    {
+        return requireNonNull(nodes.get(id), "NO SUCH Node " + id);
+    }
+
+    @Override
     public List<String> printShow()
     {
         List<String> builder = new ArrayList<>();

@@ -28,7 +28,7 @@ public class TupleTest
             Tuple4.class, Tuple5.class};
 
     @Test
-    public void TupleSizeTest()
+    public void tupleSizeTest()
             throws Exception
     {
         for (Class aClass : tupleClass) {
@@ -49,6 +49,29 @@ public class TupleTest
             Assert.assertEquals(tuple, copy);
             Assert.assertTrue(aClass.isInstance(copy));
             //---------------------------------------
+            Assert.assertEquals(tuple, tuple);
+            Assert.assertFalse(tuple.equals(null));
+            Assert.assertFalse(tuple.equals(""));
+        }
+    }
+
+    @Test
+    public void tupleEqTest()
+            throws Exception
+    {
+        for (Class aClass : tupleClass) {
+            Constructor[] constructors = aClass.getConstructors();
+            Assert.assertEquals(1, constructors.length);
+            int columnCnt = constructors[0].getParameterCount();
+            Object[] array = Streams.range(0, columnCnt).mapToObj(x -> x).toArray();
+            Tuple tuple = (Tuple) constructors[0].newInstance(array);
+
+            for (int i = 0; i < columnCnt; i++) {
+                Object[] newArray = Arrays.copyOf(array, columnCnt);
+                newArray[i] = -9999;
+                Tuple tuple2 = (Tuple) constructors[0].newInstance(newArray);
+                Assert.assertNotEquals(tuple, tuple2);
+            }
         }
     }
 }
