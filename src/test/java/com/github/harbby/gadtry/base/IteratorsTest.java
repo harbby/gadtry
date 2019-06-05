@@ -62,6 +62,23 @@ public class IteratorsTest
     }
 
     @Test
+    public void getFirstByIteratorReturn2()
+    {
+        List<String> list = Arrays.asList("1", "2", "3");
+
+        Assert.assertEquals(list.get(0), Iterators.getFirst(list.iterator(), 0));
+        Assert.assertEquals(list.get(1), Iterators.getFirst(list.iterator(), 1));
+        Assert.assertEquals(list.get(2), Iterators.getFirst(list.iterator(), 2));
+
+        try {
+            Iterators.getFirst(Iterators.empty(), 999);
+            Assert.fail();
+        }
+        catch (NoSuchElementException ignored) {
+        }
+    }
+
+    @Test
     public void getLastTestByIterator()
     {
         List<String> list = Arrays.asList("1", "2", "3");

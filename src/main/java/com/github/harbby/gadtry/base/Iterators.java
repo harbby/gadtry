@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -87,6 +88,36 @@ public class Iterators
     {
         requireNonNull(iterator);
         return !iterator.hasNext();
+    }
+
+    public static <T> T getFirst(Iterator<T> iterator, int index, T defaultValue)
+    {
+        requireNonNull(iterator);
+        checkState(index >= 0, "must index >= 0");
+        T value;
+        int number = 0;
+        while (iterator.hasNext()) {
+            value = iterator.next();
+            if (number++ == index) {
+                return value;
+            }
+        }
+        return defaultValue;
+    }
+
+    public static <T> T getFirst(Iterator<T> iterator, int index)
+    {
+        requireNonNull(iterator);
+        checkState(index >= 0, "must index >= 0");
+        T value;
+        int number = 0;
+        while (iterator.hasNext()) {
+            value = iterator.next();
+            if (number++ == index) {
+                return value;
+            }
+        }
+        throw new NoSuchElementException();
     }
 
     public static <T> T getLast(Iterator<T> iterator)
