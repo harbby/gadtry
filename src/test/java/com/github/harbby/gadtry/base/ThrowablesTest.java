@@ -19,6 +19,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 
@@ -31,15 +33,28 @@ public class ThrowablesTest
     @Test
     public void testNoCatch()
     {
-        noCatch(() -> { new URL("file:"); });
-        URL url1 = noCatch(() -> new URL("file:"));
+        noCatch(() -> {});
+        Assert.assertEquals(noCatch(() -> "done"), "done");
+        try {
+            noCatch(() -> {
+                if (true) {
+                    throw new MalformedURLException();
+                }
+            });
+            Assert.fail();
+            Throwables.throwsException(MalformedURLException.class);
+        }
+        catch (MalformedURLException ignored) {
+        }
 
         try {
-            URL url = noCatch(() -> new URL("/harbby"));
+            noCatch(() -> {
+                throw new MalformedURLException();
+            });
             Assert.fail();
+            Throwables.throwsException(MalformedURLException.class);
         }
-        catch (Exception e) {
-            Assert.assertTrue(e instanceof IOException);
+        catch (MalformedURLException ignored) {
         }
     }
 
@@ -109,6 +124,24 @@ public class ThrowablesTest
         error = new SQLException(error);
         Throwable rootCause = Throwables.getRootCause(error);
         Assert.assertTrue(rootCause instanceof ClassCastException);
+    }
+
+    @Test
+    public void getRootCauseLoopErrorTest()
+            throws NoSuchFieldException, IllegalAccessException
+    {
+        Throwable error1 = new ClassCastException("cast error");
+        Throwable error2 = new IOException(error1);
+
+        Field field = Throwable.class.getDeclaredField("cause");
+        field.setAccessible(true);
+        field.set(error1, error2);
+        try {
+            Throwables.getRootCause(error2);
+        }
+        catch (IllegalArgumentException e) {
+            Assert.assertEquals(e.getMessage(), "Loop in causal chain detected.");
+        }
     }
 
     @Test

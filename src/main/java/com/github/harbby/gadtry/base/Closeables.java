@@ -17,14 +17,13 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.function.exception.Consumer;
 
-import java.io.Closeable;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public interface Closeables<T>
-        extends Closeable, Serializable
+        extends AutoCloseable, Serializable
 {
     /**
      * Closes this stream and releases any system resources associated
@@ -35,7 +34,7 @@ public interface Closeables<T>
      * close may fail require careful attention. It is strongly advised
      * to relinquish the underlying resources and to internally
      * <em>mark</em> the {@code Closeable} as closed, prior to throwing
-     * the {@code IOException}.
+     * the {@code Exception}.
      */
     public void close();
 

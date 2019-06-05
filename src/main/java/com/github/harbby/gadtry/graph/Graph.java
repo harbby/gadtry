@@ -114,6 +114,7 @@ public interface Graph<E, R>
             Node.Builder<E, R> outNode = requireNonNull(nodes.get(node2), "Unable to create edge because " + node2 + " does not exist");
             Edge<E, R> eEdge = createEdge(outNode.build(), edgeData);
             inNode.addNextNode(eEdge);
+            //todo: 环
             rootNodes.remove(node2);  //从根节点列表中删除
             return this;
         }

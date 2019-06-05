@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.v1;
 
 import com.github.harbby.gadtry.aop.model.MethodInfo;
-import com.github.harbby.gadtry.function.exception.Function;
+import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public interface MethodFilter<T>
 {
@@ -32,16 +33,16 @@ public interface MethodFilter<T>
 
     public T returnType(Class<?>... returnTypes);
 
-    public T whereMethod(Function<MethodInfo, Boolean> whereMethod);
+    public T whereMethod(Function1<MethodInfo, Boolean> whereMethod);
 
-    public static Function<MethodInfo, Boolean> buildMethodFilter(
+    public static Function1<MethodInfo, Boolean> buildMethodFilter(
             Class<? extends Annotation>[] methodAnnotations,
             Class<?>[] inReturnTypes,
-            Function<MethodInfo, Boolean> whereMethod)
+            Function1<MethodInfo, Boolean> whereMethod)
     {
-        final Class<?>[] returnTypes = inReturnTypes == null ?
-                null :
-                Arrays.stream(inReturnTypes).flatMap(aClass -> {
+        checkState(inReturnTypes != null, "inReturnTypes is null");
+        final Class<?>[] returnTypes = Arrays.stream(inReturnTypes)
+                .flatMap(aClass -> {
                     if (aClass == Boolean.class || aClass == boolean.class) {
                         return Stream.of(Boolean.class, boolean.class);
                     }
@@ -50,6 +51,9 @@ public interface MethodFilter<T>
                     }
                     else if (aClass == Byte.class || aClass == byte.class) {
                         return Stream.of(Byte.class, byte.class);
+                    }
+                    else if (aClass == float.class || aClass == Float.class) {
+                        return Stream.of(float.class, Float.class);
                     }
                     else if (aClass == Short.class || aClass == short.class) {
                         return Stream.of(Short.class, short.class);
@@ -71,11 +75,11 @@ public interface MethodFilter<T>
                     }
                 }).toArray(Class<?>[]::new);
 
-        final List<Function<MethodInfo, Boolean>> filters = new ArrayList<>();
+        final List<Function1<MethodInfo, Boolean>> filters = new ArrayList<>();
         if (whereMethod != null) {
             filters.add(whereMethod);
         }
-        if (returnTypes != null && returnTypes.length > 0) {
+        if (returnTypes.length > 0) {
             filters.add(methodInfo -> checkContainsTrue(returnType -> returnType.isAssignableFrom(methodInfo.getReturnType()), returnTypes));
         }
         if (methodAnnotations != null && methodAnnotations.length > 0) {
@@ -83,7 +87,7 @@ public interface MethodFilter<T>
         }
 
         return methodInfo -> {
-            for (Function<MethodInfo, Boolean> filter : filters) {
+            for (Function1<MethodInfo, Boolean> filter : filters) {
                 if (!filter.apply(methodInfo)) {
                     return false;
                 }

@@ -20,7 +20,9 @@ import com.github.harbby.gadtry.graph.impl.NodeOperator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class GraphxTest
 {
@@ -48,7 +50,51 @@ public class GraphxTest
                 .addEdge("a3", "a6")
                 .create();
 
+        Assert.assertEquals("test1", graph.getName());
         graph.printShow().forEach(System.out::println);
+    }
+
+    @Test
+    public void testRoute()
+    {
+        Graph<?, ?> graph = Graph.builder()
+                .addNode("Throwable")
+                .addNode("Exception")
+                .addNode("IOException")
+                .addNode("FileNotFoundException")
+
+                .addNode("RuntimeException")
+                .addNode("UnsupportedOperationException")
+                .addNode("IllegalArgumentException")
+
+                .addNode("Error")
+                .addNode("OutOfMemoryError")
+                .addNode("NoClassDefFoundError")
+
+                .addEdge("Throwable", "Exception")
+                .addEdge("Throwable", "Error")
+
+                .addEdge("Exception", "IOException")
+                .addEdge("Exception", "FileNotFoundException")
+                .addEdge("Exception", "RuntimeException")
+                .addEdge("RuntimeException", "UnsupportedOperationException")
+                .addEdge("RuntimeException", "IllegalArgumentException")
+
+                .addEdge("Error", "OutOfMemoryError")
+                .addEdge("Error", "NoClassDefFoundError")
+                .create();
+
+        List<? extends Route<?, ?>> routes = graph.searchRuleRoute("Throwable", route -> {
+            return !route.getLastNode().getId().equals("NoClassDefFoundError");
+        });
+
+        routes = routes.stream().filter(route1->{
+            return route1.getEndNode().getId().equals("NoClassDefFoundError");
+        }).collect(Collectors.toList());
+
+        Route<?, ?> route = routes.get(0);
+        Node node = route.getLastEdge();
+        Assert.assertEquals(node.getId(), "Error");
     }
 
     @Test

@@ -40,23 +40,23 @@ public class Files
 
     private static void scanFiles(File input, boolean recursive, FileFilter filter, List<File> list)
     {
-        if (input.isDirectory()) {
-            File[] tmp = input.listFiles(filter);
-            if (tmp == null) {
-                return;
-            }
-
-            for (File it : tmp) {
-                if (it.isFile()) {
-                    list.add(it);
-                }
-                else if (recursive) {  //Directory()
-                    scanFiles(it, recursive, filter, list);
-                }
-            }
-        }
-        else {
+        if (input.isFile()) {
             list.add(input);
+            return;
+        }
+
+        File[] tmp = input.listFiles(filter);
+        if (tmp == null) {
+            return;
+        }
+
+        for (File it : tmp) {
+            if (it.isFile()) {
+                list.add(it);
+            }
+            else if (recursive) {  //Directory()
+                scanFiles(it, recursive, filter, list);
+            }
         }
     }
 }

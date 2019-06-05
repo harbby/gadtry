@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.collection.mutable.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -26,6 +27,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class CloseablesTest
 {
@@ -40,6 +42,50 @@ public class CloseablesTest
             Assert.assertTrue(classLoader == urlClassLoader);
         }
         Assert.assertTrue(Thread.currentThread().getContextClassLoader() != urlClassLoader);
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void getReturnError()
+    {
+        Closeables.autoClose(() -> {}).get();
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void getCloseError()
+    {
+        try (Closeables closeables = Closeables.autoClose(() -> {
+            throw new IOException("close");
+        })) {
+            Assert.assertNull(closeables.get());
+            Throwables.throwsException(IOException.class);
+        }
+        catch (IOException e) {
+            Assert.assertEquals(e.getMessage(), "close");
+        }
+    }
+
+    @Test
+    public void autoCloseGiveNullInstance()
+    {
+        try (Closeables<Connection> closeables = Closeables.autoClose(null, conn -> {})) {
+            Assert.assertNull(closeables.get());
+        }
+    }
+
+    @Test
+    public void autoCloseGiveErrorClose()
+    {
+        try (Closeables<String> closeables = Closeables.autoClose("init", conn -> {
+            throw new IOException("close error");
+        })) {
+            Assert.assertEquals(closeables.get(), "init");
+            throw new IOException("running error");
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            Assert.assertEquals("running error", e.getMessage());
+            Assert.assertEquals("close error", e.getSuppressed()[0].getMessage());
+        }
     }
 
     @Test

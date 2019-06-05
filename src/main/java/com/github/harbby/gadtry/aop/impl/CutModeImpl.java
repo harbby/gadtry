@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
 
@@ -34,7 +35,7 @@ public class CutModeImpl<T>
     private final ClassLoader loader;
 
     private final Proxy proxy;
-    private final Supplier<Function<MethodInfo, Boolean>> methodFilter =
+    private final Supplier<Function1<MethodInfo, Boolean>> methodFilter =
             Lazys.goLazy(this::getMethodFilter);
 
     protected CutModeImpl(Class<?> interfaces, T instance, Proxy proxy)
@@ -50,14 +51,14 @@ public class CutModeImpl<T>
         return new CutModeImpl<>(interfaces, instance, proxy);
     }
 
-    protected Function<MethodInfo, Boolean> getMethodFilter()
+    protected Function1<MethodInfo, Boolean> getMethodFilter()
     {
         return (method) -> true;
     }
 
     private T getProxy(InvocationHandler handler, Class<?> interfaces)
     {
-        Function<MethodInfo, Boolean> filter = this.methodFilter.get();
+        Function1<MethodInfo, Boolean> filter = this.methodFilter.get();
         return getProxyStatic(proxy, loader, interfaces, handler, instance, filter);
     }
 
@@ -67,7 +68,7 @@ public class CutModeImpl<T>
             Class<?> interfaces,
             InvocationHandler handler,
             T instance,
-            Function<MethodInfo, Boolean> filter)
+            Function1<MethodInfo, Boolean> filter)
     {
         InvocationHandler proxyHandler = filter != null ?
                 (InvocationHandler & Serializable) (proxy, method, args) -> {

@@ -52,7 +52,7 @@ public interface IocFactory
 
     public static IocFactory create(Bean... beans)
     {
-        BindMapping bindMapping = BindMapping.create(ReplaceHandler.INSTANCE, beans);
+        BindMapping bindMapping = BindMapping.create(beans);
         return new IocFactoryImpl(bindMapping, beans);
     }
 

@@ -21,7 +21,7 @@ import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.classloader.ClassScanner;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
-import com.github.harbby.gadtry.function.exception.Function;
+import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -29,8 +29,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static java.util.Objects.requireNonNull;
 
 public class FilterBuilder
@@ -46,7 +44,7 @@ public class FilterBuilder
     //-- method filter
     private Class<? extends Annotation>[] methodAnnotations = new Class[0];
     private Class<?>[] returnTypes = new Class[0];
-    private Function<MethodInfo, Boolean> whereMethod;
+    private Function1<MethodInfo, Boolean> whereMethod;
 
     public FilterBuilder(Pointcut pointcut)
     {
@@ -69,7 +67,7 @@ public class FilterBuilder
     }
 
     @Override
-    public FilterBuilder whereMethod(Function<MethodInfo, Boolean> whereMethod)
+    public FilterBuilder whereMethod(Function1<MethodInfo, Boolean> whereMethod)
     {
         this.whereMethod = requireNonNull(whereMethod);
         return this;
@@ -105,22 +103,15 @@ public class FilterBuilder
     @Override
     public FilterBuilder subclassOf(Class<?>... subclasses)
     {
-        this.subclasses = subclasses;
+        this.subclasses = requireNonNull(subclasses);
         return this;
     }
 
     @Override
-    public FilterBuilder whereClass(Function<ClassInfo, Boolean> whereClass)
+    public FilterBuilder whereClass(Function1<ClassInfo, Boolean> whereClass)
     {
-        checkState(whereClass != null, "whereClass is null");
-        this.whereClass = (aClass) -> {
-            try {
-                return whereClass.apply(ClassInfo.of(aClass));
-            }
-            catch (Exception e) {
-                throw throwsException(e);
-            }
-        };
+        requireNonNull(whereClass, "whereClass is null");
+        this.whereClass = (aClass) -> whereClass.apply(ClassInfo.of(aClass));
         return this;
     }
 
@@ -137,19 +128,12 @@ public class FilterBuilder
         }
         scanClass.addAll(inputClass);
 
-        Function<MethodInfo, Boolean> methodFilter = MethodFilter.buildMethodFilter(methodAnnotations, returnTypes, whereMethod);
+        Function1<MethodInfo, Boolean> methodFilter = MethodFilter.buildMethodFilter(methodAnnotations, returnTypes, whereMethod);
 
         //---class filter
         Set<Class<?>> searchClass = scanClass.stream().filter(
                 aClass -> !Arrays.stream(aClass.getMethods())
-                        .map(method -> {
-                            try {
-                                return !(methodFilter.apply(MethodInfo.of(method)));
-                            }
-                            catch (Exception e) {
-                                throw throwsException(e);
-                            }
-                        })
+                        .map(method -> !(methodFilter.apply(MethodInfo.of(method))))
                         .reduce((x, y) -> x && y).orElse(false)
         ).collect(Collectors.toSet());
 

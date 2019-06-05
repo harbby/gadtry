@@ -25,7 +25,7 @@ import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.FilterBuilder;
 import com.github.harbby.gadtry.aop.v1.MethodFilter;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
-import com.github.harbby.gadtry.function.exception.Function;
+import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -97,7 +97,7 @@ public interface AopFactory
         //-- method filter
         private Class<? extends Annotation>[] methodAnnotations = new Class[0];
         private Class<?>[] returnTypes = new Class<?>[0];
-        private Function<MethodInfo, Boolean> whereMethod;
+        private Function1<MethodInfo, Boolean> whereMethod;
 
         private ProxyBuilder(Class<?> interfaces, T instance, Proxy proxy)
         {
@@ -120,14 +120,14 @@ public interface AopFactory
         }
 
         @Override
-        public ProxyBuilder<T> whereMethod(Function<MethodInfo, Boolean> whereMethod)
+        public ProxyBuilder<T> whereMethod(Function1<MethodInfo, Boolean> whereMethod)
         {
             this.whereMethod = whereMethod;
             return this;
         }
 
         @Override
-        protected Function<MethodInfo, Boolean> getMethodFilter()
+        protected Function1<MethodInfo, Boolean> getMethodFilter()
         {
             return MethodFilter.buildMethodFilter(methodAnnotations, returnTypes, whereMethod);
         }

@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,14 +28,14 @@ public class GraphUtil
 {
     private GraphUtil() {}
 
-    public static class PrintContext
-    {
-        private final List<String> builder = new ArrayList<>();
-        private final Set<String> looped = new HashSet<>();
-
-        private List<Node> nodes;
-        private String header;
-    }
+//    public static class PrintContext
+//    {
+//        private final List<String> builder = new ArrayList<>();
+//        private final Set<String> looped = new HashSet<>();
+//
+//        private List<Node> nodes;
+//        private String header;
+//    }
 
     public static void printShow(List<String> builder, List<Node> firstNodes)
     {

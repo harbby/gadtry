@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.v1;
 
 import com.github.harbby.gadtry.aop.model.ClassInfo;
-import com.github.harbby.gadtry.function.exception.Function;
+import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
 
@@ -36,5 +36,5 @@ public interface ClassFilter<T>
      */
     public T subclassOf(Class<?>... subclasses);
 
-    public T whereClass(Function<ClassInfo, Boolean> whereClass);
+    public T whereClass(Function1<ClassInfo, Boolean> whereClass);
 }

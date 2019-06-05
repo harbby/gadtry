@@ -79,7 +79,8 @@ class InternalContext
     private <T> T getNewInstance(Class<T> driver)
     {
         try {
-            return newInstance(driver);
+            T userValue = (T) userCreator.apply(driver);
+            return userValue == null ? newInstance(driver) : userValue;
         }
         catch (InvocationTargetException e) {
             throw throwsThrowable(e.getTargetException());
@@ -104,16 +105,9 @@ class InternalContext
         for (Class<?> argType : constructor.getParameterTypes()) {
             checkState(argType != driver && check(argType), "Found a circular dependency involving " + driver + ", and circular dependencies are disabled.");
 
-            Object userValue = userCreator.apply(argType);
-            if (userValue == null) {
-                Object value = getInstance(argType);
-                checkState(value != null, String.format("Could not find a suitable constructor in [%s]. Classes must have either one (and only one) constructor annotated with @Autowired or a constructor that is not private(and only one).", argType));
-                builder.add(value);
-            }
-            else {
-                checkState(argType.isInstance(userValue));
-                builder.add(userValue);
-            }
+            Object value = getInstance(argType);
+            checkState(value != null, String.format("Could not find a suitable constructor in [%s]. Classes must have either one (and only one) constructor annotated with @Autowired or a constructor that is not private(and only one).", argType));
+            builder.add(value);
         }
 
         T instance = constructor.newInstance(builder.toArray());

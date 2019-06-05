@@ -21,6 +21,8 @@ import com.github.harbby.gadtry.graph.Graph;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 
 public class IocFactoryImpl
         implements IocFactory
@@ -45,7 +47,7 @@ public class IocFactoryImpl
     @Override
     public <T> Creator<T> getCreator(Class<T> driver)
     {
-        return () -> InternalContext.of(binds, (driverClass) -> null).get(driver);
+        return () -> getInstance(driver, driverClass -> null);
     }
 
     @Override
@@ -58,7 +60,7 @@ public class IocFactoryImpl
     public Graph<Void, Void> analysis()
     {
         Graph.GraphBuilder<Void, Void> builder = Graph.builder();
-
+        final Set<Class> parserClass = new HashSet<>();
         Binder binder = new Binder()
         {
             @Override
@@ -126,6 +128,9 @@ public class IocFactoryImpl
                         builder.addNode(key.toString());
                         builder.addNode(field.getType().toString());
                         builder.addEdge(key.toString(), field.getType().toString());
+                        if (parserClass.add(key)) {
+                            parserDep(field.getType(), field.getType());
+                        }
                     }
                 }
             }
@@ -135,7 +140,11 @@ public class IocFactoryImpl
             bean.configure(binder);
         }
         Graph<Void, Void> graph = builder.create();
-        graph.searchRuleRoute(route -> {
+        if (parserClass.isEmpty()) {
+            return graph;
+        }
+        String begin = parserClass.iterator().next().toString();
+        graph.searchRuleRoute(begin, route -> {
             if (!route.containsDeadRecursion()) {
                 throw new IllegalArgumentException("Find Circular dependency" + route.getIds());
             }

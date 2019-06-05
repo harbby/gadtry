@@ -112,6 +112,25 @@ public class AopFactoryTest
     }
 
     @Test
+    public void classFilterTest()
+    {
+        AopFactory aopFactory = AopFactory.create(binder -> {
+            binder.bind("anyMethod")
+                    .withPackage("com.github.harbby")
+                    .subclassOf(Object.class)
+                    .whereClass(x -> true)
+                    .classes(AopFactoryTest.class) // or Set
+                    .methodAnnotated(Ignore.class)
+                    .whereMethod(method -> method.getName().startsWith("get"))
+                    .build()
+                    .before(methodInfo -> {});
+        });
+
+        AopFactoryTest aopTest = aopFactory.proxy(AopFactoryTest.class, new AopFactoryTest());
+        Assert.assertEquals(aopTest.get(), "hello");
+    }
+
+    @Test
     public void aopAfterReturningTest()
     {
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);

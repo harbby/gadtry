@@ -87,6 +87,11 @@ public interface BindMapping
         }
     }
 
+    public static BindMapping create(Bean... beans)
+    {
+        return create(IocFactory.ReplaceHandler.INSTANCE, beans);
+    }
+
     public static BindMapping create(IocFactory.ReplaceHandler proxyHandler, Bean... beans)
     {
         requireNonNull(proxyHandler, "proxyHandler is null");
@@ -97,7 +102,7 @@ public interface BindMapping
             @Override
             public <T> void bind(Class<T> key, T instance)
             {
-                builder.bind(key, () -> proxyHandler.replace(key, instance));
+                builder.bind(key, Lazys.goLazy(() -> proxyHandler.replace(key, instance)));
             }
 
             @Override

@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.aop;
 
+import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ProxyInstanceTest
         implements Supplier<String>
@@ -51,6 +54,23 @@ public class ProxyInstanceTest
 
         Assert.assertEquals(supplier.get(), "hello");
         Assert.assertTrue(atomicBoolean.get());
+    }
+
+    @Test
+    public void returnTypeTest()
+    {
+        List<Class<?>> primitiveTypes = com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
+        List<Class<?>> classWraps = primitiveTypes.stream().map(JavaTypes::getWrapperClass).collect(Collectors.toList());
+        List<Class<?>> allTypes = MutableList.<Class<?>>builder()
+                .addAll(primitiveTypes)
+                .addAll(classWraps)
+                .add(String.class)
+                .build();
+
+        Set set = AopFactory.proxy(Set.class).byInstance(new HashSet<String>())
+                .returnType(allTypes.toArray(new Class[0]))
+                .before(methodInfo -> {});
+        Assert.assertTrue(set.isEmpty());
     }
 
     @Test
