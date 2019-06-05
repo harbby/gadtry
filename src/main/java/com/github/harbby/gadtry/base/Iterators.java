@@ -22,6 +22,7 @@ import java.util.NoSuchElementException;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -92,7 +93,13 @@ public class Iterators
 
     public static <T> T getFirst(Iterator<T> iterator, int index, T defaultValue)
     {
+        return getFirst(iterator, index, (Supplier<T>) () -> defaultValue);
+    }
+
+    public static <T> T getFirst(Iterator<T> iterator, int index, Supplier<T> defaultValue)
+    {
         requireNonNull(iterator);
+        requireNonNull(defaultValue);
         checkState(index >= 0, "must index >= 0");
         T value;
         int number = 0;
@@ -102,22 +109,14 @@ public class Iterators
                 return value;
             }
         }
-        return defaultValue;
+        return defaultValue.get();
     }
 
     public static <T> T getFirst(Iterator<T> iterator, int index)
     {
-        requireNonNull(iterator);
-        checkState(index >= 0, "must index >= 0");
-        T value;
-        int number = 0;
-        while (iterator.hasNext()) {
-            value = iterator.next();
-            if (number++ == index) {
-                return value;
-            }
-        }
-        throw new NoSuchElementException();
+        return getFirst(iterator, index, (Supplier<T>) () -> {
+            throw new NoSuchElementException();
+        });
     }
 
     public static <T> T getLast(Iterator<T> iterator)

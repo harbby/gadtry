@@ -70,11 +70,20 @@ public class IteratorsTest
         Assert.assertEquals(list.get(1), Iterators.getFirst(list.iterator(), 1));
         Assert.assertEquals(list.get(2), Iterators.getFirst(list.iterator(), 2));
 
+        Assert.assertEquals("-1", Iterators.getFirst(Iterators.empty(), 999, "-1"));
+
         try {
             Iterators.getFirst(Iterators.empty(), 999);
             Assert.fail();
         }
         catch (NoSuchElementException ignored) {
+        }
+
+        try {
+            Iterators.getFirst(Iterators.empty(), -1);
+            Assert.fail();
+        }
+        catch (IllegalStateException ignored) {
         }
     }
 

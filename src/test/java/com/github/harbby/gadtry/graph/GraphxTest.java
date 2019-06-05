@@ -21,36 +21,79 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class GraphxTest
 {
+    private final Graph<?, ?> graph = Graph.builder()
+            .name("test1")
+            .addNode("a1")
+            .addNode("a2")
+            .addNode("a3")
+
+            .addEdge("a1", "a2")
+            .addEdge("a1", "a3")
+            //-----------------------------------------
+            .addNode("a4")
+            .addNode("a5")
+            .addNode("a6")
+
+            .addEdge("a2", "a4")
+            .addEdge("a2", "a5")
+            .addEdge("a3", "a6")
+            .create();
+
     @Test
     public void testCreateGraph1()
-            throws Exception
     {
-        Graph<?, ?> graph = Graph.builder()
-                .name("test1")
-                .addNode("a1")
-                .addNode("a2")
-                .addNode("a3")
-
-                .addEdge("a1", "a2")
-                .addEdge("a1", "a3")
-                //-----------------------------------------
-                .addNode("a4")
-                .addNode("a5")
-                .addNode("a6")
-
-                .addEdge("a2", "a4")
-                .addEdge("a2", "a5")
-                .addEdge("a3", "a6")
-                .create();
-
         Assert.assertEquals("test1", graph.getName());
-        graph.searchRuleRoute(route -> true);
+        List<? extends Route<?, ?>> list = graph.searchRuleRoute(route -> true);
+        Assert.assertEquals(list.size(), 6);
         graph.printShow().forEach(System.out::println);
+    }
+
+    @Test
+    public void getLastEdge()
+    {
+        Route<?, ?> route = graph.getRoute("a1", "a2", "a5");
+        Assert.assertEquals(route.getLastEdge().getOutNode().getId(), "a5");
+        try {
+            Route.builder(route.getLastNode()).create().getLastEdge();
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "this Route only begin node");
+        }
+    }
+
+    @Test
+    public void getLastNode()
+    {
+        Route<?, ?> route = graph.getRoute("a1", "a2", "a5");
+        Assert.assertEquals(route.getLastNode(2).getId(), "a1");
+        try {
+            route.getLastNode(3).getId();
+            Assert.fail();
+        }
+        catch (NoSuchElementException ignored) {
+        }
+    }
+
+    @Test
+    public void routeEqualsReturnTrue()
+    {
+        Route<?, ?> route1 = graph.getRoute("a1", "a2", "a5");
+        Route<?, ?> route2 = graph.getRoute("a1", "a2", "a5");
+        Assert.assertEquals(route1.hashCode(), route2.hashCode());
+        Assert.assertEquals(route1, route2);
+        Assert.assertEquals(route1, route1);
+        Assert.assertFalse(route1.equals(null));
+        Assert.assertFalse(route1.equals(""));
+
+        Assert.assertNotEquals(graph.getRoute("a1", "a2", "a5"), graph.getRoute("a2", "a5"));
+        Assert.assertNotEquals(graph.getRoute("a1", "a2", "a5"), graph.getRoute("a1", "a2"));
     }
 
     @Test

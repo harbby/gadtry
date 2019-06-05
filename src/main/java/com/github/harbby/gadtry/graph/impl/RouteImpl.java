@@ -95,7 +95,7 @@ public class RouteImpl<E, R>
             return Iterators.getFirst(iterator, n).getOutNode();
         }
         else {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException(String.valueOf(n));
         }
     }
 
