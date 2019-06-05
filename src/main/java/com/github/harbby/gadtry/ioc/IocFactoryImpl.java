@@ -145,7 +145,7 @@ public class IocFactoryImpl
         }
         String begin = parserClass.iterator().next().toString();
         graph.searchRuleRoute(begin, route -> {
-            if (!route.containsDeadRecursion()) {
+            if (!route.checkDeadLoop()) {
                 throw new IllegalArgumentException("Find Circular dependency" + route.getIds());
             }
             return true;

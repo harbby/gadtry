@@ -15,12 +15,14 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -108,8 +110,8 @@ public class GraphDemo
                 .collect(Collectors.toList());
 
         Assert.assertEquals(3, routes.size());
-        List<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toList());
-        Assert.assertEquals(paths.toString(), "[A-B-C-D-C, A-D-C-D-C, A-D-E-B-C]");
+        Set<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toSet());
+        Assert.assertEquals(paths, MutableSet.of("A-B-C-D-C", "A-D-C-D-C", "A-D-E-B-C"));
     }
 
     @Test
@@ -153,7 +155,7 @@ public class GraphDemo
     {
         List<Route<Void, EdgeData>> minRoutes = new ArrayList<>();
         List<Route<Void, EdgeData>> searchRoutes = graph.searchRuleRoute(first, route -> {
-            if (end.equals(route.getEndNodeId())) {
+            if (end.equals(route.getLastNodeId())) {
                 if (minRoutes.isEmpty()) {
                     minRoutes.add(route);
                     return false;
@@ -172,7 +174,7 @@ public class GraphDemo
             }
             else {
                 //这里给出理论: 起点和终点不同时如果一个点在轨迹中出现两次那么它一定不是最短路径.
-                return route.containsDeadRecursion();  //如果出现两次则无须继续递归查找
+                return route.checkDeadLoop();  //如果出现两次则无须继续递归查找
             }
         });
         checkState(!minRoutes.isEmpty(), "NO SUCH ROUTE " + first + " TO " + end);

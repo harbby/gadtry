@@ -55,7 +55,7 @@ public interface Graph<E, R>
     default List<Route<E, R>> searchRuleRoute(String in, String out, Function<Route<E, R>, Boolean> rule)
     {
         return searchRuleRoute(in, rule).stream()
-                .filter(x -> out.equals(x.getEndNodeId()))
+                .filter(x -> out.equals(x.getLastNodeId()))
                 .collect(Collectors.toList());
     }
 

@@ -15,12 +15,16 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
+import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
 
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -30,12 +34,18 @@ public class RouteImpl<E, R>
         implements Route<E, R>
 {
     private final Node<E, R> begin;
-    private final List<Edge<E, R>> edges;
+    private final Deque<Edge<E, R>> edges;
 
-    public RouteImpl(Node<E, R> begin, List<Edge<E, R>> edges)
+    public RouteImpl(Node<E, R> begin, Deque<Edge<E, R>> edges)
     {
         this.begin = begin;
-        this.edges = MutableList.copy(edges);
+        this.edges = edges;
+    }
+
+    @Override
+    public Route.Builder<E, R> copy()
+    {
+        return Route.builder(begin).addAll(this.edges);
     }
 
     @Override
@@ -52,14 +62,14 @@ public class RouteImpl<E, R>
      * @return true不存在死递归
      */
     @Override
-    public boolean containsDeadRecursion()
+    public boolean checkDeadLoop()
     {
         List<String> names = this.getIds().subList(0, this.size() - 1); //
-        return !names.contains(this.getEndNodeId());  //如果出现两次则无须继续递归查找
+        return !names.contains(this.getLastNodeId());  //如果出现两次则无须继续递归查找
     }
 
     @Override
-    public List<Edge<E, R>> getEdges()
+    public Deque<Edge<E, R>> getEdges()
     {
         return edges;
     }
@@ -74,36 +84,28 @@ public class RouteImpl<E, R>
      * 上一个
      */
     @Override
-    public Node<E, R> getLastNode()
+    public Node<E, R> getLastNode(int n)
     {
-        return this.size() > 1 ? this.getEdges().get(this.size() - 2).getOutNode() : begin;
+        Iterator<Edge<E, R>> iterator = this.edges.descendingIterator();
+
+        if (this.size() == n) {
+            return begin;
+        }
+        else if (this.size() > n) {
+            return Iterators.getFirst(iterator, n).getOutNode();
+        }
+        else {
+            throw new NoSuchElementException();
+        }
     }
 
     @Override
-    public Node<E, R> getLastEdge()
+    public Edge<E, R> getLastEdge()
     {
-        return this.size() > 1 ? this.getEdges().get(this.size() - 2).getOutNode() : begin;
-    }
-
-    /**
-     * 最后一个
-     */
-    @Override
-    public Node<E, R> getEndNode()
-    {
-        return getEndEdge().getOutNode();
-    }
-
-    @Override
-    public Edge<E, R> getEndEdge()
-    {
-        return edges.get(edges.size() - 1);
-    }
-
-    @Override
-    public String getEndNodeId()
-    {
-        return getEndNode().getId();
+        if (edges.isEmpty()) {
+            throw new IllegalStateException("this Route only begin node");
+        }
+        return edges.getLast();
     }
 
     @Override

@@ -33,24 +33,23 @@ public class GraphxTest
         Graph<?, ?> graph = Graph.builder()
                 .name("test1")
                 .addNode("a1")
-                .addNode("a0")
-                .addNode("a22")
+                .addNode("a2")
                 .addNode("a3")
 
-                .addEdge("a1", "a22")
+                .addEdge("a1", "a2")
                 .addEdge("a1", "a3")
-                .addEdge("a0", "a3")
                 //-----------------------------------------
                 .addNode("a4")
                 .addNode("a5")
                 .addNode("a6")
 
-                .addEdge("a22", "a4")
-                .addEdge("a22", "a5")
+                .addEdge("a2", "a4")
+                .addEdge("a2", "a5")
                 .addEdge("a3", "a6")
                 .create();
 
         Assert.assertEquals("test1", graph.getName());
+        graph.searchRuleRoute(route -> true);
         graph.printShow().forEach(System.out::println);
     }
 
@@ -85,15 +84,15 @@ public class GraphxTest
                 .create();
 
         List<? extends Route<?, ?>> routes = graph.searchRuleRoute("Throwable", route -> {
-            return !route.getLastNode().getId().equals("NoClassDefFoundError");
+            return !route.getLastNode(1).getId().equals("NoClassDefFoundError");
         });
 
-        routes = routes.stream().filter(route1->{
-            return route1.getEndNode().getId().equals("NoClassDefFoundError");
+        routes = routes.stream().filter(route1 -> {
+            return route1.getLastNode().getId().equals("NoClassDefFoundError");
         }).collect(Collectors.toList());
 
         Route<?, ?> route = routes.get(0);
-        Node node = route.getLastEdge();
+        Node node = route.getLastNode(1);
         Assert.assertEquals(node.getId(), "Error");
     }
 

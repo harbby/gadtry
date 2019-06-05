@@ -22,9 +22,11 @@ import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -117,22 +119,83 @@ public class DefaultGraph<E, R>
         return builder;
     }
 
-    private static <E, R> void search(List<Route<E, R>> routes,
-            Node<E, R> node,
+    /*
+     *  递归 深度优先
+     * */
+//    private static <E, R> void search(List<Route<E, R>> routes,
+//            Node<E, R> node,
+//            Function<Route<E, R>, Boolean> rule,
+//            Route.Builder<E, R> header)
+//    {
+//        Collection<Edge<E, R>> edges = node.nextNodes();
+//        for (Edge<E, R> edge : edges) {   //use stream.parallel();
+//            Route.Builder<E, R> builder = header.copy();
+//            builder.add(edge);
+//            Route<E, R> newRoute = builder.create();
+//
+//            if (rule.apply(newRoute)) {
+//                routes.add(newRoute);
+//                //edge.getOutNode().getDate().action(node.getDate());
+//                search(routes, edge.getOutNode(), rule, builder);
+//            }
+//        }
+//    }
+
+    /**
+     * 广度优先
+     */
+    private static <E, R> void search1(List<Route<E, R>> routes,
+            Node<E, R> beginNode,
             Function<Route<E, R>, Boolean> rule,
             Route.Builder<E, R> header)
     {
-        Collection<Edge<E, R>> edges = node.nextNodes();
-        for (Edge<E, R> edge : edges) {   //use stream.parallel();
-            Route.Builder<E, R> builder = header.copy();
-            builder.add(edge);
-            Route<E, R> newRoute = builder.create();
+        final Queue<Route<E, R>> nextNodes = new LinkedList<>();
+        final List<Node<E, R>> all = new ArrayList<>();
+        nextNodes.add(header.create());
 
-            if (rule.apply(newRoute)) {
-                routes.add(newRoute);
-                //edge.getOutNode().getDate().action(node.getDate());
-                search(routes, edge.getOutNode(), rule, builder);
+        Route<E, R> route = null;
+        while ((route = nextNodes.poll()) != null) {
+            all.add(route.getLastNode());
+            for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
+                Route.Builder<E, R> builder = route.copy();
+                builder.add(edge);
+                Route<E, R> newRoute = builder.create();
+                if (rule.apply(newRoute)) {
+                    routes.add(newRoute);
+                    nextNodes.add(newRoute);
+                }
             }
         }
+
+        System.out.println("path: " + all);
+    }
+
+    /**
+     * 深度优先
+     */
+    private static <E, R> void search(List<Route<E, R>> routes,
+            Node<E, R> beginNode,
+            Function<Route<E, R>, Boolean> rule,
+            Route.Builder<E, R> header)
+    {
+        final Deque<Route<E, R>> nextNodes = new LinkedList<>();  //Stack
+        final List<Node<E, R>> all = new ArrayList<>();
+        nextNodes.add(header.create());
+
+        Route<E, R> route = null;
+        while ((route = nextNodes.pollLast()) != null) {
+            all.add(route.getLastNode());
+            for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
+                Route.Builder<E, R> builder = route.copy();
+                builder.add(edge);
+                Route<E, R> newRoute = builder.create();
+                if (rule.apply(newRoute)) {
+                    routes.add(newRoute);
+                    nextNodes.add(newRoute);
+                }
+            }
+        }
+
+        System.out.println("path: " + all);
     }
 }

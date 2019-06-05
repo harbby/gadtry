@@ -39,6 +39,12 @@ public interface Edge<E, R>
             {
                 return edgeData;
             }
+
+            @Override
+            public String toString()
+            {
+                return "->" + outNode.getId();
+            }
         };
     }
 }

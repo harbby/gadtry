@@ -17,40 +17,44 @@ package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.graph.impl.RouteImpl;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 public interface Route<E, R>
 {
     public List<String> getIds();
 
+    public Route.Builder<E, R> copy();
+
     /**
      * 检测死递归
      *
      * @return true表示不存在死递归
      */
-    public boolean containsDeadRecursion();
+    public boolean checkDeadLoop();
 
-    public List<Edge<E, R>> getEdges();
+    public Deque<Edge<E, R>> getEdges();
 
     public int size();
 
     /**
-     * @return 倒数第二个Node
-     */
-    public Node<E, R> getLastNode();
-
-    public Node<E, R> getLastEdge();
-
-    /**
      * @return return最后一个Node
      */
-    public Node<E, R> getEndNode();
+    public default Node<E, R> getLastNode()
+    {
+        return getLastNode(0);
+    }
 
-    public Edge<E, R> getEndEdge();
+    public Node<E, R> getLastNode(int index);
 
-    public String getEndNodeId();
+    public Edge<E, R> getLastEdge();
+
+    public default String getLastNodeId()
+    {
+        return getLastNode().getId();
+    }
 
     public static <E, R> Builder<E, R> builder(Node<E, R> begin)
     {
@@ -60,7 +64,7 @@ public interface Route<E, R>
     public static class Builder<E, R>
     {
         private final Node<E, R> begin;
-        private final List<Edge<E, R>> buffer = new ArrayList<>();
+        private final Deque<Edge<E, R>> edges = new LinkedList<>();
 
         public Builder(Node<E, R> begin)
         {
@@ -69,24 +73,19 @@ public interface Route<E, R>
 
         public Builder<E, R> add(Edge<E, R> edge)
         {
-            buffer.add(edge);
+            this.edges.add(edge);
             return this;
         }
 
-        public Builder<E, R> add(Collection<Edge<E, R>> edges)
+        public Builder<E, R> addAll(Collection<Edge<E, R>> edges)
         {
-            buffer.addAll(edges);
+            this.edges.addAll(edges);
             return this;
-        }
-
-        public Builder<E, R> copy()
-        {
-            return Route.builder(begin).add(this.buffer);
         }
 
         public Route<E, R> create()
         {
-            return new RouteImpl<>(begin, buffer);
+            return new RouteImpl<>(begin, edges);
         }
     }
 }
