@@ -82,30 +82,20 @@ public interface Graph<E, R>
             return this;
         }
 
-        public GraphBuilder<E, R> addNode(String nodeId, String name)
-        {
-            return addNode(nodeId, name, null);
-        }
-
         public GraphBuilder<E, R> addNode(String nodeId)
         {
-            return addNode(nodeId, "", null);
-        }
-
-        public GraphBuilder<E, R> addNode(String nodeId, String name, E nodeData)
-        {
-            checkState(isNotBlank(nodeId), "nodeId is null or empty");
-            nodes.computeIfAbsent(nodeId, key -> {
-                Node.Builder<E, R> node = Node.builder(nodeId, name, nodeData);
-                rootNodes.put(nodeId, node);
-                return node;
-            });
-            return this;
+            return addNode(nodeId, null);
         }
 
         public GraphBuilder<E, R> addNode(String nodeId, E nodeData)
         {
-            return addNode(nodeId, "", nodeData);
+            checkState(isNotBlank(nodeId), "nodeId is null or empty");
+            nodes.computeIfAbsent(nodeId, key -> {
+                Node.Builder<E, R> node = Node.builder(nodeId, nodeData);
+                rootNodes.put(nodeId, node);
+                return node;
+            });
+            return this;
         }
 
         public GraphBuilder<E, R> addEdge(String node1, String node2, R edgeData)
@@ -126,7 +116,7 @@ public interface Graph<E, R>
 
         public Graph<E, R> create()
         {
-            final Node.Builder<E, R> root = Node.builder("/", "", null);
+            final Node.Builder<E, R> root = Node.builder("/", null);
             for (Node.Builder<E, R> node : rootNodes.values()) {
                 Edge<E, R> edge = createEdge(node.build(), null);
                 root.addNextNode(edge);

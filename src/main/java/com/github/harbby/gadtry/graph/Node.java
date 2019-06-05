@@ -28,8 +28,6 @@ public interface Node<NodeData, EdgeData>
 {
     public abstract String getId();
 
-    public abstract String getName();
-
     public abstract NodeData getData();
 
     /**
@@ -44,9 +42,9 @@ public interface Node<NodeData, EdgeData>
     @Override
     public abstract String toString();
 
-    public static <E, R> Builder<E, R> builder(String id, String name, E nodeData)
+    public static <E, R> Builder<E, R> builder(String id, E nodeData)
     {
-        return new Builder<>(id, name, nodeData);
+        return new Builder<>(id, nodeData);
     }
 
     public static class Builder<E, R>
@@ -54,9 +52,9 @@ public interface Node<NodeData, EdgeData>
         private final Map<String, Edge<E, R>> nextNodes = new HashMap<>();
         private final Node<E, R> node;
 
-        public Builder(String id, String name, E nodeData)
+        public Builder(String id, E nodeData)
         {
-            this.node = new NodeImpl<>(id, name, nextNodes, nodeData);
+            this.node = new NodeImpl<>(id, nextNodes, nodeData);
         }
 
         public Builder<E, R> addNextNode(Edge<E, R> edge)

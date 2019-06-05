@@ -139,16 +139,16 @@ public class GraphxTest
     {
         AtomicInteger integer = new AtomicInteger();
         Graph<NodeOperator<Integer>, Void> graph = Graph.<NodeOperator<Integer>, Void>builder()
-                .addNode("a1", "source", new NodeOperator<>(v -> {   //模拟PipeLine管道soruce
+                .addNode("a1", new NodeOperator<>(v -> {   //模拟PipeLine管道soruce
                     return 1;
                 }))
-                .addNode("a2", "a2", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
+                .addNode("a2", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
                     return v + 2;
                 }))
-                .addNode("a3", "a3", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
+                .addNode("a3", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
                     return v + 3;
                 }))
-                .addNode("a4", "sink", new NodeOperator<>(v -> {    //模拟PipeLine管道Sink
+                .addNode("a4", new NodeOperator<>(v -> {    //模拟PipeLine管道Sink
                     integer.set(v);
                     return null;
                 }))

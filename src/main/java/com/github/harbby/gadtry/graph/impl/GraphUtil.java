@@ -56,8 +56,7 @@ public class GraphUtil
             if (i == nodes.size() - 1) {  //end
                 header = header.substring(0, header.length() - 1) + "└";
             }
-            String name = node.getName(); //+ "[" + node.getId() + "]";
-            String line = header + "────" + name;
+            String line = header + "────" + node.getId();
             builder.add(line);
 
             List<Node> nexts = node.nextNodes().stream().filter(edge -> {
@@ -66,7 +65,7 @@ public class GraphUtil
             }).map(Edge::getOutNode).collect(Collectors.toList());
 
             String f = (node.nextNodes().size() > 1) ? "├" : "└";
-            printBuilder(builder, looped, nexts, getNextLineHeader(line, name) + f);
+            printBuilder(builder, looped, nexts, getNextLineHeader(line, node.getId()) + f);
         }
     }
 

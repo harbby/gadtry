@@ -23,20 +23,16 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.github.harbby.gadtry.base.Strings.isBlank;
-
 public class NodeImpl<E, R>
         implements Node<E, R>
 {
     private final String id;
-    private final String name;
     private final Map<String, Edge<E, R>> nextNodes;
     private final E data;
 
-    public NodeImpl(String id, String name, Map<String, Edge<E, R>> nextNodes, E data)
+    public NodeImpl(String id, Map<String, Edge<E, R>> nextNodes, E data)
     {
         this.id = id;
-        this.name = name;
         this.nextNodes = Collections.unmodifiableMap(nextNodes);
         this.data = data;
     }
@@ -51,12 +47,6 @@ public class NodeImpl<E, R>
     public String getId()
     {
         return id;
-    }
-
-    @Override
-    public String getName()
-    {
-        return isBlank(name) ? getId() : getId() + "[" + name + "]";
     }
 
     @Override
