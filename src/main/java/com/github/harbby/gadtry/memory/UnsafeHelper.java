@@ -22,6 +22,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class UnsafeHelper
 {
     private UnsafeHelper() {}
@@ -140,34 +142,23 @@ public final class UnsafeHelper
     private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
 
     static {
-        sun.misc.Unsafe unsafe;
+        sun.misc.Unsafe unsafe = null;
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
             unsafe = (sun.misc.Unsafe) unsafeField.get(null);
         }
         catch (Throwable cause) {
-            unsafe = null;
+            throwException(cause);
         }
-        _UNSAFE = unsafe;
+        _UNSAFE = requireNonNull(unsafe);
 
-        if (_UNSAFE != null) {
-            BOOLEAN_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(boolean[].class);
-            BYTE_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(byte[].class);
-            SHORT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(short[].class);
-            INT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(int[].class);
-            LONG_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(long[].class);
-            FLOAT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(float[].class);
-            DOUBLE_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(double[].class);
-        }
-        else {
-            BOOLEAN_ARRAY_OFFSET = 0;
-            BYTE_ARRAY_OFFSET = 0;
-            SHORT_ARRAY_OFFSET = 0;
-            INT_ARRAY_OFFSET = 0;
-            LONG_ARRAY_OFFSET = 0;
-            FLOAT_ARRAY_OFFSET = 0;
-            DOUBLE_ARRAY_OFFSET = 0;
-        }
+        BOOLEAN_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(boolean[].class);
+        BYTE_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(byte[].class);
+        SHORT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(short[].class);
+        INT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(int[].class);
+        LONG_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(long[].class);
+        FLOAT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(float[].class);
+        DOUBLE_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(double[].class);
     }
 }

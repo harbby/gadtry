@@ -51,8 +51,7 @@ public class GadTry
 
         public Builder aop(Aspect... aspects)
         {
-            this.aopFactory = AopFactory.create(aspects);
-            return this;
+            return this.aop(AopFactory.create(aspects));
         }
 
         public Builder setConfigurationProperties(Map<String, Object> config)
