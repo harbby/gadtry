@@ -91,7 +91,7 @@ public class PluginLoaderTest
     public void reloadTest()
             throws IOException
     {
-        Assert.assertEquals(2, pluginLoader.getModules().size());
+        Assert.assertEquals(3, pluginLoader.getModules().size());
         Module module = pluginLoader.getModules().get(0);
         File reloadFile = new File(module.getModulePath(), "reload");
         File reloadFile2 = new File(module.getModulePath().getParentFile(), "reload");
@@ -101,14 +101,14 @@ public class PluginLoaderTest
             reloadFile2.mkdirs();
             pluginLoader.reload();
             Assert.assertEquals(1, closeNumber.get());
-            Assert.assertEquals(3, pluginLoader.getModules().size());
+            Assert.assertEquals(4, pluginLoader.getModules().size());
             Assert.assertEquals(2, pluginLoader.getPlugins().size());
         }
         finally {
             reloadFile.delete();
             reloadFile2.delete();
             pluginLoader.reload();
-            Assert.assertEquals(2, pluginLoader.getModules().size());
+            Assert.assertEquals(3, pluginLoader.getModules().size());
         }
     }
 
