@@ -59,6 +59,10 @@ public interface Graph<E, R>
                 .collect(Collectors.toList());
     }
 
+    public List<Node<E, R>> findNode(Function<Node<E, R>, Boolean> rule);
+
+    public SearchBuilder<E, R> search();
+
     List<Route<E, R>> searchRuleRoute(String in, Function<Route<E, R>, Boolean> rule);
 
     List<Route<E, R>> searchRuleRoute(Function<Route<E, R>, Boolean> rule);
@@ -104,7 +108,7 @@ public interface Graph<E, R>
         {
             Node.Builder<E, R> inNode = requireNonNull(nodes.get(node1), "Unable to create edge because " + node1 + " does not exist");
             Node.Builder<E, R> outNode = requireNonNull(nodes.get(node2), "Unable to create edge because " + node2 + " does not exist");
-            Edge<E, R> eEdge = createEdge(outNode.build(), edgeData);
+            Edge<E, R> eEdge = createEdge(inNode.build(), outNode.build(), edgeData);
             inNode.addNextNode(eEdge);
             //todo: 环
             rootNodes.remove(node2);  //从根节点列表中删除
@@ -120,7 +124,7 @@ public interface Graph<E, R>
         {
             final Node.Builder<E, R> root = Node.builder("/", null);
             for (Node.Builder<E, R> node : rootNodes.values()) {
-                Edge<E, R> edge = createEdge(node.build(), null);
+                Edge<E, R> edge = createEdge(root.build(), node.build(), null);
                 root.addNextNode(edge);
             }
 

@@ -15,18 +15,15 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
+import com.github.harbby.gadtry.graph.SearchBuilder;
 
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -64,22 +61,22 @@ public class DefaultGraph<E, R>
     public List<Route<E, R>> searchRuleRoute(String in, Function<Route<E, R>, Boolean> rule)
     {
         Node<E, R> begin = requireNonNull(nodes.get(in), "NO SUCH Node " + in);
-        List<Route<E, R>> routes = new ArrayList<>();
-        Route.Builder<E, R> header = Route.builder(begin);
 
-        search(routes, begin, rule, header);
-
-        return MutableList.copy(routes);
+        return new ArrayList<>(new SearchBuilder<>(this, begin)
+                .optimizer(SearchBuilder.Optimizer.DEPTH_FIRST)
+                .nextRule(rule)
+                .search()
+                .getRoutes());
     }
 
     @Override
     public List<Route<E, R>> searchRuleRoute(Function<Route<E, R>, Boolean> rule)
     {
-        List<Route<E, R>> routes = new ArrayList<>();
-        Route.Builder<E, R> header = Route.builder(root);
-
-        search(routes, root, rule, header);
-        return MutableList.copy(routes);
+        return new ArrayList<>(new SearchBuilder<>(this, root)
+                .optimizer(SearchBuilder.Optimizer.DEPTH_FIRST)
+                .nextRule(rule)
+                .search()
+                .getRoutes());
     }
 
     @Override
@@ -125,83 +122,15 @@ public class DefaultGraph<E, R>
         return builder;
     }
 
-    /*
-     *  递归 深度优先
-     * */
-//    private static <E, R> void search(List<Route<E, R>> routes,
-//            Node<E, R> node,
-//            Function<Route<E, R>, Boolean> rule,
-//            Route.Builder<E, R> header)
-//    {
-//        Collection<Edge<E, R>> edges = node.nextNodes();
-//        for (Edge<E, R> edge : edges) {   //use stream.parallel();
-//            Route.Builder<E, R> builder = header.copy();
-//            builder.add(edge);
-//            Route<E, R> newRoute = builder.create();
-//
-//            if (rule.apply(newRoute)) {
-//                routes.add(newRoute);
-//                //edge.getOutNode().getDate().action(node.getDate());
-//                search(routes, edge.getOutNode(), rule, builder);
-//            }
-//        }
-//    }
-
-    /**
-     * 广度优先
-     */
-    private static <E, R> void search1(List<Route<E, R>> routes,
-            Node<E, R> beginNode,
-            Function<Route<E, R>, Boolean> rule,
-            Route.Builder<E, R> header)
+    @Override
+    public List<Node<E, R>> findNode(Function<Node<E, R>, Boolean> rule)
     {
-        final Queue<Route<E, R>> nextNodes = new LinkedList<>();
-        final List<Node<E, R>> all = new ArrayList<>();
-        nextNodes.add(header.create());
-
-        Route<E, R> route = null;
-        while ((route = nextNodes.poll()) != null) {
-            all.add(route.getLastNode());
-            for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
-                Route.Builder<E, R> builder = route.copy();
-                builder.add(edge);
-                Route<E, R> newRoute = builder.create();
-                if (rule.apply(newRoute)) {
-                    routes.add(newRoute);
-                    nextNodes.add(newRoute);
-                }
-            }
-        }
-
-        System.out.println("path: " + all);
+        return nodes.values().stream().filter(rule::apply).collect(Collectors.toList());
     }
 
-    /**
-     * 深度优先
-     */
-    private static <E, R> void search(List<Route<E, R>> routes,
-            Node<E, R> beginNode,
-            Function<Route<E, R>, Boolean> rule,
-            Route.Builder<E, R> header)
+    @Override
+    public SearchBuilder<E, R> search()
     {
-        final Deque<Route<E, R>> nextNodes = new LinkedList<>();  //Stack
-        final List<Node<E, R>> all = new ArrayList<>();
-        nextNodes.add(header.create());
-
-        Route<E, R> route = null;
-        while ((route = nextNodes.pollLast()) != null) {
-            all.add(route.getLastNode());
-            for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
-                Route.Builder<E, R> builder = route.copy();
-                builder.add(edge);
-                Route<E, R> newRoute = builder.create();
-                if (rule.apply(newRoute)) {
-                    routes.add(newRoute);
-                    nextNodes.add(newRoute);
-                }
-            }
-        }
-
-        System.out.println("path: " + all);
+        return new SearchBuilder<>(this, root);
     }
 }

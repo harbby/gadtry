@@ -136,6 +136,8 @@ public class GraphxTest
                 .addEdge("Error", "NoClassDefFoundError")
                 .create();
 
+        graph.printShow().forEach(System.out::println);
+
         List<? extends Route<?, ?>> routes = graph.searchRuleRoute("Throwable", route -> {
             return !route.getLastNode(1).getId().equals("NoClassDefFoundError");
         });

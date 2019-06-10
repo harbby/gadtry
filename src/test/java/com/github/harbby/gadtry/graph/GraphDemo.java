@@ -174,7 +174,7 @@ public class GraphDemo
             }
             else {
                 //这里给出理论: 起点和终点不同时如果一个点在轨迹中出现两次那么它一定不是最短路径.
-                return route.checkDeadLoop();  //如果出现两次则无须继续递归查找
+                return !route.findDeadLoop();  //如果出现两次则无须继续递归查找
             }
         });
         checkState(!minRoutes.isEmpty(), "NO SUCH ROUTE " + first + " TO " + end);

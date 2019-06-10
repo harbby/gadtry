@@ -47,6 +47,11 @@ public interface Node<NodeData, EdgeData>
         return new Builder<>(id, nodeData);
     }
 
+    public static <E, R> Builder<E, R> builder(String id)
+    {
+        return new Builder<>(id, null);
+    }
+
     public static class Builder<E, R>
     {
         private final Map<String, Edge<E, R>> nextNodes = new HashMap<>();

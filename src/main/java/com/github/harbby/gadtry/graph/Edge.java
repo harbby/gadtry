@@ -17,34 +17,67 @@ package com.github.harbby.gadtry.graph;
 
 import java.io.Serializable;
 
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
+
 public interface Edge<E, R>
         extends Serializable
 {
+    public abstract Node<E, R> getInNode();
+
     public abstract Node<E, R> getOutNode();
 
     public abstract R getData();
 
-    static <E, R> Edge<E, R> createEdge(Node<E, R> outNode, R edgeData)
+    public static class EdgeImpl<E, R>
+            implements Edge<E, R>
     {
-        return new Edge<E, R>()
+        private final Node<E, R> inNode;
+        private final Node<E, R> outNode;
+        private final R edgeData;
+
+        private EdgeImpl(Node<E, R> inNode, Node<E, R> outNode, R edgeData)
         {
-            @Override
-            public Node<E, R> getOutNode()
-            {
-                return outNode;
-            }
+            this.inNode = inNode;
+            this.outNode = outNode;
+            this.edgeData = edgeData;
+        }
 
-            @Override
-            public R getData()
-            {
-                return edgeData;
-            }
+        @Override
+        public Node<E, R> getInNode()
+        {
+            return inNode;
+        }
 
-            @Override
-            public String toString()
-            {
-                return "->" + outNode.getId();
-            }
-        };
+        @Override
+        public Node<E, R> getOutNode()
+        {
+            return outNode;
+        }
+
+        @Override
+        public R getData()
+        {
+            return edgeData;
+        }
+
+        @Override
+        public String toString()
+        {
+            return toStringHelper(this)
+                    .add("inNode", inNode)
+                    .add("outNode", outNode)
+                    .add("edgeData", edgeData)
+                    .toString();
+        }
+    }
+
+    static <E, R> Edge<E, R> createEdge(Node<E, R> inNode, Node<E, R> outNode, R edgeData)
+    {
+        return new EdgeImpl<>(inNode, outNode, edgeData);
+    }
+
+    static <E, R> Edge<E, R> createEdge(Node<E, R> inNode, Node<E, R> outNode)
+    {
+        return createEdge(inNode, outNode, null);
     }
 }

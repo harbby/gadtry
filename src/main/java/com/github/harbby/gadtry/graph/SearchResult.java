@@ -15,7 +15,13 @@
  */
 package com.github.harbby.gadtry.graph;
 
-@Deprecated
-public interface Data
+import java.util.Deque;
+
+public interface SearchResult<N, E>
 {
+    public Deque<Route<N, E>> getRoutes();
+
+    public long getSearchStartTime();
+
+    public int getFindNodeNumber();
 }

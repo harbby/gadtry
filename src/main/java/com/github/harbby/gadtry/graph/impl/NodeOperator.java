@@ -53,9 +53,9 @@ public class NodeOperator<T>
     public static <R> void runGraph(Graph<NodeOperator<R>, ?> graph)
     {
         graph.searchRuleRoute(route -> {
-            NodeOperator<R> parentNode = route.getLastNode(1).getData();
+            NodeOperator<R> parentNode = route.getLastEdge().getInNode().getData();
             route.getLastNode().getData().action(parentNode);
-            checkState(route.checkDeadLoop(), "The Graph contains Dead Recursion: " + route);
+            checkState(!route.findDeadLoop(), "The Graph contains Dead Recursion: " + route);
             return true;
         });
     }

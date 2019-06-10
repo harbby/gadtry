@@ -33,7 +33,7 @@ public interface Route<E, R>
      *
      * @return true表示不存在死递归
      */
-    public boolean checkDeadLoop();
+    public boolean findDeadLoop();
 
     public Deque<Edge<E, R>> getEdges();
 

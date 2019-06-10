@@ -16,17 +16,18 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.base.Iterators;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 import com.github.harbby.gadtry.graph.Route;
 
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
@@ -35,11 +36,27 @@ public class RouteImpl<E, R>
 {
     private final Node<E, R> begin;
     private final Deque<Edge<E, R>> edges;
+    private final Supplier<Boolean> findDeadLoop;   //如果出现两次则说明发现循环
+    private final Supplier<List<String>> nodeIds;
 
     public RouteImpl(Node<E, R> begin, Deque<Edge<E, R>> edges)
     {
         this.begin = begin;
         this.edges = edges;
+        this.findDeadLoop = Lazys.goLazy(() -> {
+            Edge<E, R> lastEdge = getLastEdge();
+            return begin.getId().equals(lastEdge.getOutNode().getId()) ||
+                    edges.stream().anyMatch(erEdge -> erEdge != lastEdge && erEdge.getOutNode().getId()
+                            .equals(getLastNode().getId())); //如果出现两次则无须继续递归查找
+        });
+        this.nodeIds = Lazys.goLazy(() -> {
+            List<String> list = new ArrayList<>(this.size() + 1);
+            list.add(begin.getId());
+            this.edges.forEach(erEdge -> {
+                list.add(erEdge.getOutNode().getId());
+            });
+            return list;
+        });
     }
 
     @Override
@@ -51,9 +68,7 @@ public class RouteImpl<E, R>
     @Override
     public List<String> getIds()
     {
-        return MutableList.<String>builder().add(begin.getId())
-                .addAll(edges.stream().map(x -> x.getOutNode().getId()).collect(Collectors.toList()))
-                .build();
+        return nodeIds.get();
     }
 
     /**
@@ -62,10 +77,9 @@ public class RouteImpl<E, R>
      * @return true不存在死递归
      */
     @Override
-    public boolean checkDeadLoop()
+    public boolean findDeadLoop()
     {
-        List<String> names = this.getIds().subList(0, this.size() - 1); //
-        return !names.contains(this.getLastNodeId());  //如果出现两次则无须继续递归查找
+        return findDeadLoop.get();
     }
 
     @Override
@@ -84,18 +98,18 @@ public class RouteImpl<E, R>
      * 上一个
      */
     @Override
-    public Node<E, R> getLastNode(int n)
+    public Node<E, R> getLastNode(int index)
     {
         Iterator<Edge<E, R>> iterator = this.edges.descendingIterator();
 
-        if (this.size() == n) {
+        if (this.size() == index) {
             return begin;
         }
-        else if (this.size() > n) {
-            return Iterators.getFirst(iterator, n).getOutNode();
+        else if (this.size() > index) {
+            return Iterators.getFirst(iterator, index).getOutNode();
         }
         else {
-            throw new NoSuchElementException(String.valueOf(n));
+            throw new NoSuchElementException(String.valueOf(index));
         }
     }
 
