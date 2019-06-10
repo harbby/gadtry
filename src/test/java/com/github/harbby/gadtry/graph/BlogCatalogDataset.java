@@ -46,7 +46,7 @@ public class BlogCatalogDataset
     private static final Graph<Void, Void> graph;
 
     static {
-        File dataDir = new File("/ideal/data/BlogCatalog-dataset/data");
+        File dataDir = new File(BlogCatalogDataset.class.getClassLoader().getResource("blogCatalog-dataset/data").getFile());
         Graph.GraphBuilder<Void, Void> graphBuilder = ImmutableGraph.builder();
 
         try (CloseableIterator<String> iterator = new FileCloseableIterator(new File(dataDir, "nodes.csv"), 4096)) {
