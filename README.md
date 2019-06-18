@@ -8,7 +8,7 @@ Contains: ioc. aop. exec. graph ...
 <dependency>
   <groupId>com.github.harbby</groupId>
   <artifactId>gadtry</artifactId>
-  <version>1.4.2</version>
+  <version>1.5.0</version>
 </dependency>
 ```
 
