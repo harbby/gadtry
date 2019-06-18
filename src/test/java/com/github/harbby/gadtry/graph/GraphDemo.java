@@ -38,7 +38,7 @@ public class GraphDemo
     public void before()
     {
         //AB5, BC4, CD8, DC8, DE6, AD5, CE2, EB3, AE7
-        this.graph = Graph.<Void, EdgeData>builder()
+        this.graph = ImmutableGraph.<Void, EdgeData>builder()
                 .addNode("A")
                 .addNode("B")
                 .addNode("C")
@@ -115,10 +115,27 @@ public class GraphDemo
     }
 
     @Test
+    public void searchApi7SearchEq4Return3AToC()
+    {
+        //7 找出A到C恰好经过4个点的路线
+        List<Route<Void, EdgeData>> routes = graph.search()
+                .beginNode("A")
+                .endNode("C")
+                .optimizer(SearchBuilder.Optimizer.BREADTH_FIRST)
+                .nextRule(route -> route.size() <= 4)
+                .globalRule(searchContext -> searchContext.getSearchTime() < 5_000)
+                .search()
+                .getRoutes()
+                .stream().filter(x -> x.size() == 4).collect(Collectors.toList());
+
+        Set<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toSet());
+        Assert.assertEquals(paths, MutableSet.of("A-B-C-D-C", "A-D-C-D-C", "A-D-E-B-C"));
+    }
+
+    @Test
     public void test8SearchMinRouteReturn9AToC()
     {
         //8 找出A到C的最短距离线路
-        //Route route = graph.searchMinRoute("A", "C");
         List<Route<Void, EdgeData>> minRoutes = searchMinRoute(graph, "A", "C");
         long distances = getRouteDistance(minRoutes.get(0));
 
@@ -138,11 +155,28 @@ public class GraphDemo
     public void test10SearchMaxDistances30RouteReturn7CToC()
     {
         //10 找出c to c 距离30以内的线路
-        //Set<Route> routes = graph.searchMinRoute("C", "C", 30);
         List<Route<Void, EdgeData>> routes = graph.searchRuleRoute("C", "C", route -> {
             long distances = getRouteDistance(route);
             return distances < 30;
         });
+        Assert.assertEquals(7, routes.size());
+    }
+
+    @Test
+    public void searchApi10SearchGiveMaxDistances30Return7ByCToC()
+    {
+        //10 找出c to c 距离30以内的线路
+        List<Route<Void, EdgeData>> routes = graph.search()
+                .beginNode("C")
+                .endNode("C")
+                .optimizer(SearchBuilder.Optimizer.DEPTH_FIRST)
+                .nextRule(route -> {
+                    long distances = getRouteDistance(route);
+                    return distances < 30;
+                })
+                .globalRule(searchContext -> searchContext.getSearchTime() < 5_000)
+                .search()
+                .getRoutes();
         Assert.assertEquals(7, routes.size());
     }
 

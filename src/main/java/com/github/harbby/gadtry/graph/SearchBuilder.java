@@ -15,10 +15,14 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
+
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,6 +39,7 @@ public class SearchBuilder<E, R>
 
     private Optimizer optimizer = Optimizer.DEPTH_FIRST;
     private Node<E, R> beginNode;
+    private Node<E, R> endNode;
     private Function<Route<E, R>, Boolean> nextRule;
     private Function<SearchContext<E, R>, Boolean> globalRule = erSearchContext -> true;
 
@@ -54,6 +59,13 @@ public class SearchBuilder<E, R>
     {
         requireNonNull(beginNodeId, "beginNodeId is null");
         this.beginNode = graph.getNode(beginNodeId);
+        return this;
+    }
+
+    public SearchBuilder<E, R> endNode(String endNodeId)
+    {
+        requireNonNull(endNodeId, "endNodeId is null");
+        this.endNode = graph.getNode(endNodeId);
         return this;
     }
 
@@ -96,9 +108,16 @@ public class SearchBuilder<E, R>
         return new SearchResult<E, R>()
         {
             @Override
-            public Deque<Route<E, R>> getRoutes()
+            public List<Route<E, R>> getRoutes()
             {
-                return routes;
+                if (endNode != null) {
+                    return routes.stream()
+                            .filter(x -> endNode.getId().equals(x.getLastNodeId()))
+                            .collect(Collectors.toList());
+                }
+                else {
+                    return MutableList.copy(routes);
+                }
             }
 
             @Override

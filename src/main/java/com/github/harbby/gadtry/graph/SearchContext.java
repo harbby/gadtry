@@ -50,6 +50,11 @@ public class SearchContext<N, E>
         return searchStartTime;
     }
 
+    public long getSearchTime()
+    {
+        return System.currentTimeMillis() - searchStartTime;
+    }
+
     public int getFindNodeNumber()
     {
         return number;

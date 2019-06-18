@@ -191,9 +191,9 @@ public class GraphxTest
     public void testAddOperatorReturn6()
             throws Exception
     {
-        AtomicInteger integer = new AtomicInteger();
+        AtomicInteger db = new AtomicInteger();  //模拟数据库
         Graph<NodeOperator<Integer>, Void> graph = Graph.<NodeOperator<Integer>, Void>builder()
-                .addNode("a1", new NodeOperator<>(v -> {   //模拟PipeLine管道soruce
+                .addNode("source", new NodeOperator<>(v -> {   //模拟PipeLine管道soruce
                     return 1;
                 }))
                 .addNode("a2", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
@@ -202,17 +202,17 @@ public class GraphxTest
                 .addNode("a3", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
                     return v + 3;
                 }))
-                .addNode("a4", new NodeOperator<>(v -> {    //模拟PipeLine管道Sink
-                    integer.set(v);
+                .addNode("sink", new NodeOperator<>(v -> {    //模拟PipeLine管道Sink
+                    db.set(v);
                     return null;
                 }))
-                .addEdge("a1", "a2")
+                .addEdge("source", "a2")
                 .addEdge("a2", "a3")
-                .addEdge("a3", "a4")
+                .addEdge("a3", "sink")
                 .create();
 
         NodeOperator.runGraph(graph);
         graph.printShow().forEach(System.out::println);
-        Assert.assertEquals(6, integer.get());
+        Assert.assertEquals(6, db.get());
     }
 }

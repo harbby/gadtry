@@ -15,11 +15,11 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import java.util.Deque;
+import java.util.List;
 
 public interface SearchResult<N, E>
 {
-    public Deque<Route<N, E>> getRoutes();
+    public List<Route<N, E>> getRoutes();
 
     public long getSearchStartTime();
 

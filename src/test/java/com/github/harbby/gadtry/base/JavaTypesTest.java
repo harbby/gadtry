@@ -16,16 +16,20 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
+import sun.reflect.generics.tree.TypeArgument;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
@@ -149,6 +153,60 @@ public class JavaTypesTest
             Assert.fail();
         }
         catch (UnsupportedOperationException ignored) {
+        }
+    }
+
+    @Test
+    public void getClassGenericString()
+    {
+        Assert.assertEquals("Ljava/lang/Object;Lcom/github/harbby/gadtry/function/Function1<Ljava/util/Map<Ljava/lang/String;Ljava/lang/Integer;>;Ljava/lang/String;>;Ljava/util/concurrent/Callable<Ljava/lang/Double;>;",
+                JavaTypes.getClassGenericString(GenericTest.class));
+    }
+
+    @Test
+    public void getClassGenericInfo()
+    {
+        Map<String, TypeArgument[]> types2 = JavaTypes.getClassGenericInfo(GenericTest.class);
+        Assert.assertEquals(types2.size(), 3);
+        TypeArgument[] a1 = types2.get(Function1.class.getName());
+        Assert.assertEquals(a1.length, 2);
+    }
+
+    @Test
+    public void getClassGenericInfoReturnEmpGiveJavaTypesTest()
+    {
+        Map<String, TypeArgument[]> types = JavaTypes.getClassGenericInfo(JavaTypesTest.class);
+        Assert.assertTrue(types == Collections.EMPTY_MAP);
+    }
+
+    @Test
+    public void getClassGenericTypes()
+    {
+        List<Type> types = JavaTypes.getClassGenericTypes(GenericTest.class);
+        Assert.assertEquals(types.get(1), JavaTypes.make(Function1.class, new Type[] {JavaTypes.makeMapType(String.class, Integer.class), String.class}, null));
+    }
+
+    @Test
+    public void getClassGenericTypesReturnEmpGiveJavaTypesTest()
+    {
+        List<Type> types = JavaTypes.getClassGenericTypes(JavaTypesTest.class);
+        Assert.assertTrue(types == Collections.EMPTY_LIST);
+    }
+
+    public static class GenericTest
+            implements Function1<Map<String, Integer>, String>, Callable<Double>
+    {
+        @Override
+        public Double call()
+                throws Exception
+        {
+            return null;
+        }
+
+        @Override
+        public String apply(Map<String, Integer> o)
+        {
+            return null;
         }
     }
 }

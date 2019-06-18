@@ -19,10 +19,14 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -89,6 +93,17 @@ public class Iterators
     {
         requireNonNull(iterator);
         return !iterator.hasNext();
+    }
+
+    public static <T> Stream<T> toStream(Iterator<T> iterator)
+    {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                iterator, Spliterator.ORDERED | Spliterator.NONNULL), false);
+    }
+
+    public static <T> Stream<T> toStream(Iterator<T> iterator, Runnable close)
+    {
+        return toStream(iterator).onClose(close);
     }
 
     public static <T> T getFirst(Iterator<T> iterator, int index, T defaultValue)

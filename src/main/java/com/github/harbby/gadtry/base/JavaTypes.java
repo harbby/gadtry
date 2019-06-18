@@ -15,14 +15,30 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
+import sun.reflect.generics.repository.AbstractRepository;
+import sun.reflect.generics.repository.ClassRepository;
+import sun.reflect.generics.tree.ClassSignature;
+import sun.reflect.generics.tree.ClassTypeSignature;
+import sun.reflect.generics.tree.SimpleClassTypeSignature;
+import sun.reflect.generics.tree.TypeArgument;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.base.Throwables.noCatch;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class JavaTypes
 {
@@ -69,6 +85,11 @@ public class JavaTypes
         }
         return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
                 ownerType);
+    }
+
+    public static Type makeMapType(Type keyType, Type valueType)
+    {
+        return make(Map.class, new Type[] {keyType, valueType}, null);
     }
 
     /**
@@ -134,5 +155,69 @@ public class JavaTypes
             //checkState(aClass.isPrimitive(), "%s not is Primitive", aClass);
             throw new UnsupportedOperationException("this " + aClass + " have't support!");
         }
+    }
+
+    private static <T, R> R getReflectMethod(Method method, T t)
+            throws InvocationTargetException, IllegalAccessException
+    {
+        method.setAccessible(true);
+        return (R) method.invoke(t);
+    }
+
+    private static <T, R> R getReflectField(Field field, T t)
+            throws IllegalAccessException
+    {
+        field.setAccessible(true);
+        return (R) field.get(t);
+    }
+
+    public static String getClassGenericString(Class<?> javaClass)
+    {
+        return noCatch(() -> getReflectMethod(Class.class.getDeclaredMethod("getGenericSignature0"), javaClass));
+    }
+
+    /**
+     * 获取Class的泛型信息(Get generic information about class)
+     *
+     * @param javaClass Class
+     * @return TypeArgument[]
+     */
+    public static Map<String, TypeArgument[]> getClassGenericInfo(Class<?> javaClass)
+    {
+        try {
+            Map<String, TypeArgument[]> typeSignatureMap = new LinkedHashMap<>();
+            ClassRepository classRepository = getReflectMethod(Class.class.getDeclaredMethod("getGenericInfo"), javaClass);
+
+            if (classRepository == null) {
+                return Collections.emptyMap();
+            }
+            //-----2
+            ClassSignature tree = getReflectMethod(AbstractRepository.class.getDeclaredMethod("getTree"), classRepository);
+            //FormalTypeParameter[] formalTypeParameters = tree.getFormalTypeParameters();  //type 个数  === type[]
+            SimpleClassTypeSignature typeSignature = tree.getSuperclass().getPath().get(0);
+            typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
+
+            for (ClassTypeSignature it : tree.getSuperInterfaces()) {
+                typeSignature = it.getPath().get(0);
+                typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
+            }
+            return typeSignatureMap;
+        }
+        catch (Exception e) {
+            throw throwsException(e);
+        }
+    }
+
+    public static List<Type> getClassGenericTypes(Class<?> javaClass)
+    {
+        ClassRepository classRepository = noCatch(() -> getReflectMethod(Class.class.getDeclaredMethod("getGenericInfo"),
+                javaClass));
+
+        if (classRepository == null) {
+            return Collections.emptyList();
+        }
+
+        classRepository.getSuperclass();
+        return MutableList.asList(classRepository.getSuperclass(), classRepository.getSuperInterfaces());
     }
 }
