@@ -27,6 +27,10 @@ tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
 
+tasks.withType(Javadoc) {
+  options.encoding = "UTF-8"
+}
+
 checkstyle {
   toolVersion '8.12'
   showViolations true
