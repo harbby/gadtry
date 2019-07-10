@@ -92,13 +92,14 @@ ext {
   mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
 }
 
+signing {
+  required { shouldSign }
+  sign configurations.archives
+}
+
 //--- gradle clean build upload
 uploadArchives {   //uploadArchives uploadShadow
   repositories {
-    signing {
-      required { shouldSign }
-      sign configurations.archives
-
       mavenDeployer {
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
@@ -140,8 +141,6 @@ uploadArchives {   //uploadArchives uploadShadow
           }
         }
       }
-
       mavenLocal()
-    }
   }
 }
