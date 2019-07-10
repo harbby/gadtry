@@ -180,6 +180,3 @@ Demo: Search for routes with A to C distances less than 30:
 
 ## Useful mailing lists
 * yezhixinghai@gmail.com - For discussions about code, design and features
-
-## Join talk
-* QQ Group: 438625067
