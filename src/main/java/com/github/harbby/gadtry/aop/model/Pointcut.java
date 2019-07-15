@@ -29,10 +29,10 @@ public class Pointcut
 {
     private Function<ProxyContext, Object> around = ProxyContext::proceed;
 
-    private Consumer<MethodInfo> before;
-    private Consumer<MethodInfo> after;
-    private Consumer<MethodInfo> afterThrowing;
-    private Consumer<MethodInfo> afterReturning;
+    private Consumer<Before> before;
+    private Consumer<After> after;
+    private Consumer<AfterThrowing> afterThrowing;
+    private Consumer<AfterReturning> afterReturning;
 
     private final String pointName;
     private Function1<MethodInfo, Boolean> methodFilter;
@@ -68,42 +68,42 @@ public class Pointcut
         return searchClass;
     }
 
-    public Consumer<MethodInfo> getAfterThrowing()
+    public Consumer<AfterThrowing> getAfterThrowing()
     {
         return afterThrowing;
     }
 
-    public void setAfterThrowing(Consumer<MethodInfo> afterThrowing)
+    public void setAfterThrowing(Consumer<AfterThrowing> afterThrowing)
     {
         this.afterThrowing = afterThrowing;
     }
 
-    public Consumer<MethodInfo> getAfterReturning()
+    public Consumer<AfterReturning> getAfterReturning()
     {
         return afterReturning;
     }
 
-    public void setAfterReturning(Consumer<MethodInfo> afterReturning)
+    public void setAfterReturning(Consumer<AfterReturning> afterReturning)
     {
         this.afterReturning = afterReturning;
     }
 
-    public Consumer<MethodInfo> getBefore()
+    public Consumer<Before> getBefore()
     {
         return before;
     }
 
-    public void setBefore(Consumer<MethodInfo> before)
+    public void setBefore(Consumer<Before> before)
     {
         this.before = before;
     }
 
-    public Consumer<MethodInfo> getAfter()
+    public Consumer<After> getAfter()
     {
         return after;
     }
 
-    public void setAfter(Consumer<MethodInfo> after)
+    public void setAfter(Consumer<After> after)
     {
         this.after = after;
     }
@@ -121,22 +121,25 @@ public class Pointcut
     public Function<ProxyContext, Object> buildRunHandler()
     {
         return (proxyContext) -> {
-            Object value = null;
-
             if (this.getBefore() != null) {
-                this.getBefore().apply(proxyContext.getInfo());
+                this.getBefore().apply(Before.of(proxyContext.getMethod(), proxyContext.getArgs()));
             }
 
+            Object value = null;
+            Throwable throwable = null;
             try {
                 value = this.getAround().apply(proxyContext);
-
                 if (this.getAfterReturning() != null) {
-                    this.getAfterReturning().apply(proxyContext.getInfo());
+                    this.getAfterReturning().apply(AfterReturning.of(proxyContext.getMethod(),
+                            proxyContext.getArgs(), value));
                 }
+                return value;
             }
             catch (Exception e) {
+                throwable = e;
                 if (this.getAfterThrowing() != null) {
-                    this.getAfterThrowing().apply(proxyContext.getInfo());
+                    this.getAfterThrowing().apply(AfterThrowing.of(proxyContext.getMethod(),
+                            proxyContext.getArgs(), e));
                 }
                 if (e instanceof InvocationTargetException) {
                     throw throwsThrowable(((InvocationTargetException) e).getTargetException());
@@ -147,11 +150,10 @@ public class Pointcut
             }
             finally {
                 if (this.getAfter() != null) {
-                    this.getAfter().apply(proxyContext.getInfo());
+                    this.getAfter().apply(After.of(proxyContext.getMethod(),
+                            proxyContext.getArgs(), value, throwable));
                 }
             }
-
-            return value;
         };
     }
 }

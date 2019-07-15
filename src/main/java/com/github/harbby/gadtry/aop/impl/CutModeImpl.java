@@ -17,6 +17,10 @@ package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.CutMode;
 import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.model.After;
+import com.github.harbby.gadtry.aop.model.AfterReturning;
+import com.github.harbby.gadtry.aop.model.AfterThrowing;
+import com.github.harbby.gadtry.aop.model.Before;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.function.Function1;
@@ -94,36 +98,7 @@ public class CutModeImpl<T>
     private static <T> InvocationHandler aroundStatic(Function<ProxyContext, Object> aroundHandler, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
-            ProxyContext context = new ProxyContext()
-            {
-                private final MethodInfo info = MethodInfo.of(method);
-
-                @Override
-                public MethodInfo getInfo()
-                {
-                    return info;
-                }
-
-                @Override
-                public Object proceed()
-                        throws Exception
-                {
-                    return proceed(args);
-                }
-
-                @Override
-                public Object proceed(Object[] args)
-                        throws Exception
-                {
-                    return method.invoke(instance, args);
-                }
-
-                @Override
-                public Object[] getArgs()
-                {
-                    return args;
-                }
-            };
+            ProxyContext context = ProxyContext.of(instance, method, args);
             Object returnValue = aroundHandler.apply(context);
             Class<?> returnType = method.getReturnType();
 
@@ -138,73 +113,80 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T before(Consumer<MethodInfo> runnable)
+    public T before(Consumer<Before> runnable)
     {
         InvocationHandler handler = beforeStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler beforeStatic(Consumer<MethodInfo> runnable, T instance)
+    private static <T> InvocationHandler beforeStatic(Consumer<Before> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
-            runnable.apply(MethodInfo.of(method));
+            runnable.apply(Before.of(method, args));
             return method.invoke(instance, args);
         };
         return handler;
     }
 
     @Override
-    public T afterReturning(Consumer<MethodInfo> runnable)
+    public T afterReturning(Consumer<AfterReturning> runnable)
     {
         InvocationHandler handler = afterReturningStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler afterReturningStatic(Consumer<MethodInfo> runnable, T instance)
+    private static <T> InvocationHandler afterReturningStatic(Consumer<AfterReturning> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             Object value = method.invoke(instance, args);
-            runnable.apply(MethodInfo.of(method));
+            runnable.apply(AfterReturning.of(method, args, value));
             return value;
         };
         return handler;
     }
 
     @Override
-    public T after(Consumer<MethodInfo> runnable)
+    public T after(Consumer<After> runnable)
     {
         InvocationHandler handler = afterStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler afterStatic(Consumer<MethodInfo> runnable, T instance)
+    private static <T> InvocationHandler afterStatic(Consumer<After> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
+            Object value = null;
+            Throwable throwable = null;
             try {
-                return method.invoke(instance, args);
+                value = method.invoke(instance, args);
+                return value;
+            }
+            catch (Throwable e) {
+                throwable = e;
+                throw e;
             }
             finally {
-                runnable.apply(MethodInfo.of(method));
+                runnable.apply(After.of(method, args, value, throwable));
             }
         };
         return handler;
     }
 
     @Override
-    public T afterThrowing(Consumer<MethodInfo> runnable)
+    public T afterThrowing(Consumer<AfterThrowing> runnable)
     {
         InvocationHandler handler = afterThrowingStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler afterThrowingStatic(Consumer<MethodInfo> runnable, T instance)
+    private static <T> InvocationHandler afterThrowingStatic(Consumer<AfterThrowing> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             try {
                 return method.invoke(instance, args);
             }
             catch (Exception e) {
-                runnable.apply(MethodInfo.of(method));
+                runnable.apply(AfterThrowing.of(method, args, e));
                 throw e;
             }
         };

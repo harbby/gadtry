@@ -15,17 +15,54 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.model.MethodInfo;
+import com.github.harbby.gadtry.aop.model.Before;
+
+import java.lang.reflect.Method;
 
 public interface ProxyContext
+        extends Before
 {
-    MethodInfo getInfo();
-
     Object proceed()
             throws Exception;
 
     Object proceed(Object[] args)
             throws Exception;
 
-    Object[] getArgs();
+    public static ProxyContext of(Object instance, Method method, Object[] args)
+    {
+        return new ProxyContext()
+        {
+            @Override
+            public Method getMethod()
+            {
+                return method;
+            }
+
+//            @Override
+//            public MethodInfo getInfo()
+//            {
+//                return MethodInfo.of(method);
+//            }
+
+            @Override
+            public Object proceed()
+                    throws Exception
+            {
+                return proceed(args);
+            }
+
+            @Override
+            public Object proceed(Object[] args)
+                    throws Exception
+            {
+                return method.invoke(instance, args);
+            }
+
+            @Override
+            public Object[] getArgs()
+            {
+                return args;
+            }
+        };
+    }
 }

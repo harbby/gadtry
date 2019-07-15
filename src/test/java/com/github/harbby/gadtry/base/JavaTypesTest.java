@@ -160,13 +160,13 @@ public class JavaTypesTest
     public void getClassGenericString()
     {
         Assert.assertEquals("Ljava/lang/Object;Lcom/github/harbby/gadtry/function/Function1<Ljava/util/Map<Ljava/lang/String;Ljava/lang/Integer;>;Ljava/lang/String;>;Ljava/util/concurrent/Callable<Ljava/lang/Double;>;",
-                JavaTypes.getClassGenericString(GenericTest.class));
+                JavaTypes.getClassGenericString(GenericClassTest.class));
     }
 
     @Test
     public void getClassGenericInfo()
     {
-        Map<String, TypeArgument[]> types2 = JavaTypes.getClassGenericInfo(GenericTest.class);
+        Map<String, TypeArgument[]> types2 = JavaTypes.getClassGenericInfo(GenericClassTest.class);
         Assert.assertEquals(types2.size(), 3);
         TypeArgument[] a1 = types2.get(Function1.class.getName());
         Assert.assertEquals(a1.length, 2);
@@ -182,7 +182,7 @@ public class JavaTypesTest
     @Test
     public void getClassGenericTypes()
     {
-        List<Type> types = JavaTypes.getClassGenericTypes(GenericTest.class);
+        List<Type> types = JavaTypes.getClassGenericTypes(GenericClassTest.class);
         Assert.assertEquals(types.get(1), JavaTypes.make(Function1.class, new Type[] {JavaTypes.makeMapType(String.class, Integer.class), String.class}, null));
     }
 
@@ -193,7 +193,7 @@ public class JavaTypesTest
         Assert.assertTrue(types == Collections.EMPTY_LIST);
     }
 
-    public static class GenericTest
+    public static class GenericClassTest
             implements Function1<Map<String, Integer>, String>, Callable<Double>
     {
         @Override

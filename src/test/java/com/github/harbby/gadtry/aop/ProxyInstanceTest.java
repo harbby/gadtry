@@ -81,7 +81,7 @@ public class ProxyInstanceTest
                 .returnType(void.class, Boolean.class)
                 //.methodAnnotated(Override.class, Override.class)
                 .around(proxyContext -> {
-                    String name = proxyContext.getInfo().getName();
+                    String name = proxyContext.getName();
                     actions.add(name);
                     System.out.println("around: " + name);
                     Object value = proxyContext.proceed();

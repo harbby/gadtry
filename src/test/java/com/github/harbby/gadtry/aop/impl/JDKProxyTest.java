@@ -38,7 +38,7 @@ public class JDKProxyTest
 
         Set set = CutModeImpl.of(Set.class, old, JdkProxy::newProxyInstance)
                 .around(proxyContext -> {
-                    String name = proxyContext.getInfo().getName();
+                    String name = proxyContext.getName();
                     Object value = proxyContext.proceed();
                     switch (name) {
                         case "add":

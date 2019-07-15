@@ -15,7 +15,10 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.model.MethodInfo;
+import com.github.harbby.gadtry.aop.model.After;
+import com.github.harbby.gadtry.aop.model.AfterReturning;
+import com.github.harbby.gadtry.aop.model.AfterThrowing;
+import com.github.harbby.gadtry.aop.model.Before;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.aop.v1.FilterBuilder;
 import com.github.harbby.gadtry.function.exception.Consumer;
@@ -62,28 +65,28 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder before(Consumer<MethodInfo> runnable)
+        public PointBuilder before(Consumer<Before> runnable)
         {
             pointcut.setBefore(runnable);
             return new PointBuilder(pointcut);
         }
 
         @Override
-        public PointBuilder afterReturning(Consumer<MethodInfo> runnable)
+        public PointBuilder afterReturning(Consumer<AfterReturning> runnable)
         {
             pointcut.setAfterReturning(runnable);
             return new PointBuilder(pointcut);
         }
 
         @Override
-        public PointBuilder after(Consumer<MethodInfo> runnable)
+        public PointBuilder after(Consumer<After> runnable)
         {
             pointcut.setAfter(runnable);
             return new PointBuilder(pointcut);
         }
 
         @Override
-        public PointBuilder afterThrowing(Consumer<MethodInfo> runnable)
+        public PointBuilder afterThrowing(Consumer<AfterThrowing> runnable)
         {
             pointcut.setAfterThrowing(runnable);
             return new PointBuilder(pointcut);

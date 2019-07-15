@@ -24,6 +24,7 @@ import sun.reflect.generics.tree.ClassTypeSignature;
 import sun.reflect.generics.tree.SimpleClassTypeSignature;
 import sun.reflect.generics.tree.TypeArgument;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
@@ -117,6 +118,21 @@ public class JavaTypes
     {
         return type instanceof Class<?> || type instanceof ParameterizedType || type
                 instanceof GenericArrayType;
+    }
+
+    public static <T> T getClassInitValue(Class<?> aClass)
+    {
+        if (!aClass.isPrimitive()) {
+            return null;
+        }
+        return getPrimitiveClassInitValue(aClass);
+    }
+
+    public static <T> T getPrimitiveClassInitValue(Class<?> aClass)
+    {
+        checkState(aClass.isPrimitive(), "%s not is primitive", aClass);
+        Object arr = java.lang.reflect.Array.newInstance(aClass, 1);
+        return (T) Array.get(arr, 0);
     }
 
     /**
