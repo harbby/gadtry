@@ -15,12 +15,12 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.aop.mock.Mock;
+import com.github.harbby.gadtry.aop.mock.MockGo;
 import com.github.harbby.gadtry.base.Closeables;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 import java.io.IOException;
@@ -192,7 +192,7 @@ public class VmFutureTest
     @Before
     public void setUp()
     {
-        MockitoAnnotations.initMocks(this);
+        MockGo.initMocks(this);
     }
 
     @Test

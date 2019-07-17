@@ -163,7 +163,7 @@ public class JavassistProxy
         proxyClass.setModifiers(Modifier.PUBLIC | Modifier.FINAL);
 
         //-- 添加构造器
-        if (parentClass.getConstructors().length == 0) {
+        if (superclass.getConstructors().length == 0) {
             addVoidConstructor(proxyClass);  //如果没有 任何非私有构造器,则添加一个
         }
 

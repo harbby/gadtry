@@ -15,17 +15,17 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.aop.mock.Mock;
+import com.github.harbby.gadtry.aop.mock.MockGo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectStreamClass;
 
-import static org.mockito.Mockito.when;
+import static com.github.harbby.gadtry.aop.mock.MockGo.when;
 
 public class ObjectInputStreamProxyTest
 {
@@ -41,7 +41,7 @@ public class ObjectInputStreamProxyTest
     @Before
     public void setUp()
     {
-        MockitoAnnotations.initMocks(this);
+        MockGo.initMocks(this);
     }
 
     @Test

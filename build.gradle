@@ -20,7 +20,6 @@ repositories {
 dependencies {
   compile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
   testCompile group: 'junit', name: 'junit', version: '4.12'
-  testCompile 'org.mockito:mockito-core:2.23.4'
 }
 
 tasks.withType(JavaCompile) {
@@ -104,47 +103,47 @@ signing {
 //--- gradle clean build upload
 uploadArchives {   //uploadArchives uploadShadow
   repositories {
-      mavenDeployer {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-        def repository_url = project.version.endsWith('-SNAPSHOT') ?
-                'https://oss.sonatype.org/content/repositories/snapshots' :
-                'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+      def repository_url = project.version.endsWith('-SNAPSHOT') ?
+              'https://oss.sonatype.org/content/repositories/snapshots' :
+              'https://oss.sonatype.org/service/local/staging/deploy/maven2'
 
-        repository(url: repository_url) {
-          authentication(userName: "${mavenUsername}", password: "${mavenPassword}")
-        }
-        pom.version = "$project.version"
-        pom.artifactId = "$project.name"
-        pom.groupId = "$project.group"
+      repository(url: repository_url) {
+        authentication(userName: "${mavenUsername}", password: "${mavenPassword}")
+      }
+      pom.version = "$project.version"
+      pom.artifactId = "$project.name"
+      pom.groupId = "$project.group"
 
-        pom.project {
-          name 'gadtry'
-          description 'Gadtry A collection of java tool libraries. Contains: ioc. aop. exec. graph ...'
+      pom.project {
+        name 'gadtry'
+        description 'Gadtry A collection of java tool libraries. Contains: ioc. aop. exec. graph ...'
+        url 'https://github.com/harbby/gadtry'
+        scm {
           url 'https://github.com/harbby/gadtry'
-          scm {
-            url 'https://github.com/harbby/gadtry'
-            connection 'https://github.com/harbby/gadtry.git'
-            developerConnection 'https://github.com/harbby/gadtry.git'
-          }
+          connection 'https://github.com/harbby/gadtry.git'
+          developerConnection 'https://github.com/harbby/gadtry.git'
+        }
 
-          developers {
-            developer {
-              id 'harbby'
-              name 'harbby'
-              email 'yezhixinghai@gmail.com'
-            }
+        developers {
+          developer {
+            id 'harbby'
+            name 'harbby'
+            email 'yezhixinghai@gmail.com'
           }
+        }
 
-          licenses {
-            license {
-              name 'The Apache Software License, Version 2.0'
-              url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-              distribution 'repo'
-            }
+        licenses {
+          license {
+            name 'The Apache Software License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution 'repo'
           }
         }
       }
-      mavenLocal()
+    }
+    mavenLocal()
   }
 }
