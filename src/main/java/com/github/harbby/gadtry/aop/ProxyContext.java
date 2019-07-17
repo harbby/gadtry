@@ -19,36 +19,29 @@ import com.github.harbby.gadtry.aop.model.Before;
 
 import java.lang.reflect.Method;
 
+import static java.util.Objects.requireNonNull;
+
 public interface ProxyContext
         extends Before
 {
-    Object proceed()
-            throws Exception;
+    default Object proceed()
+            throws Throwable
+    {
+        return proceed(getArgs());
+    }
 
     Object proceed(Object[] args)
-            throws Exception;
+            throws Throwable;
 
     public static ProxyContext of(Object instance, Method method, Object[] args)
     {
+        requireNonNull(instance, "instance is null");
         return new ProxyContext()
         {
             @Override
             public Method getMethod()
             {
                 return method;
-            }
-
-//            @Override
-//            public MethodInfo getInfo()
-//            {
-//                return MethodInfo.of(method);
-//            }
-
-            @Override
-            public Object proceed()
-                    throws Exception
-            {
-                return proceed(args);
             }
 
             @Override

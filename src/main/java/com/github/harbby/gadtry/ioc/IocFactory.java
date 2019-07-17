@@ -42,7 +42,7 @@ public interface IocFactory
      * @return T Driver instance object
      * @throws InjectorException Injector error
      */
-    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?> userCreator);
+    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?, Exception> userCreator);
 
     public <T> Creator<T> getCreator(Class<T> driver);
 

@@ -16,21 +16,23 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.function.exception.Function;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.function.Function;
 
 @SuppressWarnings("unchecked")
 public class ProxySerializeTest
 {
+    private final Function<String, Integer> function =
+            (Serializable & Function<String, Integer>) (str) -> str.length();
+
     @Test
     public void beforeSerializeTest0()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .whereMethod(methodInfo -> true)
@@ -38,7 +40,7 @@ public class ProxySerializeTest
                     System.out.println("beforeSerializeTest1");
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -46,15 +48,13 @@ public class ProxySerializeTest
     public void beforeSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .before(methodInfo -> {
                     System.out.println("beforeSerializeTest1");
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -62,15 +62,13 @@ public class ProxySerializeTest
     public void beforeSerializeTest2()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .before(methodInfo -> {
                     System.out.println(methodInfo);
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -78,15 +76,13 @@ public class ProxySerializeTest
     public void afterReturningSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .afterReturning(methodInfo -> {
                     System.out.println("afterReturningSerializeTest1");
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -94,15 +90,13 @@ public class ProxySerializeTest
     public void afterThrowingSerializeTest2()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .afterThrowing(methodInfo -> {
                     System.out.println(methodInfo);
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -110,15 +104,13 @@ public class ProxySerializeTest
     public void aroundSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .around(proxyContext -> {
                     return proxyContext.proceed();
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -126,8 +118,6 @@ public class ProxySerializeTest
     public void aroundSerializeTest2()
             throws Exception
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .around(proxyContext -> {
@@ -136,7 +126,7 @@ public class ProxySerializeTest
                     return value;
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -144,15 +134,13 @@ public class ProxySerializeTest
     public void afterSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .after(methodInfo -> {
                     System.out.println("afterSerializeTest1");
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 
@@ -160,15 +148,13 @@ public class ProxySerializeTest
     public void afterSerializeTest2()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> function = (str) -> str.length();
-
         Function<String, Integer> proxy = AopFactory.proxy(Function.class)
                 .byInstance(function)
                 .after(methodInfo -> {
                     System.out.println(methodInfo);
                 });
 
-        byte[] bytes = Serializables.serialize(proxy);
+        byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
     }
 }

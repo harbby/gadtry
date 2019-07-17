@@ -23,14 +23,24 @@ public class JdkProxy
     private JdkProxy() {}
 
     @SuppressWarnings("unchecked")
-    public static <T> T newProxyInstance(ClassLoader loader, Class<?> driver, InvocationHandler handler)
+    public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... driver)
             throws IllegalArgumentException
     {
-        return (T) Proxy.newProxyInstance(loader, new Class<?>[] {driver}, handler);
+        return (T) Proxy.newProxyInstance(loader, driver, handler);
     }
 
-    public static Class<?> getProxyClass(ClassLoader loader, Class<?> parent)
+    public static Class<?> getProxyClass(ClassLoader loader, Class<?>... driver)
     {
-        return Proxy.getProxyClass(loader, parent);
+        return Proxy.getProxyClass(loader, driver);
+    }
+
+    public static boolean isProxyClass(Class<?> cl)
+    {
+        return Proxy.isProxyClass(cl);
+    }
+
+    public static InvocationHandler getInvocationHandler(Object proxy)
+    {
+        return Proxy.getInvocationHandler(proxy);
     }
 }

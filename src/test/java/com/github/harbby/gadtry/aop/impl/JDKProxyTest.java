@@ -18,16 +18,40 @@ package com.github.harbby.gadtry.aop.impl;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationHandler;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JDKProxyTest
 {
     @Test
-    public void of()
+    public void newProxyInstance()
+            throws Exception
     {
-        CutModeImpl<Set> setAopProxy = CutModeImpl.of(Set.class, new HashSet(), JdkProxy::newProxyInstance);
-        Assert.assertNotNull(setAopProxy);
+        Supplier<String> set1 = () -> "done";
+        InvocationHandler handler = (proxy, method, args) -> {
+            return method.invoke(set1, args);
+        };
+        Supplier<String> proxySet = JdkProxy.newProxyInstance(getClass().getClassLoader(), handler, Supplier.class);
+        List a2 = Stream.of(proxySet.getClass().getDeclaredFields())
+                .map(field -> {
+                    field.setAccessible(true);
+                    try {
+                        return field.get(null);
+                    }
+                    catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).collect(Collectors.toList());
+
+//        ClassPool classPool = new ClassPool(true);
+//        classPool.appendClassPath(new LoaderClassPath(proxySet.getClass().getClassLoader()));
+//        CtClass ctClass = classPool.get(proxySet.getClass().getName());
+        Assert.assertEquals(proxySet.get(), "done");
     }
 
     @Test

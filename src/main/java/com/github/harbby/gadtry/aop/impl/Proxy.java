@@ -15,22 +15,69 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.base.Arrays;
+
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.util.Objects.requireNonNull;
 
 public interface Proxy
 {
-    <T> T getProxy(ClassLoader loader, Class<?> interfaces, InvocationHandler handler);
+    <T> T getProxy(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces);
 
-    public static interface ProxyHandler
+    public static ProxyBuilder builder(Class<?> superclass)
     {
-        /**
-         * Sets a handler.  It can be used for changing handlers
-         * during runtime.
-         *
-         * @param handler {@link InvocationHandler}
-         */
-        void setHandler(InvocationHandler handler);
+        return new ProxyBuilder(superclass);
+    }
 
-        InvocationHandler getHandler();
+    public static class ProxyBuilder
+    {
+        private final Class<?> superclass;
+        private final List<Class<?>> interfacesList = new ArrayList<>();
+        private InvocationHandler handler;
+        private ClassLoader classLoader;
+
+        public ProxyBuilder(Class<?> superclass)
+        {
+            this.superclass = requireNonNull(superclass, "superclass is null");
+        }
+
+        public ProxyBuilder addInterface(Class<?> superInterface)
+        {
+            requireNonNull(superInterface, "superInterface is null");
+            checkState(superInterface.isInterface(), superInterface.getName() + " not is Interface");
+            interfacesList.add(superInterface);
+            return this;
+        }
+
+        public ProxyBuilder setInvocationHandler(InvocationHandler handler)
+        {
+            this.handler = handler;
+            return this;
+        }
+
+        public ProxyBuilder setClassLoader(ClassLoader classLoader)
+        {
+            this.classLoader = classLoader;
+            return this;
+        }
+
+        public <T> T build()
+        {
+            checkState(handler != null, "InvocationHandler is null");
+            Class<?>[] interfaces = Arrays.asArray(superclass, interfacesList);
+            if (superclass.isInterface()) {
+                T proxy = JdkProxy.newProxyInstance(classLoader, handler, interfaces);
+                return proxy;
+            }
+            else {
+                checkState(!Modifier.isFinal(superclass.getModifiers()), superclass + " is final");
+                return JavassistProxy.newProxyInstance(classLoader, handler, interfaces);
+            }
+        }
     }
 }

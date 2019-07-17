@@ -57,7 +57,7 @@ public class AopFactoryImpl
         }
 
         if (pointcut != null) {
-            final Function<ProxyContext, Object> handler = pointcut.buildRunHandler();
+            final Function<ProxyContext, Object, Throwable> handler = pointcut.buildRunHandler();
             return AopFactory.proxy(driver)
                     .byInstance(instance)
                     .whereMethod(pointcut.getMethodFilter())

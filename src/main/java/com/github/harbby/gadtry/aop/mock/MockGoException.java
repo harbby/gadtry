@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.function.exception;
+package com.github.harbby.gadtry.aop.mock;
 
-import java.io.Serializable;
-
-@FunctionalInterface
-public interface Function3<F1, F2, F3, R, Throwable extends java.lang.Throwable>
-        extends Serializable
+public class MockGoException
+        extends RuntimeException
 {
-    R apply(F1 f1, F2 f2, F3 f3)
-            throws Throwable;
+    public MockGoException(String message)
+    {
+        super(message);
+    }
+
+    public MockGoException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public MockGoException(Throwable cause)
+    {
+        super(cause);
+    }
 }

@@ -43,11 +43,11 @@ import static java.util.Objects.requireNonNull;
 
 public final class PluginLoader<T>
 {
-    private final Function<File, Module<T>> loader;
+    private final Function<File, Module<T>, Exception> loader;
     private final Supplier<Collection<File>> scanner;
     private final ConcurrentMap<String, Module<T>> modules = new ConcurrentHashMap<>();
 
-    private PluginLoader(List<Module<T>> modules, Function<File, Module<T>> loader, Supplier<Collection<File>> scanner)
+    private PluginLoader(List<Module<T>> modules, Function<File, Module<T>, Exception> loader, Supplier<Collection<File>> scanner)
     {
         this.loader = loader;
         this.scanner = scanner;

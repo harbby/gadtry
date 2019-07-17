@@ -67,7 +67,7 @@ public class CutModeImpl<T>
     }
 
     private static <T> T getProxyStatic(
-            Proxy proxyContext,
+            Proxy proxyFactory,
             ClassLoader loader,
             Class<?> interfaces,
             InvocationHandler handler,
@@ -85,17 +85,17 @@ public class CutModeImpl<T>
                 }
                 : handler;
 
-        return proxyContext.getProxy(loader, interfaces, proxyHandler);
+        return proxyFactory.getProxy(loader, proxyHandler, interfaces);
     }
 
     @Override
-    public T around(Function<ProxyContext, Object> aroundHandler)
+    public T around(Function<ProxyContext, Object, Throwable> aroundHandler)
     {
         InvocationHandler handler = aroundStatic(aroundHandler, instance);
         return this.getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler aroundStatic(Function<ProxyContext, Object> aroundHandler, T instance)
+    private static <T> InvocationHandler aroundStatic(Function<ProxyContext, Object, Throwable> aroundHandler, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             ProxyContext context = ProxyContext.of(instance, method, args);
@@ -113,13 +113,13 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T before(Consumer<Before> runnable)
+    public T before(Consumer<Before, Exception> runnable)
     {
         InvocationHandler handler = beforeStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler beforeStatic(Consumer<Before> runnable, T instance)
+    private static <T> InvocationHandler beforeStatic(Consumer<Before, Exception> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             runnable.apply(Before.of(method, args));
@@ -129,13 +129,13 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T afterReturning(Consumer<AfterReturning> runnable)
+    public T afterReturning(Consumer<AfterReturning, Exception> runnable)
     {
         InvocationHandler handler = afterReturningStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler afterReturningStatic(Consumer<AfterReturning> runnable, T instance)
+    private static <T> InvocationHandler afterReturningStatic(Consumer<AfterReturning, Exception> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             Object value = method.invoke(instance, args);
@@ -146,13 +146,13 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T after(Consumer<After> runnable)
+    public T after(Consumer<After, Exception> runnable)
     {
         InvocationHandler handler = afterStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler afterStatic(Consumer<After> runnable, T instance)
+    private static <T> InvocationHandler afterStatic(Consumer<After, Exception> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             Object value = null;
@@ -173,13 +173,13 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T afterThrowing(Consumer<AfterThrowing> runnable)
+    public T afterThrowing(Consumer<AfterThrowing, Exception> runnable)
     {
         InvocationHandler handler = afterThrowingStatic(runnable, instance);
         return getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler afterThrowingStatic(Consumer<AfterThrowing> runnable, T instance)
+    private static <T> InvocationHandler afterThrowingStatic(Consumer<AfterThrowing, Exception> runnable, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             try {

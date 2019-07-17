@@ -17,9 +17,11 @@ package com.github.harbby.gadtry.memory;
 
 import sun.misc.Cleaner;
 import sun.misc.Unsafe;
+import sun.reflect.ReflectionFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 
 import static java.util.Objects.requireNonNull;
@@ -96,6 +98,15 @@ public final class UnsafeHelper
             throws InstantiationException
     {
         return (T) _UNSAFE.allocateInstance(tClass);
+    }
+
+    public static <T> T allocateInstance2(Class<T> tClass)
+            throws InstantiationException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
+        Constructor superCons = Object.class.getConstructor();
+        ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
+        Constructor c = reflFactory.newConstructorForSerialization(tClass, superCons);
+        return (T) c.newInstance();
     }
 
     public static void copyMemory(

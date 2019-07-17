@@ -18,9 +18,9 @@ package com.github.harbby.gadtry.function.exception;
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface Consumer<T>
+public interface Consumer<T, Throwable extends java.lang.Throwable>
         extends Serializable
 {
     void apply(T t)
-            throws Exception;
+            throws Throwable;
 }

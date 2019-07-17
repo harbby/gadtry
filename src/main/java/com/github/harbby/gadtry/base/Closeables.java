@@ -50,7 +50,7 @@ public interface Closeables<T>
         return () -> Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
     }
 
-    public static <T> Closeables<T> autoClose(T instance, Consumer<T> runnable)
+    public static <T> Closeables<T> autoClose(T instance, Consumer<T, Exception> runnable)
     {
         return new Closeables<T>()
         {

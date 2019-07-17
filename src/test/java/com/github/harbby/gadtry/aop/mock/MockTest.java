@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop;
+package com.github.harbby.gadtry.aop.mock;
 
-import com.github.harbby.gadtry.aop.mock.MockGo;
 import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -81,8 +81,11 @@ public class MockTest
     {
         List<String> proxy = MockGo.mock(List.class);
         doReturn(7).when(proxy).size();
-        doAround(proxyContext -> "123").when(proxy).toString();
-        doThrow(new IOException("mockDoThrow")).when(proxy).get(anyInt());
+        doAround(proxyContext -> {
+            proxyContext.proceed();
+            return "123";
+        }).when(proxy).toString();
+        doThrow(new RuntimeException("mockDoThrow")).when(proxy).get(anyInt());
 
         Assert.assertEquals(proxy.size(), 7);
         Assert.assertEquals("123", proxy.toString());
@@ -90,9 +93,8 @@ public class MockTest
         try {
             proxy.get(0);
             Assert.fail();
-            Throwables.throwsException(IOException.class);
         }
-        catch (IOException e) {
+        catch (RuntimeException e) {
             Assert.assertEquals(e.getMessage(), "mockDoThrow");
         }
     }
@@ -103,7 +105,7 @@ public class MockTest
         List<String> proxy = MockGo.mock(List.class);
         when(proxy.size()).thenReturn(7);
         when(proxy.toString()).thenAround(proxyContext -> "123");
-        when(proxy.get(anyInt())).thenThrow(new IOException("mockDoThrow"));
+        when(proxy.get(anyInt())).thenThrow(new RuntimeException("mockDoThrow"));
 
         Assert.assertEquals(proxy.size(), 7);
         Assert.assertEquals("123", proxy.toString());
@@ -111,10 +113,17 @@ public class MockTest
         try {
             proxy.get(0);
             Assert.fail();
-            Throwables.throwsException(IOException.class);
         }
-        catch (IOException e) {
+        catch (RuntimeException e) {
             Assert.assertEquals(e.getMessage(), "mockDoThrow");
         }
+    }
+
+    @Test(expected = MockGoException.class)
+    public void doNothingTest()
+    {
+        List<String> proxy = MockGo.spy(new ArrayList<>());
+        MockGo.doNothing().when(proxy).size();
+        proxy.size();
     }
 }

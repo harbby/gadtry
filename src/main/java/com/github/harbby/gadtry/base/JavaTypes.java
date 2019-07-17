@@ -131,6 +131,9 @@ public class JavaTypes
     public static <T> T getPrimitiveClassInitValue(Class<?> aClass)
     {
         checkState(aClass.isPrimitive(), "%s not is primitive", aClass);
+        if (aClass == void.class) {
+            return null;
+        }
         Object arr = java.lang.reflect.Array.newInstance(aClass, 1);
         return (T) Array.get(arr, 0);
     }
@@ -235,5 +238,13 @@ public class JavaTypes
 
         classRepository.getSuperclass();
         return MutableList.asList(classRepository.getSuperclass(), classRepository.getSuperInterfaces());
+    }
+
+    public static <T> Class<T> classTag(Class<?> runtimeClass)
+    {
+//        if (runtimeClass.isPrimitive()) {
+//            return (Class<T>) JavaTypes.getWrapperClass(runtimeClass);
+//        }
+        return (Class<T>) runtimeClass;
     }
 }

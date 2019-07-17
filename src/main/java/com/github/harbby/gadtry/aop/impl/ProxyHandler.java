@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.function.exception;
+package com.github.harbby.gadtry.aop.impl;
 
-import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
 
-@FunctionalInterface
-public interface Function3<F1, F2, F3, R, Throwable extends java.lang.Throwable>
-        extends Serializable
+public interface ProxyHandler
 {
-    R apply(F1 f1, F2 f2, F3 f3)
-            throws Throwable;
+    /**
+     * sets a handler.  It can be used for changing handlers
+     * during runtime.
+     *
+     * @param handler {@link InvocationHandler}
+     */
+    public void setHandler(InvocationHandler handler);
+
+    /**
+     * get a handler.  It can be used for changing handlers
+     * during runtime.
+     *
+     * @return handler {@link InvocationHandler}
+     */
+    public InvocationHandler getHandler();
 }

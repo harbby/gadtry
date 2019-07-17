@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -49,15 +50,15 @@ public class JavassistProxyTest
             }
             return method.invoke(old, args1);
         };
-        Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), Test1.class, handler);
+        Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class);
         int age = proxy.age();
         Assert.assertEquals(18, age);
         Assert.assertEquals(name, proxy.name());
-        Assert.assertTrue(proxy instanceof Proxy.ProxyHandler);
+        Assert.assertTrue(proxy instanceof ProxyHandler);
         Assert.assertTrue(atomicBoolean.get());
         System.out.println(proxy);
 
-        Test1 proxy2 = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), Test1.class, handler);
+        Test1 proxy2 = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class);
         System.out.println(proxy2);
     }
 
@@ -99,6 +100,22 @@ public class JavassistProxyTest
     }
 
     @Test
+    public void testConcurrent10GiveHashSet()
+    {
+        ClassLoader classLoader = HashSet.class.getClassLoader();
+        Streams.range(10).parallel()
+                .forEach(x -> {
+                    try {
+                        Class<?> aClass = JavassistProxy.getProxyClass(classLoader, HashSet.class);
+                        Assert.assertTrue(HashSet.class.isAssignableFrom(aClass));
+                    }
+                    catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    @Test
     public void testConcurrent_CLass()
     {
         Unsafe unsafe = UnsafeHelper.getUnsafe();
@@ -118,5 +135,34 @@ public class JavassistProxyTest
                         Assert.fail(e.getMessage());
                     }
                 });
+    }
+
+    @Test
+    public void genericClassProxyTest()
+    {
+        final GenericProxyClass genericProxyClass = new GenericProxyClass();
+        InvocationHandler invocationHandler = (proxy, method, args) -> {
+            if ("get".equals(method.getName())) {
+                return "hello";
+            }
+            return method.invoke(genericProxyClass, args);
+        };
+        GenericProxyClass proxy = JavassistProxy.newProxyInstance(null, invocationHandler, GenericProxyClass.class);
+        Assert.assertEquals(proxy.get(), "hello");
+    }
+
+    public static class GenericProxyClass
+            implements Supplier<String>, Provider<String>
+    {
+        @Override
+        public String get()
+        {
+            return null;
+        }
+    }
+
+    public interface Provider<V>
+    {
+        V get();
     }
 }
