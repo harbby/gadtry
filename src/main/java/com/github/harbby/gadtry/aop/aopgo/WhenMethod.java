@@ -15,26 +15,33 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
-import com.github.harbby.gadtry.aop.mock.MockInvocationHandler;
+import com.github.harbby.gadtry.function.exception.Consumer;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class WhenMethod<T>
 {
     private final Class<T> superclass;
-    private final T instance;
+    private final T target;
 
-    private java.util.function.Consumer<MockBinder<T>>[] binders;
+    private Consumer<MockBinder<T>, Throwable>[] binders;
 
-    public WhenMethod(Class<T> superclass, T instance)
+    public WhenMethod(Class<T> superclass, T target)
     {
         this.superclass = superclass;
-        this.instance = instance;
+        this.target = target;
     }
 
     @SafeVarargs
-    public final WhenMethod<T> aop(java.util.function.Consumer<MockBinder<T>>... binders)
+    public final WhenMethod<T> aop(Consumer<MockBinder<T>, Throwable>... binders)
     {
         this.binders = binders;
         return this;
@@ -44,24 +51,30 @@ public class WhenMethod<T>
     {
         ClassLoader loader = superclass.getClassLoader() == null ? ProxyHandler.class.getClassLoader() :
                 superclass.getClassLoader();
-        MockInvocationHandler mockInvocationHandler = new MockInvocationHandler(instance);
+        final AopInvocationHandler aopInvocationHandler = new AopInvocationHandler(target);
         T proxy = Proxy.builder(superclass)
-                .addInterface(ProxyHandler.class)
-                .setInvocationHandler(mockInvocationHandler)
+                .setInvocationHandler(aopInvocationHandler)
                 .setClassLoader(loader)
                 .build();
-        // mock method getHandler()
-        // 等价于: toReturn(invocationHandler).when(proxy).getHandler() 但此处并不能这么写
-        if (JdkProxy.isProxyClass(proxy.getClass())) {
-            mockInvocationHandler.setDoNext(p -> mockInvocationHandler);
-            ((ProxyHandler) proxy).getHandler(); //must
-        }
         //---------------------------
-        MockBinder<T> mockBinder = new MockBinder<>(proxy, mockInvocationHandler);
-        for (java.util.function.Consumer<MockBinder<T>> it : binders) {
-            it.accept(mockBinder);
+        final MockBinder<T> mockBinder = new MockBinder<>(proxy, aopInvocationHandler);
+        for (Consumer<MockBinder<T>, Throwable> it : binders) {
+            try {
+                it.apply(mockBinder);
+            }
+            catch (Throwable throwable) {
+                throwsThrowable(throwable);
+            }
         }
-        mockBinder.flush();
+        List<Aspect> aspects = mockBinder.build();
+        Map<Method, Advice> methodAdviceMap = new HashMap<>();
+        for (Aspect aspect : aspects) {
+            List<Method> methods = aspect.getPointcut().filter(proxy.getClass());
+            //merge aspect
+            Arrays.stream(aspect.getAdvices()).reduce(Advice::merge).ifPresent(advice ->
+                    methods.forEach(method -> methodAdviceMap.merge(method, advice, Advice::merge)));
+        }
+        methodAdviceMap.forEach(aopInvocationHandler::register);
         return proxy;
     }
 }

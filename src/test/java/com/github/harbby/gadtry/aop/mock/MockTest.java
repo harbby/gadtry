@@ -29,7 +29,7 @@ import static com.github.harbby.gadtry.aop.mock.MockGo.doAround;
 import static com.github.harbby.gadtry.aop.mock.MockGo.doReturn;
 import static com.github.harbby.gadtry.aop.mock.MockGo.doThrow;
 import static com.github.harbby.gadtry.aop.mock.MockGo.when;
-import static com.github.harbby.gadtry.aop.mock.MockitoArgument.anyInt;
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyInt;
 
 public class MockTest
 {
@@ -97,6 +97,16 @@ public class MockTest
         catch (RuntimeException e) {
             Assert.assertEquals(e.getMessage(), "mockDoThrow");
         }
+    }
+
+    @Test
+    public void verify()
+    {
+//        Mockito.verify(proxy, Mockito.times(5)).get(anyInt());
+//        Mockito.verify(proxy, Mockito.times(5)).get(2);
+//        Mockito.verify(proxy, VerificationModeFactory.only()).size();
+//        Mockito.verify(proxy, Mockito.timeout(1)).size();
+//        Assert.assertEquals(Mockito.analaysis(proxy.get(2)).getTirggTimes(), 5);
     }
 
     @Test

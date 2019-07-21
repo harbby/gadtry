@@ -15,8 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.ProxyContext;
-import com.github.harbby.gadtry.aop.mock.MockInvocationHandler;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.model.After;
 import com.github.harbby.gadtry.aop.model.AfterReturning;
 import com.github.harbby.gadtry.aop.model.AfterThrowing;
@@ -24,58 +23,67 @@ import com.github.harbby.gadtry.aop.model.Before;
 import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MockBinder<T>
 {
-    private final MockInvocationHandler mockInvocationHandler;
+    private final AopInvocationHandler aopInvocationHandler;
     private final T proxy;
+    private final AtomicReference<PointcutBuilder<T>> last = new AtomicReference<>();
+    private final List<Aspect> aspects = new ArrayList<>();
 
-    public MockBinder(T proxy, MockInvocationHandler mockInvocationHandler)
+    public MockBinder(T proxy, AopInvocationHandler aopInvocationHandler)
     {
-        this.mockInvocationHandler = mockInvocationHandler;
+        this.aopInvocationHandler = aopInvocationHandler;
         this.proxy = proxy;
     }
 
-    public MethodSelect<T> doBefore(Consumer<Before, Exception> before)
+    public PointcutBuilder<T> doBefore(Consumer<Before, Exception> before)
     {
         return createMethodSelect(AroundHandler.doBefore(before));
     }
 
-    public MethodSelect<T> doAfterReturning(Consumer<AfterReturning, Exception> afterReturning)
+    public PointcutBuilder<T> doAfterReturning(Consumer<AfterReturning, Exception> afterReturning)
     {
         return createMethodSelect(AroundHandler.doAfterReturning(afterReturning));
     }
 
-    public MethodSelect<T> doAfterThrowing(Consumer<AfterThrowing, Exception> afterThrowing)
+    public PointcutBuilder<T> doAfterThrowing(Consumer<AfterThrowing, Exception> afterThrowing)
     {
         return createMethodSelect(AroundHandler.doAfterThrowing(afterThrowing));
     }
 
-    public MethodSelect<T> doAfter(Consumer<After, Exception> after)
+    public PointcutBuilder<T> doAfter(Consumer<After, Exception> after)
     {
         return createMethodSelect(AroundHandler.doAfter(after));
     }
 
-    public MethodSelect<T> doAround(Function<ProxyContext, Object, Throwable> aroundContext)
+    public PointcutBuilder<T> doAround(Function<JoinPoint, Object, Throwable> aroundContext)
     {
         return createMethodSelect(aroundContext);
     }
 
-    void flush()
+    private void flush()
     {
         if (last.get() != null) {
-            last.get().build();
+            Aspect aspect = last.get().build();
+            aspects.add(aspect);
         }
     }
 
-    AtomicReference<MethodSelect<T>> last = new AtomicReference<>();
-
-    private MethodSelect<T> createMethodSelect(Function<ProxyContext, Object, Throwable> function)
+    List<Aspect> build()
     {
         this.flush();
-        MethodSelect<T> methodSelect = new MethodSelect<T>(mockInvocationHandler, proxy, function);
-        last.set(methodSelect);
-        return methodSelect;
+        return aspects;
+    }
+
+    private PointcutBuilder<T> createMethodSelect(Function<JoinPoint, Object, Throwable> function)
+    {
+        this.flush();
+        PointcutBuilder<T> pointcutBuilder = new PointcutBuilder<T>(aopInvocationHandler, proxy, function);
+        last.set(pointcutBuilder);
+        return pointcutBuilder;
     }
 }

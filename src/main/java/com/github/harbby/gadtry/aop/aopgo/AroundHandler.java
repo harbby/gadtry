@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.model.After;
 import com.github.harbby.gadtry.aop.model.AfterReturning;
 import com.github.harbby.gadtry.aop.model.AfterThrowing;
@@ -24,7 +24,7 @@ import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
 
 public interface AroundHandler
-        extends Function<ProxyContext, Object, Throwable>
+        extends Function<JoinPoint, Object, Throwable>
 {
     static AroundHandler doBefore(Consumer<Before, Exception> before)
     {
@@ -75,7 +75,7 @@ public interface AroundHandler
         };
     }
 
-    static AroundHandler doAround(Function<ProxyContext, Object, Throwable> aroundContext)
+    static AroundHandler doAround(Function<JoinPoint, Object, Throwable> aroundContext)
     {
         return aroundContext::apply;
     }

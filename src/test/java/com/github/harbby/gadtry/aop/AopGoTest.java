@@ -18,6 +18,7 @@ package com.github.harbby.gadtry.aop;
 import com.github.harbby.gadtry.aop.impl.JavassistProxy;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple4;
@@ -102,5 +103,33 @@ public class AopGoTest
         Assert.assertEquals(list.size(), 1);
         Assert.assertTrue(list.isEmpty());
         Assert.assertEquals(actions, MutableSet.of("isEmpty"));
+    }
+
+    /**
+     * 同心圆
+     */
+    @Test
+    public void moreAspectTest()
+    {
+        List<String> actions = new ArrayList<>();
+        Set<String> set = AopGo.proxy(JavaTypes.<Set<String>>classTag(Set.class))
+                .byInstance(new HashSet<>())
+                .aop(binder -> {
+                    binder.doBefore(before -> {
+                        actions.add("before1");
+                    }).when().size();
+                    binder.doAround(cut -> {
+                        actions.add("before2");
+                        int value = (int) cut.proceed() + 1;
+                        actions.add("before3");
+                        return value;
+                    }).whereMethod(method -> method.getName().startsWith("size"));
+                    binder.doBefore(before -> {
+                        actions.add("before4");
+                    }).when().size();
+                })
+                .build();
+        Assert.assertEquals(set.size(), 1);
+        Assert.assertEquals(MutableList.of("before1", "before2", "before4", "before3"), actions);
     }
 }

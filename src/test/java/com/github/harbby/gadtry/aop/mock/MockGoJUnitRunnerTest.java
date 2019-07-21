@@ -15,18 +15,28 @@
  */
 package com.github.harbby.gadtry.aop.mock;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.util.List;
+import java.util.Map;
 
-@Target({FIELD, PARAMETER})  //add METHOD  PARAMETER
-@Retention(RUNTIME)
-@Documented
-@Deprecated
-public @interface InjectMock
+@RunWith(MockGoJUnitRunner.class)
+public class MockGoJUnitRunnerTest
 {
+    @Mock
+    private List<String> list;
+    @Mock
+    private Map<String, Integer> map;
+
+    @InjectMock
+    private MockAnnotationsTest.InjectMockClass injectMockClass;
+
+    @Test
+    public void initMocks()
+    {
+        Assert.assertTrue(list == injectMockClass.getList());
+        Assert.assertTrue(map == injectMockClass.getMap());
+    }
 }

@@ -31,12 +31,12 @@ public class AopGo
 
     public interface ByInstance<T>
     {
-        public WhenMethod<T> byInstance(T instance);
+        public WhenMethod<T> byInstance(T target);
     }
 
     public static <T> ByInstance<T> proxy(Class<T> superclass)
     {
-        return instance -> new WhenMethod<>(superclass, instance);
+        return target -> new WhenMethod<>(superclass, target);
     }
 
     public static <T> WhenMethod<T> proxy(T instance)
@@ -49,7 +49,7 @@ public class AopGo
         return doAround(AroundHandler.doBefore(before));
     }
 
-    public static MockGo.DoBuilder doAround(Function<ProxyContext, Object, Throwable> function)
+    public static MockGo.DoBuilder doAround(Function<JoinPoint, Object, Throwable> function)
     {
         return MockGo.doAround(function);
     }

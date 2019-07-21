@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.mock;
 
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.impl.JavassistProxy;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.impl.Proxy;
@@ -109,21 +109,21 @@ public class MockGo
         });
     }
 
-    public static DoBuilder doAnswer(Function<ProxyContext, Object, Throwable> function)
+    public static DoBuilder doAnswer(Function<JoinPoint, Object, Throwable> function)
     {
         return doAround(function);
     }
 
-    public static DoBuilder doAround(Function<ProxyContext, Object, Throwable> function)
+    public static DoBuilder doAround(Function<JoinPoint, Object, Throwable> function)
     {
         return new DoBuilder(function);
     }
 
     public static class DoBuilder
     {
-        private final Function<ProxyContext, Object, Throwable> function;
+        private final Function<JoinPoint, Object, Throwable> function;
 
-        public DoBuilder(Function<ProxyContext, Object, Throwable> function)
+        public DoBuilder(Function<JoinPoint, Object, Throwable> function)
         {
             this.function = function;
         }
@@ -141,7 +141,7 @@ public class MockGo
         return new WhenThenBuilder<>();
     }
 
-    public static DoBuilder doThrow(Exception e)
+    public static DoBuilder doThrow(Throwable e)
     {
         return new DoBuilder(f -> { throw e; });
     }
@@ -162,20 +162,33 @@ public class MockGo
             bind(p -> value);
         }
 
-        public void thenAround(Function<ProxyContext, Object, Throwable> function)
+        public void thenNothing()
+        {
+            bind(f -> {
+                if (f.getMethod().getReturnType() != void.class) {
+                    throw new MockGoException("Only void methods can doNothing()!\n" +
+                            "Example of correct use of doNothing():\n" +
+                            "    doNothing().\n" +
+                            "    .when(mock).someVoidMethod();");
+                }
+                return null;
+            });
+        }
+
+        public void thenAround(Function<JoinPoint, Object, Throwable> function)
         {
             bind(function);
         }
 
-        public void thenThrow(Exception e)
+        public void thenThrow(Throwable e)
         {
             bind(f -> { throw e; });
         }
 
-        private void bind(Function<ProxyContext, Object, Throwable> function)
+        private void bind(Function<JoinPoint, Object, Throwable> pointcut)
         {
             MockInvocationHandler handler = getMockInvocationHandler(lastWhenMethod.f1());
-            handler.register(lastWhenMethod.f2(), function);
+            handler.register(lastWhenMethod.f2(), pointcut);
         }
     }
 

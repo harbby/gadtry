@@ -57,7 +57,7 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder around(Function<ProxyContext, Object, Throwable> aroundHandler)
+        public PointBuilder around(Function<JoinPoint, Object, Throwable> aroundHandler)
         {
             requireNonNull(aroundHandler, "aroundHandler is null");
             pointcut.setAround(aroundHandler);

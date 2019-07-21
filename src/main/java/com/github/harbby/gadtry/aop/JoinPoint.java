@@ -21,7 +21,10 @@ import java.lang.reflect.Method;
 
 import static java.util.Objects.requireNonNull;
 
-public interface ProxyContext
+/**
+ * around
+ */
+public interface JoinPoint
         extends Before
 {
     default Object proceed()
@@ -33,10 +36,10 @@ public interface ProxyContext
     Object proceed(Object[] args)
             throws Throwable;
 
-    public static ProxyContext of(Object instance, Method method, Object[] args)
+    public static JoinPoint of(Object instance, Method method, Object[] args)
     {
         requireNonNull(instance, "instance is null");
-        return new ProxyContext()
+        return new JoinPoint()
         {
             @Override
             public Method getMethod()

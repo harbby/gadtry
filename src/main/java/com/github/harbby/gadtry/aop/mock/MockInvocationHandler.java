@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.mock;
 
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.exception.Function;
 
@@ -35,13 +35,13 @@ public class MockInvocationHandler
         implements InvocationHandler, Serializable
 {
     private final InvocationHandler handler;
-    private final AtomicReference<Function<ProxyContext, Object, Throwable>> next = new AtomicReference<>();
-    private final Map<Method, Function<ProxyContext, Object, Throwable>> mockMethods = new IdentityHashMap<>();
-    private final Object instance;
+    private final AtomicReference<Function<JoinPoint, Object, Throwable>> next = new AtomicReference<>();
+    private final Map<Method, Function<JoinPoint, Object, Throwable>> mockMethods = new IdentityHashMap<>();
+    private final Object target;
 
     public MockInvocationHandler()
     {
-        this.instance = null;
+        this.target = null;
         this.handler = (proxy, method, args) ->
         {
             LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
@@ -49,14 +49,14 @@ public class MockInvocationHandler
         };
     }
 
-    public MockInvocationHandler(Object instance)
+    public MockInvocationHandler(Object target)
     {
-        this.instance = requireNonNull(instance, "instance is null");
+        this.target = requireNonNull(target, "instance is null");
         this.handler = (proxy, method, args) ->
         {
             LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
             try {
-                return method.invoke(instance, args);
+                return method.invoke(target, args);
             }
             catch (InvocationTargetException e) {
                 throw e.getTargetException();
@@ -67,7 +67,7 @@ public class MockInvocationHandler
     /**
      * doReturn register
      */
-    public void setDoNext(Function<ProxyContext, Object, Throwable> function)
+    public void setDoNext(Function<JoinPoint, Object, Throwable> function)
     {
         next.set(function);
     }
@@ -75,22 +75,22 @@ public class MockInvocationHandler
     /**
      * WhenThen register
      */
-    public void register(Method method, Function<ProxyContext, Object, Throwable> nextValue)
+    public void register(Method method, Function<JoinPoint, Object, Throwable> advice)
     {
-        mockMethods.put(method, nextValue);
+        mockMethods.put(method, advice);
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args)
             throws Throwable
     {
-        Function<ProxyContext, Object, Throwable> nextValue = next.getAndSet(null);
-        if (nextValue != null) {
-            register(method, nextValue);
+        Function<JoinPoint, Object, Throwable> advice = next.getAndSet(null);
+        if (advice != null) {
+            register(method, advice);
             return getClassInitValue(method.getReturnType());
         }
         else if (mockMethods.containsKey(method)) {
-            ProxyContext context = new ProxyContext()
+            final JoinPoint context = new JoinPoint()
             {
                 @Override
                 public Method getMethod()
@@ -108,11 +108,11 @@ public class MockInvocationHandler
                 public Object proceed(Object[] args)
                         throws Throwable
                 {
-                    if (instance == null) {  //@Mock
+                    if (target == null) {  //@Mock
                         return getClassInitValue(method.getReturnType());
                     }
                     else {  //MockSpy
-                        return method.invoke(instance, args);
+                        return method.invoke(target, args);
                     }
                 }
             };

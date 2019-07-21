@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.CutMode;
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.model.After;
 import com.github.harbby.gadtry.aop.model.AfterReturning;
 import com.github.harbby.gadtry.aop.model.AfterThrowing;
@@ -89,16 +89,16 @@ public class CutModeImpl<T>
     }
 
     @Override
-    public T around(Function<ProxyContext, Object, Throwable> aroundHandler)
+    public T around(Function<JoinPoint, Object, Throwable> aroundHandler)
     {
         InvocationHandler handler = aroundStatic(aroundHandler, instance);
         return this.getProxy(handler, interfaces);
     }
 
-    private static <T> InvocationHandler aroundStatic(Function<ProxyContext, Object, Throwable> aroundHandler, T instance)
+    private static <T> InvocationHandler aroundStatic(Function<JoinPoint, Object, Throwable> aroundHandler, T instance)
     {
         InvocationHandler handler = (InvocationHandler & Serializable) (proxy, method, args) -> {
-            ProxyContext context = ProxyContext.of(instance, method, args);
+            JoinPoint context = JoinPoint.of(instance, method, args);
             Object returnValue = aroundHandler.apply(context);
             Class<?> returnType = method.getReturnType();
 

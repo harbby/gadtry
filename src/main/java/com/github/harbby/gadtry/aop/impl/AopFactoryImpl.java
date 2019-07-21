@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.AopFactory;
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.model.Pointcut;
 import com.github.harbby.gadtry.function.exception.Function;
 
@@ -57,7 +57,7 @@ public class AopFactoryImpl
         }
 
         if (pointcut != null) {
-            final Function<ProxyContext, Object, Throwable> handler = pointcut.buildRunHandler();
+            final Function<JoinPoint, Object, Throwable> handler = pointcut.buildRunHandler();
             return AopFactory.proxy(driver)
                     .byInstance(instance)
                     .whereMethod(pointcut.getMethodFilter())

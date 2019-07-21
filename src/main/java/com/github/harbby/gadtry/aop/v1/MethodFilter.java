@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.v1;
 
 import com.github.harbby.gadtry.aop.model.MethodInfo;
+import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
@@ -24,7 +25,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public interface MethodFilter<T>
@@ -42,36 +42,12 @@ public interface MethodFilter<T>
     {
         checkState(inReturnTypes != null, "inReturnTypes is null");
         final Class<?>[] returnTypes = Arrays.stream(inReturnTypes)
-                .flatMap(aClass -> {
-                    if (aClass == Boolean.class || aClass == boolean.class) {
-                        return Stream.of(Boolean.class, boolean.class);
-                    }
-                    else if (aClass == Integer.class || aClass == int.class) {
-                        return Stream.of(Integer.class, int.class);
-                    }
-                    else if (aClass == Byte.class || aClass == byte.class) {
-                        return Stream.of(Byte.class, byte.class);
-                    }
-                    else if (aClass == float.class || aClass == Float.class) {
-                        return Stream.of(float.class, Float.class);
-                    }
-                    else if (aClass == Short.class || aClass == short.class) {
-                        return Stream.of(Short.class, short.class);
-                    }
-                    else if (aClass == Long.class || aClass == long.class) {
-                        return Stream.of(Long.class, long.class);
-                    }
-                    else if (aClass == Double.class || aClass == double.class) {
-                        return Stream.of(Double.class, double.class);
-                    }
-                    else if (aClass == Character.class || aClass == char.class) {
-                        return Stream.of(Character.class, char.class);
-                    }
-                    else if (aClass == Void.class || aClass == void.class) {
-                        return Stream.of(Void.class, void.class);
+                .map(aClass -> {
+                    if (aClass.isPrimitive()) {
+                        return JavaTypes.getWrapperClass(aClass);
                     }
                     else {
-                        return Stream.of(aClass);
+                        return aClass;
                     }
                 }).toArray(Class<?>[]::new);
 
@@ -80,10 +56,16 @@ public interface MethodFilter<T>
             filters.add(whereMethod);
         }
         if (returnTypes.length > 0) {
-            filters.add(methodInfo -> checkContainsTrue(returnType -> returnType.isAssignableFrom(methodInfo.getReturnType()), returnTypes));
+            filters.add(methodInfo -> Stream.of(returnTypes).anyMatch(returnType ->
+            {
+                if (methodInfo.getReturnType().isPrimitive()) {
+                    return returnType.isAssignableFrom(JavaTypes.getWrapperClass(methodInfo.getReturnType()));
+                }
+                return returnType.isAssignableFrom(methodInfo.getReturnType());
+            }));
         }
         if (methodAnnotations != null && methodAnnotations.length > 0) {
-            filters.add(methodInfo -> checkContainsTrue(ann -> methodInfo.getAnnotation(ann) != null, methodAnnotations));
+            filters.add(methodInfo -> Stream.of(methodAnnotations).anyMatch(ann -> methodInfo.getAnnotation(ann) != null));
         }
 
         return methodInfo -> {

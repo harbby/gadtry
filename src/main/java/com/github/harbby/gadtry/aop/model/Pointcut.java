@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
@@ -27,7 +27,7 @@ import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class Pointcut
 {
-    private Function<ProxyContext, Object, Throwable> around = ProxyContext::proceed;
+    private Function<JoinPoint, Object, Throwable> around = JoinPoint::proceed;
 
     private Consumer<Before, Exception> before;
     private Consumer<After, Exception> after;
@@ -108,17 +108,17 @@ public class Pointcut
         this.after = after;
     }
 
-    public void setAround(Function<ProxyContext, Object, Throwable> aroundHandler)
+    public void setAround(Function<JoinPoint, Object, Throwable> aroundHandler)
     {
         this.around = aroundHandler;
     }
 
-    public Function<ProxyContext, Object, Throwable> getAround()
+    public Function<JoinPoint, Object, Throwable> getAround()
     {
         return around;
     }
 
-    public Function<ProxyContext, Object, Throwable> buildRunHandler()
+    public Function<JoinPoint, Object, Throwable> buildRunHandler()
     {
         return (proxyContext) -> {
             if (this.getBefore() != null) {

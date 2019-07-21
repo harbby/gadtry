@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop.mock;
+package com.github.harbby.gadtry.aop.aopgo;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-@Target({FIELD, PARAMETER})  //add METHOD  PARAMETER
-@Retention(RUNTIME)
-@Documented
-@Deprecated
-public @interface InjectMock
+/**
+ * Weaving
+ */
+public interface Aspect
 {
+    Pointcut getPointcut();  //Only One
+
+    Advice[] getAdvices();
 }

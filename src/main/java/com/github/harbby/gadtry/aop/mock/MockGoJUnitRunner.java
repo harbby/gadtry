@@ -15,18 +15,24 @@
  */
 package com.github.harbby.gadtry.aop.mock;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.InitializationError;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-@Target({FIELD, PARAMETER})  //add METHOD  PARAMETER
-@Retention(RUNTIME)
-@Documented
-@Deprecated
-public @interface InjectMock
+public class MockGoJUnitRunner
+        extends BlockJUnit4ClassRunner
 {
+    public MockGoJUnitRunner(Class testClass)
+            throws InitializationError
+    {
+        super(testClass);
+    }
+
+    @Override
+    protected Object createTest()
+            throws Exception
+    {
+        Object obj = super.createTest();
+        MockGo.initMocks(obj);
+        return obj;
+    }
 }
