@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+
 public class Strings
 {
     private Strings() {}
@@ -40,5 +42,18 @@ public class Strings
             }
         }
         return true;
+    }
+
+    /**
+     * 字符串的首字母小写
+     */
+    public static String lowerFirst(String oldStr)
+    {
+        checkState(oldStr.length() > 0);
+        char[] chars = oldStr.toCharArray();
+        if (chars[0] >= 65 && chars[0] <= 90) {
+            chars[0] += 32;
+        }
+        return String.valueOf(chars);
     }
 }

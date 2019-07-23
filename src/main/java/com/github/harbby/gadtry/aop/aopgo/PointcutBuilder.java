@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.aopgo;
 
 import com.github.harbby.gadtry.aop.JoinPoint;
+import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.exception.Function;

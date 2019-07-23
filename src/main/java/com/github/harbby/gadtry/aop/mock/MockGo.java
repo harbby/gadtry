@@ -20,6 +20,7 @@ import com.github.harbby.gadtry.aop.impl.JavassistProxy;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
+import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.exception.Function;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
@@ -28,6 +29,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.base.Strings.lowerFirst;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 /**
@@ -42,14 +44,14 @@ public class MockGo
     public static <T> T spy(T instance)
     {
         Class<T> tClass = (Class<T>) instance.getClass();
-        return JavassistProxy.newProxyInstance(tClass.getClassLoader(), new MockInvocationHandler(instance), tClass);
+        return JavassistProxy.newProxyInstance(tClass.getClassLoader(), new AopInvocationHandler(instance), tClass);
     }
 
     public static <T> T spy(Class<T> superclass)
     {
         try {
             T instance = UnsafeHelper.allocateInstance2(superclass);
-            return mock(superclass, new MockInvocationHandler(instance));
+            return mock(superclass, new AopInvocationHandler(instance));
         }
         catch (Exception e) {
             throw throwsException(e);
@@ -58,32 +60,25 @@ public class MockGo
 
     public static <T> T spy(Class<T> superclass, T instance)
     {
-        return mock(superclass, new MockInvocationHandler(instance));
+        return mock(superclass, new AopInvocationHandler(instance));
     }
 
     public static <T> T mock(Class<T> superclass)
     {
-        return mock(superclass, new MockInvocationHandler());
+        return mock(superclass, new AopInvocationHandler());
     }
 
-    private static <T> T mock(Class<T> superclass, MockInvocationHandler invocationHandler)
+    private static <T> T mock(Class<T> superclass, AopInvocationHandler invocationHandler)
     {
         ClassLoader loader = superclass.getClassLoader() == null ? ProxyHandler.class.getClassLoader() :
                 superclass.getClassLoader();
 
-        ProxyHandler proxy = Proxy.builder(superclass)
-                .addInterface(ProxyHandler.class)
+        T proxy = Proxy.builder(superclass)
                 .setClassLoader(loader)
                 .setInvocationHandler(invocationHandler)
                 .build();
-        // mock method getHandler()
-        // 等价于: toReturn(invocationHandler).when(proxy).getHandler() 但此处并不能这么写
-        if (JdkProxy.isProxyClass(proxy.getClass())) {
-            invocationHandler.setDoNext(p -> invocationHandler);
-            proxy.getHandler(); //must
-        }
-        //---------------------------
-        return (T) proxy;
+        when(proxy.toString()).thenReturn(lowerFirst(superclass.getSimpleName()));
+        return proxy;
     }
 
     public static void initMocks(Object testObject)
@@ -130,8 +125,12 @@ public class MockGo
 
         public <T> T when(T instance)
         {
-            MockInvocationHandler handler = getMockInvocationHandler(instance);
-            handler.setDoNext(function);
+            AopInvocationHandler aopInvocationHandler = getMockInvocationHandler(instance);
+            aopInvocationHandler.setHandler((proxy, method, args) -> {
+                aopInvocationHandler.initHandler();
+                aopInvocationHandler.register(method, function);
+                return JavaTypes.getClassInitValue(method.getReturnType());
+            });
             return instance;
         }
     }
@@ -187,16 +186,19 @@ public class MockGo
 
         private void bind(Function<JoinPoint, Object, Throwable> pointcut)
         {
-            MockInvocationHandler handler = getMockInvocationHandler(lastWhenMethod.f1());
+            AopInvocationHandler handler = getMockInvocationHandler(lastWhenMethod.f1());
             handler.register(lastWhenMethod.f2(), pointcut);
         }
     }
 
-    private static MockInvocationHandler getMockInvocationHandler(Object instance)
+    private static AopInvocationHandler getMockInvocationHandler(Object instance)
     {
+        if (JdkProxy.isProxyClass(instance.getClass())) {
+            return (AopInvocationHandler) JdkProxy.getInvocationHandler(instance);
+        }
         ProxyHandler proxy = (ProxyHandler) instance;
         InvocationHandler handler = proxy.getHandler();
-        checkState(handler instanceof MockInvocationHandler, "instance not mock proxy");
-        return (MockInvocationHandler) handler;
+        checkState(handler instanceof AopInvocationHandler, "instance not mock proxy");
+        return (AopInvocationHandler) handler;
     }
 }

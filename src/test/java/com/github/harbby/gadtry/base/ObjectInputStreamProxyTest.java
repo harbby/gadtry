@@ -16,10 +16,10 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.aop.mock.Mock;
-import com.github.harbby.gadtry.aop.mock.MockGo;
+import com.github.harbby.gadtry.aop.mock.MockGoJUnitRunner;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,6 +27,7 @@ import java.io.ObjectStreamClass;
 
 import static com.github.harbby.gadtry.aop.mock.MockGo.when;
 
+@RunWith(MockGoJUnitRunner.class)
 public class ObjectInputStreamProxyTest
 {
     @Test
@@ -37,12 +38,6 @@ public class ObjectInputStreamProxyTest
 
     @Mock
     private ObjectStreamClass objectStreamClass;
-
-    @Before
-    public void setUp()
-    {
-        MockGo.initMocks(this);
-    }
 
     @Test
     public void resolveClass()

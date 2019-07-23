@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.aopgo;
 
 import com.github.harbby.gadtry.aop.JoinPoint;
+import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.aop.model.After;
 import com.github.harbby.gadtry.aop.model.AfterReturning;
 import com.github.harbby.gadtry.aop.model.AfterThrowing;

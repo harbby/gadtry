@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.aop.aopgo;
 
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
+import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.function.exception.Consumer;
 
 import java.lang.reflect.Method;

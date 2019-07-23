@@ -77,7 +77,7 @@ public class MockTest
     }
 
     @Test
-    public void mock()
+    public void mockUseDoWhen()
     {
         List<String> proxy = MockGo.mock(List.class);
         doReturn(7).when(proxy).size();
@@ -97,6 +97,26 @@ public class MockTest
         catch (RuntimeException e) {
             Assert.assertEquals(e.getMessage(), "mockDoThrow");
         }
+    }
+
+    @Test
+    public void duplicateMockWhenThen()
+    {
+        List<String> proxy = MockGo.mock(List.class);
+        when(proxy.size()).thenReturn(7);
+        Assert.assertEquals(proxy.size(), 7);
+        when(proxy.size()).thenReturn(8);
+        Assert.assertEquals(proxy.size(), 8);
+    }
+
+    @Test
+    public void duplicateMockDoWhen()
+    {
+        List<String> proxy = MockGo.mock(List.class);
+        doReturn(7).when(proxy).size();
+        Assert.assertEquals(proxy.size(), 7);
+        doReturn(8).when(proxy).size();
+        Assert.assertEquals(proxy.size(), 8);
     }
 
     @Test

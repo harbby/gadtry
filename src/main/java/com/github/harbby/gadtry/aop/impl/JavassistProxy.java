@@ -138,6 +138,9 @@ public class JavassistProxy
             if (interfaces[i] == ProxyHandler.class) {
                 continue;
             }
+            if (interfaces[i].isAssignableFrom(superclass)) {
+                continue;
+            }
             CtClass ctClass = classPool.get(interfaces[i].getName());
             if (!ctClass.isInterface()) {
                 throw new CannotCompileException(ctClass.getName() + " not is Interface");
@@ -242,7 +245,12 @@ public class JavassistProxy
         attribute.addAnnotation(annotation);
         proxyMethod.getMethodInfo().addAttribute(attribute);
 
-        proxy.addMethod(proxyMethod);
+        try {
+            proxy.addMethod(proxyMethod);
+        }
+        catch (DuplicateMemberException e) {
+            //todo: Use a more elegant way
+        }
     }
 
     /**
