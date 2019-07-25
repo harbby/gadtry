@@ -39,7 +39,7 @@ public class IocFactoryImpl
     /**
      * @throws InjectorException Injector error
      */
-    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?> userCreator)
+    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?, Exception> userCreator)
     {
         return InternalContext.of(binds, userCreator).get(driver);
     }

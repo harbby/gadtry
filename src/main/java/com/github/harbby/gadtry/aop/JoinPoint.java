@@ -19,18 +19,28 @@ import com.github.harbby.gadtry.aop.model.Before;
 
 import java.lang.reflect.Method;
 
-public interface ProxyContext
+import static com.github.harbby.gadtry.base.JavaTypes.getClassInitValue;
+import static java.util.Objects.requireNonNull;
+
+/**
+ * around
+ */
+public interface JoinPoint
         extends Before
 {
-    Object proceed()
-            throws Exception;
+    default Object proceed()
+            throws Throwable
+    {
+        return proceed(getArgs());
+    }
 
     Object proceed(Object[] args)
-            throws Exception;
+            throws Throwable;
 
-    public static ProxyContext of(Object instance, Method method, Object[] args)
+    public static JoinPoint of(Object instance, Method method, Object[] args)
     {
-        return new ProxyContext()
+        requireNonNull(instance, "instance is null");
+        return new JoinPoint()
         {
             @Override
             public Method getMethod()
@@ -38,24 +48,37 @@ public interface ProxyContext
                 return method;
             }
 
-//            @Override
-//            public MethodInfo getInfo()
-//            {
-//                return MethodInfo.of(method);
-//            }
-
             @Override
-            public Object proceed()
+            public Object proceed(Object[] args)
                     throws Exception
             {
-                return proceed(args);
+                return method.invoke(instance, args);
+            }
+
+            @Override
+            public Object[] getArgs()
+            {
+                return args;
+            }
+        };
+    }
+
+    public static JoinPoint of(Method method, Object[] args)
+    {
+        return new JoinPoint()
+        {
+            @Override
+            public Method getMethod()
+            {
+                return method;
             }
 
             @Override
             public Object proceed(Object[] args)
                     throws Exception
             {
-                return method.invoke(instance, args);
+                //@Mock
+                return getClassInitValue(method.getReturnType());
             }
 
             @Override

@@ -34,16 +34,16 @@ import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 class InternalContext
 {
     private final ThreadLocal<Set<Class<?>>> deps = ThreadLocal.withInitial(HashSet::new);
-    private final Function<Class<?>, ?> userCreator;
+    private final Function<Class<?>, ?, Exception> userCreator;
     private final BindMapping binds;
 
-    private InternalContext(BindMapping binds, Function<Class<?>, ?> userCreator)
+    private InternalContext(BindMapping binds, Function<Class<?>, ?, Exception> userCreator)
     {
         this.binds = binds;
         this.userCreator = userCreator;
     }
 
-    public static InternalContext of(BindMapping binds, Function<Class<?>, ?> userCreator)
+    public static InternalContext of(BindMapping binds, Function<Class<?>, ?, Exception> userCreator)
     {
         return new InternalContext(binds, userCreator);
     }

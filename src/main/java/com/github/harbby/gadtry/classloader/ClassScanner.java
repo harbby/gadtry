@@ -35,7 +35,6 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkContainsTrue;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +60,7 @@ public class ClassScanner
             return classSet;
         }
         return classSet.stream()
-                .filter(aClass -> checkContainsTrue(ann -> aClass.getAnnotation(ann) != null, annotations))
+                .filter(aClass -> Stream.of(annotations).anyMatch(ann -> aClass.getAnnotation(ann) != null))
                 .collect(Collectors.toSet());
     }
 
@@ -72,7 +71,7 @@ public class ClassScanner
             return classSet;
         }
         return classSet.stream()
-                .filter(aClass -> checkContainsTrue(sub -> sub.isAssignableFrom(aClass), subclasses))
+                .filter(aClass -> Stream.of(subclasses).anyMatch(sub -> sub.isAssignableFrom(aClass)))
                 .collect(Collectors.toSet());
     }
 
@@ -143,10 +142,10 @@ public class ClassScanner
 
             Stream<Class<?>> classStream = classSet.stream();
             if (annotations.length > 0) {
-                classStream = classStream.filter(aClass -> checkContainsTrue(ann -> aClass.getAnnotation(ann) != null, annotations));
+                classStream = classStream.filter(aClass -> Stream.of(annotations).anyMatch(ann -> aClass.getAnnotation(ann) != null));
             }
             if (subclasses.length > 0) {
-                classStream = classStream.filter(aClass -> checkContainsTrue(sub -> sub.isAssignableFrom(aClass), subclasses));
+                classStream = classStream.filter(aClass -> Stream.of(subclasses).anyMatch(sub -> sub.isAssignableFrom(aClass)));
             }
             if (classFilter != null) {
                 classStream = classStream.filter(aClass -> classFilter.apply(aClass));

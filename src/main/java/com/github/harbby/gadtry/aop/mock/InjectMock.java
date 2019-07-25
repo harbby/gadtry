@@ -26,6 +26,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({FIELD, PARAMETER})  //add METHOD  PARAMETER
 @Retention(RUNTIME)
 @Documented
+@Deprecated
 public @interface InjectMock
 {
 }

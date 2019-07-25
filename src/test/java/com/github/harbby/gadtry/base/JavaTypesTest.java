@@ -69,6 +69,13 @@ public class JavaTypesTest
     }
 
     @Test
+    public void getPrimitiveClassInitValue()
+    {
+        Assert.assertNull(JavaTypes.getPrimitiveClassInitValue(void.class));
+        Assert.assertEquals((double) JavaTypes.getPrimitiveClassInitValue(double.class), 0.0d, 0.0d);
+    }
+
+    @Test
     public void makeArrayType()
     {
         Type type = JavaTypes.make(List[].class, new Type[] {String.class}, null);

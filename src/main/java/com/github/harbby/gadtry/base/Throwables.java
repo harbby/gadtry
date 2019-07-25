@@ -78,7 +78,7 @@ public class Throwables
         return throwable;
     }
 
-    public static <T> void noCatch(Runnable runnable)
+    public static void noCatch(Runnable<Exception> runnable)
     {
         try {
             runnable.apply();

@@ -35,6 +35,12 @@ import java.util.List;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Tag @Deprecated
+ * Not recommended, plan to remove in 2.0
+ * Recommended {@link AopGo}
+ */
+@Deprecated
 public interface AopFactory
 {
     List<Pointcut> getPointcuts();

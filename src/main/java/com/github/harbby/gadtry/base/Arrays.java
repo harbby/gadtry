@@ -15,7 +15,10 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.lang.reflect.Array;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
@@ -217,5 +220,68 @@ public class Arrays
         }
 
         throw new IllegalArgumentException("The given argument is no array.");
+    }
+
+    /**
+     * @param first firstValue
+     * @param rest array
+     * @return merge array
+     */
+    public static <T> T[] asArray(T first, T[] rest)
+    {
+        T[] arr = createPrimitiveByArrayClass(rest.getClass(), rest.length + 1);
+        arr[0] = first;
+        System.arraycopy(rest, 0, arr, 1, rest.length);
+        return arr;
+    }
+
+    /**
+     * @param first firstValue
+     * @param rest Collection
+     * @return merge array
+     */
+    public static <T> T[] asArray(T first, Collection<T> rest)
+    {
+        T[] arr = createArray((Class<T>) first.getClass(), rest.size());
+        rest.toArray(arr);
+        return asArray(first, arr);
+    }
+
+    /**
+     * array merge
+     *
+     * @param arrays input arrays
+     * @return merged array
+     */
+    @SafeVarargs
+    public static <T> T[] merge(T[]... arrays)
+    {
+        requireNonNull(arrays, "arrays is null");
+        checkState(arrays.length > 0, "must arrays length > 0");
+        int length = Stream.of(arrays).mapToInt(x -> x.length).sum();
+        T[] mergeArr = createArrayByArrayClass((Class<T[]>) arrays.getClass().getComponentType(), length);
+
+        int index = 0;
+        for (T[] arr : arrays) {
+            System.arraycopy(arr, 0, mergeArr, index, arr.length);
+            index += arr.length;
+        }
+        return mergeArr;
+    }
+
+    @SafeVarargs
+    public static <T> T mergeByPrimitiveArray(T... arrays)
+    {
+        requireNonNull(arrays, "arrays is null");
+        checkState(arrays.length > 0, "must arrays length > 0");
+        int length = Stream.of(arrays).mapToInt(Array::getLength).sum();
+        T mergeArr = createPrimitiveByArrayClass(arrays.getClass().getComponentType(), length);
+
+        int index = 0;
+        for (T arr : arrays) {
+            System.arraycopy(arr, 0, mergeArr, index, Array.getLength(arr));
+            index += Array.getLength(arr);
+        }
+        return mergeArr;
     }
 }

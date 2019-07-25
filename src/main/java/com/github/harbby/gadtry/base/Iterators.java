@@ -54,6 +54,8 @@ public class Iterators
         }
     };
 
+    private static final Iterable EMPTY_ITERABLE = () -> EMPTY_ITERATOR;
+
     public static <E> Iterator<E> of(E... values)
     {
         return new Iterator<E>()
@@ -78,6 +80,12 @@ public class Iterators
     public static <E> Iterator<E> empty()
     {
         return (Iterator<E>) EMPTY_ITERATOR;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E> Iterable<E> emptyIterable()
+    {
+        return (Iterable<E>) EMPTY_ITERABLE;
     }
 
     public static boolean isEmpty(Iterable<?> iterable)

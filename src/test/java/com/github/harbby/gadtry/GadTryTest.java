@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry;
 
+import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.collection.mutable.MutableMap;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import org.junit.Assert;
@@ -57,5 +59,17 @@ public class GadTryTest
         set.add("a1");
         System.out.println("************");
         System.out.println(set);
+    }
+
+    @Test
+    public void testConcurrent10()
+    {
+        Streams.range(10).parallel().forEach(x -> {
+            Set set = AopFactory.proxy(HashSet.class).byInstance(new HashSet<String>())
+                    .returnType(void.class, Boolean.class)
+                    .after(after -> {
+                        String name = after.getName();
+                    });
+        });
     }
 }

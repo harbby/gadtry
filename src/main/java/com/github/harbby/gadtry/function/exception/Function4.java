@@ -18,9 +18,9 @@ package com.github.harbby.gadtry.function.exception;
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface Function4<F1, F2, F3, F4, R>
+public interface Function4<F1, F2, F3, F4, R, Throwable extends java.lang.Throwable>
         extends Serializable
 {
     R apply(F1 f1, F2 f2, F3 f3, F4 f4)
-            throws Exception;
+            throws Throwable;
 }

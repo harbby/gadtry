@@ -25,7 +25,6 @@ import sun.reflect.generics.tree.SimpleClassTypeSignature;
 import sun.reflect.generics.tree.TypeArgument;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
@@ -131,6 +130,9 @@ public class JavaTypes
     public static <T> T getPrimitiveClassInitValue(Class<?> aClass)
     {
         checkState(aClass.isPrimitive(), "%s not is primitive", aClass);
+        if (aClass == void.class) {
+            return null;
+        }
         Object arr = java.lang.reflect.Array.newInstance(aClass, 1);
         return (T) Array.get(arr, 0);
     }
@@ -178,13 +180,6 @@ public class JavaTypes
     {
         method.setAccessible(true);
         return (R) method.invoke(t);
-    }
-
-    private static <T, R> R getReflectField(Field field, T t)
-            throws IllegalAccessException
-    {
-        field.setAccessible(true);
-        return (R) field.get(t);
     }
 
     public static String getClassGenericString(Class<?> javaClass)
@@ -235,5 +230,13 @@ public class JavaTypes
 
         classRepository.getSuperclass();
         return MutableList.asList(classRepository.getSuperclass(), classRepository.getSuperInterfaces());
+    }
+
+    public static <T> Class<T> classTag(Class<?> runtimeClass)
+    {
+//        if (runtimeClass.isPrimitive()) {
+//            return (Class<T>) JavaTypes.getWrapperClass(runtimeClass);
+//        }
+        return (Class<T>) runtimeClass;
     }
 }

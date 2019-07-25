@@ -15,11 +15,19 @@
  */
 package com.github.harbby.gadtry.aop.mock;
 
+import com.github.harbby.gadtry.base.Iterators;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import static com.github.harbby.gadtry.base.JavaTypes.getPrimitiveClassInitValue;
 
-public class MockitoArgument
+public class MockGoArgument
 {
-    private MockitoArgument() {}
+    private MockGoArgument() {}
 
     public static <T> T any()
     {
@@ -64,5 +72,59 @@ public class MockitoArgument
     public static boolean anyBoolean()
     {
         return getPrimitiveClassInitValue(boolean.class);
+    }
+
+    public static String anyString()
+    {
+        return "";
+    }
+
+    public static <K, V> Map<K, V> anyMap()
+    {
+        return Collections.emptyMap();
+    }
+
+    public static <V> List<V> anyList()
+    {
+        return Collections.emptyList();
+    }
+
+    public static <V> Set<V> anySet()
+    {
+        return Collections.emptySet();
+    }
+
+    public static <E> Iterator<E> anyIterator()
+    {
+        return Iterators.empty();
+    }
+
+    public static <E> Iterable<E> anyIterable()
+    {
+        return Iterators.emptyIterable();
+    }
+
+    /**
+     * e.equals(input)
+     *
+     * @param e equals e
+     * @return e;
+     */
+    public static <E> E eq(E e)
+    {
+        throw new UnsupportedOperationException("this method have't support!");
+        //return e;
+    }
+
+    /**
+     * e == input
+     *
+     * @param e same e
+     * @return e
+     */
+    public static <E> E same(E e)
+    {
+        throw new UnsupportedOperationException("this method have't support!");
+        //return e;
     }
 }

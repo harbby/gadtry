@@ -57,7 +57,7 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder around(Function<ProxyContext, Object> aroundHandler)
+        public PointBuilder around(Function<JoinPoint, Object, Throwable> aroundHandler)
         {
             requireNonNull(aroundHandler, "aroundHandler is null");
             pointcut.setAround(aroundHandler);
@@ -65,28 +65,28 @@ public interface Binder
         }
 
         @Override
-        public PointBuilder before(Consumer<Before> runnable)
+        public PointBuilder before(Consumer<Before, Exception> runnable)
         {
             pointcut.setBefore(runnable);
             return new PointBuilder(pointcut);
         }
 
         @Override
-        public PointBuilder afterReturning(Consumer<AfterReturning> runnable)
+        public PointBuilder afterReturning(Consumer<AfterReturning, Exception> runnable)
         {
             pointcut.setAfterReturning(runnable);
             return new PointBuilder(pointcut);
         }
 
         @Override
-        public PointBuilder after(Consumer<After> runnable)
+        public PointBuilder after(Consumer<After, Exception> runnable)
         {
             pointcut.setAfter(runnable);
             return new PointBuilder(pointcut);
         }
 
         @Override
-        public PointBuilder afterThrowing(Consumer<AfterThrowing> runnable)
+        public PointBuilder afterThrowing(Consumer<AfterThrowing, Exception> runnable)
         {
             pointcut.setAfterThrowing(runnable);
             return new PointBuilder(pointcut);

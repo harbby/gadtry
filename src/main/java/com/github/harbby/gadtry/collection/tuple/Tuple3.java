@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.collection.tuple;
 
 import java.util.Objects;
 
-public final class Tuple3<F1, F2, F3>
+public class Tuple3<F1, F2, F3>
         implements Tuple
 {
     private final F1 f1;

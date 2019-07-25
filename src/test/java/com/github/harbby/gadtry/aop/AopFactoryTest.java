@@ -98,10 +98,9 @@ public class AopFactoryTest
                     .methodAnnotated(Ignore.class)
                     .whereMethod(method -> method.getName().startsWith("get"))
                     .build()
-                    .around(proxyContext -> {
+                    .before(before -> {
                         atomicBoolean.set(true);
-                        Assert.assertEquals(proxyContext.getName(), "get");
-                        return proxyContext.proceed();
+                        Assert.assertEquals(before.getName(), "get");
                     });
         });
 
@@ -123,11 +122,12 @@ public class AopFactoryTest
                     .methodAnnotated(Ignore.class)
                     .whereMethod(method -> method.getName().startsWith("get"))
                     .build()
-                    .before(methodInfo -> {});
+                    .around(around -> {
+                        return "hello aop";
+                    });
         });
-
         AopFactoryTest aopTest = aopFactory.proxy(AopFactoryTest.class, new AopFactoryTest());
-        Assert.assertEquals(aopTest.get(), "hello");
+        Assert.assertEquals(aopTest.get(), "hello aop");
     }
 
     @Test

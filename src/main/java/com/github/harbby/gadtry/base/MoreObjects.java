@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.base;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -77,42 +76,6 @@ public class MoreObjects
         }
 
         throw new NullPointerException("Both parameters are null");
-    }
-
-    public static <T> boolean checkNonFalse(T[] values, Function<T, Boolean> filter)
-    {
-        requireNonNull(values, "values is null");
-        requireNonNull(filter, "filter is null");
-        for (T t : values) {
-            if (!filter.apply(t)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static <T> boolean checkContainsTrue(Function<T, Boolean> filter, T... values)
-    {
-        requireNonNull(values, "values is null");
-        requireNonNull(filter, "filter is null");
-        for (T t : values) {
-            if (filter.apply(t)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static <T> boolean checkContainsTrue(Function<T, Boolean> filter, Iterable<T> values)
-    {
-        requireNonNull(values, "values is null");
-        requireNonNull(filter, "filter is null");
-        for (T t : values) {
-            if (filter.apply(t)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public static ToStringBuilder toStringHelper(Object object)

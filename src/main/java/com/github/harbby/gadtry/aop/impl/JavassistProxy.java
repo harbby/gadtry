@@ -27,148 +27,164 @@ import javassist.LoaderClassPath;
 import javassist.Modifier;
 import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.DuplicateMemberException;
 import javassist.bytecode.annotation.Annotation;
-import sun.reflect.CallerSensitive;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static java.util.Objects.requireNonNull;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class JavassistProxy
         implements Serializable
 {
-    private static final Map<ClassLoader, Map<String, Class<?>>> proxyCache = new WeakHashMap<>();
+    private static final AtomicLong number = new AtomicLong(0);
+    private static final Map<ClassLoader, ConcurrentMap<KeyX, Class<?>>> proxyCache = new IdentityHashMap<>();
 
     private JavassistProxy() {}
 
     @SuppressWarnings("unchecked")
-    public static <T> T newProxyInstance(ClassLoader loader, Class<?> interfaces, InvocationHandler handler)
-            throws IllegalArgumentException
+    public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces)
     {
         try {
             Class<?> aClass = getProxyClass(loader, interfaces);
             //--存在可能没有无参构造器的问题
             Object obj = UnsafeHelper.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
-
-            ((Proxy.ProxyHandler) obj).setHandler(handler);
+            ((ProxyHandler) obj).setHandler(handler);
             return (T) obj;
         }
         catch (Exception e) {
-            throw new IllegalArgumentException(e);
+            throw throwsException(e);
         }
     }
 
     public static boolean isProxyClass(Class<?> cl)
     {
-        return Proxy.ProxyHandler.class.isAssignableFrom(cl);
+        return ProxyHandler.class.isAssignableFrom(cl) &&
+                proxyCache.get(cl.getClassLoader()).containsValue(cl);
     }
 
-    @CallerSensitive
     public static InvocationHandler getInvocationHandler(Object proxy)
             throws IllegalArgumentException
     {
-        checkState(proxy instanceof Proxy.ProxyHandler, proxy + " is not a Proxy obj");
-        return ((Proxy.ProxyHandler) proxy).getHandler();
+        checkState(isProxyClass(proxy.getClass()), proxy + " is not a Proxy obj");
+        return ((ProxyHandler) proxy).getHandler();
     }
 
-    public static Class<?> getProxyClass(ClassLoader loader, Class<?> parent)
+    public static Class<?> getProxyClass(ClassLoader classLoader, Class<?>... interfaces)
             throws Exception
     {
-        checkState(!java.lang.reflect.Modifier.isFinal(parent.getModifiers()), parent + " is final");
-        return requireNonNull(getCacheOrCreate(loader, parent), "proxyClass is null");
+        final ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
+        KeyX name = new KeyX(interfaces); //interfaces[0].getName();
+        return getClassLoaderProxyCache(loader).computeIfAbsent(name, key -> {
+            try {
+                return createProxyClass(loader, interfaces);
+            }
+            catch (Exception e) {
+                throw throwsException(e);
+            }
+        });
     }
 
-    private static Class<?> getCacheOrCreate(ClassLoader loader, Class<?> parent)
-            throws Exception
+    private static ConcurrentMap<KeyX, Class<?>> getClassLoaderProxyCache(ClassLoader loader)
     {
-        String name = parent.getName();
-        if (loader == null) {
-            //see: javassist.CtClass.toClass()
-            loader = Thread.currentThread().getContextClassLoader();
+        ConcurrentMap<KeyX, Class<?>> classMap = proxyCache.get(loader);
+        if (classMap != null) {
+            return classMap;
         }
 
-        Map<String, Class<?>> classMap = proxyCache.get(loader);
-        if (classMap == null) {
-            synchronized (proxyCache) {
-                classMap = proxyCache.get(loader);
-                if (classMap == null) {
-                    Class<?> proxyClass = createProxyClass(loader, parent);
-                    Map<String, Class<?>> tmp = new WeakHashMap<>();  //WeakHashMap
-                    tmp.put(name, proxyClass);
-                    proxyCache.put(loader, tmp);
-                    return proxyClass;
-                }
+        synchronized (proxyCache) {
+            if (!proxyCache.containsKey(loader)) {
+                ConcurrentMap<KeyX, Class<?>> tmp = new ConcurrentHashMap<>();  //HashMap
+                proxyCache.put(loader, tmp);
+                return tmp;
+            }
+            else {
+                return proxyCache.get(loader);
             }
         }
-
-        Class<?> proxy = classMap.get(name);
-        if (proxy == null) {
-            synchronized (classMap) {
-                Class<?> value = classMap.get(name);
-                if (value != null) {
-                    return value;
-                }
-                Class<?> proxyClass = createProxyClass(loader, parent);
-                classMap.put(name, proxyClass);
-                return proxyClass;
-            }
-        }
-        return proxy;
     }
 
-    private static Class<?> createProxyClass(ClassLoader loader, Class<?> parent)
+    private static Class<?> createProxyClass(ClassLoader loader, Class<?>... interfaces)
             throws Exception
     {
+        Class<?> superclass = interfaces[0];
         ClassPool classPool = new ClassPool(true);
         classPool.appendClassPath(new LoaderClassPath(loader));
 
         // New Create Proxy Class
-        CtClass proxyClass = classPool.makeClass(JavassistProxy.class.getPackage().getName() + "." + parent.getSimpleName() + "$$JvstProxy");
-        CtClass parentClass = classPool.get(parent.getName());
+        CtClass proxyClass = classPool.makeClass(JavassistProxy.class.getPackage().getName() + ".$JvstProxy" + number.getAndIncrement() + "$" + superclass.getSimpleName());
+        CtClass parentClass = classPool.get(superclass.getName());
+        final List<CtClass> ctInterfaces = MutableList.of(parentClass);
 
         // 添加继承父类
-        if (parentClass.isInterface()) {
+        if (superclass.isInterface()) {
             proxyClass.addInterface(parentClass);
         }
         else {
+            checkState(!java.lang.reflect.Modifier.isFinal(superclass.getModifiers()), superclass + " is final");
             proxyClass.setSuperclass(parentClass);
+        }
+
+        for (int i = 1; i < interfaces.length; i++) {
+            if (interfaces[i] == ProxyHandler.class) {
+                continue;
+            }
+            if (interfaces[i].isAssignableFrom(superclass)) {
+                continue;
+            }
+            CtClass ctClass = classPool.get(interfaces[i].getName());
+            if (!ctClass.isInterface()) {
+                throw new CannotCompileException(ctClass.getName() + " not is Interface");
+            }
+
+            ctInterfaces.add(ctClass);
+            proxyClass.addInterface(ctClass);
+        }
+        //check duplicate class
+        for (Map.Entry<CtClass, List<CtClass>> entry : ctInterfaces.stream().collect(Collectors.groupingBy(k -> k)).entrySet()) {
+            if (entry.getValue().size() > 1) {
+                throw new DuplicateMemberException("duplicate class " + entry.getKey().getName());
+            }
         }
 
         // 添加 ProxyHandler 接口
         installProxyHandlerInterface(classPool, proxyClass);
 
         // 添加方法和字段
-        installFieldAndMethod(proxyClass, parentClass);
+        installFieldAndMethod(proxyClass, ctInterfaces);
 
         // 设置代理类的类修饰符
         proxyClass.setModifiers(Modifier.PUBLIC | Modifier.FINAL);
 
         //-- 添加构造器
-        if (parentClass.getConstructors().length == 0) {
+        if (superclass.getConstructors().length == 0) {
             addVoidConstructor(proxyClass);  //如果没有 任何非私有构造器,则添加一个
         }
 
         // 持久化class到硬盘, 可以直接反编译查看
         //proxyClass.writeFile(".");
-
-        return proxyClass.toClass(loader, parent.getProtectionDomain());
+        return proxyClass.toClass(loader, superclass.getProtectionDomain());
     }
 
-    private static void installFieldAndMethod(CtClass proxyClass, CtClass parentClass)
+    private static void installFieldAndMethod(CtClass proxyClass, List<CtClass> ctInterfaces)
             throws NotFoundException, CannotCompileException
     {
         Map<CtMethod, String> methods = new IdentityHashMap<>();
-        List<CtMethod> methodList = MutableList.<CtMethod>builder()
-                .addAll(parentClass.getMethods())
-                .addAll(parentClass.getDeclaredMethods())
-                .build();
-
+        MutableList.Builder<CtMethod> builder = MutableList.builder(); //不能使用 Set进行去重。否则泛型方法会丢失
+        ctInterfaces.forEach(ctClass -> {
+            builder.addAll(ctClass.getMethods());
+            builder.addAll(ctClass.getDeclaredMethods());
+        });
+        List<CtMethod> methodList = builder.build();
         methodList.stream().filter(ctMethod -> {
             //final or private or static 的方法都不会继承和代理
             return !(Modifier.isFinal(ctMethod.getModifiers()) ||
@@ -196,7 +212,7 @@ public class JavassistProxy
     private static void installProxyHandlerInterface(ClassPool classPool, CtClass proxyClass)
             throws Exception
     {
-        CtClass proxyHandler = classPool.get(Proxy.ProxyHandler.class.getName());
+        CtClass proxyHandler = classPool.get(ProxyHandler.class.getName());
         proxyClass.addInterface(proxyHandler);
 
         CtField handlerField = CtField.make("private java.lang.reflect.InvocationHandler handler;", proxyClass);
@@ -229,7 +245,12 @@ public class JavassistProxy
         attribute.addAnnotation(annotation);
         proxyMethod.getMethodInfo().addAttribute(attribute);
 
-        proxy.addMethod(proxyMethod);
+        try {
+            proxy.addMethod(proxyMethod);
+        }
+        catch (DuplicateMemberException e) {
+            //todo: Use a more elegant way
+        }
     }
 
     /**

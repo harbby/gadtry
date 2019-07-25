@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
-import com.github.harbby.gadtry.aop.ProxyContext;
+import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
@@ -27,12 +27,12 @@ import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class Pointcut
 {
-    private Function<ProxyContext, Object> around = ProxyContext::proceed;
+    private Function<JoinPoint, Object, Throwable> around = JoinPoint::proceed;
 
-    private Consumer<Before> before;
-    private Consumer<After> after;
-    private Consumer<AfterThrowing> afterThrowing;
-    private Consumer<AfterReturning> afterReturning;
+    private Consumer<Before, Exception> before;
+    private Consumer<After, Exception> after;
+    private Consumer<AfterThrowing, Exception> afterThrowing;
+    private Consumer<AfterReturning, Exception> afterReturning;
 
     private final String pointName;
     private Function1<MethodInfo, Boolean> methodFilter;
@@ -68,57 +68,57 @@ public class Pointcut
         return searchClass;
     }
 
-    public Consumer<AfterThrowing> getAfterThrowing()
+    public Consumer<AfterThrowing, Exception> getAfterThrowing()
     {
         return afterThrowing;
     }
 
-    public void setAfterThrowing(Consumer<AfterThrowing> afterThrowing)
+    public void setAfterThrowing(Consumer<AfterThrowing, Exception> afterThrowing)
     {
         this.afterThrowing = afterThrowing;
     }
 
-    public Consumer<AfterReturning> getAfterReturning()
+    public Consumer<AfterReturning, Exception> getAfterReturning()
     {
         return afterReturning;
     }
 
-    public void setAfterReturning(Consumer<AfterReturning> afterReturning)
+    public void setAfterReturning(Consumer<AfterReturning, Exception> afterReturning)
     {
         this.afterReturning = afterReturning;
     }
 
-    public Consumer<Before> getBefore()
+    public Consumer<Before, Exception> getBefore()
     {
         return before;
     }
 
-    public void setBefore(Consumer<Before> before)
+    public void setBefore(Consumer<Before, Exception> before)
     {
         this.before = before;
     }
 
-    public Consumer<After> getAfter()
+    public Consumer<After, Exception> getAfter()
     {
         return after;
     }
 
-    public void setAfter(Consumer<After> after)
+    public void setAfter(Consumer<After, Exception> after)
     {
         this.after = after;
     }
 
-    public void setAround(Function<ProxyContext, Object> aroundHandler)
+    public void setAround(Function<JoinPoint, Object, Throwable> aroundHandler)
     {
         this.around = aroundHandler;
     }
 
-    public Function<ProxyContext, Object> getAround()
+    public Function<JoinPoint, Object, Throwable> getAround()
     {
         return around;
     }
 
-    public Function<ProxyContext, Object> buildRunHandler()
+    public Function<JoinPoint, Object, Throwable> buildRunHandler()
     {
         return (proxyContext) -> {
             if (this.getBefore() != null) {

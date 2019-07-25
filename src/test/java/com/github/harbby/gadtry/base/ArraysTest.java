@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -205,6 +206,42 @@ public class ArraysTest
         }
         catch (IllegalArgumentException e) {
             Assert.assertEquals("The given argument is no array.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void asArrayGiveList()
+    {
+        String[] arr = Arrays.asArray("1", MutableList.of("2", "3"));
+        Assert.assertArrayEquals(arr, new String[] {"1", "2", "3"});
+    }
+
+    @Test
+    public void arrayMerge()
+    {
+        String[] arr = Arrays.<String>merge(new String[] {"1", "2"}, new String[] {"3", "4"}, new String[] {"5"});
+        Assert.assertArrayEquals(arr, new String[] {"1", "2", "3", "4", "5"});
+
+        try {
+            Arrays.merge();
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "must arrays length > 0");
+        }
+    }
+
+    @Test
+    public void mergePrimitiveByArray()
+    {
+        int[] arr = Arrays.mergeByPrimitiveArray(new int[] {1, 2}, new int[] {3, 4}, new int[] {5});
+        Assert.assertArrayEquals(arr, new int[] {1, 2, 3, 4, 5});
+        try {
+            Arrays.mergeByPrimitiveArray();
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "must arrays length > 0");
         }
     }
 }

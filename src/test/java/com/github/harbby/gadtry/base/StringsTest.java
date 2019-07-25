@@ -37,4 +37,12 @@ public class StringsTest
         Assert.assertTrue(Strings.isBlank(null));
         Assert.assertTrue(Strings.isBlank("   "));
     }
+
+    @Test
+    public void lowerFirstTest()
+    {
+        Assert.assertEquals("info", Strings.lowerFirst("Info"));
+        Assert.assertEquals("info", Strings.lowerFirst("info"));
+        Assert.assertEquals("123info", Strings.lowerFirst("123info"));
+    }
 }

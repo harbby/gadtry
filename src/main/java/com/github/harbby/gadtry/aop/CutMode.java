@@ -24,13 +24,13 @@ import com.github.harbby.gadtry.function.exception.Function;
 
 public interface CutMode<T>
 {
-    public T around(Function<ProxyContext, Object> runnable);
+    public T around(Function<JoinPoint, Object, Throwable> runnable);
 
-    public T before(Consumer<Before> runnable);
+    public T before(Consumer<Before, Exception> runnable);
 
-    public T afterReturning(Consumer<AfterReturning> runnable);
+    public T afterReturning(Consumer<AfterReturning, Exception> runnable);
 
-    public T after(Consumer<After> runnable);
+    public T after(Consumer<After, Exception> runnable);
 
-    public T afterThrowing(Consumer<AfterThrowing> runnable);
+    public T afterThrowing(Consumer<AfterThrowing, Exception> runnable);
 }
