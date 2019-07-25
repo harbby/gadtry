@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import org.junit.Assert;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import sun.misc.Unsafe;
 
 import java.io.File;
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,6 +62,50 @@ public class JavassistProxyTest
 
         Test1 proxy2 = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class);
         System.out.println(proxy2);
+    }
+
+    @Test
+    public void moreSuperclass()
+            throws Exception
+    {
+        try {
+            JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class, ProxyHandler.class, HashMap.class);
+            Assert.fail();
+        }
+        catch (CannotCompileException e) {
+            Assert.assertEquals(e.getMessage(), "java.util.HashMap not is Interface");
+        }
+    }
+
+    @Test
+    public void finalSuperclass()
+            throws Exception
+    {
+        try {
+            JavassistProxy.getProxyClass(getClass().getClassLoader(), Boolean.class, Serializable.class, ProxyHandler.class);
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "class java.lang.Boolean is final");
+        }
+    }
+
+    @Test
+    public void getInvocationHandler()
+            throws Exception
+    {
+        List<String> list = new ArrayList<>();
+        InvocationHandler invocationHandler = (proxy, method, args) -> {
+            if ("get".equals(method.getName())) {
+                return "hello";
+            }
+            return method.invoke(list, args);
+        };
+
+        JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class, ProxyHandler.class);
+        List<String> proxy = JavassistProxy.newProxyInstance(getClass().getClassLoader(), invocationHandler,
+                ArrayList.class, Serializable.class, ProxyHandler.class);
+        Assert.assertTrue(invocationHandler == JavassistProxy.getInvocationHandler(proxy));
     }
 
     @Test
