@@ -1,6 +1,6 @@
 # Gadtry [![Build Status](http://img.shields.io/travis/harbby/gadtry.svg?style=flat&branch=master)](https://travis-ci.org/harbby/gadtry) [![codecov](https://codecov.io/gh/harbby/gadtry/branch/master/graph/badge.svg)](https://codecov.io/gh/harbby/gadtry)
 Gadtry A collection of java tool libraries.
-Contains: ioc. aop. exec. graph ...
+Contains: ioc. aop. mock. exec. graph ...
 
 ## Use
 * maven
@@ -8,7 +8,7 @@ Contains: ioc. aop. exec. graph ...
 <dependency>
   <groupId>com.github.harbby</groupId>
   <artifactId>gadtry</artifactId>
-  <version>1.5.0</version>
+  <version>1.6.1</version>
 </dependency>
 ```
 
