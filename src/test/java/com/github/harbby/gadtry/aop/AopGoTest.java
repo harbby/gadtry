@@ -23,6 +23,7 @@ import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple4;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,28 +31,40 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyInt;
+
 public class AopGoTest
 {
     @Test
-    public void proxyTestGiveSet()
+    public void proxyTestGiveTuple4()
     {
         Tuple1<String> action = new Tuple1<>(null);
         Tuple4<String, Integer, Double, Character> proxy = AopGo.proxy(Tuple4.of("1", 2, 4.0d, 'a'))
                 .aop(binder -> {
                     binder.doBefore(before -> {
+                        Assert.assertArrayEquals(before.getArgs(), new Object[0]);
                         action.set("before_" + before.getName());
                     }).when().f1();
                     binder.doAfterReturning(returning -> {
+                        Assert.assertArrayEquals(returning.getArgs(), new Object[0]);
                         action.set("returning_" + returning.getName() + "_" + returning.getValue());
                     }).when().f2();
                     binder.doAfter(after -> {
+                        Assert.assertTrue(after.isSuccess() && after.getThrowable() == null);
+                        Assert.assertArrayEquals(after.getArgs(), new Object[0]);
                         action.set("after_" + after.getName() + "_" + after.getValue());
                     }).when().f3();
                     binder.doAround(around -> {
+                        Assert.assertArrayEquals(around.getArgs(), new Object[0]);
                         Object value = around.proceed();
                         action.set("around_" + around.getName() + "_" + value);
                         return around.proceed();
                     }).when().f4();
+                    binder.doAfterThrowing(throwing -> {
+                        Assert.assertArrayEquals(throwing.getArgs(), new Object[] {0});
+                        Assert.assertEquals(throwing.getArgument(0), 0);
+                        action.set("afterThrowing_" + throwing.getName() + "_" + throwing.getThrowable().getMessage());
+                    }).when().getField(anyInt());
                 })
                 .build();
         proxy.f1();
@@ -62,6 +75,78 @@ public class AopGoTest
         Assert.assertEquals(action.get(), "after_f3_4.0");
         proxy.f4();
         Assert.assertEquals(action.get(), "around_f4_a");
+
+        Assert.assertEquals(proxy.getField(1), "1");
+        try {
+            proxy.getField(0);
+        }
+        catch (IndexOutOfBoundsException e) {
+            Assert.assertEquals(action.get(), "afterThrowing_getField_0");
+        }
+    }
+
+    @Test
+    public void createAfterMock()
+    {
+        Tuple1<String> action = new Tuple1<>(null);
+        Tuple4<String, Integer, Double, Character> proxy = AopGo.proxy(Tuple4.of("1", 2, 4.0d, 'a'))
+                .build();
+
+        AopGo.doBefore(before -> {
+            Assert.assertArrayEquals(before.getArgs(), new Object[0]);
+            action.set("before_" + before.getName());
+        }).when(proxy).f1();
+        AopGo.doAfterReturning(returning -> {
+            Assert.assertArrayEquals(returning.getArgs(), new Object[0]);
+            action.set("returning_" + returning.getName() + "_" + returning.getValue());
+        }).when(proxy).f2();
+        AopGo.doAfter(after -> {
+            Assert.assertTrue(after.isSuccess() && after.getThrowable() == null);
+            Assert.assertArrayEquals(after.getArgs(), new Object[0]);
+            action.set("after_" + after.getName() + "_" + after.getValue());
+        }).when(proxy).f3();
+        AopGo.doAround(around -> {
+            Assert.assertArrayEquals(around.getArgs(), new Object[0]);
+            Object value = around.proceed();
+            action.set("around_" + around.getName() + "_" + value);
+            return around.proceed();
+        }).when(proxy).f4();
+        AopGo.doAfterThrowing(throwing -> {
+            Assert.assertArrayEquals(throwing.getArgs(), new Object[] {0});
+            Assert.assertEquals(throwing.getArgument(0), 0);
+            action.set("afterThrowing_" + throwing.getName() + "_" + throwing.getThrowable().getMessage());
+        }).when(proxy).getField(anyInt());
+
+        proxy.f1();
+        Assert.assertEquals(action.get(), "before_f1");
+        proxy.f2();
+        Assert.assertEquals(action.get(), "returning_f2_2");
+        proxy.f3();
+        Assert.assertEquals(action.get(), "after_f3_4.0");
+        proxy.f4();
+        Assert.assertEquals(action.get(), "around_f4_a");
+
+        Assert.assertEquals(proxy.getField(1), "1");
+        try {
+            proxy.getField(0);
+        }
+        catch (IndexOutOfBoundsException e) {
+            Assert.assertEquals(action.get(), "afterThrowing_getField_0");
+        }
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void aopByAfterIsSuccessTestGive999ReturnFalse()
+    {
+        Tuple1<String> proxy = AopGo.proxy(Tuple1.of("1"))
+                .aop(binder -> {
+                    binder.doAfter(after -> {
+                        Assert.assertFalse(after.isSuccess());
+                    }).when().getField(anyInt());
+                })
+                .build();
+        proxy.getField(999);
+        Assert.fail();
     }
 
     @Test
@@ -103,6 +188,46 @@ public class AopGoTest
         Assert.assertEquals(list.size(), 1);
         Assert.assertTrue(list.isEmpty());
         Assert.assertEquals(actions, MutableSet.of("isEmpty"));
+    }
+
+    @Test
+    public void aopGoUseReturnTypeSelector()
+    {
+        Set<String> actions = new HashSet<>();
+        List<String> list = AopGo.proxy(new ArrayList<String>())
+                .aop(binder -> {
+                    binder.doBefore(before -> {
+                        actions.add(before.getName());
+                    }).returnType(String.class, int.class);
+                }).build();
+
+        Assert.assertEquals(list.size(), 0);
+        Assert.assertEquals(list.toString(), "[]");
+        Assert.assertTrue(list.isEmpty());
+        Assert.assertEquals(actions, MutableSet.of("size", "toString"));
+    }
+
+    @Test
+    public void aopGoUseAnnotatedSelector()
+    {
+        Set<String> actions = new HashSet<>();
+        AnnotatedClass proxy = AopGo.proxy(new AnnotatedClass())
+                .aop(binder -> {
+                    binder.doBefore(before -> {
+                        actions.add(before.getName());
+                    }).annotated(Ignore.class, Ignore.class);
+                }).build();
+        proxy.a1();
+        proxy.a2();
+        Assert.assertEquals(actions, MutableSet.of("a2"));
+    }
+
+    public static class AnnotatedClass
+    {
+        public void a1() {}
+
+        @Ignore
+        public void a2() {}
     }
 
     /**

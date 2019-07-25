@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
@@ -252,27 +253,35 @@ public class Arrays
      * @param arrays input arrays
      * @return merged array
      */
+    @SafeVarargs
     public static <T> T[] merge(T[]... arrays)
     {
         requireNonNull(arrays, "arrays is null");
-        if (arrays.length > 0) {
-            int length = Stream.of(arrays).mapToInt(x -> x.length).sum();
-            T[] mergeArr = createPrimitiveByArrayClass(arrays[0].getClass(), length);
+        checkState(arrays.length > 0, "must arrays length > 0");
+        int length = Stream.of(arrays).mapToInt(x -> x.length).sum();
+        T[] mergeArr = createArrayByArrayClass((Class<T[]>) arrays.getClass().getComponentType(), length);
 
-            int index = 0;
-            for (T[] arr : arrays) {
-                System.arraycopy(arr, 0, mergeArr, index, arr.length);
-                index += arr.length;
-            }
-            return mergeArr;
+        int index = 0;
+        for (T[] arr : arrays) {
+            System.arraycopy(arr, 0, mergeArr, index, arr.length);
+            index += arr.length;
         }
-        else {
-            return createPrimitiveByArrayClass(arrays.getClass().getComponentType(), 0);
-        }
+        return mergeArr;
     }
 
-    public static <T> boolean contains(T[] array, T ins)
+    @SafeVarargs
+    public static <T> T mergeByPrimitiveArray(T... arrays)
     {
-        return Stream.of(array).anyMatch(it -> it == ins);
+        requireNonNull(arrays, "arrays is null");
+        checkState(arrays.length > 0, "must arrays length > 0");
+        int length = Stream.of(arrays).mapToInt(Array::getLength).sum();
+        T mergeArr = createPrimitiveByArrayClass(arrays.getClass().getComponentType(), length);
+
+        int index = 0;
+        for (T arr : arrays) {
+            System.arraycopy(arr, 0, mergeArr, index, Array.getLength(arr));
+            index += Array.getLength(arr);
+        }
+        return mergeArr;
     }
 }

@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.aop.model.Before;
 
 import java.lang.reflect.Method;
 
+import static com.github.harbby.gadtry.base.JavaTypes.getClassInitValue;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -52,6 +53,32 @@ public interface JoinPoint
                     throws Exception
             {
                 return method.invoke(instance, args);
+            }
+
+            @Override
+            public Object[] getArgs()
+            {
+                return args;
+            }
+        };
+    }
+
+    public static JoinPoint of(Method method, Object[] args)
+    {
+        return new JoinPoint()
+        {
+            @Override
+            public Method getMethod()
+            {
+                return method;
+            }
+
+            @Override
+            public Object proceed(Object[] args)
+                    throws Exception
+            {
+                //@Mock
+                return getClassInitValue(method.getReturnType());
             }
 
             @Override

@@ -53,7 +53,7 @@ public interface After
             @Override
             public boolean isSuccess()
             {
-                return e != null;
+                return e == null;
             }
         };
     }

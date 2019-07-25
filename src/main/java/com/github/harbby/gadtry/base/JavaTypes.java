@@ -25,7 +25,6 @@ import sun.reflect.generics.tree.SimpleClassTypeSignature;
 import sun.reflect.generics.tree.TypeArgument;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
@@ -181,13 +180,6 @@ public class JavaTypes
     {
         method.setAccessible(true);
         return (R) method.invoke(t);
-    }
-
-    private static <T, R> R getReflectField(Field field, T t)
-            throws IllegalAccessException
-    {
-        field.setAccessible(true);
-        return (R) field.get(t);
     }
 
     public static String getClassGenericString(Class<?> javaClass)

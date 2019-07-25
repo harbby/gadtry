@@ -13,13 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop.mock;
+package com.github.harbby.gadtry.base;
 
-public class MockGoException
-        extends RuntimeException
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
+public class SerializablesTest
 {
-    public MockGoException(String message)
+    @Test
+    public void byteToObject()
+            throws IOException, ClassNotFoundException
     {
-        super(message);
+        byte[] bytes = Serializables.serialize("123456");
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+
+        Assert.assertEquals(Serializables.byteToObject(inputStream), "123456");
     }
 }

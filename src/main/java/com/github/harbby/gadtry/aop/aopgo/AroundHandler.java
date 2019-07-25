@@ -23,6 +23,8 @@ import com.github.harbby.gadtry.aop.model.Before;
 import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
 
+import java.lang.reflect.InvocationTargetException;
+
 public interface AroundHandler
         extends Function<JoinPoint, Object, Throwable>
 {
@@ -49,6 +51,10 @@ public interface AroundHandler
             try {
                 return f.proceed();
             }
+            catch (InvocationTargetException e) {
+                afterThrowing.apply(AfterThrowing.of(f.getMethod(), f.getArgs(), e.getTargetException()));
+                throw e.getTargetException();
+            }
             catch (Throwable e) {
                 afterThrowing.apply(AfterThrowing.of(f.getMethod(), f.getArgs(), e));
                 throw e;
@@ -73,10 +79,5 @@ public interface AroundHandler
                 after.apply(After.of(f.getMethod(), f.getArgs(), value, throwable));
             }
         };
-    }
-
-    static AroundHandler doAround(Function<JoinPoint, Object, Throwable> aroundContext)
-    {
-        return aroundContext::apply;
     }
 }

@@ -219,7 +219,29 @@ public class ArraysTest
     @Test
     public void arrayMerge()
     {
-        String[] arr = Arrays.merge(new String[] {"1", "2"}, new String[] {"3", "4"}, new String[] {"5"});
+        String[] arr = Arrays.<String>merge(new String[] {"1", "2"}, new String[] {"3", "4"}, new String[] {"5"});
         Assert.assertArrayEquals(arr, new String[] {"1", "2", "3", "4", "5"});
+
+        try {
+            Arrays.merge();
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "must arrays length > 0");
+        }
+    }
+
+    @Test
+    public void mergePrimitiveByArray()
+    {
+        int[] arr = Arrays.mergeByPrimitiveArray(new int[] {1, 2}, new int[] {3, 4}, new int[] {5});
+        Assert.assertArrayEquals(arr, new int[] {1, 2, 3, 4, 5});
+        try {
+            Arrays.mergeByPrimitiveArray();
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "must arrays length > 0");
+        }
     }
 }

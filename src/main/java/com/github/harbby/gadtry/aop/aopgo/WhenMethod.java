@@ -33,7 +33,7 @@ public class WhenMethod<T>
     private final Class<T> superclass;
     private final T target;
 
-    private Consumer<MockBinder<T>, Throwable>[] binders;
+    private Consumer<MockBinder<T>, Throwable>[] binders = new Consumer[0];
 
     public WhenMethod(Class<T> superclass, T target)
     {

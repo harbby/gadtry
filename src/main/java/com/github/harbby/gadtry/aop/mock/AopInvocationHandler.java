@@ -21,6 +21,7 @@ import com.github.harbby.gadtry.function.exception.Function;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -55,29 +56,7 @@ public class AopInvocationHandler
     {
         this.defaultHandler = (proxy, method, args) -> {
             if (mockMethods.containsKey(method)) {
-                final JoinPoint joinPoint = new JoinPoint()
-                {
-                    @Override
-                    public Method getMethod()
-                    {
-                        return method;
-                    }
-
-                    @Override
-                    public Object[] getArgs()
-                    {
-                        return args;
-                    }
-
-                    @Override
-                    public Object proceed(Object[] args)
-                            throws Throwable
-                    {
-                        //@Mock
-                        return getClassInitValue(method.getReturnType());
-                    }
-                };
-                return mockMethods.get(method).apply(joinPoint);
+                return mockMethods.get(method).apply(JoinPoint.of(method, args));
             }
             else {
                 return getClassInitValue(method.getReturnType());
@@ -109,6 +88,11 @@ public class AopInvocationHandler
             throws Throwable
     {
         LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
-        return this.handler.invoke(proxy, method, args);
+        try {
+            return this.handler.invoke(proxy, method, args);
+        }
+        catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        }
     }
 }

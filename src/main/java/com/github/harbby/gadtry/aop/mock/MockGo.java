@@ -41,38 +41,36 @@ public class MockGo
 
     private MockGo() {}
 
-    public static <T> T spy(T instance)
+    public static <T> T spy(T target)
     {
-        Class<T> tClass = (Class<T>) instance.getClass();
-        return JavassistProxy.newProxyInstance(tClass.getClassLoader(), new AopInvocationHandler(instance), tClass);
+        Class<T> tClass = (Class<T>) target.getClass();
+        return JavassistProxy.newProxyInstance(tClass.getClassLoader(), new AopInvocationHandler(target), tClass);
     }
 
     public static <T> T spy(Class<T> superclass)
     {
         try {
-            T instance = UnsafeHelper.allocateInstance2(superclass);
-            return mock(superclass, new AopInvocationHandler(instance));
+            T target = UnsafeHelper.allocateInstance2(superclass);
+            return createProxyObj(superclass, new AopInvocationHandler(target));
         }
         catch (Exception e) {
             throw throwsException(e);
         }
     }
 
-    public static <T> T spy(Class<T> superclass, T instance)
+    public static <T> T spy(Class<T> superclass, T target)
     {
-        return mock(superclass, new AopInvocationHandler(instance));
+        return createProxyObj(superclass, new AopInvocationHandler(target));
     }
 
     public static <T> T mock(Class<T> superclass)
     {
-        return mock(superclass, new AopInvocationHandler());
+        return createProxyObj(superclass, new AopInvocationHandler());
     }
 
-    private static <T> T mock(Class<T> superclass, AopInvocationHandler invocationHandler)
+    private static <T> T createProxyObj(Class<T> superclass, AopInvocationHandler invocationHandler)
     {
-        ClassLoader loader = superclass.getClassLoader() == null ? ProxyHandler.class.getClassLoader() :
-                superclass.getClassLoader();
-
+        ClassLoader loader = superclass.getClassLoader();
         T proxy = Proxy.builder(superclass)
                 .setClassLoader(loader)
                 .setInvocationHandler(invocationHandler)
@@ -153,25 +151,16 @@ public class MockGo
         {
             this.lastWhenMethod = LAST_MOCK_BY_WHEN_METHOD.get();
             LAST_MOCK_BY_WHEN_METHOD.remove();
-            checkState(lastWhenMethod != null, "whenMethod is null");
+            if (lastWhenMethod == null) {
+                throw new MockGoException("when(...) does not select any Method\n" +
+                        "Example of: \n" +
+                        " when(someMethod(any...)).then...()");
+            }
         }
 
         public void thenReturn(T value)
         {
             bind(p -> value);
-        }
-
-        public void thenNothing()
-        {
-            bind(f -> {
-                if (f.getMethod().getReturnType() != void.class) {
-                    throw new MockGoException("Only void methods can doNothing()!\n" +
-                            "Example of correct use of doNothing():\n" +
-                            "    doNothing().\n" +
-                            "    .when(mock).someVoidMethod();");
-                }
-                return null;
-            });
         }
 
         public void thenAround(Function<JoinPoint, Object, Throwable> function)

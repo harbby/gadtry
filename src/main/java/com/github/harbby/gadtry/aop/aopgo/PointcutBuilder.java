@@ -65,11 +65,17 @@ public class PointcutBuilder<T>
                         return Stream.of(aClass);
                     }
                 })
-                .anyMatch(returnType -> returnType.isAssignableFrom(method.getReturnType())));
+                .anyMatch(returnType -> {
+                    if (method.getReturnType().isPrimitive()) {
+                        return returnType.isAssignableFrom(JavaTypes.getWrapperClass(method.getReturnType()));
+                    }
+                    return returnType.isAssignableFrom(method.getReturnType());
+                }));
         return this;
     }
 
-    public PointcutBuilder<T> annotated(Class<? extends Annotation>... methodAnnotations)
+    @SafeVarargs
+    public final PointcutBuilder<T> annotated(Class<? extends Annotation>... methodAnnotations)
     {
         filters.add(method -> Stream.of(methodAnnotations)
                 .anyMatch(ann -> method.getAnnotation(ann) != null));
