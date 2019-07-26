@@ -98,10 +98,11 @@ public class Throwables
         }
     }
 
-    public static <T extends Throwable> void throwsException(Class<T> clazz)
+    public static <T extends Exception> void throwsException(Class<T> clazz)
             throws T
     {}
 
+    @Deprecated
     @SuppressWarnings("unchecked")
     public static <T extends Exception> RuntimeException throwsException(Exception e)
             throws T
@@ -115,4 +116,8 @@ public class Throwables
     {
         throw (T) e;
     }
+
+    public static <T extends Throwable> void throwsThrowable(Class<T> clazz)
+            throws T
+    {}
 }

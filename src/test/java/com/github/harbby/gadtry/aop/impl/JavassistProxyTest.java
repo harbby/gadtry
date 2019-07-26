@@ -15,9 +15,9 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
-import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import org.junit.Assert;
@@ -64,17 +64,13 @@ public class JavassistProxyTest
         System.out.println(proxy2);
     }
 
-    @Test
+    @Test(expected = MockGoException.class)
     public void moreSuperclass()
             throws Exception
     {
-        try {
-            JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class, ProxyHandler.class, HashMap.class);
-            Assert.fail();
-        }
-        catch (CannotCompileException e) {
-            Assert.assertEquals(e.getMessage(), "java.util.HashMap not is Interface");
-        }
+        JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class,
+                ProxyHandler.class, HashMap.class);
+        Assert.fail();
     }
 
     @Test
@@ -85,8 +81,8 @@ public class JavassistProxyTest
             JavassistProxy.getProxyClass(getClass().getClassLoader(), Boolean.class, Serializable.class, ProxyHandler.class);
             Assert.fail();
         }
-        catch (IllegalStateException e) {
-            Assert.assertEquals(e.getMessage(), "class java.lang.Boolean is final");
+        catch (MockGoException e) {
+            Assert.assertEquals(e.getCause().getMessage(), "class java.lang.Boolean is final");
         }
     }
 

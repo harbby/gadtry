@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
-import javassist.bytecode.DuplicateMemberException;
+import com.github.harbby.gadtry.aop.mock.MockGoException;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 
 public class ProxyTest
 {
-    @Test(expected = DuplicateMemberException.class)
+    @Test(expected = MockGoException.class)
     public void duplicateInterfaceUseJavassistproxy()
     {
         Set<String> set = new HashSet<>();

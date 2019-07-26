@@ -22,4 +22,9 @@ public class MockGoException
     {
         super(message);
     }
+
+    public MockGoException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }
