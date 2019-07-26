@@ -70,7 +70,7 @@ public class JavassistProxy
         return (T) obj;
     }
 
-    public static void initFields(Class<?> superclass, Object proxyObj, Object target)
+    private static void initFields(Class<?> superclass, Object proxyObj, Object target)
     {
         if (superclass.isInterface()) {
             return;
