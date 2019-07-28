@@ -15,7 +15,9 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -31,17 +33,18 @@ import javassist.bytecode.DuplicateMemberException;
 import javassist.bytecode.annotation.Annotation;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class JavassistProxy
         implements Serializable
@@ -54,16 +57,49 @@ public class JavassistProxy
     @SuppressWarnings("unchecked")
     public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces)
     {
+        Class<?> aClass = getProxyClass(loader, interfaces);
+        Object obj;
         try {
-            Class<?> aClass = getProxyClass(loader, interfaces);
             //--存在可能没有无参构造器的问题
-            Object obj = UnsafeHelper.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
-            ((ProxyHandler) obj).setHandler(handler);
-            return (T) obj;
+            obj = UnsafeHelper.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw new MockGoException("new Instance " + aClass + "failed", e);
         }
+        ((ProxyHandler) obj).setHandler(handler);
+        return (T) obj;
+    }
+
+    private static void initFields(Class<?> superclass, Object proxyObj, Object target)
+    {
+        if (superclass.isInterface()) {
+            return;
+        }
+        Set<Field> fields = MutableSet.<Field>builder().addAll(superclass.getDeclaredFields())
+                .addAll(superclass.getFields())
+                .build();
+
+        for (Field field : fields) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            field.setAccessible(true);
+            try {
+                Object value = field.get(target);
+                field.set(proxyObj, value);
+            }
+            catch (IllegalAccessException e) {
+                throw new MockGoException("init proxy object field " + field, e);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T newProxyInstance(ClassLoader loader, Object target, InvocationHandler handler, Class<?>... interfaces)
+    {
+        T obj = newProxyInstance(loader, handler, interfaces);
+        initFields(interfaces[0], obj, target);
+        return obj;
     }
 
     public static boolean isProxyClass(Class<?> cl)
@@ -80,8 +116,8 @@ public class JavassistProxy
     }
 
     public static Class<?> getProxyClass(ClassLoader classLoader, Class<?>... interfaces)
-            throws Exception
     {
+        checkState(interfaces.length > 0);
         final ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
         KeyX name = new KeyX(interfaces); //interfaces[0].getName();
         return getClassLoaderProxyCache(loader).computeIfAbsent(name, key -> {
@@ -89,7 +125,7 @@ public class JavassistProxy
                 return createProxyClass(loader, interfaces);
             }
             catch (Exception e) {
-                throw throwsException(e);
+                throw new MockGoException("create Proxy Class failed, " + e.getMessage(), e);
             }
         });
     }
@@ -142,9 +178,7 @@ public class JavassistProxy
                 continue;
             }
             CtClass ctClass = classPool.get(interfaces[i].getName());
-            if (!ctClass.isInterface()) {
-                throw new CannotCompileException(ctClass.getName() + " not is Interface");
-            }
+            checkState(ctClass.isInterface(), ctClass.getName() + " not is Interface");
 
             ctInterfaces.add(ctClass);
             proxyClass.addInterface(ctClass);
@@ -210,7 +244,8 @@ public class JavassistProxy
     }
 
     private static void installProxyHandlerInterface(ClassPool classPool, CtClass proxyClass)
-            throws Exception
+            throws NotFoundException, CannotCompileException
+
     {
         CtClass proxyHandler = classPool.get(ProxyHandler.class.getName());
         proxyClass.addInterface(proxyHandler);

@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.aop.mock;
 
 import com.github.harbby.gadtry.aop.JoinPoint;
-import com.github.harbby.gadtry.aop.impl.JavassistProxy;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
@@ -30,7 +29,7 @@ import java.lang.reflect.Method;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Strings.lowerFirst;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 /**
  * MockGo
@@ -43,37 +42,34 @@ public class MockGo
 
     public static <T> T spy(T target)
     {
-        Class<T> tClass = (Class<T>) target.getClass();
-        return JavassistProxy.newProxyInstance(tClass.getClassLoader(), new AopInvocationHandler(target), tClass);
+        return spy((Class<T>) target.getClass(), target);
     }
 
     public static <T> T spy(Class<T> superclass)
     {
         try {
             T target = UnsafeHelper.allocateInstance2(superclass);
-            return createProxyObj(superclass, new AopInvocationHandler(target));
+            return spy(superclass, target);
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 
     public static <T> T spy(Class<T> superclass, T target)
     {
-        return createProxyObj(superclass, new AopInvocationHandler(target));
+        return Proxy.builder(superclass)
+                .setInvocationHandler(new AopInvocationHandler(target))
+                .setTarget(target)
+                .setClassLoader(superclass.getClassLoader())
+                .build();
     }
 
     public static <T> T mock(Class<T> superclass)
     {
-        return createProxyObj(superclass, new AopInvocationHandler());
-    }
-
-    private static <T> T createProxyObj(Class<T> superclass, AopInvocationHandler invocationHandler)
-    {
-        ClassLoader loader = superclass.getClassLoader();
         T proxy = Proxy.builder(superclass)
-                .setClassLoader(loader)
-                .setInvocationHandler(invocationHandler)
+                .setClassLoader(superclass.getClassLoader())
+                .setInvocationHandler(new AopInvocationHandler())
                 .build();
         when(proxy.toString()).thenReturn(lowerFirst(superclass.getSimpleName()));
         return proxy;
