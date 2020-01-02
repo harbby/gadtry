@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.mutable.MutableList;
-import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
 import sun.reflect.generics.repository.AbstractRepository;
 import sun.reflect.generics.repository.ClassRepository;
 import sun.reflect.generics.tree.ClassSignature;
@@ -80,16 +79,27 @@ public class JavaTypes
         }
         checkState(!rawType.isPrimitive(), "rawType %s must not PrimitiveType", rawType);
 
-        if (rawType.isArray()) {
-            return GenericArrayTypeImpl.make(make(rawType.getComponentType(), actualTypeArguments, null));
-        }
         return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
                 ownerType);
     }
 
-    public static Type makeMapType(Type keyType, Type valueType)
+    public static MapType makeMapType(Class<? extends Map> mapClass, Type keyType, Type valueType)
     {
-        return make(Map.class, new Type[] {keyType, valueType}, null);
+        if (keyType instanceof Class<?>) {
+            checkState(!((Class<?>) keyType).isPrimitive(), "MapType keyType not support PrimitiveType");
+        }
+        if (valueType instanceof Class) {
+            checkState(!((Class<?>) valueType).isPrimitive(), "MapType valueType not support PrimitiveType");
+        }
+        return new MapType(mapClass, keyType, valueType);
+    }
+
+    public static ArrayType makeArrayType(Type valueType)
+    {
+        if (valueType instanceof Class<?>) {
+            checkState(!((Class<?>) valueType).isPrimitive(), "ArrayType valueType not support PrimitiveType");
+        }
+        return new ArrayType(valueType);
     }
 
     /**
@@ -171,6 +181,40 @@ public class JavaTypes
         }
         else {
             //checkState(aClass.isPrimitive(), "%s not is Primitive", aClass);
+            throw new UnsupportedOperationException("this " + aClass + " have't support!");
+        }
+    }
+
+    public static Class<?> getPrimitiveClass(Class<?> aClass)
+    {
+        if (aClass == Integer.class) {  //Integer.TYPE
+            return int.class;
+        }
+        else if (aClass == Short.class) {
+            return short.class;
+        }
+        else if (aClass == Long.class) {
+            return long.class;
+        }
+        else if (aClass == Float.class) {
+            return float.class;
+        }
+        else if (aClass == Double.class) {
+            return double.class;
+        }
+        else if (aClass == Byte.class) {
+            return byte.class;
+        }
+        else if (aClass == Boolean.class) {
+            return boolean.class;
+        }
+        else if (aClass == Character.class) {
+            return char.class;
+        }
+        else if (aClass == Void.class) {
+            return void.class;
+        }
+        else {
             throw new UnsupportedOperationException("this " + aClass + " have't support!");
         }
     }

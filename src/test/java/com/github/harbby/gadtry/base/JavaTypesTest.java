@@ -190,7 +190,7 @@ public class JavaTypesTest
     public void getClassGenericTypes()
     {
         List<Type> types = JavaTypes.getClassGenericTypes(GenericClassTest.class);
-        Assert.assertEquals(types.get(1), JavaTypes.make(Function1.class, new Type[] {JavaTypes.makeMapType(String.class, Integer.class), String.class}, null));
+        Assert.assertEquals(types.get(1), JavaTypes.make(Function1.class, new Type[] {JavaTypes.makeMapType(Map.class, String.class, Integer.class), String.class}, null));
     }
 
     @Test
