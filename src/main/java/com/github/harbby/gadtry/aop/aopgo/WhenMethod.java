@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
+import static java.util.Objects.requireNonNull;
 
 public class WhenMethod<T>
 {
@@ -34,11 +35,18 @@ public class WhenMethod<T>
     private final T target;
 
     private Consumer<MockBinder<T>, Throwable>[] binders = new Consumer[0];
+    private String basePackage;
 
     public WhenMethod(Class<T> superclass, T target)
     {
         this.superclass = superclass;
         this.target = target;
+    }
+
+    public final WhenMethod<T> basePackage(String basePackage)
+    {
+        this.basePackage = requireNonNull(basePackage, "basePackage is null");
+        return this;
     }
 
     @SafeVarargs
@@ -56,6 +64,7 @@ public class WhenMethod<T>
         T proxy = Proxy.builder(superclass)
                 .setInvocationHandler(aopInvocationHandler)
                 .setClassLoader(loader)
+                .basePackage(basePackage)
                 .build();
         //---------------------------
         final MockBinder<T> mockBinder = new MockBinder<>(proxy, aopInvocationHandler);
