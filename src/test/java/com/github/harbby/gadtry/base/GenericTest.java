@@ -66,6 +66,6 @@ public class GenericTest
 
         ParameterizedType parameterizedType = (ParameterizedType) a1;
         Type[] types = parameterizedType.getActualTypeArguments();
-        Assert.assertEquals(types[0], JavaTypes.makeMapType(String.class, Integer.class));
+        Assert.assertEquals(types[0], JavaTypes.makeMapType(Map.class, String.class, Integer.class));
     }
 }
