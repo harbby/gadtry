@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.impl.JavassistProxy;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
-import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
@@ -28,7 +27,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -258,45 +256,5 @@ public class AopGoTest
                 .build();
         Assert.assertEquals(set.size(), 1);
         Assert.assertEquals(MutableList.of("before1", "before2", "before4", "before3"), actions);
-    }
-
-    @Test
-    public void packageProxyFindJavaKeyWorldTest()
-    {
-        List<String> actions = new ArrayList<>();
-        try {
-            AopGo.proxy(JavaTypes.<Set<String>>classTag(Set.class))
-                    .byInstance(new HashSet<>())
-                    .basePackage("test.aop.int")
-                    .aop(binder -> {
-                        binder.doBefore(before -> {
-                            actions.add("before1");
-                        }).when().size();
-                    })
-                    .build();
-        }
-        catch (MockGoException e) {
-            Assert.assertEquals("package name [test.aop.int] find exists JAVA system keywords int", e.getMessage());
-        }
-    }
-
-    @Test
-    public void packageProxyTest()
-    {
-        String basePackage = "test.aop.package1";
-        List<String> actions = new ArrayList<>();
-        Set<String> set = AopGo.proxy(JavaTypes.<Set<String>>classTag(Set.class))
-                .byInstance(new HashSet<>())
-                .basePackage(basePackage)
-                .aop(binder -> {
-                    binder.doBefore(before -> {
-                        actions.add("before1");
-                    }).when().size();
-                })
-                .build();
-        Assert.assertTrue(set.getClass().getName().startsWith(basePackage));
-
-        set.size();
-        Assert.assertEquals(Arrays.asList("before1"), actions);
     }
 }

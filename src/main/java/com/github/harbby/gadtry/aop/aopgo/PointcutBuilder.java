@@ -54,6 +54,11 @@ public class PointcutBuilder<T>
         return proxy;
     }
 
+    public T method()
+    {
+        return when();
+    }
+
     public PointcutBuilder<T> returnType(Class<?>... returnTypes)
     {
         filters.add(method -> Stream.of(returnTypes)
@@ -86,6 +91,11 @@ public class PointcutBuilder<T>
     {
         filters.add(whereMethod);
         return this;
+    }
+
+    public void allMethod()
+    {
+
     }
 
     Aspect build()

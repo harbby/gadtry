@@ -89,6 +89,7 @@ public class AopInvocationHandler
     {
         LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
         try {
+            //method.setAccessible(true);  //todo: 如果未来需要默认开启所有访问权限时。设置此处为 true 即可
             return this.handler.invoke(proxy, method, args);
         }
         catch (InvocationTargetException e) {

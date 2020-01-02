@@ -134,13 +134,24 @@ public class JavassistProxy
         return getProxyClass(null, classLoader, interfaces);
     }
 
+    private static String getDefaultPackage(Class<?>... interfaces)
+    {
+        Package basePackage = interfaces[0].getPackage();
+        if (basePackage == null) {
+            return JavassistProxy.class.getPackage().getName();
+        }
+        else {
+            return basePackage.getName();
+        }
+    }
+
     public static Class<?> getProxyClass(String basePackage, ClassLoader classLoader, Class<?>... interfaces)
     {
         /**
          * todo: key should basePackage
          * */
         checkState(interfaces.length > 0);
-        final String proxyPackage = Strings.isBlank(basePackage) ? JavassistProxy.class.getPackage().getName() : basePackage;
+        final String proxyPackage = Strings.isBlank(basePackage) ? getDefaultPackage(interfaces) : basePackage;
         checkState(!proxyPackage.endsWith("."), "basePackage %s endsWith [.]", proxyPackage);
 
         final ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
