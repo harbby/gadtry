@@ -95,7 +95,6 @@ public class PointcutBuilder<T>
 
     public void allMethod()
     {
-
     }
 
     Aspect build()
