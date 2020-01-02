@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.mock.MockGoException;
+import com.github.harbby.gadtry.base.Strings;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
@@ -31,6 +32,8 @@ import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.DuplicateMemberException;
 import javassist.bytecode.annotation.Annotation;
+import javassist.compiler.CompileError;
+import javassist.compiler.Lex;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -45,6 +48,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavassistProxy
         implements Serializable
@@ -55,9 +59,9 @@ public class JavassistProxy
     private JavassistProxy() {}
 
     @SuppressWarnings("unchecked")
-    public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces)
+    public static <T> T newProxyInstance(ClassLoader loader, String basePackage, InvocationHandler handler, Class<?>... interfaces)
     {
-        Class<?> aClass = getProxyClass(loader, interfaces);
+        Class<?> aClass = getProxyClass(basePackage, loader, interfaces);
         Object obj;
         try {
             //--存在可能没有无参构造器的问题
@@ -70,7 +74,12 @@ public class JavassistProxy
         return (T) obj;
     }
 
-    private static void initFields(Class<?> superclass, Object proxyObj, Object target)
+    public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces)
+    {
+        return newProxyInstance(loader, null, handler, interfaces);
+    }
+
+    private static void copyObjectFields(Class<?> superclass, Object proxyObj, Object target)
     {
         if (superclass.isInterface()) {
             return;
@@ -95,11 +104,16 @@ public class JavassistProxy
     }
 
     @SuppressWarnings("unchecked")
+    public static <T> T newProxyInstance(ClassLoader loader, String basePackage, Object target, InvocationHandler handler, Class<?>... interfaces)
+    {
+        T obj = newProxyInstance(loader, basePackage, handler, interfaces);
+        copyObjectFields(interfaces[0], obj, target);
+        return obj;
+    }
+
     public static <T> T newProxyInstance(ClassLoader loader, Object target, InvocationHandler handler, Class<?>... interfaces)
     {
-        T obj = newProxyInstance(loader, handler, interfaces);
-        initFields(interfaces[0], obj, target);
-        return obj;
+        return newProxyInstance(loader, null, target, handler, interfaces);
     }
 
     public static boolean isProxyClass(Class<?> cl)
@@ -117,12 +131,26 @@ public class JavassistProxy
 
     public static Class<?> getProxyClass(ClassLoader classLoader, Class<?>... interfaces)
     {
+        return getProxyClass(null, classLoader, interfaces);
+    }
+
+    public static Class<?> getProxyClass(String basePackage, ClassLoader classLoader, Class<?>... interfaces)
+    {
+        /**
+         * todo: key should basePackage
+         * */
         checkState(interfaces.length > 0);
+        final String proxyPackage = Strings.isBlank(basePackage) ? JavassistProxy.class.getPackage().getName() : basePackage;
+        checkState(!proxyPackage.endsWith("."), "basePackage %s endsWith [.]", proxyPackage);
+
         final ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
         KeyX name = new KeyX(interfaces); //interfaces[0].getName();
         return getClassLoaderProxyCache(loader).computeIfAbsent(name, key -> {
             try {
-                return createProxyClass(loader, interfaces);
+                return createProxyClass(proxyPackage, loader, interfaces);
+            }
+            catch (MockGoException e) {
+                throw e;
             }
             catch (Exception e) {
                 throw new MockGoException("create Proxy Class failed, " + e.getMessage(), e);
@@ -149,7 +177,7 @@ public class JavassistProxy
         }
     }
 
-    private static Class<?> createProxyClass(ClassLoader loader, Class<?>... interfaces)
+    private static Class<?> createProxyClass(String basePackage, ClassLoader loader, Class<?>... interfaces)
             throws Exception
     {
         Class<?> superclass = interfaces[0];
@@ -157,7 +185,7 @@ public class JavassistProxy
         classPool.appendClassPath(new LoaderClassPath(loader));
 
         // New Create Proxy Class
-        CtClass proxyClass = classPool.makeClass(JavassistProxy.class.getPackage().getName() + ".$JvstProxy" + number.getAndIncrement() + "$" + superclass.getSimpleName());
+        CtClass proxyClass = classPool.makeClass(basePackage + ".$JvstProxy" + number.getAndIncrement() + "$" + superclass.getSimpleName());
         CtClass parentClass = classPool.get(superclass.getName());
         final List<CtClass> ctInterfaces = MutableList.of(parentClass);
 
@@ -234,7 +262,23 @@ public class JavassistProxy
             String fieldCode = "private static final java.lang.reflect.Method %s = " +
                     "javassist.util.proxy.RuntimeSupport.findSuperClassMethod(%s.class, \"%s\", \"%s\");";
             String fieldSrc = String.format(fieldCode, methodFieldName, proxyClass.getName(), ctMethod.getName(), ctMethod.getSignature());
-            CtField ctField = CtField.make(fieldSrc, proxyClass);
+            CtField ctField;
+            try {
+                ctField = CtField.make(fieldSrc, proxyClass);
+            }
+            catch (CannotCompileException e) {
+                if (e.getCause() instanceof CompileError) {
+                    Lex lex = ((CompileError) e.getCause()).getLex();
+                    StringBuffer stringBuffer = noCatch(() -> {
+                        Field field = Lex.class.getDeclaredField("textBuffer");
+                        field.setAccessible(true);
+                        return (StringBuffer) field.get(lex);
+                    });
+                    throw new MockGoException("package name [" + proxyClass.getPackageName() + "] find exists JAVA system keywords " + stringBuffer, e);
+                }
+                throw e;
+            }
+
             proxyClass.addField(ctField);
 
             String code = "return ($r) this.handler.invoke(this, %s, $args);";
