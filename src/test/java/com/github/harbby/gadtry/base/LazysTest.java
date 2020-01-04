@@ -15,10 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Function2;
-import com.github.harbby.gadtry.function.Function3;
-import com.github.harbby.gadtry.function.Function4;
-import com.github.harbby.gadtry.function.Function5;
+import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -60,12 +57,27 @@ public class LazysTest
             throws IOException, ClassNotFoundException
     {
         final Supplier<List<String>> lazy = Lazys.goLazy(() -> {
-            return new ArrayList<>();
+            return Arrays.asList("1", "2", "3");
         });
 
         byte[] bytes = Serializables.serialize((Serializable) lazy);
         final Supplier<List<String>> serializableLazy = Serializables.byteToObject(bytes);
-        Assert.assertEquals(0, serializableLazy.get().size());
+
+        Assert.assertTrue(serializableLazy != lazy);
+        Assert.assertEquals(Arrays.asList("1", "2", "3"), serializableLazy.get());
+    }
+
+    @Test
+    public void goLazy2SerializableTest()
+            throws IOException, ClassNotFoundException
+    {
+        final Function1<String, List<String>> lazy = Lazys.goLazy(init -> Arrays.asList(init));
+
+        byte[] bytes = Serializables.serialize(lazy);
+        final Function1<String, List<String>> serializableLazy = Serializables.byteToObject(bytes);
+
+        Assert.assertEquals(Arrays.asList("init"), serializableLazy.apply("init"));
+        Assert.assertEquals(serializableLazy.apply("a1"), serializableLazy.apply("a2"));
     }
 
     @Test
@@ -75,53 +87,8 @@ public class LazysTest
         final Function<String, List<String>> lazy = Lazys.goLazy(init -> Arrays.asList(init));
 
         Assert.assertEquals(Arrays.asList("init"), lazy.apply("init"));
-        Assert.assertEquals(lazy.apply("a1"), lazy.apply("a2"));
+        Assert.assertTrue(lazy.apply("a1") == lazy.apply("a2"));
         Assert.assertTrue(Serializables.serialize((Serializable) lazy).length > 0);
-    }
-
-    @Test
-    public void goLazy2ArgsTest()
-            throws IOException
-    {
-        final Function2<String, Integer, List<String>> lazy = Lazys.goLazy((init, num) -> Arrays.asList(init));
-
-        Assert.assertEquals(Arrays.asList("init"), lazy.apply("init", 1));
-        Assert.assertEquals(lazy.apply("a1", 1), lazy.apply("a2", 2));
-        Assert.assertTrue(Serializables.serialize(lazy).length > 0);
-    }
-
-    @Test
-    public void goLazy3ArgsTest()
-            throws IOException
-    {
-        final Function3<String, Integer, Integer, List<String>> lazy = Lazys.goLazy((init, num, num2) -> Arrays.asList(init));
-
-        Assert.assertEquals(Arrays.asList("init"), lazy.apply("init", 1, 1));
-        Assert.assertEquals(lazy.apply("a1", 1, 1), lazy.apply("a2", 2, 2));
-        Assert.assertTrue(Serializables.serialize(lazy).length > 0);
-    }
-
-    @Test
-    public void goLazy4ArgsTest()
-            throws IOException
-    {
-        final Function4<String, Integer, Integer, Integer, List<String>> lazy = Lazys.goLazy((init, num, num2, num3) -> Arrays.asList(init));
-
-        Assert.assertEquals(Arrays.asList("init"), lazy.apply("init", 1, 1, 1));
-        Assert.assertEquals(lazy.apply("a1", 1, 1, 1), lazy.apply("a2", 2, 2, 2));
-        Assert.assertTrue(Serializables.serialize(lazy).length > 0);
-    }
-
-    @Test
-    public void goLazy5ArgsTest()
-            throws IOException
-    {
-        final Function5<String, Integer, Integer, Integer, Integer, List<String>> lazy = Lazys.goLazy(
-                (init, num, num2, num3, num4) -> Arrays.asList(init));
-
-        Assert.assertEquals(Arrays.asList("init"), lazy.apply("init", 1, 1, 1, 1));
-        Assert.assertEquals(lazy.apply("a1", 1, 1, 1, 1), lazy.apply("a2", 2, 2, 2, 2));
-        Assert.assertTrue(Serializables.serialize(lazy).length > 0);
     }
 
     @Test

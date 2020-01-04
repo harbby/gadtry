@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop;
+package com.github.harbby.gadtry.aop.serialize;
 
+import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.base.Serializables;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,7 +25,7 @@ import java.io.Serializable;
 import java.util.function.Function;
 
 @SuppressWarnings("unchecked")
-public class ProxySerializeTest
+public class AopFactorySerializeTest
 {
     private final Function<String, Integer> function =
             (Serializable & Function<String, Integer>) (str) -> str.length();

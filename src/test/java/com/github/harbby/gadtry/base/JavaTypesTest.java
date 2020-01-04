@@ -78,8 +78,10 @@ public class JavaTypesTest
     @Test
     public void makeArrayType()
     {
-        Type type = JavaTypes.make(List[].class, new Type[] {String.class}, null);
+        Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
+        type = JavaTypes.makeArrayType(type);
         Assert.assertEquals(type.getTypeName(), "java.util.List<java.lang.String>[]");
+        Assert.assertEquals(JavaTypes.typeToClass(type), List[].class);
     }
 
     @Test
@@ -115,13 +117,6 @@ public class JavaTypesTest
         catch (IllegalArgumentException e) {
             Assert.assertEquals("Cannot convert type to class", e.getMessage());
         }
-    }
-
-    @Test
-    public void arrayTypeToClass()
-    {
-        Type type = JavaTypes.make(List[].class, new Type[] {String.class}, null);
-        Assert.assertEquals(JavaTypes.typeToClass(type), List[].class);
     }
 
     @Test

@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.6.3"  //SNAPSHOT
+version = "1.6.4-SNAPSHOT"  //SNAPSHOT
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -38,6 +38,7 @@ checkstyle {
   configFile = rootProject.file('src/checkstyle/facebook_checks.xml')
   //configFile = file("${rootDir}/src/checkstyle/facebook_checks.xml")
 }
+assemble.dependsOn 'checkstyle'
 
 license {
   headerDefinitions {  //see: http://code.mycila.com/license-maven-plugin/#supported-comment-types

@@ -66,6 +66,7 @@ public class WhenMethod<T>
                 .setClassLoader(loader)
                 .basePackage(basePackage)
                 .build();
+        aopInvocationHandler.setProxyClass(proxy.getClass());
         //---------------------------
         final MockBinder<T> mockBinder = new MockBinder<>(proxy, aopInvocationHandler);
         for (Consumer<MockBinder<T>, Throwable> it : binders) {

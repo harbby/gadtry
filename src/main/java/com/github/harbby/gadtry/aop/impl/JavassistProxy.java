@@ -134,13 +134,28 @@ public class JavassistProxy
         return getProxyClass(null, classLoader, interfaces);
     }
 
+    private static String getDefaultPackage(Class<?>... interfaces)
+    {
+        Package basePackage = interfaces[0].getPackage();
+        if (basePackage == null) {
+            return JavassistProxy.class.getPackage().getName();
+        }
+        else if (basePackage.getName().startsWith("java.")) {
+            //see: java8 {@like: ProtectionDomain}
+            return "gadtry." + basePackage.getName();
+        }
+        else {
+            return basePackage.getName();
+        }
+    }
+
     public static Class<?> getProxyClass(String basePackage, ClassLoader classLoader, Class<?>... interfaces)
     {
         /**
          * todo: key should basePackage
          * */
         checkState(interfaces.length > 0);
-        final String proxyPackage = Strings.isBlank(basePackage) ? JavassistProxy.class.getPackage().getName() : basePackage;
+        final String proxyPackage = Strings.isBlank(basePackage) ? getDefaultPackage(interfaces) : basePackage;
         checkState(!proxyPackage.endsWith("."), "basePackage %s endsWith [.]", proxyPackage);
 
         final ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
@@ -211,6 +226,12 @@ public class JavassistProxy
             ctInterfaces.add(ctClass);
             proxyClass.addInterface(ctClass);
         }
+
+        //和jdk java.lang.reflect.Proxy.getProxyClass 创建代理类保持行为一致，生成的代理类自动继承Serializable接口
+        if (!proxyClass.subtypeOf(classPool.get(Serializable.class.getName()))) {
+            proxyClass.addInterface(classPool.get(Serializable.class.getName()));
+        }
+
         //check duplicate class
         for (Map.Entry<CtClass, List<CtClass>> entry : ctInterfaces.stream().collect(Collectors.groupingBy(k -> k)).entrySet()) {
             if (entry.getValue().size() > 1) {
