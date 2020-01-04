@@ -182,8 +182,7 @@ public class PackageProxyTests
             AopGo.proxy(instance)
                     .basePackage(basePackage)
                     .aop(binder -> {
-                        binder.doBefore(before -> {
-                        }).allMethod();
+                        binder.doBefore(before -> {}).allMethod();
                     })
                     .build();
         }

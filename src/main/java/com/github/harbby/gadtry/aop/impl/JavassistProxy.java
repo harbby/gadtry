@@ -140,6 +140,10 @@ public class JavassistProxy
         if (basePackage == null) {
             return JavassistProxy.class.getPackage().getName();
         }
+        else if (basePackage.getName().startsWith("java.")) {
+            //see: java8 {@like: ProtectionDomain}
+            return "gadtry." + basePackage.getName();
+        }
         else {
             return basePackage.getName();
         }
@@ -222,6 +226,12 @@ public class JavassistProxy
             ctInterfaces.add(ctClass);
             proxyClass.addInterface(ctClass);
         }
+
+        //和jdk java.lang.reflect.Proxy.getProxyClass 创建代理类保持行为一致，生成的代理类自动继承Serializable接口
+        if (!proxyClass.subtypeOf(classPool.get(Serializable.class.getName()))) {
+            proxyClass.addInterface(classPool.get(Serializable.class.getName()));
+        }
+
         //check duplicate class
         for (Map.Entry<CtClass, List<CtClass>> entry : ctInterfaces.stream().collect(Collectors.groupingBy(k -> k)).entrySet()) {
             if (entry.getValue().size() > 1) {

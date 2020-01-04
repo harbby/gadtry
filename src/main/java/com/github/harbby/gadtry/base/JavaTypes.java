@@ -276,8 +276,10 @@ public class JavaTypes
         return MutableList.asList(classRepository.getSuperclass(), classRepository.getSuperInterfaces());
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> Class<T> classTag(Class<?> runtimeClass)
     {
+        checkState(!runtimeClass.isPrimitive(), "%s is isPrimitive", runtimeClass);
 //        if (runtimeClass.isPrimitive()) {
 //            return (Class<T>) JavaTypes.getWrapperClass(runtimeClass);
 //        }

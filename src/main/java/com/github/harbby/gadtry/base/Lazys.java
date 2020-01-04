@@ -16,12 +16,10 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
+import com.github.harbby.gadtry.aop.mock.MockGoArgument;
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.Function1;
-import com.github.harbby.gadtry.function.Function2;
-import com.github.harbby.gadtry.function.Function3;
-import com.github.harbby.gadtry.function.Function4;
-import com.github.harbby.gadtry.function.Function5;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
 
 import java.io.Serializable;
@@ -48,29 +46,34 @@ public class Lazys
 
     public static <F1, R> Function1<F1, R> goLazy(Function1<F1, R> lambda)
     {
-        return functionGo(Function1.class, lambda);
+        AtomicReference<Object> atomicReference = new AtomicReference<>();
+        Class<Function1<F1, R>> baseClass = JavaTypes.classTag(Function1.class);
+        return AopGo.proxy(baseClass)
+                .byInstance(lambda)
+                .aop(binder -> {
+                    binder.doAround(joinPoint -> {
+                        if (atomicReference.get() == null) {
+                            synchronized (atomicReference) {
+                                if (atomicReference.get() != null) {
+                                    return atomicReference.get();
+                                }
+                                UnsafeHelper.getUnsafe().fullFence();
+                                Object object = joinPoint.proceed();
+                                checkState(atomicReference.compareAndSet(null, object), "not Single");
+                                UnsafeHelper.getUnsafe().fullFence();
+                                return object;
+                            }
+                        }
+                        else {
+                            return atomicReference.get();
+                        }
+                    }).when().apply(MockGoArgument.any());
+                }).build();
     }
 
-    public static <F1, F2, R> Function2<F1, F2, R> goLazy(Function2<F1, F2, R> lambda)
-    {
-        return functionGo(Function2.class, lambda);
-    }
-
-    public static <F1, F2, F3, R> Function3<F1, F2, F3, R> goLazy(Function3<F1, F2, F3, R> lambda)
-    {
-        return functionGo(Function3.class, lambda);
-    }
-
-    public static <F1, F2, F3, F4, R> Function4<F1, F2, F3, F4, R> goLazy(Function4<F1, F2, F3, F4, R> lambda)
-    {
-        return functionGo(Function4.class, lambda);
-    }
-
-    public static <F1, F2, F3, F4, F5, R> Function5<F1, F2, F3, F4, F5, R> goLazy(Function5<F1, F2, F3, F4, F5, R> lambda)
-    {
-        return functionGo(Function5.class, lambda);
-    }
-
+    /**
+     * 支持任意参数个数的Function1
+     */
     private static <T> T functionGo(Class<T> interfaceClass, T lambda)
     {
         AtomicReference<Object> atomicReference = new AtomicReference<>();

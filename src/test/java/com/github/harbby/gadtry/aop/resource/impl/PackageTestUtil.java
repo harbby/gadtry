@@ -19,6 +19,8 @@ import com.github.harbby.gadtry.aop.resource.PackageTestName;
 
 public class PackageTestUtil
 {
+    private PackageTestUtil() {}
+
     public static int getAge(PackageTestName instance)
     {
         if (instance instanceof PackageTestNameAge) {

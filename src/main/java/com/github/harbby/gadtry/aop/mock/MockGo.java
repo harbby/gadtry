@@ -58,19 +58,24 @@ public class MockGo
 
     public static <T> T spy(Class<T> superclass, T target)
     {
-        return Proxy.builder(superclass)
-                .setInvocationHandler(new AopInvocationHandler(target))
+        AopInvocationHandler aopInvocationHandler = new AopInvocationHandler(target);
+        T proxy = Proxy.builder(superclass)
+                .setInvocationHandler(aopInvocationHandler)
                 .setTarget(target)
                 .setClassLoader(superclass.getClassLoader())
                 .build();
+        aopInvocationHandler.setProxyClass(proxy.getClass());
+        return proxy;
     }
 
     public static <T> T mock(Class<T> superclass)
     {
+        AopInvocationHandler aopInvocationHandler = new AopInvocationHandler();
         T proxy = Proxy.builder(superclass)
                 .setClassLoader(superclass.getClassLoader())
-                .setInvocationHandler(new AopInvocationHandler())
+                .setInvocationHandler(aopInvocationHandler)
                 .build();
+        aopInvocationHandler.setProxyClass(proxy.getClass());
         when(proxy.toString()).thenReturn(lowerFirst(superclass.getSimpleName()));
         return proxy;
     }
