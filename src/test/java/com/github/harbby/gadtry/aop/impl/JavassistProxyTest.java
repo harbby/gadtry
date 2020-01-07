@@ -32,45 +32,23 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class JavassistProxyTest
 {
     @Test
-    public void myProxyTest()
-    {
-        String name = "123123-1";
-        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
-
-        Test1 old = Test1.of(name);
-        InvocationHandler handler = (proxy, method, args1) -> {
-            System.out.println("before " + method.getName());
-            if ("name".equals(method.getName())) {
-                atomicBoolean.set(true);
-            }
-            return method.invoke(old, args1);
-        };
-        Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class);
-        int age = proxy.age();
-        Assert.assertEquals(18, age);
-        Assert.assertEquals(name, proxy.name());
-        Assert.assertTrue(proxy instanceof ProxyHandler);
-        Assert.assertTrue(atomicBoolean.get());
-        System.out.println(proxy);
-
-        Test1 proxy2 = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class);
-        System.out.println(proxy2);
-    }
-
-    @Test(expected = MockGoException.class)
     public void moreSuperclass()
             throws Exception
     {
-        JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class,
-                ProxyHandler.class, HashMap.class);
-        Assert.fail();
+        try {
+            JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class,
+                    ProxyHandler.class, HashMap.class);
+            Assert.fail();
+        }
+        catch (IllegalStateException e) {
+            Assert.assertEquals(e.getMessage(), "java.util.HashMap not is Interface");
+        }
     }
 
     @Test
@@ -155,6 +133,17 @@ public class JavassistProxyTest
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    @Test
+    public void proxyHashMapTest()
+            throws InstantiationException
+    {
+        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Class<?> aClass = JavassistProxy.getProxyClass(null, HashMap.class);
+        Object obj = unsafe.allocateInstance(aClass);
+
+        Assert.assertEquals(true, HashMap.class.isInstance(obj));
     }
 
     @Test

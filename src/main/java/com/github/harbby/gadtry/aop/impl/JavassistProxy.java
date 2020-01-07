@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.base.Strings;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
@@ -38,6 +39,7 @@ import javassist.compiler.Lex;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,22 +48,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.github.harbby.gadtry.aop.runtime.ProxyRuntime.METHOD_START;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavassistProxy
         implements Serializable
 {
+    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final AtomicLong number = new AtomicLong(0);
     private static final Map<ClassLoader, ConcurrentMap<KeyX, Class<?>>> proxyCache = new IdentityHashMap<>();
 
     private JavassistProxy() {}
 
     @SuppressWarnings("unchecked")
-    public static <T> T newProxyInstance(ClassLoader loader, String basePackage, InvocationHandler handler, Class<?>... interfaces)
+    public static <T> T newProxyInstance(ProxyRequest<T> request)
     {
-        Class<?> aClass = getProxyClass(basePackage, loader, interfaces);
+        Class<?> aClass = getProxyClass(request);
         Object obj;
         try {
             //--存在可能没有无参构造器的问题
@@ -70,13 +75,25 @@ public class JavassistProxy
         catch (Exception e) {
             throw new MockGoException("new Instance " + aClass + "failed", e);
         }
-        ((ProxyHandler) obj).setHandler(handler);
+        ((ProxyHandler) obj).setHandler(request.getHandler());
+
+        if (request.getTarget() != null) {
+            copyObjectFields(request.getSuperclass(), obj, request.getTarget());
+        }
+
         return (T) obj;
     }
 
     public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces)
     {
-        return newProxyInstance(loader, null, handler, interfaces);
+        @SuppressWarnings("unchecked")
+        ProxyRequest<T> request = ProxyRequest.builder((Class<T>) interfaces[0])
+                .setClassLoader(loader)
+                .addInterface(interfaces)
+                .setInvocationHandler(handler)
+                .disableSuperMethod()
+                .build();
+        return newProxyInstance(request);
     }
 
     private static void copyObjectFields(Class<?> superclass, Object proxyObj, Object target)
@@ -103,19 +120,6 @@ public class JavassistProxy
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T newProxyInstance(ClassLoader loader, String basePackage, Object target, InvocationHandler handler, Class<?>... interfaces)
-    {
-        T obj = newProxyInstance(loader, basePackage, handler, interfaces);
-        copyObjectFields(interfaces[0], obj, target);
-        return obj;
-    }
-
-    public static <T> T newProxyInstance(ClassLoader loader, Object target, InvocationHandler handler, Class<?>... interfaces)
-    {
-        return newProxyInstance(loader, null, target, handler, interfaces);
-    }
-
     public static boolean isProxyClass(Class<?> cl)
     {
         return ProxyHandler.class.isAssignableFrom(cl) &&
@@ -131,12 +135,18 @@ public class JavassistProxy
 
     public static Class<?> getProxyClass(ClassLoader classLoader, Class<?>... interfaces)
     {
-        return getProxyClass(null, classLoader, interfaces);
+        checkState(interfaces != null && interfaces.length > 0, "interfaces is Empty");
+        ProxyRequest.Builder<?> request = ProxyRequest.builder(interfaces[0])
+                .setClassLoader(classLoader);
+        if (interfaces.length > 1) {
+            request.addInterface(java.util.Arrays.copyOfRange(interfaces, 1, interfaces.length));
+        }
+        return getProxyClass(request.build());
     }
 
-    private static String getDefaultPackage(Class<?>... interfaces)
+    private static String getDefaultPackage(Class<?> superclass)
     {
-        Package basePackage = interfaces[0].getPackage();
+        Package basePackage = superclass.getPackage();
         if (basePackage == null) {
             return JavassistProxy.class.getPackage().getName();
         }
@@ -149,20 +159,31 @@ public class JavassistProxy
         }
     }
 
-    public static Class<?> getProxyClass(String basePackage, ClassLoader classLoader, Class<?>... interfaces)
+    public static Class<?> getProxyClass(ProxyRequest<?> request)
     {
+        String basePackage = request.getBasePackage();
+        ClassLoader classLoader = request.getClassLoader();
+
         /**
          * todo: key should basePackage
          * */
-        checkState(interfaces.length > 0);
-        final String proxyPackage = Strings.isBlank(basePackage) ? getDefaultPackage(interfaces) : basePackage;
+        String proxyPackage = Strings.isBlank(basePackage) ? getDefaultPackage(request.getSuperclass()) : basePackage;
         checkState(!proxyPackage.endsWith("."), "basePackage %s endsWith [.]", proxyPackage);
 
         final ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
-        KeyX name = new KeyX(interfaces); //interfaces[0].getName();
+
+        List<Class<?>> validClass = new ArrayList<>(request.getInterfaces().length + 1);
+        validClass.add(request.getSuperclass());
+        for (Class<?> it : request.getInterfaces()) {
+            if (it != request.getSuperclass() && it != Serializable.class && it != ProxyHandler.class && !it.isAssignableFrom(request.getSuperclass())) {
+                validClass.add(it);
+            }
+        }
+
+        KeyX name = new KeyX(request.isDisableSuperMethod(), validClass.toArray(EMPTY_CLASS_ARRAY)); //interfaces[0].getName();
         return getClassLoaderProxyCache(loader).computeIfAbsent(name, key -> {
             try {
-                return createProxyClass(proxyPackage, loader, interfaces);
+                return createProxyClass(proxyPackage, request);
             }
             catch (MockGoException e) {
                 throw e;
@@ -192,12 +213,12 @@ public class JavassistProxy
         }
     }
 
-    private static Class<?> createProxyClass(String basePackage, ClassLoader loader, Class<?>... interfaces)
+    private static Class<?> createProxyClass(String basePackage, ProxyRequest<?> request)
             throws Exception
     {
-        Class<?> superclass = interfaces[0];
+        Class<?> superclass = request.getSuperclass();
         ClassPool classPool = new ClassPool(true);
-        classPool.appendClassPath(new LoaderClassPath(loader));
+        classPool.appendClassPath(new LoaderClassPath(request.getClassLoader()));
 
         // New Create Proxy Class
         CtClass proxyClass = classPool.makeClass(basePackage + ".$JvstProxy" + number.getAndIncrement() + "$" + superclass.getSimpleName());
@@ -213,14 +234,11 @@ public class JavassistProxy
             proxyClass.setSuperclass(parentClass);
         }
 
-        for (int i = 1; i < interfaces.length; i++) {
-            if (interfaces[i] == ProxyHandler.class) {
+        for (Class<?> it : request.getInterfaces()) {
+            if (it == ProxyHandler.class || it.isAssignableFrom(superclass)) {
                 continue;
             }
-            if (interfaces[i].isAssignableFrom(superclass)) {
-                continue;
-            }
-            CtClass ctClass = classPool.get(interfaces[i].getName());
+            CtClass ctClass = classPool.get(it.getName());
             checkState(ctClass.isInterface(), ctClass.getName() + " not is Interface");
 
             ctInterfaces.add(ctClass);
@@ -243,7 +261,7 @@ public class JavassistProxy
         installProxyHandlerInterface(classPool, proxyClass);
 
         // 添加方法和字段
-        installFieldAndMethod(proxyClass, ctInterfaces);
+        installFieldAndMethod(proxyClass, ctInterfaces, request);
 
         // 设置代理类的类修饰符
         proxyClass.setModifiers(Modifier.PUBLIC | Modifier.FINAL);
@@ -254,11 +272,11 @@ public class JavassistProxy
         }
 
         // 持久化class到硬盘, 可以直接反编译查看
-        //proxyClass.writeFile(".");
-        return proxyClass.toClass(loader, superclass.getProtectionDomain());
+        //proxyClass.writeFile("out/.");
+        return proxyClass.toClass(request.getClassLoader(), superclass.getProtectionDomain());
     }
 
-    private static void installFieldAndMethod(CtClass proxyClass, List<CtClass> ctInterfaces)
+    private static void installFieldAndMethod(CtClass proxyClass, List<CtClass> ctInterfaces, ProxyRequest<?> request)
             throws NotFoundException, CannotCompileException
     {
         Map<CtMethod, String> methods = new IdentityHashMap<>();
@@ -278,34 +296,97 @@ public class JavassistProxy
         int methodIndex = 0;
         for (CtMethod ctMethod : methods.keySet()) {
             final String methodFieldName = "_method" + methodIndex++;
-
-            // 添加字段
-            String fieldCode = "private static final java.lang.reflect.Method %s = " +
-                    "javassist.util.proxy.RuntimeSupport.findSuperClassMethod(%s.class, \"%s\", \"%s\");";
-            String fieldSrc = String.format(fieldCode, methodFieldName, proxyClass.getName(), ctMethod.getName(), ctMethod.getSignature());
-            CtField ctField;
-            try {
-                ctField = CtField.make(fieldSrc, proxyClass);
+            if (request.getSuperclass().isInterface() ||
+                    ctMethod.getDeclaringClass().isInterface() ||   //接口的方法或default方法无法super.()调用
+                    request.isDisableSuperMethod() ||
+                    (Modifier.isPackage(ctMethod.getModifiers()) &&  //包内级别的无法super.()调用
+                            !ctMethod.getDeclaringClass().getPackageName().equals(proxyClass.getPackageName()))
+            ) {
+                addSupperMethod(proxyClass, ctMethod, methodFieldName);
             }
-            catch (CannotCompileException e) {
-                if (e.getCause() instanceof CompileError) {
-                    Lex lex = ((CompileError) e.getCause()).getLex();
-                    StringBuffer stringBuffer = noCatch(() -> {
-                        Field field = Lex.class.getDeclaredField("textBuffer");
-                        field.setAccessible(true);
-                        return (StringBuffer) field.get(lex);
-                    });
-                    throw new MockGoException("package name [" + proxyClass.getPackageName() + "] find exists JAVA system keywords " + stringBuffer, e);
-                }
-                throw e;
+            else {
+                addSupperMethod2(proxyClass, ctMethod, methodFieldName); //这里应该全是可以被super.()调用的方法
             }
-
-            proxyClass.addField(ctField);
-
-            String code = "return ($r) this.handler.invoke(this, %s, $args);";
-            String methodBodySrc = String.format(code, methodFieldName);
-            addProxyMethod(proxyClass, ctMethod, methodBodySrc);
         }
+    }
+
+    private static void addSupperMethod(CtClass proxyClass, CtMethod ctMethod, String methodNewName)
+            throws NotFoundException, CannotCompileException
+    {
+        // 添加字段
+        String fieldCode = "private static final java.lang.reflect.Method %s = " +
+                "javassist.util.proxy.RuntimeSupport.findSuperClassMethod(%s.class, \"%s\", \"%s\");";
+        String fieldSrc = String.format(fieldCode, methodNewName, proxyClass.getName(), ctMethod.getName(), ctMethod.getSignature());
+        CtField ctField;
+        try {
+            ctField = CtField.make(fieldSrc, proxyClass);
+        }
+        catch (CannotCompileException e) {
+            if (e.getCause() instanceof CompileError) {
+                Lex lex = ((CompileError) e.getCause()).getLex();
+                StringBuffer stringBuffer = noCatch(() -> {
+                    Field field = Lex.class.getDeclaredField("textBuffer");
+                    field.setAccessible(true);
+                    return (StringBuffer) field.get(lex);
+                });
+                throw new MockGoException("package name [" + proxyClass.getPackageName() + "] find exists JAVA system keywords " + stringBuffer, e);
+            }
+            throw e;
+        }
+
+        proxyClass.addField(ctField);
+
+        String code = "return ($r) this.handler.invoke(this, %s, $args);";
+        String methodBodySrc = String.format(code, methodNewName);
+        addProxyMethod(proxyClass, ctMethod, methodBodySrc);
+    }
+
+    private static void addSupperMethod2(CtClass proxyClass, CtMethod ctMethod, String methodNewName)
+            throws NotFoundException, CannotCompileException
+    {
+        // 添加字段
+        String fieldCode = "private static final java.lang.reflect.Method %s = " +
+                "com.github.harbby.gadtry.aop.runtime.ProxyRuntime.findProxyClassMethod(%s.class, \"" + METHOD_START + "%s\", %s);";
+
+        String arg;
+        if (ctMethod.getParameterTypes().length == 0) {
+            arg = null;
+        }
+        else {
+            arg = "new Class[] {"
+                    + Stream.of(ctMethod.getParameterTypes()).map(x -> x.getName() + ".class").collect(Collectors.joining(","))
+                    + "}";
+        }
+        String fieldSrc = String.format(fieldCode, methodNewName, proxyClass.getName(), ctMethod.getName(),
+                arg);
+
+        CtField ctField;
+        try {
+            ctField = CtField.make(fieldSrc, proxyClass);
+        }
+        catch (CannotCompileException e) {
+            if (e.getCause() instanceof CompileError) {
+                Lex lex = ((CompileError) e.getCause()).getLex();
+                StringBuffer stringBuffer = noCatch(() -> {
+                    Field field = Lex.class.getDeclaredField("textBuffer");
+                    field.setAccessible(true);
+                    return (StringBuffer) field.get(lex);
+                });
+                throw new MockGoException("package name [" + proxyClass.getPackageName() + "] find exists JAVA system keywords " + stringBuffer, e);
+            }
+            throw e;
+        }
+
+        proxyClass.addField(ctField);
+
+        String code = "return ($r) this.handler.invoke(this, %s, $args);";
+        String methodBodySrc = String.format(code, methodNewName);
+        addProxyMethod(proxyClass, ctMethod, methodBodySrc);
+        //------add _Method()---------- // ctMethod.getLongName();
+        CtMethod m2 = new CtMethod(ctMethod.getReturnType(), METHOD_START + ctMethod.getName(), ctMethod.getParameterTypes(), proxyClass);
+        ctMethod.getMethodInfo().getAttributes().forEach(m2.getMethodInfo()::addAttribute); //add @注解
+        m2.setBody("return ($r) super." + ctMethod.getName() + "($$);");
+        proxyClass.addMethod(m2);
     }
 
     private static void installProxyHandlerInterface(ClassPool classPool, CtClass proxyClass)

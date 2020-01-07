@@ -227,9 +227,9 @@ public class Arrays
      * @param rest array
      * @return merge array
      */
-    public static <T> T[] asArray(T first, T[] rest)
+    public static <T> T[] asArray(T first, T[] rest, Class<T> type)
     {
-        T[] arr = createPrimitiveByArrayClass(rest.getClass(), rest.length + 1);
+        T[] arr = createPrimitiveArray(type, rest.length + 1);
         arr[0] = first;
         System.arraycopy(rest, 0, arr, 1, rest.length);
         return arr;
@@ -240,11 +240,15 @@ public class Arrays
      * @param rest Collection
      * @return merge array
      */
-    public static <T> T[] asArray(T first, Collection<T> rest)
+    public static <T> T[] asArray(T first, Collection<T> rest, Class<T> type)
     {
-        T[] arr = createArray((Class<T>) first.getClass(), rest.size());
-        rest.toArray(arr);
-        return asArray(first, arr);
+        T[] arr = createArray(type, rest.size() + 1);
+        arr[0] = first;
+        int i = 1;
+        for (T t : rest) {
+            arr[i++] = t;
+        }
+        return arr;
     }
 
     /**

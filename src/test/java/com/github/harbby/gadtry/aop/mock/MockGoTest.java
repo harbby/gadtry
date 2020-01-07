@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -68,6 +69,14 @@ public class MockGoTest
     }
 
     @Test
+    public void disableSuperMethodMockSpyByWhen()
+    {
+        List<String> proxy = MockGo.spy(MutableList.of("1", "2", "3"));
+        when(proxy.toString()).thenAround(proxyContext -> "123");
+        Assert.assertEquals("123", proxy.toString()); //check disableSuperMethod()
+    }
+
+    @Test
     public void mockSpyByWhen()
     {
         List<String> proxy = MockGo.spy(MutableList.of("1", "2", "3"));
@@ -76,7 +85,7 @@ public class MockGoTest
         when(proxy.get(anyInt())).thenThrow(new IOException("mockDoThrow"));
 
         Assert.assertEquals(proxy.size(), 7);
-        Assert.assertEquals("123", proxy.toString());
+        Assert.assertEquals("123", proxy.toString()); //check disableSuperMethod()
         Assert.assertTrue(proxy.stream() instanceof Stream);
         try {
             proxy.get(0);
@@ -123,6 +132,18 @@ public class MockGoTest
     public void duplicateMockWhenThen()
     {
         List<String> proxy = MockGo.mock(List.class);
+        when(proxy.size()).thenReturn(7);
+        Assert.assertEquals(proxy.size(), 7);
+        when(proxy.size()).thenReturn(8);
+        Assert.assertEquals(proxy.size(), 8);
+    }
+
+    @Test
+    public void disableSuperMethodMockWhenThen()
+    {
+        HashMap proxy = MockGo.mock(HashMap.class);
+        when(proxy.toString()).thenReturn("disableSuperMethodMockWhenThen");
+        Assert.assertEquals(proxy.toString(), "disableSuperMethodMockWhenThen");
         when(proxy.size()).thenReturn(7);
         Assert.assertEquals(proxy.size(), 7);
         when(proxy.size()).thenReturn(8);

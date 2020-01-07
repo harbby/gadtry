@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
+import java.util.Objects;
 
 /*
  * a key used for proxy class with any number of implemented interfaces
@@ -25,11 +25,13 @@ public final class KeyX
 {
     private final int hash;
     private final WeakReference<Class<?>>[] refs;
+    private final boolean isDisableSuperMethod;
 
     @SuppressWarnings("unchecked")
-    public KeyX(Class<?>[] interfaces)
+    public KeyX(boolean isDisableSuperMethod, Class<?>[] interfaces)
     {
-        hash = Arrays.hashCode(interfaces);
+        this.isDisableSuperMethod = isDisableSuperMethod;
+        hash = Objects.hash(isDisableSuperMethod, interfaces);
         refs = (WeakReference<Class<?>>[]) new WeakReference<?>[interfaces.length];
         for (int i = 0; i < interfaces.length; i++) {
             refs[i] = new WeakReference<>(interfaces[i]);
@@ -56,6 +58,9 @@ public final class KeyX
         KeyX other = (KeyX) obj;
         //return this.refs[0].get().getName().equals(other.refs[0].get().getName());
         if (this.refs.length != other.refs.length) {
+            return false;
+        }
+        if (this.isDisableSuperMethod != other.isDisableSuperMethod) {
             return false;
         }
         for (int i = 0; i < this.refs.length; i++) {

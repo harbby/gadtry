@@ -39,6 +39,11 @@ public class Test1
         return 18;
     }
 
+    public String getNameAndAge()
+    {
+        return name() + age();
+    }
+
     private String city()
     {
         return "chengdu";

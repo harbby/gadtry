@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.aop;
 
+import com.github.harbby.gadtry.aop.aopgo.AopBuilder;
 import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
-import com.github.harbby.gadtry.aop.aopgo.WhenMethod;
 import com.github.harbby.gadtry.aop.mock.MockGo;
 import com.github.harbby.gadtry.aop.model.After;
 import com.github.harbby.gadtry.aop.model.AfterReturning;
@@ -31,17 +31,17 @@ public class AopGo
 
     public interface ByInstance<T>
     {
-        public WhenMethod<T> byInstance(T target);
+        public AopBuilder<T> byInstance(T target);
     }
 
     public static <T> ByInstance<T> proxy(Class<T> superclass)
     {
-        return target -> new WhenMethod<>(superclass, target);
+        return target -> new AopBuilder<>(superclass, target);
     }
 
-    public static <T> WhenMethod<T> proxy(T instance)
+    public static <T> AopBuilder<T> proxy(T instance)
     {
-        return new WhenMethod<T>((Class<T>) instance.getClass(), instance);
+        return new AopBuilder<T>((Class<T>) instance.getClass(), instance);
     }
 
     public static MockGo.DoBuilder doBefore(Consumer<Before, Exception> before)

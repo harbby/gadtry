@@ -111,13 +111,16 @@ public class AopInvocationHandler
     {
         requireNonNull(target, "instance is null");
         this.defaultHandler = (InvocationHandler & Serializable) (proxy, method, args) -> {
+            boolean v2 = method.getDeclaringClass() == proxy.getClass();
+            Object instance = v2 ? proxy : target;
+
             Function<JoinPoint, Object, Throwable> userCode = mockMethods.get(method);
             if (userCode != null) {
-                JoinPoint joinPoint = JoinPoint.of(target, method, args);
+                JoinPoint joinPoint = JoinPoint.of(instance, method, args);
                 return userCode.apply(joinPoint);
             }
             else {
-                return method.invoke(target, args);
+                return method.invoke(instance, args);
             }
         };
         this.initHandler();

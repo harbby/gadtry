@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mock.MockGoException;
 import org.junit.Test;
 
@@ -33,11 +34,12 @@ public class ProxyTest
         InvocationHandler invocationHandler = (proxy, method, args) -> {
             return method.invoke(set, args);
         };
-        Proxy.builder(HashSet.class)
+        ProxyRequest<?> request = ProxyRequest.builder(HashSet.class)
                 .setInvocationHandler(invocationHandler)
                 .addInterface(Supplier.class)
                 .addInterface(Supplier.class)
                 .build();
+        Proxy.proxy(request);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -47,10 +49,12 @@ public class ProxyTest
         InvocationHandler invocationHandler = (proxy, method, args) -> {
             return method.invoke(set, args);
         };
-        Proxy.builder(HashSet.class)
+
+        ProxyRequest<?> request = ProxyRequest.builder(HashSet.class)
                 .setInvocationHandler(invocationHandler)
                 .addInterface(ArrayList.class)
                 .build();
+        Proxy.proxy(request);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -60,10 +64,11 @@ public class ProxyTest
         InvocationHandler invocationHandler = (proxy, method, args) -> {
             return method.invoke(set, args);
         };
-        Proxy.builder(Set.class)
+        ProxyRequest<?> request = ProxyRequest.builder(Set.class)
                 .setInvocationHandler(invocationHandler)
                 .addInterface(Supplier.class)
                 .addInterface(Supplier.class)
                 .build();
+        Proxy.proxy(request);
     }
 }

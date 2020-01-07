@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.mock;
 
 import com.github.harbby.gadtry.aop.JoinPoint;
+import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
@@ -59,11 +60,13 @@ public class MockGo
     public static <T> T spy(Class<T> superclass, T target)
     {
         AopInvocationHandler aopInvocationHandler = new AopInvocationHandler(target);
-        T proxy = Proxy.builder(superclass)
+        ProxyRequest<T> request = ProxyRequest.builder(superclass)
                 .setInvocationHandler(aopInvocationHandler)
                 .setTarget(target)
                 .setClassLoader(superclass.getClassLoader())
+                .disableSuperMethod()  //和when().do...() 冲突,因此此处关闭 see: MockGoTest.disableSuperMethodMockSpyByWhen()
                 .build();
+        T proxy = Proxy.proxy(request);
         aopInvocationHandler.setProxyClass(proxy.getClass());
         return proxy;
     }
@@ -71,10 +74,12 @@ public class MockGo
     public static <T> T mock(Class<T> superclass)
     {
         AopInvocationHandler aopInvocationHandler = new AopInvocationHandler();
-        T proxy = Proxy.builder(superclass)
+        ProxyRequest<T> request = ProxyRequest.builder(superclass)
                 .setClassLoader(superclass.getClassLoader())
                 .setInvocationHandler(aopInvocationHandler)
+                .disableSuperMethod()
                 .build();
+        T proxy = Proxy.proxy(request);
         aopInvocationHandler.setProxyClass(proxy.getClass());
         when(proxy.toString()).thenReturn(lowerFirst(superclass.getSimpleName()));
         return proxy;

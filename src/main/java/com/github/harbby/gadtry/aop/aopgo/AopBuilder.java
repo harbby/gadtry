@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
+import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
@@ -29,7 +30,7 @@ import java.util.Map;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
-public class WhenMethod<T>
+public class AopBuilder<T>
 {
     private final Class<T> superclass;
     private final T target;
@@ -37,20 +38,20 @@ public class WhenMethod<T>
     private Consumer<MockBinder<T>, Throwable>[] binders = new Consumer[0];
     private String basePackage;
 
-    public WhenMethod(Class<T> superclass, T target)
+    public AopBuilder(Class<T> superclass, T target)
     {
         this.superclass = superclass;
         this.target = target;
     }
 
-    public final WhenMethod<T> basePackage(String basePackage)
+    public final AopBuilder<T> basePackage(String basePackage)
     {
         this.basePackage = requireNonNull(basePackage, "basePackage is null");
         return this;
     }
 
     @SafeVarargs
-    public final WhenMethod<T> aop(Consumer<MockBinder<T>, Throwable>... binders)
+    public final AopBuilder<T> aop(Consumer<MockBinder<T>, Throwable>... binders)
     {
         this.binders = binders;
         return this;
@@ -61,11 +62,13 @@ public class WhenMethod<T>
         ClassLoader loader = superclass.getClassLoader() == null ? ProxyHandler.class.getClassLoader() :
                 superclass.getClassLoader();
         final AopInvocationHandler aopInvocationHandler = new AopInvocationHandler(target);
-        T proxy = Proxy.builder(superclass)
+        ProxyRequest<T> request = ProxyRequest.builder(superclass)
                 .setInvocationHandler(aopInvocationHandler)
                 .setClassLoader(loader)
+                .setTarget(target)
                 .basePackage(basePackage)
                 .build();
+        T proxy = Proxy.proxy(request);
         aopInvocationHandler.setProxyClass(proxy.getClass());
         //---------------------------
         final MockBinder<T> mockBinder = new MockBinder<>(proxy, aopInvocationHandler);
