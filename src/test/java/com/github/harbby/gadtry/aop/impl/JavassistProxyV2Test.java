@@ -81,7 +81,7 @@ public class JavassistProxyV2Test
         System.out.println(proxy);
 
         //---支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "123123-117");
+        Assert.assertEquals(proxy.getNameAndAge(), "123123-117");   //上面带里age()，这里支持方法间this，所以生效了
     }
 
     @Test
@@ -105,18 +105,18 @@ public class JavassistProxyV2Test
                 .setClassLoader(Test1.class.getClassLoader())
                 .addInterface(Serializable.class)
                 .setInvocationHandler(handler)
-                .disableSuperMethod()  //使用v1代理，关闭this super支持
+                .disableSuperMethod()  //使用v1代理，关闭this super支持，关闭方法间this调用支持
                 .setTarget(old)
                 .build();
         //Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class, Serializable.class);
         Test1 proxy = JavassistProxy.newProxyInstance(request);
 
-        Assert.assertEquals(18 - 1, proxy.age());
+        Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
         Assert.assertEquals(name, proxy.name());
         Assert.assertTrue(proxy instanceof ProxyHandler);
         Assert.assertTrue(atomicBoolean.get());
 
         //---不支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "123123-118");
+        Assert.assertEquals(proxy.getNameAndAge(), "123123-118");  //虽然上面代理了age()方法，但是这里并未生效
     }
 }
