@@ -25,13 +25,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JavassistProxyV2Test
 {
+    private static class Test1
+    {
+        private final String name;
+
+        public Test1(String name)
+        {
+            this.name = name;
+        }
+
+        public String name()
+        {
+            return name;
+        }
+
+        public int age()
+        {
+            return 18;
+        }
+
+        public String getNameAndAge()
+        {
+            return name() + age();
+        }
+    }
+
     @Test
     public void javassistProxyV2Test()
     {
         String name = "123123-1";
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-        Test1 old = Test1.of(name);
+        Test1 old = new Test1(name);
         InvocationHandler handler = (proxy, method, args1) -> {
             System.out.println("before " + method.getName());
             if ("name".equals(method.getName())) {
@@ -65,7 +90,7 @@ public class JavassistProxyV2Test
         String name = "123123-1";
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-        Test1 old = Test1.of(name);
+        Test1 old = new Test1(name);
         InvocationHandler handler = (proxy, method, args1) -> {
             System.out.println("before " + method.getName());
             if ("name".equals(method.getName())) {
