@@ -15,8 +15,9 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
+import com.github.harbby.gadtry.base.Arrays;
+
 import java.lang.ref.WeakReference;
-import java.util.Objects;
 
 /*
  * a key used for proxy class with any number of implemented interfaces
@@ -31,7 +32,7 @@ public final class KeyX
     public KeyX(boolean isDisableSuperMethod, Class<?>[] interfaces)
     {
         this.isDisableSuperMethod = isDisableSuperMethod;
-        hash = Objects.hash(isDisableSuperMethod, interfaces);
+        hash = Arrays.deepHashCode(isDisableSuperMethod, interfaces);
         refs = (WeakReference<Class<?>>[]) new WeakReference<?>[interfaces.length];
         for (int i = 0; i < interfaces.length; i++) {
             refs[i] = new WeakReference<>(interfaces[i]);

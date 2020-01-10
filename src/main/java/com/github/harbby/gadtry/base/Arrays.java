@@ -252,6 +252,16 @@ public class Arrays
     }
 
     /**
+     * Returns a hash code based on the "deep contents" of the specified
+     * array.
+     * see: {@link java.util.Arrays#deepHashCode(Object[])}
+     */
+    public static int deepHashCode(Object... objects)
+    {
+        return java.util.Arrays.deepHashCode(objects);
+    }
+
+    /**
      * array merge
      *
      * @param arrays input arrays
