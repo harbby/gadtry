@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MutableList
 {
@@ -36,11 +34,20 @@ public class MutableList
         if (iterable instanceof Collection) {
             return new ArrayList<>((Collection<? extends T>) iterable);
         }
-        MutableList.Builder<T> builder = MutableList.builder();
+        List<T> list = new ArrayList<>();
         for (T it : iterable) {
-            builder.add(it);
+            list.add(it);
         }
-        return builder.build();
+        return list;
+    }
+
+    public static <T> List<T> copy(Iterator<? extends T> iterator)
+    {
+        List<T> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+        return list;
     }
 
     @SafeVarargs
@@ -56,7 +63,7 @@ public class MutableList
 
     public static class Builder<T>
     {
-        private Stream.Builder<T> builder = Stream.builder();
+        private List<T> builder = new ArrayList<>();
 
         public Builder<T> add(T t)
         {
@@ -91,7 +98,7 @@ public class MutableList
 
         public List<T> build()
         {
-            return builder.build().collect(Collectors.toList());
+            return builder;
         }
     }
 }

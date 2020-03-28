@@ -101,23 +101,16 @@ public class DefaultGraph<E, R>
     @Override
     public List<String> printShow()
     {
-        List<String> builder = new ArrayList<>();
-        builder.add("/");
-        List<Node> nodes = root.nextNodes().stream().map(Edge::getOutNode).collect(Collectors.toList());
-        GraphUtil.printShow(builder, nodes);
+        List<Node<?, ?>> nodes = root.nextNodes().stream().map(Edge::getOutNode).collect(Collectors.toList());
+        return GraphUtil.printShow(nodes);
         //builder.forEach(System.out::println);
-        return builder;
     }
 
     @Override
     public Iterable<String> printShow(String id)
     {
         Node<E, R> firstNode = requireNonNull(nodes.get(id), "NO SUCH Node " + id);
-
-        List<String> builder = new ArrayList<>();
-        builder.add("/");
-
-        GraphUtil.printShow(builder, firstNode);
+        List<String> builder = GraphUtil.printShow(firstNode);
         builder.forEach(System.out::println);
         return builder;
     }

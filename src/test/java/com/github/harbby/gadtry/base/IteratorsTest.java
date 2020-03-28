@@ -207,16 +207,18 @@ public class IteratorsTest
         Assert.assertEquals(list, Arrays.asList(2, 3, 4));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void flatMap()
+    @Test
+    public void flatMapTest()
     {
-        Iterator<String> iterator = Iterators.flatMap(Iterators.of("abcd", "123"), s -> {
+        Iterator<String> iterator = Iterators.flatMap(Iterators.of("abcd", "", "123"), s -> {
             char[] chars = s.toCharArray();
-            String[] strings = new String[chars.length];
+            List<String> strings = new ArrayList<>(chars.length);
             for (int i = 0; i < chars.length; i++) {
-                strings[i] = String.valueOf(chars[i]);
+                strings.add(String.valueOf(chars[i]));
             }
-            return strings;
+            return strings.iterator();
         });
+
+        Assert.assertEquals(Iterators.size(iterator), 7);
     }
 }

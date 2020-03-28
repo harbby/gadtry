@@ -15,10 +15,18 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.tuple.Tuple2;
+import com.github.harbby.gadtry.function.Function1;
+
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BinaryOperator;
@@ -39,7 +47,7 @@ public class Iterators
 {
     private Iterators() {}
 
-    private static final Iterator EMPTY_ITERATOR = new Iterator()
+    private static final Iterable<?> EMPTY_ITERABLE = () -> new Iterator<Object>()
     {
         @Override
         public boolean hasNext()
@@ -54,24 +62,26 @@ public class Iterators
         }
     };
 
-    private static final Iterable EMPTY_ITERABLE = () -> EMPTY_ITERATOR;
-
+    @SafeVarargs
     public static <E> Iterator<E> of(E... values)
     {
         return new Iterator<E>()
         {
-            private int cnt = 0;
+            private int index = 0;
 
             @Override
             public boolean hasNext()
             {
-                return cnt < values.length;
+                return index < values.length;
             }
 
             @Override
             public E next()
             {
-                return values[cnt++];
+                if (!this.hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return values[index++];
             }
         };
     }
@@ -79,7 +89,7 @@ public class Iterators
     @SuppressWarnings("unchecked")
     public static <E> Iterator<E> empty()
     {
-        return (Iterator<E>) EMPTY_ITERATOR;
+        return (Iterator<E>) EMPTY_ITERABLE.iterator();
     }
 
     @SuppressWarnings("unchecked")
@@ -101,6 +111,14 @@ public class Iterators
     {
         requireNonNull(iterator);
         return !iterator.hasNext();
+    }
+
+    public static <T> Stream<T> toStream(Iterable<T> iterable)
+    {
+        if (iterable instanceof Collection) {
+            return ((Collection<T>) iterable).stream();
+        }
+        return StreamSupport.stream(iterable.spliterator(), false);
     }
 
     public static <T> Stream<T> toStream(Iterator<T> iterator)
@@ -290,8 +308,294 @@ public class Iterators
         iterator.forEachRemaining(function);
     }
 
-    public static <F1, F2> Iterator<F2> flatMap(Iterator<F1> iterator, Function<F1, F2[]> function)
+    public enum JoinMode
     {
-        throw new UnsupportedOperationException("this method have't support!");
+        LEFT_JOIN,
+        RIGHT_JOIN,
+        INNER_JOIN,
+        FULL_JOIN;
+    }
+
+    public static <K> Iterator<Tuple2<K, Iterable<?>[]>> join(Iterator<Tuple2<K, Object>>... iterators)
+    {
+        return join(Iterators.of(iterators), iterators.length);
+    }
+
+    public static <K> Iterator<Tuple2<K, Iterable<?>[]>> join(Iterator<Iterator<Tuple2<K, Object>>> iterators, int length)
+    {
+        Map<K, Iterable<?>[]> memAppendMap = new HashMap<>();
+        int i = 0;
+        while (iterators.hasNext()) {
+            if (i >= length) {
+                throw new IllegalStateException("must length = iterators.size()");
+            }
+
+            Iterator<? extends Tuple2<K, Object>> iterator = iterators.next();
+            while (iterator.hasNext()) {
+                Tuple2<K, Object> t = iterator.next();
+                Collection<Object>[] values = (Collection<Object>[]) memAppendMap.get(t.f1());
+                if (values == null) {
+                    values = new Collection[length];
+                    for (int j = 0; j < length; j++) {
+                        values[j] = new ArrayList<>();
+                    }
+                    memAppendMap.put(t.f1(), values);
+                }
+
+                values[i].add(t.f2());
+            }
+            i++;
+        }
+
+        return memAppendMap.entrySet().stream().map(x -> new Tuple2<>(x.getKey(), x.getValue()))
+                .iterator();
+    }
+
+    public static <F1, F2> Iterator<Tuple2<F1, F2>> cartesian(
+            Iterable<F1> iterable,
+            Iterable<F2> iterable2,
+            JoinMode joinMode)
+    {
+        requireNonNull(iterable);
+        requireNonNull(iterable2);
+        requireNonNull(joinMode);
+
+        final Collection<F2> collection = (iterable2 instanceof Collection) ?
+                (Collection<F2>) iterable2 : MutableList.copy(iterable2);
+
+        Function<F1, Stream<Tuple2<F1, F2>>> mapper = null;
+        switch (joinMode) {
+            case INNER_JOIN:
+                if (collection.isEmpty()) {
+                    return Iterators.empty();
+                }
+                mapper = x2 -> collection.stream().map(x3 -> new Tuple2<>(x2, x3));
+                break;
+            case LEFT_JOIN:
+                mapper = x2 -> collection.isEmpty() ?
+                        Stream.of(new Tuple2<>(x2, null)) :
+                        collection.stream().map(x3 -> new Tuple2<>(x2, x3));
+                break;
+            default:
+                //todo: other
+                throw new UnsupportedOperationException();
+        }
+
+        return toStream(iterable)
+                .flatMap(mapper)
+                .iterator();
+    }
+
+    public static <F1, F2> Iterator<Tuple2<F1, F2>> cartesian(
+            Iterator<F1> iterator,
+            Iterator<F2> iterator2,
+            JoinMode joinMode)
+    {
+        requireNonNull(iterator);
+        requireNonNull(iterator2);
+        requireNonNull(joinMode);
+
+        return cartesian(() -> iterator, () -> iterator2, joinMode);
+    }
+
+    public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator, Function<E1, Iterator<E2>> flatMap)
+    {
+        requireNonNull(iterator, "iterator is null");
+        requireNonNull(flatMap, "flatMap is null");
+        return new Iterator<E2>()
+        {
+            private Iterator<E2> child = empty();
+
+            @Override
+            public boolean hasNext()
+            {
+                if (child.hasNext()) {
+                    return true;
+                }
+                while (iterator.hasNext()) {
+                    this.child = requireNonNull(flatMap.apply(iterator.next()), "user flatMap not return null");
+                    if (child.hasNext()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public E2 next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return child.next();
+            }
+        };
+    }
+
+    public static <E> Iterator<E> concat(Iterator<Iterator<E>> iterators)
+    {
+        checkArgument(iterators != null, "iterators is null");
+        if (!iterators.hasNext()) {
+            return empty();
+        }
+        return new Iterator<E>()
+        {
+            private Iterator<E> child = requireNonNull(iterators.next(), "user flatMap not return null");
+
+            @Override
+            public boolean hasNext()
+            {
+                if (child.hasNext()) {
+                    return true;
+                }
+                while (iterators.hasNext()) {
+                    this.child = requireNonNull(iterators.next(), "user flatMap not return null");
+                    if (child.hasNext()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public E next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return child.next();
+            }
+        };
+    }
+
+    public static <E> Iterator<E> concat(Iterator<E>... iterators)
+    {
+        requireNonNull(iterators, "iterators is null");
+        return concat(Iterators.of(iterators));
+    }
+
+    public static <E> Iterator<E> filter(Iterator<E> iterator, Function1<E, Boolean> filter)
+    {
+        requireNonNull(iterator, "iterator is null");
+        requireNonNull(filter, "filter is null");
+        return new Iterator<E>()
+        {
+            private E e;
+
+            @Override
+            public boolean hasNext()
+            {
+                if (e != null) {
+                    return true;
+                }
+                while (iterator.hasNext()) {
+                    this.e = iterator.next();
+                    if (filter.apply(e)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public E next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                E out = e;
+                this.e = null;
+                return out;
+            }
+        };
+    }
+
+    public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max)
+    {
+        return sample(iterator, setp, max, new Random());
+    }
+
+    /**
+     * double fraction = 1 / max
+     */
+    public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max, long seed)
+    {
+        return sample(iterator, setp, max, new Random(seed));
+    }
+
+    public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max, Random random)
+    {
+        requireNonNull(iterator, "iterators is null");
+        return new Iterator<E>()
+        {
+            private E e;
+
+            @Override
+            public boolean hasNext()
+            {
+                if (e != null) {
+                    return true;
+                }
+                while (iterator.hasNext()) {
+                    this.e = iterator.next();
+                    int i = random.nextInt(max);
+                    if (i < setp) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public E next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                E out = e;
+                this.e = null;
+                return out;
+            }
+        };
+    }
+
+    public static <E> Iterator<Tuple2<E, Integer>> zipIndex(Iterator<E> iterator, int startIndex)
+    {
+        return new Iterator<Tuple2<E, Integer>>()
+        {
+            private int i = startIndex;
+
+            @Override
+            public boolean hasNext()
+            {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public Tuple2<E, Integer> next()
+            {
+                return new Tuple2<>(iterator.next(), i++);
+            }
+        };
+    }
+
+    public static <E> Iterator<Tuple2<E, Long>> zipIndex(Iterator<E> iterator, long startIndex)
+    {
+        return new Iterator<Tuple2<E, Long>>()
+        {
+            private long i = startIndex;
+
+            @Override
+            public boolean hasNext()
+            {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public Tuple2<E, Long> next()
+            {
+                return new Tuple2<>(iterator.next(), i++);
+            }
+        };
     }
 }

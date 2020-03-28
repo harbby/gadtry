@@ -16,57 +16,86 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.collection.mutable.MutableList;
-import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Node;
 
+import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+/**
+ * throws StackOverflowError
+ */
 public class GraphUtil
 {
     private GraphUtil() {}
 
-//    public static class PrintContext
-//    {
-//        private final List<String> builder = new ArrayList<>();
-//        private final Set<String> looped = new HashSet<>();
-//
-//        private List<Node> nodes;
-//        private String header;
-//    }
-
-    public static void printShow(List<String> builder, List<Node> firstNodes)
+    public static List<String> printShow(List<? extends Node<?, ?>> firstNodes)
     {
+        return printBuilder(firstNodes);  //MutableList.copyOf()
+    }
+
+    public static List<String> printShow(Node<?, ?>... firstNodes)
+    {
+        return printShow(MutableList.of(firstNodes));
+    }
+
+    private static class NextStep
+    {
+        private final Node<?, ?> node;
+        private final String header;
+
+        public NextStep(Node<?, ?> node, String header)
+        {
+            this.node = node;
+            this.header = header;
+        }
+
+        public Node<?, ?> getNode()
+        {
+            return node;
+        }
+
+        public String getHeader()
+        {
+            return header;
+        }
+    }
+
+    private static List<String> printBuilder(List<? extends Node<?, ?>> beginNodes)
+    {
+        Deque<NextStep> queue = new LinkedList<>();
+        List<String> builder = new LinkedList<>();
+        builder.add("/");
+
         Set<String> looped = new HashSet<>();
-        printBuilder(builder, looped, MutableList.copy(firstNodes), "├");  //MutableList.copyOf()
-    }
+        final String beginHeader = "├";
 
-    public static void printShow(List<String> builder, Node... firstNodes)
-    {
-        printShow(builder, MutableList.of(firstNodes));
-    }
+        beginNodes.forEach(x -> queue.addLast(new NextStep(x, beginHeader)));
+        while (!queue.isEmpty()) {
+            NextStep nextStep = queue.pop();
+            String header = nextStep.getHeader();
+            Node<?, ?> node = nextStep.getNode();
 
-    private static void printBuilder(List<String> builder, Set<String> looped, List<Node> nodes, String header)
-    {
-        for (int i = 0; i < nodes.size(); i++) {
-            Node<?, ?> node = nodes.get(i);
-
-            if (i == nodes.size() - 1) {  //end
-                header = header.substring(0, header.length() - 1) + "└";
-            }
             String line = header + "────" + node.getId();
             builder.add(line);
 
-            List<Node> nexts = node.nextNodes().stream().filter(edge -> {
+            String f = (node.nextNodes().size() > 1) ? "├" : "└";
+            String nextHeader = getNextLineHeader(line, node.getId()) + f;
+
+            //push next nodes...
+            if (node.nextNodes().size() == 1) {  //end
+                nextHeader = nextHeader.substring(0, nextHeader.length() - 1) + "└";
+            }
+            String finalNextHeader = nextHeader;
+            node.nextNodes().stream().filter(edge -> {
                 String rowkey = node.getId() + "->" + edge.getOutNode().getId();
                 return looped.add(rowkey);
-            }).map(Edge::getOutNode).collect(Collectors.toList());
-
-            String f = (node.nextNodes().size() > 1) ? "├" : "└";
-            printBuilder(builder, looped, nexts, getNextLineHeader(line, node.getId()) + f);
+            }).forEach(edge -> queue.push(new NextStep(edge.getOutNode(), finalNextHeader)));
         }
+
+        return builder;
     }
 
     private static String getNextLineHeader(String lastLine, String id)

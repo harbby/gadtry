@@ -136,6 +136,7 @@ public class SearchBuilder<E, R>
 
     /*
      *  递归 深度优先
+     * 如果深度过高可能 throws StackOverflowError
      * */
     private static <E, R> void searchByRecursiveDepthFirst(
             Deque<Route<E, R>> routes,
