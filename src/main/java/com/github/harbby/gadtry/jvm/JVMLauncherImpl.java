@@ -18,18 +18,15 @@ package com.github.harbby.gadtry.jvm;
 import com.github.harbby.gadtry.base.Serializables;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,15 +51,14 @@ public class JVMLauncherImpl<R extends Serializable>
     private final ClassLoader classLoader;
     private final File workDirectory;
 
-    protected JVMLauncherImpl(
-            VmCallable<R> task,
-            Consumer<String> consoleHandler,
-            Collection<URL> userJars,
-            boolean depThisJvm,
-            List<String> otherVmOps,
-            Map<String, String> environment,
-            ClassLoader classLoader,
-            File workDirectory)
+    public JVMLauncherImpl(VmCallable<R> task,
+                             Consumer<String> consoleHandler,
+                             Collection<URL> userJars,
+                             boolean depThisJvm,
+                             List<String> otherVmOps,
+                             Map<String, String> environment,
+                             ClassLoader classLoader,
+                             File workDirectory)
     {
         this.task = task;
         this.userJars = userJars;
@@ -121,8 +117,7 @@ public class JVMLauncherImpl<R extends Serializable>
         }
     }
 
-    protected VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] bytes)
-            throws Exception
+    private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] task) throws Exception
     {
         try (ServerSocket sock = new ServerSocket()) {
             sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
@@ -138,31 +133,35 @@ public class JVMLauncherImpl<R extends Serializable>
             processAtomic.set(process);
 
             try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
-                os.write(bytes);  //send task
+                os.write(task);  //send task
             }
             //IOUtils.copyBytes();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    consoleHandler.accept(line);
+            try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
+                byte type;
+                while ((type = reader.readByte()) != -1) {
+                    int length = reader.readInt();
+                    byte[] bytes = new byte[length];
+                    int len = reader.read(bytes);
+                    if (type == 1) {
+                        consoleHandler.accept(new String(bytes, UTF_8));
+                    }
+                    else if (type == 2) {
+                        process.destroy();
+                        return Serializables.byteToObject(bytes, classLoader);
+                    }
+                    else {
+                        throw new RuntimeException("not support type code " + type);
+                    }
                 }
             }
-            //---return Socket io Stream
-            // 能执行到这里 并跳出上面的where 则说明子进程已经退出
-            //set accept timeOut 100ms  //设置最大100ms等待,防止子进程意外退出时 无限等待
-            // 正常情况下子进程在退出时,已经回写完数据， 这里需要设置异常退出时 最大等待时间
-            //sock.setSoTimeout(3000);
-            sock.setSoTimeout(100);
-            try (Socket socketClient = sock.accept();
-                    InputStream inputStream = socketClient.getInputStream()) {
-                return Serializables.byteToObject(inputStream, classLoader);
-            }
-            catch (SocketTimeoutException e) {
+            catch (EOFException e) {
+                // 能执行到这里 并跳出上面的where 则说明子进程已经退出
                 if (process.isAlive()) {
                     process.destroy();
+                    process.waitFor();
                 }
-                throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue(), e);
             }
+            throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
         }
     }
 

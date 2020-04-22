@@ -21,20 +21,32 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 
-public class JVMLauncherTest
+public class JVMLauncherMainTest
 {
     @Test
-    public void main()
-            throws Exception
+    public void main() throws Exception
     {
         InputStream old = System.in;
+        PrintStream oldOut = System.out;
         VmCallable<String> vmCallable = () -> {
             throw new RuntimeException("deno");
         };
+
+        PrintStream stream = new PrintStream(oldOut)
+        {
+            @Override
+            public void write(int b)
+            {
+                throw new IllegalArgumentException("port out of range:-1");
+            }
+        };
+        System.setOut(stream);
+        System.setErr(stream);
         try {
             System.setIn(new ByteArrayInputStream(Serializables.serialize(vmCallable)));
-            JVMLauncher.main(new String[] {"-1"});
+            JVMLauncher.main(new String[]{"-1"});
             Assert.fail();
         }
         catch (IllegalArgumentException e) {
@@ -42,6 +54,8 @@ public class JVMLauncherTest
         }
         finally {
             System.setIn(old);
+            System.setOut(oldOut);
+            System.setErr(oldOut);
         }
     }
 }

@@ -24,15 +24,16 @@ import java.io.Serializable;
 
 import static java.util.Objects.requireNonNull;
 
-public class Serializables {
-    private Serializables() {
-    }
+public class Serializables
+{
+    private Serializables() {}
 
     public static byte[] serialize(Serializable serializable)
-            throws IOException {
+            throws IOException
+    {
         requireNonNull(serializable, "serializable obj is null");
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-             ObjectOutputStream os = new ObjectOutputStream(bos)
+                ObjectOutputStream os = new ObjectOutputStream(bos)
         ) {
             os.writeObject(serializable);
             return bos.toByteArray();
@@ -40,20 +41,23 @@ public class Serializables {
     }
 
     public static <T> T byteToObject(byte[] bytes)
-            throws IOException, ClassNotFoundException {
-        return (T) byteToObject(bytes, null);
+            throws IOException, ClassNotFoundException
+    {
+        return byteToObject(bytes, null);
     }
 
     public static <T> T byteToObject(InputStream inputStream)
-            throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException
+    {
         return byteToObject(inputStream, null);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T byteToObject(byte[] bytes, ClassLoader classLoader)
-            throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException
+    {
         try (ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
-             ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi, classLoader)
+                ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi, classLoader)
         ) {
             return (T) oi.readObject();
         }
@@ -61,7 +65,8 @@ public class Serializables {
 
     @SuppressWarnings("unchecked")
     public static <T> T byteToObject(InputStream inputStream, ClassLoader classLoader)
-            throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException
+    {
         try (ObjectInputStreamProxy oi = new ObjectInputStreamProxy(inputStream, classLoader)
         ) {
             return (T) oi.readObject();

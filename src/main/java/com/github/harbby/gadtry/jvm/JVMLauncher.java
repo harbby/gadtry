@@ -25,7 +25,8 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
 
-public interface JVMLauncher<R extends Serializable> {
+public interface JVMLauncher<R extends Serializable>
+{
     public R startAndGet()
             throws JVMException;
 
@@ -44,16 +45,22 @@ public interface JVMLauncher<R extends Serializable> {
     public VmFuture<R> startAsync(VmCallable<R> task)
             throws JVMException;
 
-    public static void main(String[] args)
-            throws Exception {
+    public static void main(String[] args) throws Exception
+    {
         DataOutputStream outputStream = new DataOutputStream(System.out);
         PrintStream outStream = new PrintStream(outputStream) {
             @Override
-            public void write(byte[] buf, int off, int len) {
+            public void write(byte[] buf, int off, int len)
+            {
+                if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
+                    return;
+                }
+
                 try {
                     outputStream.writeByte(1);
                     outputStream.writeInt(len - off);
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
                 super.write(buf, off, len);
@@ -69,20 +76,17 @@ public interface JVMLauncher<R extends Serializable> {
             System.out.println("vm start init ok ...");
             VmCallable<? extends Serializable> task = (VmCallable<? extends Serializable>) ois.readObject();
             future = new VmResult<>(task.call());
-        } catch (Throwable e) {
+        }
+        catch (Throwable e) {
             future = new VmResult<>(Throwables.getStackTraceAsString(e));
             System.out.println("vm task run error");
         }
 
-        try {
-            byte[] result = Serializables.serialize(future);
-            outputStream.writeByte(2);
-            outputStream.writeInt(result.length);
-            outputStream.write(result);
-            System.out.println("vm exiting ok ...");
-        } finally {
-            outputStream.flush();
-            outputStream.close();
-        }
+        byte[] result = Serializables.serialize(future);
+        System.out.println("vm exiting ok ...");
+        outputStream.writeByte(2);
+        outputStream.writeInt(result.length);
+        outputStream.write(result);
+        outputStream.flush();
     }
 }
