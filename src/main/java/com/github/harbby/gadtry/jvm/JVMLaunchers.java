@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.jvm.v2.JVMLauncherImplV2;
+
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
@@ -123,7 +125,7 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader, workDir);
+            return new JVMLauncherImplV2<>(task, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader, workDir);
         }
     }
 

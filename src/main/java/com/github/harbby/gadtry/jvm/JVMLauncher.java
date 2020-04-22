@@ -19,15 +19,13 @@ import com.github.harbby.gadtry.base.ObjectInputStreamProxy;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.io.UncheckedIOException;
 
-public interface JVMLauncher<R extends Serializable>
-{
+public interface JVMLauncher<R extends Serializable> {
     public R startAndGet()
             throws JVMException;
 
@@ -47,8 +45,23 @@ public interface JVMLauncher<R extends Serializable>
             throws JVMException;
 
     public static void main(String[] args)
-            throws Exception
-    {
+            throws Exception {
+        DataOutputStream outputStream = new DataOutputStream(System.out);
+        PrintStream outStream = new PrintStream(outputStream) {
+            @Override
+            public void write(byte[] buf, int off, int len) {
+                try {
+                    outputStream.writeByte(1);
+                    outputStream.writeInt(len - off);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                super.write(buf, off, len);
+            }
+        };
+        System.setOut(outStream);
+        System.setErr(outStream);
+
         System.out.println("vm start ok ...");
         VmResult<? extends Serializable> future;
 
@@ -56,29 +69,20 @@ public interface JVMLauncher<R extends Serializable>
             System.out.println("vm start init ok ...");
             VmCallable<? extends Serializable> task = (VmCallable<? extends Serializable>) ois.readObject();
             future = new VmResult<>(task.call());
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             future = new VmResult<>(Throwables.getStackTraceAsString(e));
             System.out.println("vm task run error");
         }
 
-        try (OutputStream out = chooseOutputStream(args)) {
-            out.write(Serializables.serialize(future));
+        try {
+            byte[] result = Serializables.serialize(future);
+            outputStream.writeByte(2);
+            outputStream.writeInt(result.length);
+            outputStream.write(result);
             System.out.println("vm exiting ok ...");
-        }
-    }
-
-    static OutputStream chooseOutputStream(String[] args)
-            throws IOException
-    {
-        if (args.length > 0) {
-            int port = Integer.parseInt(args[0]);
-            Socket sock = new Socket();
-            sock.connect(new InetSocketAddress(InetAddress.getLocalHost(), port));
-            return sock.getOutputStream();
-        }
-        else {
-            return System.out;
+        } finally {
+            outputStream.flush();
+            outputStream.close();
         }
     }
 }

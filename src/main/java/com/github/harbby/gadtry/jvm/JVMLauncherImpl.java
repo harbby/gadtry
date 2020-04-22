@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public final class JVMLauncherImpl<R extends Serializable>
+public class JVMLauncherImpl<R extends Serializable>
         implements JVMLauncher<R>
 {
     private final VmCallable<R> task;
@@ -54,7 +54,7 @@ public final class JVMLauncherImpl<R extends Serializable>
     private final ClassLoader classLoader;
     private final File workDirectory;
 
-    JVMLauncherImpl(
+    protected JVMLauncherImpl(
             VmCallable<R> task,
             Consumer<String> consoleHandler,
             Collection<URL> userJars,
@@ -121,7 +121,7 @@ public final class JVMLauncherImpl<R extends Serializable>
         }
     }
 
-    private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] bytes)
+    protected VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] bytes)
             throws Exception
     {
         try (ServerSocket sock = new ServerSocket()) {
@@ -173,7 +173,7 @@ public final class JVMLauncherImpl<R extends Serializable>
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    private List<String> buildMainArg(int port, List<String> otherVmOps)
+    protected List<String> buildMainArg(int port, List<String> otherVmOps)
     {
         File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
         List<String> ops = new ArrayList<>();
