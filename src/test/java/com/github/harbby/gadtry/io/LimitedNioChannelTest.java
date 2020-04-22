@@ -15,14 +15,13 @@
  */
 package com.github.harbby.gadtry.io;
 
+import com.github.harbby.gadtry.graph.BlogCatalogDataset;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -30,10 +29,10 @@ public class LimitedNioChannelTest
 {
     @Test
     public void readTest()
-            throws URISyntaxException, IOException
+            throws IOException
     {
-        URL url = LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt");
-        File file = new File(url.toURI());
+        File file = new File(BlogCatalogDataset.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt").getFile());
+
         int length = (int) file.length();
         Assert.assertEquals(length, 2032);
         ByteBuffer allBytes = ByteBuffer.allocate(length);
