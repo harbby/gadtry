@@ -29,7 +29,7 @@ public class LimitedNioChannelTest {
     @Test
     public void readTest()
             throws IOException {
-        File file = new File(BlogCatalogDataset.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt").getFile());
+        File file = new File(LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt").getFile());
 
         int length = (int) file.length();
         Assert.assertTrue(length > 0);
