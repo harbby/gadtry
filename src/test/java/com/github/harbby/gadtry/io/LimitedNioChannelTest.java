@@ -24,10 +24,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class LimitedNioChannelTest {
+public class LimitedNioChannelTest
+{
     @Test
-    public void readTest()
-            throws IOException {
+    public void readTest() throws IOException
+    {
         File file = new File(LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt").getFile());
 
         int length = (int) file.length();
