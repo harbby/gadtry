@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.io;
 
-import com.github.harbby.gadtry.graph.BlogCatalogDataset;
 import org.junit.Assert;
 import org.junit.Test;
 
