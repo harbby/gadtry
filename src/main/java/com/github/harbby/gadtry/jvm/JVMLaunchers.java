@@ -45,6 +45,7 @@ public class JVMLaunchers
         private final Map<String, String> environment = new HashMap<>();
         private ClassLoader classLoader;
         private File workDir;
+        private boolean debug = false;
 
         public VmBuilder<T> setCallable(VmCallable<T> task)
         {
@@ -106,6 +107,12 @@ public class JVMLaunchers
             return this;
         }
 
+        public VmBuilder<T> useDebug()
+        {
+            debug = true;
+            return this;
+        }
+
         public VmBuilder<T> setEnvironment(Map<String, String> env)
         {
             this.environment.putAll(requireNonNull(env, "env is null"));
@@ -123,7 +130,8 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm, otherVmOps, environment, classLoader, workDir);
+            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm,
+                    otherVmOps, environment, classLoader, workDir, debug);
         }
     }
 

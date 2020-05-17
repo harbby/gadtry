@@ -31,7 +31,9 @@ import java.util.RandomAccess;
 
 import static java.util.Objects.requireNonNull;
 
-public class ImmutableList
+public abstract class ImmutableList<E>
+        extends AbstractList<E>
+        implements List<E>
 {
     private ImmutableList() {}
 
@@ -47,7 +49,7 @@ public class ImmutableList
         }
     }
 
-    public static <T> List<T> copy(Iterator<? extends T> iterator)
+    public static <T> ImmutableList<T> copy(Iterator<? extends T> iterator)
     {
         return new ImmutableArrayList<>(MutableList.copy(iterator).toArray()); //todo: 2 copy 引用
     }
@@ -106,7 +108,7 @@ public class ImmutableList
     }
 
     static class ImmutableArrayList<E>
-            extends AbstractList<E>
+            extends ImmutableList<E>
             implements RandomAccess, Serializable
     {
         private final Object[] array;

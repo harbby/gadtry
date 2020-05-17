@@ -47,6 +47,7 @@ public interface JVMLauncher<R extends Serializable>
 
     public static void main(String[] args) throws Exception
     {
+        boolean debug = Boolean.parseBoolean(args[0]);
         DataOutputStream outputStream = new DataOutputStream(System.out);
         PrintStream outStream = new PrintStream(outputStream) {
             @Override
@@ -69,21 +70,29 @@ public interface JVMLauncher<R extends Serializable>
         System.setOut(outStream);
         System.setErr(outStream);
 
-        System.out.println("vm start ok ...");
+        if (debug) {
+            System.out.println("vm starting ...");
+        }
         VmResult<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
-            System.out.println("vm start init ok ...");
+            if (debug) {
+                System.out.println("vm start init ...");
+            }
             VmCallable<? extends Serializable> task = (VmCallable<? extends Serializable>) ois.readObject();
             future = new VmResult<>(task.call());
         }
         catch (Throwable e) {
             future = new VmResult<>(Throwables.getStackTraceAsString(e));
-            System.out.println("vm task run error");
+            if (debug) {
+                System.out.println("vm task run error");
+            }
         }
 
         byte[] result = Serializables.serialize(future);
-        System.out.println("vm exiting ok ...");
+        if (debug) {
+            System.out.println("vm exiting ...");
+        }
         outputStream.writeByte(2);
         outputStream.writeInt(result.length);
         outputStream.write(result);

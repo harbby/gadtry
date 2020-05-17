@@ -24,9 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,6 +47,7 @@ public class JVMLauncherImpl<R extends Serializable>
     private final Map<String, String> environment;
     private final ClassLoader classLoader;
     private final File workDirectory;
+    private final boolean debug;
 
     public JVMLauncherImpl(VmCallable<R> task,
                              Consumer<String> consoleHandler,
@@ -58,7 +56,8 @@ public class JVMLauncherImpl<R extends Serializable>
                              List<String> otherVmOps,
                              Map<String, String> environment,
                              ClassLoader classLoader,
-                             File workDirectory)
+                             File workDirectory,
+                             boolean debug)
     {
         this.task = task;
         this.userJars = userJars;
@@ -68,6 +67,7 @@ public class JVMLauncherImpl<R extends Serializable>
         this.environment = environment;
         this.classLoader = classLoader;
         this.workDirectory = workDirectory;
+        this.debug = debug;
     }
 
     @Override
@@ -119,50 +119,46 @@ public class JVMLauncherImpl<R extends Serializable>
 
     private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] task) throws Exception
     {
-        try (ServerSocket sock = new ServerSocket()) {
-            sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-
-            ProcessBuilder builder = new ProcessBuilder(buildMainArg(sock.getLocalPort(), otherVmOps))
-                    .redirectErrorStream(true);
-            if (workDirectory != null && workDirectory.exists() && workDirectory.isDirectory()) {
-                builder.directory(workDirectory);
-            }
-            builder.environment().putAll(environment);
-
-            Process process = builder.start();
-            processAtomic.set(process);
-
-            try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
-                os.write(task);  //send task
-            }
-            //IOUtils.copyBytes();
-            try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
-                byte type;
-                while ((type = reader.readByte()) != -1) {
-                    int length = reader.readInt();
-                    byte[] bytes = new byte[length];
-                    int len = reader.read(bytes);
-                    if (type == 1) {
-                        consoleHandler.accept(new String(bytes, UTF_8));
-                    }
-                    else if (type == 2) {
-                        process.destroy();
-                        return Serializables.byteToObject(bytes, classLoader);
-                    }
-                    else {
-                        throw new RuntimeException("not support type code " + type);
-                    }
-                }
-            }
-            catch (EOFException e) {
-                // 能执行到这里 并跳出上面的where 则说明子进程已经退出
-                if (process.isAlive()) {
-                    process.destroy();
-                    process.waitFor();
-                }
-            }
-            throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
+        ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps, debug))
+                .redirectErrorStream(true);
+        if (workDirectory != null && workDirectory.exists() && workDirectory.isDirectory()) {
+            builder.directory(workDirectory);
         }
+        builder.environment().putAll(environment);
+
+        Process process = builder.start();
+        processAtomic.set(process);
+
+        try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
+            os.write(task);  //send task
+        }
+        //IOUtils.copyBytes();
+        try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
+            byte type;
+            while ((type = reader.readByte()) != -1) {
+                int length = reader.readInt();
+                byte[] bytes = new byte[length];
+                int len = reader.read(bytes);
+                if (type == 1) {
+                    consoleHandler.accept(new String(bytes, UTF_8));
+                }
+                else if (type == 2) {
+                    process.destroy();
+                    return Serializables.byteToObject(bytes, classLoader);
+                }
+                else {
+                    throw new RuntimeException("not support type code " + type);
+                }
+            }
+        }
+        catch (EOFException e) {
+            // 能执行到这里 并跳出上面的where 则说明子进程已经退出
+            if (process.isAlive()) {
+                process.destroy();
+                process.waitFor();
+            }
+        }
+        throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
     }
 
     private String getUserAddClasspath()
@@ -172,7 +168,7 @@ public class JVMLauncherImpl<R extends Serializable>
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    protected List<String> buildMainArg(int port, List<String> otherVmOps)
+    protected List<String> buildMainArg(List<String> otherVmOps, boolean debug)
     {
         File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
         List<String> ops = new ArrayList<>();
@@ -195,7 +191,7 @@ public class JVMLauncherImpl<R extends Serializable>
             ops.add("-Djava.library.path=" + javaLibPath);
         }
         ops.add(JVMLauncher.class.getCanonicalName()); //子进程会启动这个类 进行编译
-        ops.add(Integer.toString(port));
+        ops.add(Boolean.toString(debug));
         return ops;
     }
 }
