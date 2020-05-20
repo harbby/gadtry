@@ -47,7 +47,7 @@ public class JVMLaunchersTest
                 .setXms("16m")
                 .setXmx("16m")
                 //.useDebug()
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole(msg -> System.out.println(msg))
                 .build();
 
         try {
@@ -109,7 +109,7 @@ public class JVMLaunchersTest
                 .addUserjars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole(msg -> System.out.println(msg))
                 .build();
 
         String out = launcher.startAndGet();

@@ -57,14 +57,19 @@ public interface JVMLauncher<R extends Serializable>
                     return;
                 }
 
+                int length = len;
+                if (buf[buf.length - 1] == 10) {  //use trim()
+                    length = len - 1;
+                }
+
                 try {
                     outputStream.writeByte(1);
-                    outputStream.writeInt(len - off);
+                    outputStream.writeInt(length - off);
                 }
                 catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                super.write(buf, off, len);
+                super.write(buf, off, length);
             }
         };
         System.setOut(outStream);
