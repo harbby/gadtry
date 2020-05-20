@@ -298,6 +298,7 @@ public class JavassistProxy
             final String methodFieldName = "_method" + methodIndex++;
             if (request.getSuperclass().isInterface() ||
                     ctMethod.getDeclaringClass().isInterface() ||   //接口的方法或default方法无法super.()调用
+                    Modifier.isAbstract(ctMethod.getModifiers()) ||  //Abstract方法也无法被super.()调用
                     request.isDisableSuperMethod() ||
                     (Modifier.isPackage(ctMethod.getModifiers()) &&  //包内级别的无法super.()调用
                             !ctMethod.getDeclaringClass().getPackageName().equals(proxyClass.getPackageName()))
@@ -341,6 +342,16 @@ public class JavassistProxy
         addProxyMethod(proxyClass, ctMethod, methodBodySrc);
     }
 
+    /**
+     *     @Override
+     *     public final int getAge() {
+     *         return (Integer)this.handler.invoke(this, _method5, new Object[0]);
+     *     }
+     *
+     *     public int $_getAge() {
+     *         return super.getAge();
+     *     }
+     * */
     private static void addSupperMethod2(CtClass proxyClass, CtMethod ctMethod, String methodNewName)
             throws NotFoundException, CannotCompileException
     {

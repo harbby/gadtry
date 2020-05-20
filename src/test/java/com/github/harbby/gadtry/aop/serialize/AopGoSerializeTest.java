@@ -16,6 +16,8 @@
 package com.github.harbby.gadtry.aop.serialize;
 
 import com.github.harbby.gadtry.aop.AopGo;
+import com.github.harbby.gadtry.aop.impl.ProxyHandler;
+import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
@@ -24,14 +26,51 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class AopGoSerializeTest
 {
     private final Function<String, Integer> function =
             (Serializable & Function<String, Integer>) (str) -> str.length();
+
+    @Test
+    public void aopGoSerializeTest1() throws Exception
+    {
+        AbstractClass extendsClass = new AbstractClass.ExtendsClass();
+
+        AbstractClass proxy = AopGo
+                .proxy(AbstractClass.class)
+                .byInstance(extendsClass)
+                .aop(binder -> {
+                    binder.doBefore(before -> {
+                        System.out.println("beforeSerializeTest1");
+                    }).allMethod();
+                }).build();
+
+        byte[] bytes = Serializables.serialize(proxy);
+        AbstractClass serialized = Serializables.byteToObject(bytes);
+        AopInvocationHandler handler = (AopInvocationHandler) ((ProxyHandler) proxy).getHandler();
+        AopInvocationHandler handler2 = (AopInvocationHandler) ((ProxyHandler) serialized).getHandler();
+        Map<Method, Object> map1 = getAopInvocationHandlerMethodMap(handler);
+        Map<Method, Object> map2 = getAopInvocationHandlerMethodMap(handler2);
+
+        Assert.assertEquals(map1.keySet(), map2.keySet());
+        Assert.assertEquals("desc", serialized.getDesc());
+        Assert.assertEquals(18, serialized.getAge());
+    }
+
+    private Map<Method, Object> getAopInvocationHandlerMethodMap(AopInvocationHandler handler) throws IllegalAccessException, NoSuchFieldException
+    {
+        Field field = AopInvocationHandler.class.getDeclaredField("mockMethods");
+        field.setAccessible(true);
+        Map<Method, Object> map = (Map<Method, Object>) field.get(handler);
+        return map;
+    }
 
     @Test
     public void beforeSerializeTest0()

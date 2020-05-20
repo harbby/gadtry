@@ -18,7 +18,7 @@ package com.github.harbby.gadtry.aop.mock;
 import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.aopgo.Pointcut;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
-import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.collection.tuple.Tuple3;
 import com.github.harbby.gadtry.function.exception.Function;
 
 import java.io.Externalizable;
@@ -30,15 +30,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.aop.mock.MockGo.LAST_MOCK_BY_WHEN_METHOD;
 import static com.github.harbby.gadtry.base.JavaTypes.getClassInitValue;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -67,23 +66,17 @@ public class AopInvocationHandler
         out.writeObject(handler);
         out.writeObject(proxyClass);
         //-------------------------------
-        List<Consumer<Map<Method, Function<JoinPoint, Object, Throwable>>, Exception>> mockMethodLoader = new ArrayList<>(mockMethods.size());
+        List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>> mappings = new ArrayList<>(mockMethods.size());
         for (Map.Entry<Method, Function<JoinPoint, Object, Throwable>> entry : mockMethods.entrySet()) {
             Method method = entry.getKey();
             String methodName = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
-            Class<?> methodClass = method.getDeclaringClass();
+            //Class<?> methodClass = method.getDeclaringClass();
 
             Function<JoinPoint, Object, Throwable> value = entry.getValue();
-            mockMethodLoader.add((mockMethods) -> {
-                Pointcut pointcut = Collections::emptyList;
-                Map<Method, Method> methods = pointcut.filter(this.proxyClass).stream()
-                        .collect(Collectors.toMap(k -> k, v -> v));
-                Method findMethod = methodClass.getDeclaredMethod(methodName, parameterTypes);
-                mockMethods.put(methods.get(findMethod), value);
-            });
+            mappings.add(new Tuple3<>(methodName, parameterTypes, value));
         }
-        out.writeObject(mockMethodLoader);
+        out.writeObject(mappings);
     }
 
     @Override
@@ -96,15 +89,36 @@ public class AopInvocationHandler
             throw new MockGoException("Gadtry aopGo proxy object serializable failed. proxyClass is null");
         }
         //--------------------------------
-        List<Consumer<Map<Method, Function<JoinPoint, Object, Throwable>>, Exception>> mockMethodLoader = (List<Consumer<Map<Method, Function<JoinPoint, Object, Throwable>>, Exception>>) in.readObject();
-        for (Consumer<Map<Method, Function<JoinPoint, Object, Throwable>>, Exception> consumer : mockMethodLoader) {
-            try {
-                consumer.apply(mockMethods);
-            }
-            catch (Exception e) {
-                throwsThrowable(e);
+        List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>> mockMethodLoader =
+                (List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>>) in.readObject();
+        for (Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>> tp : mockMethodLoader) {
+            String methodName = tp.f1();
+            Class<?>[] parameterTypes = tp.f2();
+            Function<JoinPoint, Object, Throwable> value = tp.f3();
+
+            Pointcut pointcut = Collections::emptyList;
+            Method[] methods = pointcut.filter(this.proxyClass).toArray(new Method[0]);
+            Method findMethod = searchMethods(methods, methodName, parameterTypes);
+            mockMethods.put(findMethod, value);
+        }
+    }
+
+    private static Method searchMethods(Method[] methods,
+                                        String name,
+                                        Class<?>[] parameterTypes)
+    {
+        Method res = null;
+        for (int i = 0; i < methods.length; i++) {
+            Method m = methods[i];
+            if (m.getName().equals(name) &&
+                    Arrays.deepEquals(parameterTypes, m.getParameterTypes()) &&
+                    (res == null ||
+                            res.getReturnType().isAssignableFrom(m.getReturnType()))) {
+                res = m;
             }
         }
+
+        return res;
     }
 
     public AopInvocationHandler(Object target)
