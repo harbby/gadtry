@@ -221,4 +221,36 @@ public class IteratorsTest
 
         Assert.assertEquals(Iterators.size(iterator), 7);
     }
+
+    @Test
+    public void mergeSorted1()
+    {
+        List<Integer> list1 = Arrays.asList(1, 5, 7, 9, 13, 27);
+        List<Integer> list2 = Arrays.asList(0, 4, 8, 16, 20);
+        List<Integer> list3 = Arrays.asList(3, 8, 11, 15, 22);
+
+        Iterator<Integer> iterator = Iterators.mergeSorted(Arrays.asList(list1.iterator(),
+                list2.iterator(),
+                list3.iterator()),
+                Integer::compareTo);
+        List<Integer> out = MutableList.copy(iterator);
+        Assert.assertEquals(out, Arrays.asList(0, 1, 3, 4, 5, 7, 8, 8, 9, 11, 13, 15, 16, 20, 22, 27));
+    }
+
+    @Test
+    public void mergeSorted2()
+    {
+        List<Integer> list1 = Arrays.asList(27, 13, 9, 7, 5, 1);
+        List<Integer> list2 = Arrays.asList(20, 16, 8, 4, 0);
+        List<Integer> list3 = Arrays.asList(22, 15, 11, 8, 3);
+
+        Iterator<Integer> iterator = Iterators.mergeSorted(
+                Arrays.asList(list1.iterator(),
+                        list2.iterator(),
+                        list3.iterator()),
+                (x, y) -> Integer.compare(y, x));
+
+        List<Integer> out = MutableList.copy(iterator);
+        Assert.assertEquals(out, Arrays.asList(27, 22, 20, 16, 15, 13, 11, 9, 8, 8, 7, 5, 4, 3, 1, 0));
+    }
 }

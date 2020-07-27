@@ -30,6 +30,9 @@ import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,7 +44,9 @@ import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class JavaTypes
 {
-    private JavaTypes() {}
+    private JavaTypes()
+    {
+    }
 
     /**
      * Static factory. Given a (generic) class, actual type arguments
@@ -59,14 +64,14 @@ public class JavaTypes
      * If any of the actual type arguments is not an instance of the
      * bounds on the corresponding formal.
      *
-     * @param rawType the Class representing the generic type declaration being
-     * instantiated
+     * @param rawType             the Class representing the generic type declaration being
+     *                            instantiated
      * @param actualTypeArguments - a (possibly empty) array of types
-     * representing the actual type arguments to the parameterized type
-     * @param ownerType - the enclosing type, if known.
+     *                            representing the actual type arguments to the parameterized type
+     * @param ownerType           - the enclosing type, if known.
      * @return An instance of <tt>ParameterizedType</tt>
      * @throws MalformedParameterizedTypeException - if the instantiation
-     * is invalid
+     *                                             is invalid
      */
     public static Type make(Class<?> rawType,
             Type[] actualTypeArguments,
@@ -284,5 +289,12 @@ public class JavaTypes
 //            return (Class<T>) JavaTypes.getWrapperClass(runtimeClass);
 //        }
         return (Class<T>) runtimeClass;
+    }
+
+    public static URL getClassLocation(Class<?> aClass)
+    {
+        ProtectionDomain pd = aClass.getProtectionDomain();
+        CodeSource cs = pd.getCodeSource();
+        return cs.getLocation();
     }
 }

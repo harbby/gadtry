@@ -20,8 +20,8 @@ import java.util.Objects;
 public class Tuple2<F1, F2>
         implements Tuple
 {
-    private final F1 f1;
-    private final F2 f2;
+    public F1 f1;
+    public F2 f2;
 
     public Tuple2(F1 f1, F2 f2)
     {

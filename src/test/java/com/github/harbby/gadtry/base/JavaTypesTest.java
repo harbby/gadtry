@@ -22,6 +22,7 @@ import org.junit.Test;
 import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
 import sun.reflect.generics.tree.TypeArgument;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -195,7 +196,14 @@ public class JavaTypesTest
         Assert.assertTrue(types == Collections.EMPTY_LIST);
     }
 
-    public static class GenericClassTest
+    @Test
+    public void getClassLocationTest()
+    {
+        String path = JavaTypes.getClassLocation(Test.class).getPath();
+        Assert.assertEquals(new File(path).getName(), "junit-4.12.jar");
+    }
+
+    private static class GenericClassTest
             implements Function1<Map<String, Integer>, String>, Callable<Double>
     {
         @Override

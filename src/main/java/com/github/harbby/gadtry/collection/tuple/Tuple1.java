@@ -20,7 +20,7 @@ import java.util.Objects;
 public class Tuple1<F1>
         implements Tuple
 {
-    private F1 f1;
+    public F1 f1;
 
     public Tuple1(F1 f1)
     {

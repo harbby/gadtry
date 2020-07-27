@@ -77,7 +77,9 @@ public class ClassScanner
 
     public static Builder builder(String basePackage)
     {
-        return new Builder(basePackage) {};
+        return new Builder(basePackage)
+        {
+        };
     }
 
     public static class Builder
@@ -132,7 +134,7 @@ public class ClassScanner
             Set<Class<?>> classSet;
             try {
                 if (classLoader == null) {
-                    classLoader = sun.misc.VM.latestUserDefinedLoader();
+                    classLoader = ClassLoader.getSystemClassLoader();
                 }
                 classSet = scanClasses(basePackage, classLoader, errorHandler);
             }
@@ -159,7 +161,8 @@ public class ClassScanner
     public static Set<Class<?>> scanClasses(String basePackage)
             throws IOException
     {
-        ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
+        //ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         return scanClasses(basePackage, classLoader);
     }
 
@@ -172,6 +175,7 @@ public class ClassScanner
     public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader, BiConsumer<String, Throwable> loadErrorHandler)
             throws IOException
     {
+        requireNonNull(classLoader, "classLoader is null");
         Set<String> classStrings = scanClassNames(basePackage, classLoader);
 
         MutableSet.Builder<Class<?>> classes = MutableSet.builder();

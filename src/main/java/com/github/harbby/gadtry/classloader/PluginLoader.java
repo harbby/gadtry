@@ -181,7 +181,7 @@ public final class PluginLoader<T>
                 spiLoader = pluginClass.getClassLoader();
             }
             if (spiLoader == null) {
-                spiLoader = sun.misc.VM.latestUserDefinedLoader();
+                spiLoader = ClassLoader.getSystemClassLoader();
             }
 
             MutableList.Builder<Module<T>> builder = MutableList.builder();

@@ -16,11 +16,13 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -480,17 +482,17 @@ public class Iterators
         requireNonNull(filter, "filter is null");
         return new Iterator<E>()
         {
-            private E e;
+            private final Tuple1<E> e = new Tuple1<>(null);
 
             @Override
             public boolean hasNext()
             {
-                if (e != null) {
+                if (e.f1 != null) {
                     return true;
                 }
                 while (iterator.hasNext()) {
-                    this.e = iterator.next();
-                    if (filter.apply(e)) {
+                    e.f1 = iterator.next();
+                    if (filter.apply(e.f1)) {
                         return true;
                     }
                 }
@@ -503,8 +505,8 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                E out = e;
-                this.e = null;
+                E out = e.f1;
+                this.e.f1 = null;
                 return out;
             }
         };
@@ -528,16 +530,16 @@ public class Iterators
         requireNonNull(iterator, "iterators is null");
         return new Iterator<E>()
         {
-            private E e;
+            private final Tuple1<E> e = new Tuple1<>(null);
 
             @Override
             public boolean hasNext()
             {
-                if (e != null) {
+                if (e.f1 != null) {
                     return true;
                 }
                 while (iterator.hasNext()) {
-                    this.e = iterator.next();
+                    this.e.f1 = iterator.next();
                     int i = random.nextInt(max);
                     if (i < setp) {
                         return true;
@@ -552,8 +554,8 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                E out = e;
-                this.e = null;
+                E out = e.f1;
+                this.e.f1 = null;
                 return out;
             }
         };
@@ -595,6 +597,58 @@ public class Iterators
             public Tuple2<E, Long> next()
             {
                 return new Tuple2<>(iterator.next(), i++);
+            }
+        };
+    }
+
+    public static <T> Iterator<T> mergeSorted(Iterable<? extends Iterator<? extends T>> inputs, Comparator<? super T> comparator)
+    {
+        final List<? extends Iterator<? extends T>> iterators = MutableList.copy(inputs);
+
+        final List<Tuple2<T, Integer>> sortArr = new ArrayList<>();
+        for (int i = 0; i < iterators.size(); i++) {
+            Iterator<? extends T> iterator = iterators.get(i);
+            if (iterator.hasNext()) {
+                sortArr.add(new Tuple2<>(iterator.next(), i));
+            }
+        }
+
+        return new Iterator<T>()
+        {
+            private Tuple2<T, Integer> node;
+
+            @Override
+            public boolean hasNext()
+            {
+                if (node != null) {
+                    return true;
+                }
+                if (sortArr.isEmpty()) {
+                    return false;
+                }
+                if (sortArr.size() > 1) {
+                    sortArr.sort((x1, x2) -> comparator.compare(x1.f1(), x2.f1()));
+                }
+                this.node = sortArr.get(0);
+                return true;
+            }
+
+            @Override
+            public T next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                T value = node.f1();
+                Iterator<? extends T> iterator = iterators.get(node.f2);
+                if (iterator.hasNext()) {
+                    node.f1 = iterator.next();
+                }
+                else {
+                    sortArr.remove(0);
+                }
+                this.node = null;
+                return value;
             }
         };
     }
