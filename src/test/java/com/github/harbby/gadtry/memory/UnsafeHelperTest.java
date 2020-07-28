@@ -59,7 +59,10 @@ public class UnsafeHelperTest
         ctClass.setName("com.github.harbby.gadtry.memory.TestDome");
         byte[] bytes = ctClass.toBytecode();
 
-        Class<?> newClass = UnsafeHelper.defineClass(UnsafeHelperTest.class, bytes);
+        Class<?> newClass = UnsafeHelper.defineClass(bytes, UnsafeHelperTest.class.getClassLoader());
+        Assert.assertNotNull(newClass);
+
+        newClass = UnsafeHelper.defineAnonymousClass(UnsafeHelperTest.class, bytes, new Object[0]);
         Assert.assertNotNull(newClass);
     }
 

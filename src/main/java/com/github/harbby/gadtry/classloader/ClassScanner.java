@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.classloader;
 
+import com.github.harbby.gadtry.base.ClassLoaders;
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.InjectorException;
@@ -134,7 +135,7 @@ public class ClassScanner
             Set<Class<?>> classSet;
             try {
                 if (classLoader == null) {
-                    classLoader = ClassLoader.getSystemClassLoader();
+                    classLoader = ClassLoaders.latestUserDefinedLoader();
                 }
                 classSet = scanClasses(basePackage, classLoader, errorHandler);
             }
@@ -161,8 +162,7 @@ public class ClassScanner
     public static Set<Class<?>> scanClasses(String basePackage)
             throws IOException
     {
-        //ClassLoader classLoader = sun.misc.VM.latestUserDefinedLoader();
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        ClassLoader classLoader = ClassLoaders.latestUserDefinedLoader();
         return scanClasses(basePackage, classLoader);
     }
 

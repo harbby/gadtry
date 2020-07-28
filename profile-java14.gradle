@@ -3,13 +3,6 @@
 sourceCompatibility = 14
 targetCompatibility = 14
 
-sourceSets {
-  test {
-    java {
-      srcDirs = ['src/test/java', 'src/test/java11']
-    }
-  }
-}
 
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
@@ -25,10 +18,12 @@ tasks.withType(Test) {
   jvmArgs += "--add-modules=jdk.unsupported"
   jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
   jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 }
 
 tasks.withType(JavaExec) {
   jvmArgs += "--add-modules=jdk.unsupported"
   jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
   jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 }
