@@ -31,7 +31,7 @@ public class MoreObjectsTest
     public void firstNonNullGiveNull()
     {
         try {
-            MoreObjects.firstNonNull(null);
+            MoreObjects.firstNonNull((Object) null);
             Assert.fail();
         }
         catch (NullPointerException ignored) {

@@ -10,8 +10,24 @@ plugins {
 group = "com.github.harbby"
 version = "1.7.2-SNAPSHOT"  //SNAPSHOT
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+project.hasProperty('jdk')
+def jdk = project.hasProperty('jdk') ? project.jdk : 'java8'  //or java11  use -Pjdk=java8
+//def jdk = System.getProperty("jdk") ?: "java8"  //or java11   use -Djdk=java8
+apply from: "profile-${jdk}.gradle"
+
+sourceSets {
+  main {
+    resources {
+      srcDirs = ["src/main/resources", "src/main/profile/$jdk"]
+    }
+  }
+
+  test {
+    java {
+      srcDirs = ['src/test/java', "src/test/$jdk"]
+    }
+  }
+}
 
 repositories {
   mavenLocal()
@@ -91,7 +107,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
   classifier = 'javadoc'
   from javadoc.destinationDir
-  //javadoc.failOnError = false
+  javadoc.failOnError = false
 }
 
 artifacts {

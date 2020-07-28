@@ -15,17 +15,19 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.collection.mutable.MutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -35,6 +37,7 @@ public class JVMLaunchersTest
 {
     @Test
     public void testForkJvmReturn1()
+            throws InterruptedException
     {
         System.out.println("--- vm test ---");
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
@@ -50,29 +53,72 @@ public class JVMLaunchersTest
                 .setConsole(msg -> System.out.println(msg))
                 .build();
 
-        try {
-            VmFuture<Integer> out = launcher.startAsync();
-            System.out.println(out.getPid());
-            Assert.assertEquals(out.get().intValue(), 1);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        VmFuture<Integer> out = launcher.startAsync();
+        System.out.println(out.getPid());
+        Assert.assertEquals(out.get().intValue(), 1);
     }
 
     @Test
     public void testForkJvmThrowRuntimeException123()
-            throws InterruptedException, ExecutionException
+            throws Exception
     {
         String f = "testForkJvmThrowRuntimeException123";
         System.out.println("--- vm test ---");
+        MutableList.Builder<URL> urls = MutableList.builder();
+        ClassLoader classLoader = this.getClass().getClassLoader();
+
+        if (classLoader instanceof URLClassLoader) {
+            URL[] urlArr = ((URLClassLoader) classLoader).getURLs();
+            urls.addAll(urlArr);
+        }
+        else {
+            Field field = classLoader.getClass().getDeclaredField("ucp");
+            field.setAccessible(true);
+            Object ucp = field.get(classLoader);
+            Method method = ucp.getClass().getDeclaredMethod("getURLs");
+            method.setAccessible(true);
+            URL[] urlArr = (URL[]) method.invoke(ucp);
+            System.out.println();
+            urls.addAll(urlArr);
+        }
+
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
                 .addUserjars(Collections.emptyList())
-                .addUserURLClassLoader((URLClassLoader) this.getClass().getClassLoader())
+                .addUserjars(urls.build())
+                .setClassLoader(classLoader)
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .notDepThisJvmClassPath()
+                .build();
+
+        try {
+            launcher.startAsync().get();
+            Assert.fail();
+        }
+        catch (JVMException e) {
+            Assert.assertTrue(e.getMessage().contains(f));
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testStartVMError()
+            throws Exception
+    {
+        String f = "testForkJvmThrowRuntimeException123";
+        System.out.println("--- vm test ---");
+
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .setCallable(() -> {
+                    System.out.println("************ job start ***************");
+                    throw new RuntimeException(f);
+                })
+                //.addUserjars(Collections.emptyList())
                 .setClassLoader(this.getClass().getClassLoader())
                 .setXms("16m")
                 .setXmx("16m")
@@ -81,11 +127,11 @@ public class JVMLaunchersTest
                 .build();
 
         try {
-            VmFuture<Integer> out = launcher.startAsync();
-            out.get();
+            launcher.startAsync().get();
+            Assert.fail();
         }
         catch (JVMException e) {
-            Assert.assertTrue(e.getMessage().contains(f));
+            Assert.assertTrue(e.getMessage().contains("Could not find or load main class " + JVMLauncher.class.getName()));
             e.printStackTrace();
         }
     }

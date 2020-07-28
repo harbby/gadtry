@@ -1,0 +1,34 @@
+//java 14
+
+sourceCompatibility = 14
+targetCompatibility = 14
+
+sourceSets {
+  test {
+    java {
+      srcDirs = ['src/test/java', 'src/test/java11']
+    }
+  }
+}
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.reflect.generics.tree=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.reflect.generics.repository=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.nio.cs=ALL-UNNAMED"
+  options.compilerArgs += "--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED"
+}
+
+tasks.withType(Test) {
+  jvmArgs += "--add-modules=jdk.unsupported"
+  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
+}
+
+tasks.withType(JavaExec) {
+  jvmArgs += "--add-modules=jdk.unsupported"
+  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
+}

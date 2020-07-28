@@ -45,6 +45,7 @@ public class UnsafeHelperTest
     @Test
     public void allocateDirectBuffer()
     {
+        //jdk.internal.ref.Cleaner.create()
         ByteBuffer byteBuffer = UnsafeHelper.allocateDirectBuffer(1024);
         Assert.assertNotNull(byteBuffer);
     }
@@ -58,7 +59,7 @@ public class UnsafeHelperTest
         ctClass.setName("com.github.harbby.gadtry.memory.TestDome");
         byte[] bytes = ctClass.toBytecode();
 
-        Class<?> newClass = UnsafeHelper.defineClass(bytes, this.getClass().getClassLoader());
+        Class<?> newClass = UnsafeHelper.defineClass(UnsafeHelperTest.class, bytes);
         Assert.assertNotNull(newClass);
     }
 

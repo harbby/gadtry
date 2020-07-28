@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Serializables;
+import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -50,14 +51,14 @@ public class JVMLauncherImpl<R extends Serializable>
     private final boolean debug;
 
     public JVMLauncherImpl(VmCallable<R> task,
-                             Consumer<String> consoleHandler,
-                             Collection<URL> userJars,
-                             boolean depThisJvm,
-                             List<String> otherVmOps,
-                             Map<String, String> environment,
-                             ClassLoader classLoader,
-                             File workDirectory,
-                             boolean debug)
+            Consumer<String> consoleHandler,
+            Collection<URL> userJars,
+            boolean depThisJvm,
+            List<String> otherVmOps,
+            Map<String, String> environment,
+            ClassLoader classLoader,
+            File workDirectory,
+            boolean debug)
     {
         this.task = task;
         this.userJars = userJars;
@@ -117,7 +118,8 @@ public class JVMLauncherImpl<R extends Serializable>
         }
     }
 
-    private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] task) throws Exception
+    private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] task)
+            throws Exception
     {
         ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps, debug))
                 .redirectErrorStream(true);
@@ -133,21 +135,24 @@ public class JVMLauncherImpl<R extends Serializable>
             os.write(task);  //send task
         }
         //IOUtils.copyBytes();
+
         try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
+            checkState(reader.markSupported(), "not support this jdk " + System.getProperty("java.version"));
             byte type;
+            reader.mark(1);
             while ((type = reader.readByte()) != -1) {
-                int length = reader.readInt();
-                byte[] bytes = new byte[length];
-                int len = reader.read(bytes);
                 if (type == 1) {
-                    consoleHandler.accept(new String(bytes, UTF_8));
+                    consoleHandler.accept(new String(readLensByte(reader), UTF_8));
                 }
                 else if (type == 2) {
+                    VmResult<R> result = Serializables.byteToObject(readLensByte(reader), classLoader);
                     process.destroy();
-                    return Serializables.byteToObject(bytes, classLoader);
+                    return result;
                 }
                 else {
-                    throw new RuntimeException("not support type code " + type);
+                    reader.reset();
+                    byte[] allBytes = IOUtils.readAllBytes(reader); //java11 use reader.readAllBytes();
+                    throw new JVMException(new String(allBytes, UTF_8));
                 }
             }
         }
@@ -159,6 +164,15 @@ public class JVMLauncherImpl<R extends Serializable>
             }
         }
         throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
+    }
+
+    private byte[] readLensByte(DataInputStream reader)
+            throws IOException
+    {
+        int length = reader.readInt();
+        byte[] bytes = new byte[length];
+        int len = reader.read(bytes);
+        return bytes;
     }
 
     private String getUserAddClasspath()

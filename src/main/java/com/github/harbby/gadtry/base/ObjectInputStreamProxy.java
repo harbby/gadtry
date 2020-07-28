@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -61,8 +63,17 @@ public class ObjectInputStreamProxy
      */
     public static ClassLoader getLatestUserDefinedLoader()
     {
+        try {
+            Method method = java.io.ObjectInputStream.class.getDeclaredMethod("latestUserDefinedLoader");
+            method.setAccessible(true);
+            return (ClassLoader) method.invoke(null);
+        }
+        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new IllegalStateException("not support this jdk");
+        }
         //super.latestUserDefinedLoader();
-        return sun.misc.VM.latestUserDefinedLoader();
+        //jdk8: return sun.misc.VM.latestUserDefinedLoader();
+        //jdk11 return jdk.internal.misc.VM.latestUserDefinedLoader()
     }
 
     /**

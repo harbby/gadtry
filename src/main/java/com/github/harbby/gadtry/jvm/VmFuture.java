@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Throwables;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
@@ -26,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class VmFuture<R extends Serializable>
@@ -68,24 +70,29 @@ public class VmFuture<R extends Serializable>
     {
         Process process = getVmProcess();
         String system = process.getClass().getName();
-        if ("java.lang.UNIXProcess".equals(system)) {
-            try {
-                Field field = process.getClass().getDeclaredField("pid");
-                field.setAccessible(true);
-                int pid = (int) field.get(process);
-                return pid;
-            }
-            catch (NoSuchFieldException | IllegalAccessException e) {
-                throw throwsException(e);
-            }
+        try {
+            Field field = process.getClass().getDeclaredField("pid");
+            field.setAccessible(true);
+            int pid = (int) field.get(process);
+            return pid;
         }
-        throw new UnsupportedOperationException("Only support for UNIX and Linux systems pid, Your " + system + " is Windows ?");
+        catch (NoSuchFieldException e) {
+            throw new UnsupportedOperationException("Only support for UNIX and Linux systems pid, Your " + system + " is Windows ?");
+        }
+        catch (IllegalAccessException e) {
+            throw throwsThrowable(e);
+        }
     }
 
     public R get()
-            throws JVMException, InterruptedException, ExecutionException
+            throws JVMException, InterruptedException
     {
-        return future.get().get();
+        try {
+            return future.get().get();
+        }
+        catch (ExecutionException e) {
+            throw Throwables.throwsThrowable(e.getCause());
+        }
     }
 
     public R get(long timeout, TimeUnit unit)

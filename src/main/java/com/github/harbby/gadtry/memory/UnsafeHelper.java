@@ -15,13 +15,13 @@
  */
 package com.github.harbby.gadtry.memory;
 
-import sun.misc.Cleaner;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 
 import static java.util.Objects.requireNonNull;
@@ -51,10 +51,48 @@ public final class UnsafeHelper
         return _UNSAFE;
     }
 
+    /**
+     * only jdk8 support
+     */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineClass(byte[] classBytes, ClassLoader classLoader)
     {
-        return (Class<T>) _UNSAFE.defineClass(null, classBytes, 0, classBytes.length, classLoader, classLoader.getClass().getProtectionDomain());
+        try {
+            Method defineClassMethod = sun.misc.Unsafe.class.getDeclaredMethod(
+                    "defineClass", byte[].class, int.class, int.class,
+                    ClassLoader.class, java.security.ProtectionDomain.class);
+            defineClassMethod.setAccessible(true);
+            return (Class<T>) defineClassMethod.invoke(_UNSAFE, classBytes, 0,
+                    classBytes.length, classLoader, classLoader.getClass().getProtectionDomain());
+        }
+        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throwException(e);
+        }
+        throw new IllegalStateException("unchecked");
+        //return (Class<T>) _UNSAFE.defineClass(null, classBytes, 0, classBytes.length, classLoader, classLoader.getClass().getProtectionDomain());
+    }
+
+    /**
+     * only jdk11 support
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> defineClass(Class<?> hostClass, byte[] classBytes)
+    {
+        try {
+            Method defineClassMethod = sun.misc.Unsafe.class.getDeclaredMethod(
+                    "defineAnonymousClass", Class.class, byte[].class, Object[].class);
+            defineClassMethod.setAccessible(true);
+            return (Class<T>) defineClassMethod.invoke(_UNSAFE, hostClass, classBytes, new Object[0]);
+        }
+        catch (NoSuchMethodException e) {
+            //java8
+            return defineClass(classBytes, hostClass.getClassLoader());
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+            throwException(e);
+        }
+        throw new IllegalStateException("unchecked");
+        //return (Class<T>) _UNSAFE.defineAnonymousClass(hostClass, classBytes, new Object[0]);
     }
 
     public static long reallocateMemory(long address, long oldSize, long newSize)
@@ -84,7 +122,17 @@ public final class UnsafeHelper
             cleanerField.setAccessible(true);
             long memory = _UNSAFE.allocateMemory(size);
             ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
-            Cleaner cleaner = Cleaner.create(buffer, () -> _UNSAFE.freeMemory(memory));
+            Method createMethod;
+            try {
+                createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+            }
+            catch (ClassNotFoundException e) {
+                //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+                createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+            }
+            createMethod.setAccessible(true);
+            Object cleaner = createMethod.invoke(null, buffer, (Runnable) () -> _UNSAFE.freeMemory(memory));
+            //Cleaner cleaner = Cleaner.create(buffer, () -> _UNSAFE.freeMemory(memory));
             cleanerField.set(buffer, cleaner);
             return buffer;
         }
