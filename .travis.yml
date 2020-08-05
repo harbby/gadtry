@@ -19,7 +19,8 @@ sudo: required
 services:
 - docker
 
-script: "./gradlew clean licenseMain build --no-daemon -Pjdk="$jdk
+script:
+  - ./gradlew clean licenseMain build --no-daemon -Pjdk="$jdk"
 
 before_deploy:
 - echo build start... gadtry
