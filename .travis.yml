@@ -1,12 +1,22 @@
 language: java
-jdk:
-- openjdk8
+#jdk:
+#- openjdk8
+
+matrix:
+  include:
+    - dist: trusty
+      jdk: openjdk8
+    - dist: trusty
+      jdk: openjdk11
+    - dist: trusty
+      jdk: openjdk14
+
 sudo: required
-dist: trusty
+#dist: trusty
 services:
 - docker
 
-script: "./gradlew clean licenseMain build --no-daemon"
+script: "./gradlew clean licenseMain build --no-daemon $jdk"
 
 before_deploy:
 - echo build start... gadtry
