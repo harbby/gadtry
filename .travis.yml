@@ -6,17 +6,20 @@ matrix:
   include:
     - dist: trusty
       jdk: openjdk8
+      env: jdk=java8
     - dist: trusty
       jdk: openjdk11
+      env: jdk=java11
     - dist: trusty
       jdk: openjdk14
+      env: jdk=java14
 
 sudo: required
 #dist: trusty
 services:
 - docker
 
-script: "./gradlew clean licenseMain build --no-daemon $jdk"
+script: "./gradlew clean licenseMain build --no-daemon -Pjdk="+$jdk
 
 before_deploy:
 - echo build start... gadtry
