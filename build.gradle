@@ -10,7 +10,6 @@ plugins {
 group = "com.github.harbby"
 version = "1.7.2-SNAPSHOT"  //SNAPSHOT
 
-project.hasProperty('jdk')
 def jdk = project.hasProperty('jdk') ? project.jdk : 'java8'  //or java11  use -Pjdk=java8
 //def jdk = System.getProperty("jdk") ?: "java8"  //or java11   use -Djdk=java8
 apply from: "profile-${jdk}.gradle"
