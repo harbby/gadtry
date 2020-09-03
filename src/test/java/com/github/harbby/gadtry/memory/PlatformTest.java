@@ -23,21 +23,22 @@ import javassist.NotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class UnsafeHelperTest
+public class PlatformTest
 {
-    private final Unsafe unsafe = UnsafeHelper.getUnsafe();
+    private final Unsafe unsafe = Platform.getUnsafe();
 
     @Test
     public void reallocateMemory()
     {
         long address = unsafe.allocateMemory(1024);
-        long newAddress = UnsafeHelper.reallocateMemory(address, 1024, 2048);
+        long newAddress = Platform.reallocateMemory(address, 1024, 2048);
 
-        try (Closeables<Long> closeables = Closeables.autoClose(newAddress, unsafe::freeMemory)) {
+        try (Closeables<Long> closeables = Closeables.autoClose(newAddress, Platform::freeMemory)) {
             Assert.assertTrue(newAddress > 0);
         }
     }
@@ -46,7 +47,8 @@ public class UnsafeHelperTest
     public void allocateDirectBuffer()
     {
         //jdk.internal.ref.Cleaner.create()
-        ByteBuffer byteBuffer = UnsafeHelper.allocateDirectBuffer(1024);
+        ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
+        ((DirectBuffer) byteBuffer).cleaner().clean();
         Assert.assertNotNull(byteBuffer);
     }
 
@@ -55,14 +57,14 @@ public class UnsafeHelperTest
             throws NotFoundException, IOException, CannotCompileException
     {
         ClassPool classPool = new ClassPool(true);
-        CtClass ctClass = classPool.getCtClass(UnsafeHelperTest.class.getName());
+        CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
         ctClass.setName("com.github.harbby.gadtry.memory.TestDome");
         byte[] bytes = ctClass.toBytecode();
 
-        Class<?> newClass = UnsafeHelper.defineClass(bytes, UnsafeHelperTest.class.getClassLoader());
+        Class<?> newClass = Platform.defineClass(bytes, PlatformTest.class.getClassLoader());
         Assert.assertNotNull(newClass);
 
-        newClass = UnsafeHelper.defineAnonymousClass(UnsafeHelperTest.class, bytes, new Object[0]);
+        newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);
         Assert.assertNotNull(newClass);
     }
 
@@ -70,7 +72,7 @@ public class UnsafeHelperTest
     public void throwException()
     {
         try {
-            UnsafeHelper.throwException(new IOException("IO_test"));
+            Platform.throwException(new IOException("IO_test"));
             Assert.fail();
         }
         catch (Exception e) {

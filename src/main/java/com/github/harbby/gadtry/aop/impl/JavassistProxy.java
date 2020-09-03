@@ -20,7 +20,7 @@ import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.base.Strings;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
-import com.github.harbby.gadtry.memory.UnsafeHelper;
+import com.github.harbby.gadtry.memory.Platform;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -70,7 +70,7 @@ public class JavassistProxy
         Object obj;
         try {
             //--存在可能没有无参构造器的问题
-            obj = UnsafeHelper.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
+            obj = Platform.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
         }
         catch (Exception e) {
             throw new MockGoException("new Instance " + aClass + "failed", e);
@@ -454,5 +454,6 @@ public class JavassistProxy
         CtConstructor ctConstructor = new CtConstructor(new CtClass[] {}, proxy);
         ctConstructor.setBody(";");
         proxy.addConstructor(ctConstructor);
+        //proxy.addConstructor(CtNewConstructor.defaultConstructor(proxy));
     }
 }

@@ -21,7 +21,7 @@ public class RevisedObjectInHeap
 {
     private long address = 0;
 
-    private Unsafe unsafe = UnsafeHelper.getUnsafe();
+    private Unsafe unsafe = Platform.getUnsafe();
 
     // 让对象占用堆内存,触发[Full GC
     private byte[] bytes = null;

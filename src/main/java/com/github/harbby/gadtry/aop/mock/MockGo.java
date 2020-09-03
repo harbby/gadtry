@@ -23,7 +23,7 @@ import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.exception.Function;
-import com.github.harbby.gadtry.memory.UnsafeHelper;
+import com.github.harbby.gadtry.memory.Platform;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -49,7 +49,7 @@ public class MockGo
     public static <T> T spy(Class<T> superclass)
     {
         try {
-            T target = UnsafeHelper.allocateInstance2(superclass);
+            T target = Platform.allocateInstance2(superclass);
             return spy(superclass, target);
         }
         catch (Exception e) {
