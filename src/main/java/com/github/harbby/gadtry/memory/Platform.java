@@ -29,29 +29,20 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public final class UnsafeHelper
+public final class Platform
 {
-    private UnsafeHelper() {}
+    private Platform() {}
 
-    private static final Unsafe _UNSAFE;
-
-    public static final int BOOLEAN_ARRAY_OFFSET;
-
-    public static final int BYTE_ARRAY_OFFSET;
-
-    public static final int SHORT_ARRAY_OFFSET;
-
-    public static final int INT_ARRAY_OFFSET;
-
-    public static final int LONG_ARRAY_OFFSET;
-
-    public static final int FLOAT_ARRAY_OFFSET;
-
-    public static final int DOUBLE_ARRAY_OFFSET;
+    private static final Unsafe unsafe;
 
     public static Unsafe getUnsafe()
     {
-        return _UNSAFE;
+        return unsafe;
+    }
+
+    public static void freeMemory(long address)
+    {
+        unsafe.freeMemory(address);
     }
 
     private static final Supplier<Method> classLoaderDefineClassMethod = Lazys.goLazy(() -> {
@@ -90,7 +81,7 @@ public final class UnsafeHelper
             try {
                 Method defineClass = unsafeDefineClassMethod.get();
                 Throwables.throwsThrowable(NoSuchMethodException.class);
-                return (Class<T>) defineClass.invoke(_UNSAFE, null, classBytes, 0,
+                return (Class<T>) defineClass.invoke(unsafe, null, classBytes, 0,
                         classBytes.length, classLoader, classLoader.getClass().getProtectionDomain());
             }
             catch (NoSuchMethodException e) {
@@ -107,14 +98,14 @@ public final class UnsafeHelper
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineAnonymousClass(Class<?> hostClass, byte[] classBytes, Object[] cpPatches)
     {
-        return (Class<T>) _UNSAFE.defineAnonymousClass(hostClass, classBytes, cpPatches);
+        return (Class<T>) unsafe.defineAnonymousClass(hostClass, classBytes, cpPatches);
     }
 
     public static long reallocateMemory(long address, long oldSize, long newSize)
     {
-        long newMemory = _UNSAFE.allocateMemory(newSize);
+        long newMemory = unsafe.allocateMemory(newSize);
         copyMemory(null, address, null, newMemory, oldSize);
-        _UNSAFE.freeMemory(address);
+        unsafe.freeMemory(address);
         return newMemory;
     }
 
@@ -134,7 +125,7 @@ public final class UnsafeHelper
             constructor.setAccessible(true);
             Field cleanerField = cls.getDeclaredField("cleaner");
             cleanerField.setAccessible(true);
-            long memory = _UNSAFE.allocateMemory(size);
+            long memory = unsafe.allocateMemory(size);
             ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
             Method createMethod;
             try {
@@ -145,7 +136,7 @@ public final class UnsafeHelper
                 createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
             }
             createMethod.setAccessible(true);
-            Object cleaner = createMethod.invoke(null, buffer, (Runnable) () -> _UNSAFE.freeMemory(memory));
+            Object cleaner = createMethod.invoke(null, buffer, (Runnable) () -> unsafe.freeMemory(memory));
             //Cleaner cleaner = Cleaner.create(buffer, () -> _UNSAFE.freeMemory(memory));
             cleanerField.set(buffer, cleaner);
             return buffer;
@@ -160,7 +151,7 @@ public final class UnsafeHelper
     public static <T> T allocateInstance(Class<T> tClass)
             throws InstantiationException
     {
-        return (T) _UNSAFE.allocateInstance(tClass);
+        return (T) unsafe.allocateInstance(tClass);
     }
 
     @SuppressWarnings("unchecked")
@@ -173,15 +164,14 @@ public final class UnsafeHelper
         return c.newInstance();
     }
 
-    public static void copyMemory(
-            Object src, long srcOffset, Object dst, long dstOffset, long length)
+    public static void copyMemory(Object src, long srcOffset, Object dst, long dstOffset, long length)
     {
         // Check if dstOffset is before or after srcOffset to determine if we should copy
         // forward or backwards. This is necessary in case src and dst overlap.
         if (dstOffset < srcOffset) {
             while (length > 0) {
                 long size = Math.min(length, UNSAFE_COPY_THRESHOLD);
-                _UNSAFE.copyMemory(src, srcOffset, dst, dstOffset, size);
+                unsafe.copyMemory(src, srcOffset, dst, dstOffset, size);
                 length -= size;
                 srcOffset += size;
                 dstOffset += size;
@@ -194,7 +184,7 @@ public final class UnsafeHelper
                 long size = Math.min(length, UNSAFE_COPY_THRESHOLD);
                 srcOffset -= size;
                 dstOffset -= size;
-                _UNSAFE.copyMemory(src, srcOffset, dst, dstOffset, size);
+                unsafe.copyMemory(src, srcOffset, dst, dstOffset, size);
                 length -= size;
             }
         }
@@ -207,7 +197,7 @@ public final class UnsafeHelper
      */
     public static void throwException(Throwable t)
     {
-        _UNSAFE.throwException(t);
+        unsafe.throwException(t);
     }
 
     /**
@@ -217,23 +207,15 @@ public final class UnsafeHelper
     private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
 
     static {
-        sun.misc.Unsafe unsafe = null;
+        sun.misc.Unsafe obj = null;
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
-            unsafe = (sun.misc.Unsafe) unsafeField.get(null);
+            obj = (sun.misc.Unsafe) unsafeField.get(null);
         }
         catch (Throwable cause) {
             throwException(cause);
         }
-        _UNSAFE = requireNonNull(unsafe);
-
-        BOOLEAN_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(boolean[].class);
-        BYTE_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(byte[].class);
-        SHORT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(short[].class);
-        INT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(int[].class);
-        LONG_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(long[].class);
-        FLOAT_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(float[].class);
-        DOUBLE_ARRAY_OFFSET = _UNSAFE.arrayBaseOffset(double[].class);
+        unsafe = requireNonNull(obj);
     }
 }

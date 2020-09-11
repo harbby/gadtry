@@ -20,7 +20,7 @@ import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.aop.mock.MockGoArgument;
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.Function1;
-import com.github.harbby.gadtry.memory.UnsafeHelper;
+import com.github.harbby.gadtry.memory.Platform;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,10 +57,10 @@ public class Lazys
                                 if (atomicReference.get() != null) {
                                     return atomicReference.get();
                                 }
-                                UnsafeHelper.getUnsafe().fullFence();
+                                Platform.getUnsafe().fullFence();
                                 Object object = joinPoint.proceed();
                                 checkState(atomicReference.compareAndSet(null, object), "not Single");
-                                UnsafeHelper.getUnsafe().fullFence();
+                                Platform.getUnsafe().fullFence();
                                 return object;
                             }
                         }
@@ -85,10 +85,10 @@ public class Lazys
                             if (atomicReference.get() != null) {
                                 return atomicReference.get();
                             }
-                            UnsafeHelper.getUnsafe().fullFence();
+                            Platform.getUnsafe().fullFence();
                             Object object = proxyContext.proceed();
                             checkState(atomicReference.compareAndSet(null, object), "not Single");
-                            UnsafeHelper.getUnsafe().fullFence();
+                            Platform.getUnsafe().fullFence();
                             return object;
                         }
                     }

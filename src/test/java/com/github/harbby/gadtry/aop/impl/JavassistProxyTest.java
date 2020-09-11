@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.base.Streams;
-import com.github.harbby.gadtry.memory.UnsafeHelper;
+import com.github.harbby.gadtry.memory.Platform;
 import javassist.ClassPool;
 import javassist.CtClass;
 import org.junit.Assert;
@@ -98,7 +98,7 @@ public class JavassistProxyTest
     @Test
     public void testConcurrent10()
     {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Platform.getUnsafe();
         //unsafe.allocateInstance(null); 会让jvm崩溃
         Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).parallel().forEach(x -> {
             Class<?> aClass = null;
@@ -139,7 +139,7 @@ public class JavassistProxyTest
     public void proxyHashMapTest()
             throws InstantiationException
     {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Platform.getUnsafe();
         Class<?> aClass = JavassistProxy.getProxyClass(null, HashMap.class);
         Object obj = unsafe.allocateInstance(aClass);
 
@@ -149,7 +149,7 @@ public class JavassistProxyTest
     @Test
     public void testConcurrent_CLass()
     {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Platform.getUnsafe();
         //unsafe.allocateInstance(null); 会让jvm崩溃
         Stream.of(Supplier.class, Supplier.class, Supplier.class, Supplier.class, Supplier.class, Supplier.class,
                 HashMap.class, HashSet.class, ArrayList.class, Test.class, Test1.class, JavassistProxyTest.class)

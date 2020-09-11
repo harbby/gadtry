@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.io;
 
 import com.github.harbby.gadtry.aop.AopFactory;
-import com.github.harbby.gadtry.memory.UnsafeHelper;
+import com.github.harbby.gadtry.memory.Platform;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,7 +47,7 @@ public class IOUtilsTest
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = AopFactory.proxy(PrintStream.class)
-                .byInstance(UnsafeHelper.allocateInstance(PrintStream.class))
+                .byInstance(Platform.allocateInstance(PrintStream.class))
                 .whereMethod(methodInfo -> methodInfo.getName().equals("write") &&
                         Arrays.equals(methodInfo.getParameterTypes(),
                                 new Class[] {byte[].class, int.class, int.class}))
@@ -69,7 +69,7 @@ public class IOUtilsTest
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = AopFactory.proxy(PrintStream.class)
-                .byInstance(UnsafeHelper.allocateInstance(PrintStream.class))
+                .byInstance(Platform.allocateInstance(PrintStream.class))
                 .whereMethod(methodInfo -> methodInfo.getName().equals("checkError"))
                 .around(proxyContext -> true);
 
