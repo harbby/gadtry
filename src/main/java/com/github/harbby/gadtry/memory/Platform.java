@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.memory;
 
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.base.Throwables;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
@@ -40,9 +39,54 @@ public final class Platform
         return unsafe;
     }
 
+    public static long allocateMemory(long bytes)
+    {
+        return unsafe.allocateMemory(bytes);
+    }
+
     public static void freeMemory(long address)
     {
         unsafe.freeMemory(address);
+    }
+
+    public static void registerForClean(AutoCloseable closeable)
+    {
+        Method createMethod = cleanerCreateMethod.get();
+        try {
+            createMethod.invoke(null, closeable, (Runnable) () -> {
+                try {
+                    closeable.close();
+                }
+                catch (Exception e) {
+                    throwException(e);
+                }
+            });
+        }
+        catch (InvocationTargetException | IllegalAccessException e) {
+            throwException(e);
+        }
+    }
+
+    public static int[] getInts(long address, int count)
+    {
+        int[] values = new int[count];
+        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, count << 2);
+        return values;
+    }
+
+    public static void getInts(long address, int[] values, int count)
+    {
+        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, count << 2);
+    }
+
+    public static void putInts(long address, int[] values)
+    {
+        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, values.length << 2);
+    }
+
+    public static void putInts(long address, int[] values, int count)
+    {
+        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, count << 2);
     }
 
     private static final Supplier<Method> classLoaderDefineClassMethod = Lazys.goLazy(() -> {
@@ -57,37 +101,31 @@ public final class Platform
         throw new IllegalStateException("unchecked");
     });
 
-    private static final Supplier<Method> unsafeDefineClassMethod = Lazys.goLazy(() -> {
+    private static final Supplier<Method> cleanerCreateMethod = Lazys.goLazy(() -> {
         try {
-            Method defineClassMethod = sun.misc.Unsafe.class.getDeclaredMethod(
-                    "defineClass", String.class, byte[].class, int.class, int.class,
-                    ClassLoader.class, java.security.ProtectionDomain.class);
-            defineClassMethod.setAccessible(true);
-            return defineClassMethod;
+            Method createMethod;
+            try {
+                createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+            }
+            catch (ClassNotFoundException e) {
+                //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+                createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+            }
+            createMethod.setAccessible(true);
+            return createMethod;
         }
-        catch (NoSuchMethodException e) {
+        catch (ClassNotFoundException | NoSuchMethodException e) {
             throwException(e);
         }
         throw new IllegalStateException("unchecked");
     });
 
-    /**
-     * only jdk8 support
-     */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineClass(byte[] classBytes, ClassLoader classLoader)
     {
         try {
-            try {
-                Method defineClass = unsafeDefineClassMethod.get();
-                Throwables.throwsThrowable(NoSuchMethodException.class);
-                return (Class<T>) defineClass.invoke(unsafe, null, classBytes, 0,
-                        classBytes.length, classLoader, classLoader.getClass().getProtectionDomain());
-            }
-            catch (NoSuchMethodException e) {
-                Method defineClass = classLoaderDefineClassMethod.get();
-                return (Class<T>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
-            }
+            Method defineClass = classLoaderDefineClassMethod.get();
+            return (Class<T>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
         }
         catch (InvocationTargetException | IllegalAccessException e1) {
             throwException(e1);
@@ -127,15 +165,7 @@ public final class Platform
             cleanerField.setAccessible(true);
             long memory = unsafe.allocateMemory(size);
             ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
-            Method createMethod;
-            try {
-                createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
-            }
-            catch (ClassNotFoundException e) {
-                //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
-                createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
-            }
-            createMethod.setAccessible(true);
+            Method createMethod = cleanerCreateMethod.get();
             Object cleaner = createMethod.invoke(null, buffer, (Runnable) () -> unsafe.freeMemory(memory));
             //Cleaner cleaner = Cleaner.create(buffer, () -> _UNSAFE.freeMemory(memory));
             cleanerField.set(buffer, cleaner);
