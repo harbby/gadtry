@@ -48,21 +48,21 @@ public class MoreObjects
     public static void checkArgument(boolean ok)
     {
         if (!ok) {
-            throw new IllegalStateException();
+            throw new IllegalArgumentException();
         }
     }
 
     public static void checkArgument(boolean ok, String error)
     {
         if (!ok) {
-            throw new IllegalStateException(error);
+            throw new IllegalArgumentException(error);
         }
     }
 
     public static void checkArgument(boolean ok, String error, Object... args)
     {
         if (!ok) {
-            throw new IllegalStateException(String.format(error, args));
+            throw new IllegalArgumentException(String.format(error, args));
         }
     }
 

@@ -32,6 +32,23 @@ public class PlatformTest
 {
     private final Unsafe unsafe = Platform.getUnsafe();
 
+    @Test(expected = IllegalArgumentException.class)
+    public void allocateAlignMemoryErrorTest()
+    {
+        Platform.allocateAlignMemory(10, 31);
+    }
+
+    @Test
+    public void allocateAlignMemoryTest()
+    {
+        long[] address = Platform.allocateAlignMemory(10, 32);
+        long base = address[0];
+        long dataAddress = address[1];
+
+        Assert.assertEquals(0, base % 16);
+        Assert.assertEquals(0, dataAddress % 32);
+    }
+
     @Test
     public void putIntsTest()
     {

@@ -47,7 +47,7 @@ public class MoreObjectsTest
             MoreObjects.checkArgument(false);
             Assert.fail();
         }
-        catch (IllegalStateException ignored) {
+        catch (IllegalArgumentException ignored) {
         }
     }
 
@@ -71,7 +71,7 @@ public class MoreObjectsTest
             MoreObjects.checkArgument(false, "done");
             Assert.fail();
         }
-        catch (IllegalStateException e) {
+        catch (IllegalArgumentException e) {
             Assert.assertEquals(e.getMessage(), "done");
         }
     }
@@ -84,7 +84,7 @@ public class MoreObjectsTest
             MoreObjects.checkArgument(false, "done %s,%s", 1, "2");
             Assert.fail();
         }
-        catch (IllegalStateException e) {
+        catch (IllegalArgumentException e) {
             Assert.assertEquals(e.getMessage(), "done 1,2");
         }
     }

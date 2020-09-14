@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.memory;
 
 import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.gadtry.base.Maths;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
@@ -26,6 +27,7 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.function.Supplier;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public final class Platform
@@ -41,7 +43,39 @@ public final class Platform
 
     public static long allocateMemory(long bytes)
     {
-        return unsafe.allocateMemory(bytes);
+        return unsafe.allocateMemory(bytes);  //默认按16个字节对齐
+    }
+
+    /**
+     * copy  {@link java.nio.ByteBuffer#allocateDirect(int)}
+     * must alignByte = Math.sqrt(alignByte)
+     */
+    public static long[] allocateAlignMemory(long len, long alignByte)
+    {
+        checkArgument(Maths.isPowerOfTwo(alignByte), "Number %s power of two", alignByte);
+
+        long size = Math.max(1L, len + alignByte);
+        long base = 0;
+        try {
+            base = unsafe.allocateMemory(size);
+        }
+        catch (OutOfMemoryError x) {
+            throw x;
+        }
+        //unsafe.setMemory(base, size, (byte) 0);
+
+        long dataOffset;
+        if (base % alignByte != 0) {
+            // Round up to page boundary
+            dataOffset = base + alignByte - (base & (alignByte - 1));
+        }
+        else {
+            dataOffset = base;
+        }
+        long[] res = new long[2];
+        res[0] = base;
+        res[1] = dataOffset;
+        return res;
     }
 
     public static void freeMemory(long address)
