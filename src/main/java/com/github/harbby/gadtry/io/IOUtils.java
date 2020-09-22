@@ -67,7 +67,7 @@ public class IOUtils
      *
      * @param in       InputStrem to read from
      * @param out      OutputStream to write to
-     * @param buffSize the size of the buffer
+     * @param buffSize the size of the buffer, 4096
      * @throws IOException IOException
      */
     public static void copyBytes(InputStream in, OutputStream out, int buffSize)
@@ -113,17 +113,17 @@ public class IOUtils
      *
      * @since 11
      */
-    public static byte[] readNBytes(InputStream inputStream, int len)
+    public static byte[] readNBytes(InputStream inputStream, int initialSize)
             throws IOException
     {
-        if (len < 0) {
-            throw new IllegalArgumentException("len < 0");
+        if (initialSize < 0) {
+            throw new IllegalArgumentException("initialSize < 0");
         }
 
         List<byte[]> bufs = null;
         byte[] result = null;
         int total = 0;
-        int remaining = len;
+        int remaining = initialSize;
         int n;
         do {
             byte[] buf = new byte[Math.min(remaining, DEFAULT_BUFFER_SIZE)];
