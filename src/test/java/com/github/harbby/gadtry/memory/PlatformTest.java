@@ -32,6 +32,46 @@ public class PlatformTest
 {
     private final Unsafe unsafe = Platform.getUnsafe();
 
+    @Test(expected = IllegalArgumentException.class)
+    public void allocateAlignMemoryErrorTest()
+    {
+        Platform.allocateAlignMemory(10, 31);
+    }
+
+    @Test
+    public void allocateAlignMemoryTest()
+    {
+        long[] address = Platform.allocateAlignMemory(10, 32);
+        long base = address[0];
+        long dataAddress = address[1];
+
+        Assert.assertEquals(0, base % 16);
+        Assert.assertEquals(0, dataAddress % 32);
+    }
+
+    @Test
+    public void putIntsTest()
+    {
+        int[] arr = new int[] {1, 2, 3, 4, 5};
+        long intArr = unsafe.allocateMemory(10 << 2);
+        Platform.putInts(intArr, arr);
+        Assert.assertArrayEquals(Platform.getInts(intArr, 5), arr);
+        //--------------------
+        int[] arr2 = new int[3];
+        Platform.getInts(intArr, arr2, 2);
+        Assert.assertArrayEquals(arr2, new int[] {1, 2, 0});
+    }
+
+    @Test
+    public void putCountInts()
+    {
+        long intArr = Platform.allocateMemory(10 << 2);
+        Platform.putInts(intArr, new int[] {1, 1, 1, 1, 1, 1});
+        int[] arr = new int[] {1, 2, 3, 4, 5};
+        Platform.putInts(intArr, arr, 3);
+        Assert.assertArrayEquals(Platform.getInts(intArr, 5), new int[] {1, 2, 3, 1, 1});
+    }
+
     @Test
     public void reallocateMemory()
     {

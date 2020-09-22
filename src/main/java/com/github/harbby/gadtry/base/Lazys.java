@@ -15,17 +15,11 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.aop.AopFactory;
-import com.github.harbby.gadtry.aop.AopGo;
-import com.github.harbby.gadtry.aop.mock.MockGoArgument;
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.Function1;
-import com.github.harbby.gadtry.memory.Platform;
 
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class Lazys
@@ -46,56 +40,46 @@ public class Lazys
 
     public static <F1, R> Function1<F1, R> goLazy(Function1<F1, R> lambda)
     {
-        AtomicReference<Object> atomicReference = new AtomicReference<>();
-        Class<Function1<F1, R>> baseClass = JavaTypes.classTag(Function1.class);
-        return AopGo.proxy(baseClass)
-                .byInstance(lambda)
-                .aop(binder -> {
-                    binder.doAround(joinPoint -> {
-                        if (atomicReference.get() == null) {
-                            synchronized (atomicReference) {
-                                if (atomicReference.get() != null) {
-                                    return atomicReference.get();
-                                }
-                                Platform.getUnsafe().fullFence();
-                                Object object = joinPoint.proceed();
-                                checkState(atomicReference.compareAndSet(null, object), "not Single");
-                                Platform.getUnsafe().fullFence();
-                                return object;
-                            }
-                        }
-                        else {
-                            return atomicReference.get();
-                        }
-                    }).when().apply(MockGoArgument.any());
-                }).build();
+        return lambda instanceof LazyFunction1 ?
+                lambda :
+                new LazyFunction1<>(requireNonNull(lambda));
     }
 
-    /**
-     * 支持任意参数个数的Function1
-     */
-    private static <T> T functionGo(Class<T> interfaceClass, T lambda)
+    public static class LazyFunction1<F1, R>
+            implements Serializable, Function1<F1, R>
     {
-        AtomicReference<Object> atomicReference = new AtomicReference<>();
-        return AopFactory.proxy(interfaceClass)
-                .byInstance(lambda)
-                .around(proxyContext -> {
-                    if (atomicReference.get() == null) {
-                        synchronized (atomicReference) {
-                            if (atomicReference.get() != null) {
-                                return atomicReference.get();
-                            }
-                            Platform.getUnsafe().fullFence();
-                            Object object = proxyContext.proceed();
-                            checkState(atomicReference.compareAndSet(null, object), "not Single");
-                            Platform.getUnsafe().fullFence();
-                            return object;
-                        }
+        private final Function1<F1, R> delegate;
+        private transient volatile boolean initialized = false;
+        private transient R value;
+        private static final long serialVersionUID = 0L;
+
+        LazyFunction1(Function1<F1, R> delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public R apply(F1 f1)
+        {
+            if (!this.initialized) {
+                synchronized (this) {
+                    if (!this.initialized) {
+                        R t = this.delegate.apply(f1);
+                        this.value = t;
+                        this.initialized = true;  //Atomic operation(原子操作)
+                        return t;
                     }
-                    else {
-                        return atomicReference.get();
-                    }
-                });
+                }
+            }
+
+            return this.value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Lazys.goLazy(" + this.delegate + ")";
+        }
     }
 
     public static class LazySupplier<T>
@@ -127,6 +111,7 @@ public class Lazys
             return this.value;
         }
 
+        @Override
         public String toString()
         {
             return "Lazys.goLazy(" + this.delegate + ")";

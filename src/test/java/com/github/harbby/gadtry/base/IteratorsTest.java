@@ -186,7 +186,7 @@ public class IteratorsTest
         try {
             Iterators.limit(Iterators.empty(), -1);
         }
-        catch (IllegalStateException e) {
+        catch (IllegalArgumentException e) {
             Assert.assertEquals(e.getMessage(), "limit must >= 0");
         }
 
