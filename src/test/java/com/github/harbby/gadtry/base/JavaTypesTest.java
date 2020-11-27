@@ -44,7 +44,7 @@ public class JavaTypesTest
             throws NoSuchMethodException
     {
         Assert.assertEquals("()Ljava/lang/String;", getMethodSignature(Object.class.getMethod("toString")));
-        Assert.assertEquals("([CII)Ljava/lang/String;", getMethodSignature(String.class.getDeclaredMethod("valueOf", char[].class,int.class, int.class)));
+        Assert.assertEquals("([CII)Ljava/lang/String;", getMethodSignature(String.class.getDeclaredMethod("valueOf", char[].class, int.class, int.class)));
     }
 
     @Test
