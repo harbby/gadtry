@@ -1,8 +1,11 @@
-//java 14
+//java 15
 
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 15
+targetCompatibility = 15
 
+jacoco {
+  toolVersion = "0.8.6"
+}
 
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'

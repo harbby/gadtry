@@ -11,8 +11,8 @@ matrix:
        env: jdk=java8
      - jdk: openjdk11
        env: jdk=java11
-     - jdk: openjdk14
-       env: jdk=java14
+     - jdk: openjdk15
+       env: jdk=java15
 
 sudo: required
 dist: trusty

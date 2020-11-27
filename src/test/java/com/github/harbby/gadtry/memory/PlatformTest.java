@@ -23,7 +23,6 @@ import javassist.NotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -88,7 +87,6 @@ public class PlatformTest
     {
         //jdk.internal.ref.Cleaner.create()
         ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
-        ((DirectBuffer) byteBuffer).cleaner().clean();
         Assert.assertNotNull(byteBuffer);
     }
 

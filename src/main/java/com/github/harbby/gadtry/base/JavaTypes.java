@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
@@ -221,6 +222,59 @@ public class JavaTypes
         }
         else {
             throw new UnsupportedOperationException("this " + aClass + " have't support!");
+        }
+    }
+
+    /**
+     * see: javap -s java.lang.String
+     *
+     * @param method java method
+     * @return method signature
+     */
+    public static String getMethodSignature(Method method)
+    {
+        String parameterSignature = java.util.Arrays.stream(method.getParameterTypes())
+                .map(JavaTypes::getClassSignature)
+                .collect(Collectors.joining(""));
+
+        return String.format("(%s)%s", parameterSignature, getClassSignature(method.getReturnType()));
+    }
+
+    public static String getClassSignature(final Class<?> type)
+    {
+        if (int.class == type) {
+            return "I";
+        }
+        else if (void.class == type) {
+            return "V";
+        }
+        else if (boolean.class == type) {
+            return "Z";
+        }
+        else if (char.class == type) {  // Character
+            return "C";
+        }
+        else if (byte.class == type) {
+            return "B";
+        }
+        else if (short.class == type) {
+            return "S";
+        }
+        else if (float.class == type) {
+            return "F";
+        }
+        else if (long.class == type) {
+            return "J";
+        }
+        else if (double.class == type) {
+            return "D";
+        }
+        else if (type.isArray()) {
+            return "[" + getClassSignature(type.getComponentType());
+        }
+        else {
+            checkState(!type.isPrimitive(), "not found primitive type %s", type);
+            return "L" + type.getName().replaceAll("\\.", "/") + ";";
         }
     }
 

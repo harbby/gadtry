@@ -34,10 +34,19 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
+import static com.github.harbby.gadtry.base.JavaTypes.getMethodSignature;
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavaTypesTest
 {
+    @Test
+    public void getMethodSignatureTest()
+            throws NoSuchMethodException
+    {
+        Assert.assertEquals("()Ljava/lang/String;", getMethodSignature(Object.class.getMethod("toString")));
+        Assert.assertEquals("([BBILjava/lang/String;I)I", getMethodSignature(String.class.getDeclaredMethod("lastIndexOf", byte[].class, byte.class, int.class, String.class, int.class)));
+    }
+
     @Test
     public void make()
             throws IOException

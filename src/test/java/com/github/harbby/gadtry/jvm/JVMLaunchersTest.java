@@ -131,7 +131,7 @@ public class JVMLaunchersTest
             Assert.fail();
         }
         catch (JVMException e) {
-            Assert.assertTrue(e.getMessage().contains("Could not find or load main class " + JVMLauncher.class.getName()));
+            Assert.assertTrue(e.getMessage().contains(JVMLauncher.class.getName()));
             e.printStackTrace();
         }
     }
