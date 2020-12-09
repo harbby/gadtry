@@ -204,6 +204,12 @@ public class JVMLauncherImpl<R extends Serializable>
         if (javaLibPath != null) {
             ops.add("-Djava.library.path=" + javaLibPath);
         }
+
+        URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
+        if (url.getPath().endsWith(".jar")) {
+            ops.add("-javaagent:" + url.getPath());
+        }
+
         ops.add(JVMLauncher.class.getCanonicalName()); //子进程会启动这个类 进行编译
         ops.add(Boolean.toString(debug));
         return ops;

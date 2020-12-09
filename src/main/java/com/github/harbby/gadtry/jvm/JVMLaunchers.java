@@ -47,7 +47,14 @@ public class JVMLaunchers
         private File workDir;
         private boolean debug = false;
 
+        @Deprecated
         public VmBuilder<T> setCallable(VmCallable<T> task)
+        {
+            this.task = requireNonNull(task, "task is null");
+            return this;
+        }
+
+        public VmBuilder<T> task(VmCallable<T> task)
         {
             this.task = requireNonNull(task, "task is null");
             return this;
