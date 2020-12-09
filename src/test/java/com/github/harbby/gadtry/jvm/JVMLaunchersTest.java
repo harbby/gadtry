@@ -42,7 +42,7 @@ public class JVMLaunchersTest
         System.out.println("--- vm test ---");
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {
-                    //TimeUnit.SECONDS.sleep(1000000);
+                    TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
                     return 1;
                 })

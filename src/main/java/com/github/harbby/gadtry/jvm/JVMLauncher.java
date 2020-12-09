@@ -45,11 +45,11 @@ public interface JVMLauncher<R extends Serializable>
     public VmFuture<R> startAsync(VmCallable<R> task)
             throws JVMException;
 
-    public static void main(String[] args) throws Exception
+    public static DataOutputStream mockSystemOutErr()
     {
-        boolean debug = Boolean.parseBoolean(args[0]);
         DataOutputStream outputStream = new DataOutputStream(System.out);
-        PrintStream outStream = new PrintStream(outputStream) {
+        PrintStream outStream = new PrintStream(outputStream)
+        {
             @Override
             public void write(byte[] buf, int off, int len)
             {
@@ -72,9 +72,17 @@ public interface JVMLauncher<R extends Serializable>
                 super.write(buf, off, length);
             }
         };
+
         System.setOut(outStream);
         System.setErr(outStream);
+        return outputStream;
+    }
 
+    public static void main(String[] args)
+            throws Exception
+    {
+        boolean debug = Boolean.parseBoolean(args[0]);
+        DataOutputStream outputStream = mockSystemOutErr();
         if (debug) {
             System.out.println("vm starting ...");
         }
@@ -98,6 +106,7 @@ public interface JVMLauncher<R extends Serializable>
         if (debug) {
             System.out.println("vm exiting ...");
         }
+
         outputStream.writeByte(2);
         outputStream.writeInt(result.length);
         outputStream.write(result);

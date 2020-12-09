@@ -206,6 +206,7 @@ public class JVMLauncherImpl<R extends Serializable>
         }
 
         URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
+        ops.add("-javaagent:/ideal/workspce/github/gadtry/build/libs/gadtry-1.7.3-SNAPSHOT.jar");
         if (url.getPath().endsWith(".jar")) {
             ops.add("-javaagent:" + url.getPath());
         }

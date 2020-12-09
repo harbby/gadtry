@@ -45,6 +45,15 @@ dependencies {
   testAnnotationProcessor group: "org.openjdk.jmh", name: "jmh-generator-annprocess",version: "1.25.2"
 }
 
+jar {
+  manifest {
+    // Set the required manifest attributes for the Java agent, cf.
+    // https://docs.oracle.com/javase/8/docs/api/java/lang/instrument/package-summary.html.
+    attributes 'Premain-Class': 'com.github.harbby.gadtry.jvm.JvmAgent'
+    attributes 'Can-Retransform-Classes': true
+  }
+}
+
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
