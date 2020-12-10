@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.graph.Graph;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Random;
@@ -33,6 +34,7 @@ public class GraphUtilTest
         for (int i = 0; i < 3999; i++) {
             graphBuilder.addEdge(i + "", i + 1 + "");
         }
-        graphBuilder.create().printShow().forEach(x -> System.out.println(x));
+
+        Assert.assertEquals(graphBuilder.create().printShow().size(), 4001);
     }
 }

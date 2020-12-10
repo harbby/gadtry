@@ -46,6 +46,7 @@ public class JVMLaunchers
         private ClassLoader classLoader;
         private File workDir;
         private boolean debug = false;
+        private String taskProcessName = JVMLauncher.class.getName();
 
         @Deprecated
         public VmBuilder<T> setCallable(VmCallable<T> task)
@@ -108,6 +109,12 @@ public class JVMLaunchers
             return this;
         }
 
+        public VmBuilder<T> setName(String name)
+        {
+            this.taskProcessName = requireNonNull(name, "task process name is null");
+            return this;
+        }
+
         public VmBuilder<T> setXmx(String xmx)
         {
             otherVmOps.add("-Xmx" + xmx);
@@ -138,7 +145,7 @@ public class JVMLaunchers
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
             return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm,
-                    otherVmOps, environment, classLoader, workDir, debug);
+                    otherVmOps, environment, classLoader, workDir, debug, taskProcessName);
         }
     }
 

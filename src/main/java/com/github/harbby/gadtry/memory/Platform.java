@@ -123,18 +123,6 @@ public final class Platform
         unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, count << 2);
     }
 
-    private static final Supplier<Method> classLoaderDefineClassMethod = Lazys.goLazy(() -> {
-        try {
-            Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
-            defineClass.setAccessible(true);
-            return defineClass;
-        }
-        catch (NoSuchMethodException e) {
-            throwException(e);
-        }
-        throw new IllegalStateException("unchecked");
-    });
-
     private static final Supplier<Method> cleanerCreateMethod = Lazys.goLazy(() -> {
         try {
             Method createMethod;
@@ -158,10 +146,11 @@ public final class Platform
     public static <T> Class<T> defineClass(byte[] classBytes, ClassLoader classLoader)
     {
         try {
-            Method defineClass = classLoaderDefineClassMethod.get();
+            Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
+            defineClass.setAccessible(true);
             return (Class<T>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
         }
-        catch (InvocationTargetException | IllegalAccessException e1) {
+        catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e1) {
             throwException(e1);
         }
         throw new IllegalStateException("unchecked");

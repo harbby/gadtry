@@ -49,6 +49,7 @@ public class JVMLauncherImpl<R extends Serializable>
     private final ClassLoader classLoader;
     private final File workDirectory;
     private final boolean debug;
+    private final String taskProcessName;
 
     public JVMLauncherImpl(VmCallable<R> task,
             Consumer<String> consoleHandler,
@@ -58,7 +59,8 @@ public class JVMLauncherImpl<R extends Serializable>
             Map<String, String> environment,
             ClassLoader classLoader,
             File workDirectory,
-            boolean debug)
+            boolean debug,
+            String taskProcessName)
     {
         this.task = task;
         this.userJars = userJars;
@@ -69,6 +71,7 @@ public class JVMLauncherImpl<R extends Serializable>
         this.classLoader = classLoader;
         this.workDirectory = workDirectory;
         this.debug = debug;
+        this.taskProcessName = taskProcessName;
     }
 
     @Override
@@ -206,12 +209,17 @@ public class JVMLauncherImpl<R extends Serializable>
         }
 
         URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-        ops.add("-javaagent:/ideal/workspce/github/gadtry/build/libs/gadtry-1.7.3-SNAPSHOT.jar");
-        if (url.getPath().endsWith(".jar")) {
-            ops.add("-javaagent:" + url.getPath());
+        if (!url.getPath().endsWith(".jar")) {
+            url = ClassLoader.getSystemClassLoader().getResource("./agent.jar");
+        }
+        if (!JVMLauncher.class.getName().equals(taskProcessName) && url != null && url.getPath().endsWith(".jar")) {
+            ops.add(String.format("-javaagent:%s=%s:%s", url.getPath(), JVMLauncher.class.getName(), taskProcessName));
+            ops.add(taskProcessName);
+        }
+        else {
+            ops.add(JVMLauncher.class.getName()); //子进程会启动这个类 进行编译
         }
 
-        ops.add(JVMLauncher.class.getCanonicalName()); //子进程会启动这个类 进行编译
         ops.add(Boolean.toString(debug));
         return ops;
     }

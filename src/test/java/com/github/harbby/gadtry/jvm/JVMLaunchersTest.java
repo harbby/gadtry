@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Threads;
 import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.collection.mutable.MutableMap;
 import org.junit.Assert;
@@ -39,14 +40,14 @@ public class JVMLaunchersTest
     public void testForkJvmReturn1()
             throws InterruptedException
     {
-        System.out.println("--- vm test ---");
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {
-                    TimeUnit.SECONDS.sleep(1000000);
+                    //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
                     return 1;
                 })
                 .addUserjars(Collections.emptyList())
+                .setName("gadtry.testForkJvmReturn1")
                 .setXms("16m")
                 .setXmx("16m")
                 //.useDebug()
@@ -54,8 +55,31 @@ public class JVMLaunchersTest
                 .build();
 
         VmFuture<Integer> out = launcher.startAsync();
-        System.out.println(out.getPid());
+        System.out.println("pid is " + out.getPid());
         Assert.assertEquals(out.get().intValue(), 1);
+    }
+
+    @Test
+    public void setTaskNameTest()
+            throws InterruptedException
+    {
+        String taskName = "gadtry.testForkJvmReturn1";
+        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+                .task(() -> {
+                    //TimeUnit.SECONDS.sleep(1000000);
+                    StackTraceElement element = Threads.getJvmMainClass();
+                    System.out.println(element);
+                    return element.getClassName();
+                })
+                .addUserjars(Collections.emptyList())
+                .setName(taskName)
+                .setXms("16m")
+                .setXmx("16m")
+                .useDebug()
+                .setConsole(System.out::println)
+                .build();
+
+        Assert.assertEquals(launcher.startAndGet(), taskName);
     }
 
     @Test

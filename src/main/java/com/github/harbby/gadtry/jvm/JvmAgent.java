@@ -15,59 +15,71 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import javassist.CannotCompileException;
+import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.gadtry.memory.Platform;
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.LoaderClassPath;
 
-import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.lang.instrument.Instrumentation;
-import java.security.ProtectionDomain;
-import java.util.Arrays;
-import java.util.Random;
+import java.util.function.Supplier;
+
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class JvmAgent
 {
     private JvmAgent() {}
 
-    private static final String CLASS_NAME = JVMLauncher.class.getName().replace(".", "/");
-
-    public static void premain(String agentArgs, Instrumentation inst)
-    {
-        inst.addTransformer(new ClassFileTransformer()
+    private static final Supplier<DataOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
+        DataOutputStream outputStream = new DataOutputStream(System.out);
+        PrintStream outStream = new PrintStream(outputStream)
         {
             @Override
-            public byte[] transform(ClassLoader loader, String className,
-                    Class<?> classBeingRedefined,
-                    ProtectionDomain protectionDomain,
-                    byte[] classfileBuffer)
-                    throws IllegalClassFormatException
+            public void write(byte[] buf, int off, int len)
             {
-                //System.out.println(className);
-                System.exit(126);
-                if (!CLASS_NAME.equals(className)) {
-                    return null;
+                if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
+                    return;
                 }
-                System.exit(126);
 
-                //System.out.println("find main class " + className);
-                ClassPool cp = ClassPool.getDefault();
-                cp.appendClassPath(new LoaderClassPath(loader));
+                int length = len;
+                if (buf[buf.length - 1] == 10) {  //use trim()
+                    length = len - 1;
+                }
 
                 try {
-                    CtClass cc = cp.makeClass(new ByteArrayInputStream(classfileBuffer));
-                    cc.setName(CLASS_NAME + ".demo" + new Random().nextInt(10));
-                    Arrays.stream(cc.getMethods()).forEach(m -> System.out.println(m.getName()));
-                    return cc.toBytecode();
+                    outputStream.writeByte(1);
+                    outputStream.writeInt(length - off);
                 }
-                catch (IOException | CannotCompileException e) {
-                    System.exit(126);
-                    return null;
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
+                super.write(buf, off, length);
             }
-        });
+        };
+
+        System.setOut(outStream);
+        System.setErr(outStream);
+        return outputStream;
+    });
+
+    public static DataOutputStream systemOutGetOrInit()
+    {
+        return systemOutGetOrInit.get();
+    }
+
+    public static void premain(String agentArgs, Instrumentation inst)
+            throws Exception
+    {
+        JvmAgent.systemOutGetOrInit();
+
+        ClassPool cp = ClassPool.getDefault();
+        String[] split = agentArgs.split(":");
+        checkState(split.length == 2, "-javaagent:agent.jar=oldClass:newClass");
+        CtClass cc = cp.get(split[0]);
+        cc.setName(split[1]);
+        Platform.defineClass(cc.toBytecode(), ClassLoader.getSystemClassLoader());
     }
 }

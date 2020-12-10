@@ -20,10 +20,7 @@ import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Serializable;
-import java.io.UncheckedIOException;
 
 public interface JVMLauncher<R extends Serializable>
 {
@@ -45,44 +42,11 @@ public interface JVMLauncher<R extends Serializable>
     public VmFuture<R> startAsync(VmCallable<R> task)
             throws JVMException;
 
-    public static DataOutputStream mockSystemOutErr()
-    {
-        DataOutputStream outputStream = new DataOutputStream(System.out);
-        PrintStream outStream = new PrintStream(outputStream)
-        {
-            @Override
-            public void write(byte[] buf, int off, int len)
-            {
-                if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
-                    return;
-                }
-
-                int length = len;
-                if (buf[buf.length - 1] == 10) {  //use trim()
-                    length = len - 1;
-                }
-
-                try {
-                    outputStream.writeByte(1);
-                    outputStream.writeInt(length - off);
-                }
-                catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                super.write(buf, off, length);
-            }
-        };
-
-        System.setOut(outStream);
-        System.setErr(outStream);
-        return outputStream;
-    }
-
     public static void main(String[] args)
             throws Exception
     {
         boolean debug = Boolean.parseBoolean(args[0]);
-        DataOutputStream outputStream = mockSystemOutErr();
+        DataOutputStream outputStream = JvmAgent.systemOutGetOrInit();
         if (debug) {
             System.out.println("vm starting ...");
         }
