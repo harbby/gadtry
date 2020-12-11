@@ -47,7 +47,6 @@ public class JVMLaunchersTest
                     return 1;
                 })
                 .addUserjars(Collections.emptyList())
-                .setName("gadtry.testForkJvmReturn1")
                 .setXms("16m")
                 .setXmx("16m")
                 //.useDebug()

@@ -71,6 +71,9 @@ public interface JVMLauncher<R extends Serializable>
             System.out.println("vm exiting ...");
         }
 
+        System.out.close();
+        System.err.close();
+
         outputStream.writeByte(2);
         outputStream.writeInt(result.length);
         outputStream.write(result);

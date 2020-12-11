@@ -21,48 +21,80 @@ import javassist.ClassPool;
 import javassist.CtClass;
 
 import java.io.DataOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JvmAgent
 {
     private JvmAgent() {}
 
     private static final Supplier<DataOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
-        DataOutputStream outputStream = new DataOutputStream(System.out);
-        PrintStream outStream = new PrintStream(outputStream)
-        {
-            @Override
-            public void write(byte[] buf, int off, int len)
+        System.err.close();
+
+        try {
+            Field field = FilterOutputStream.class.getDeclaredField("out");
+            field.setAccessible(true);
+            OutputStream out = (OutputStream) field.get(System.out);
+            DataOutputStream outputStream = new DataOutputStream(out);
+            OutputStream mock = new OutputStream()
             {
-                if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
-                    return;
+                @Override
+                public void write(int b)
+                        throws IOException
+                {
+                    this.write(String.valueOf(b).getBytes(UTF_8));
                 }
 
-                int length = len;
-                if (buf[buf.length - 1] == 10) {  //use trim()
-                    length = len - 1;
+                @Override
+                public void write(byte[] b)
+                        throws IOException
+                {
+                    this.write(b, 0, b.length);
                 }
 
-                try {
-                    outputStream.writeByte(1);
-                    outputStream.writeInt(length - off);
-                }
-                catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                super.write(buf, off, length);
-            }
-        };
+                @Override
+                public void write(byte[] buf, int off, int len)
+                        throws IOException
+                {
+//                if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
+//                    return;
+//                }
 
-        System.setOut(outStream);
-        System.setErr(outStream);
-        return outputStream;
+                    int length = len;
+//                if (buf[buf.length - 1] == 10) {  //use trim()
+//                    length = len - 1;
+//                }
+
+                    try {
+                        outputStream.writeByte(1);
+                        outputStream.writeInt(length - off);
+                    }
+                    catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                    outputStream.write(buf, off, length);
+                }
+            };
+
+            field.set(System.out, mock);
+            field.set(System.err, mock);
+
+//            PrintStream outStream = new PrintStream(mock);
+//            System.setOut(outStream);
+//            System.setErr(outStream);
+            return outputStream;
+        }
+        catch (Exception e) {
+            throw new UnsupportedOperationException(e);
+        }
     });
 
     public static DataOutputStream systemOutGetOrInit()
@@ -74,6 +106,7 @@ public class JvmAgent
             throws Exception
     {
         JvmAgent.systemOutGetOrInit();
+        System.err.write(123);
 
         ClassPool cp = ClassPool.getDefault();
         String[] split = agentArgs.split(":");

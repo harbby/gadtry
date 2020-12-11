@@ -46,3 +46,5 @@ gradle-app.setting
 .idea
 
 **/src/test/generated_tests/
+
+!**/main/resources/agent.jar

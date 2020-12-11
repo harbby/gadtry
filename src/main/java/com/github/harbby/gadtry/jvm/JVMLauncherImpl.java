@@ -140,12 +140,12 @@ public class JVMLauncherImpl<R extends Serializable>
         //IOUtils.copyBytes();
 
         try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
-            checkState(reader.markSupported(), "not support this jdk " + System.getProperty("java.version"));
             byte type;
-            reader.mark(1);
             while ((type = reader.readByte()) != -1) {
                 if (type == 1) {
-                    consoleHandler.accept(new String(readLensByte(reader), UTF_8));
+                    //todo: use BufferedReader
+                    System.out.print(new String(readLensByte(reader), UTF_8));
+                    //consoleHandler.accept(new String(readLensByte(reader), UTF_8));
                 }
                 else if (type == 2) {
                     VmResult<R> result = Serializables.byteToObject(readLensByte(reader), classLoader);
@@ -153,9 +153,11 @@ public class JVMLauncherImpl<R extends Serializable>
                     return result;
                 }
                 else {
-                    reader.reset();
-                    byte[] allBytes = IOUtils.readAllBytes(reader); //java11 use reader.readAllBytes();
-                    throw new JVMException(new String(allBytes, UTF_8));
+                    byte[] bytes = IOUtils.readAllBytes(reader); //java11 use reader.readAllBytes();
+                    byte[] fullBytes = new byte[bytes.length + 1];
+                    System.arraycopy(bytes, 0, fullBytes, 1, bytes.length);
+                    fullBytes[0] = type;
+                    throw new JVMException(new String(fullBytes, UTF_8));
                 }
             }
         }
