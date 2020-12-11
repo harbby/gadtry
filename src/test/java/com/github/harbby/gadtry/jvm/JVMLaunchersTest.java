@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +67,9 @@ public class JVMLaunchersTest
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .task(() -> {
                     //TimeUnit.SECONDS.sleep(1000000);
+                    System.err.write(666);
                     StackTraceElement element = Threads.getJvmMainClass();
+                    Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x-> System.out.println(x));
                     System.out.println(element);
                     return element.getClassName();
                 })
@@ -74,7 +77,6 @@ public class JVMLaunchersTest
                 .setName(taskName)
                 .setXms("16m")
                 .setXmx("16m")
-                .useDebug()
                 .setConsole(System.out::println)
                 .build();
 

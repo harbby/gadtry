@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.base.ObjectInputStreamProxy;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
-import java.io.DataOutputStream;
 import java.io.Serializable;
 
 public interface JVMLauncher<R extends Serializable>
@@ -45,38 +44,20 @@ public interface JVMLauncher<R extends Serializable>
     public static void main(String[] args)
             throws Exception
     {
-        boolean debug = Boolean.parseBoolean(args[0]);
-        DataOutputStream outputStream = JvmAgent.systemOutGetOrInit();
-        if (debug) {
-            System.out.println("vm starting ...");
-        }
+        SystemOutputStream outputStream = JvmAgent.systemOutGetOrInit();
         VmResult<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
-            if (debug) {
-                System.out.println("vm start init ...");
-            }
             VmCallable<? extends Serializable> task = (VmCallable<? extends Serializable>) ois.readObject();
             future = new VmResult<>(task.call());
         }
         catch (Throwable e) {
             future = new VmResult<>(Throwables.getStackTraceAsString(e));
-            if (debug) {
-                System.out.println("vm task run error");
-            }
         }
 
         byte[] result = Serializables.serialize(future);
-        if (debug) {
-            System.out.println("vm exiting ...");
-        }
 
-        System.out.close();
-        System.err.close();
-
-        outputStream.writeByte(2);
-        outputStream.writeInt(result.length);
-        outputStream.write(result);
-        outputStream.flush();
+        outputStream.close();
+        outputStream.release(result);
     }
 }

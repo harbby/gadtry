@@ -48,7 +48,6 @@ public class JVMLauncherImpl<R extends Serializable>
     private final Map<String, String> environment;
     private final ClassLoader classLoader;
     private final File workDirectory;
-    private final boolean debug;
     private final String taskProcessName;
 
     public JVMLauncherImpl(VmCallable<R> task,
@@ -59,7 +58,6 @@ public class JVMLauncherImpl<R extends Serializable>
             Map<String, String> environment,
             ClassLoader classLoader,
             File workDirectory,
-            boolean debug,
             String taskProcessName)
     {
         this.task = task;
@@ -70,7 +68,6 @@ public class JVMLauncherImpl<R extends Serializable>
         this.environment = environment;
         this.classLoader = classLoader;
         this.workDirectory = workDirectory;
-        this.debug = debug;
         this.taskProcessName = taskProcessName;
     }
 
@@ -124,7 +121,7 @@ public class JVMLauncherImpl<R extends Serializable>
     private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] task)
             throws Exception
     {
-        ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps, debug))
+        ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps))
                 .redirectErrorStream(true);
         if (workDirectory != null && workDirectory.exists() && workDirectory.isDirectory()) {
             builder.directory(workDirectory);
@@ -143,11 +140,9 @@ public class JVMLauncherImpl<R extends Serializable>
             byte type;
             while ((type = reader.readByte()) != -1) {
                 if (type == 1) {
-                    //todo: use BufferedReader
-                    System.out.print(new String(readLensByte(reader), UTF_8));
-                    //consoleHandler.accept(new String(readLensByte(reader), UTF_8));
+                    consoleHandler.accept(new String(readLensByte(reader), UTF_8));
                 }
-                else if (type == 2) {
+                else if (type == 0) {
                     VmResult<R> result = Serializables.byteToObject(readLensByte(reader), classLoader);
                     process.destroy();
                     return result;
@@ -187,7 +182,7 @@ public class JVMLauncherImpl<R extends Serializable>
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    protected List<String> buildMainArg(List<String> otherVmOps, boolean debug)
+    protected List<String> buildMainArg(List<String> otherVmOps)
     {
         File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
         List<String> ops = new ArrayList<>();
@@ -222,7 +217,7 @@ public class JVMLauncherImpl<R extends Serializable>
             ops.add(JVMLauncher.class.getName()); //子进程会启动这个类 进行编译
         }
 
-        ops.add(Boolean.toString(debug));
+        ops.add(String.valueOf(System.currentTimeMillis()));
         return ops;
     }
 }

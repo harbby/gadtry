@@ -20,84 +20,34 @@ import com.github.harbby.gadtry.memory.Platform;
 import javassist.ClassPool;
 import javassist.CtClass;
 
-import java.io.DataOutputStream;
 import java.io.FilterOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JvmAgent
 {
     private JvmAgent() {}
 
-    private static final Supplier<DataOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
+    private static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
         System.err.close();
-
         try {
             Field field = FilterOutputStream.class.getDeclaredField("out");
             field.setAccessible(true);
-            OutputStream out = (OutputStream) field.get(System.out);
-            DataOutputStream outputStream = new DataOutputStream(out);
-            OutputStream mock = new OutputStream()
-            {
-                @Override
-                public void write(int b)
-                        throws IOException
-                {
-                    this.write(String.valueOf(b).getBytes(UTF_8));
-                }
-
-                @Override
-                public void write(byte[] b)
-                        throws IOException
-                {
-                    this.write(b, 0, b.length);
-                }
-
-                @Override
-                public void write(byte[] buf, int off, int len)
-                        throws IOException
-                {
-//                if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
-//                    return;
-//                }
-
-                    int length = len;
-//                if (buf[buf.length - 1] == 10) {  //use trim()
-//                    length = len - 1;
-//                }
-
-                    try {
-                        outputStream.writeByte(1);
-                        outputStream.writeInt(length - off);
-                    }
-                    catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                    outputStream.write(buf, off, length);
-                }
-            };
-
+            SystemOutputStream mock = new SystemOutputStream((OutputStream) field.get(System.out));
             field.set(System.out, mock);
             field.set(System.err, mock);
-
-//            PrintStream outStream = new PrintStream(mock);
-//            System.setOut(outStream);
-//            System.setErr(outStream);
-            return outputStream;
+            return mock;
         }
         catch (Exception e) {
             throw new UnsupportedOperationException(e);
         }
     });
 
-    public static DataOutputStream systemOutGetOrInit()
+    public static SystemOutputStream systemOutGetOrInit()
     {
         return systemOutGetOrInit.get();
     }
@@ -106,7 +56,6 @@ public class JvmAgent
             throws Exception
     {
         JvmAgent.systemOutGetOrInit();
-        System.err.write(123);
 
         ClassPool cp = ClassPool.getDefault();
         String[] split = agentArgs.split(":");
