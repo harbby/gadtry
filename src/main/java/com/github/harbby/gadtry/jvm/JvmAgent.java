@@ -15,16 +15,11 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.memory.Platform;
 import javassist.ClassPool;
 import javassist.CtClass;
 
-import java.io.FilterOutputStream;
-import java.io.OutputStream;
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Field;
-import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
@@ -32,36 +27,17 @@ public class JvmAgent
 {
     private JvmAgent() {}
 
-    private static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
-        System.err.close();
-        try {
-            Field field = FilterOutputStream.class.getDeclaredField("out");
-            field.setAccessible(true);
-            SystemOutputStream mock = new SystemOutputStream((OutputStream) field.get(System.out));
-            field.set(System.out, mock);
-            field.set(System.err, mock);
-            return mock;
-        }
-        catch (Exception e) {
-            throw new UnsupportedOperationException(e);
-        }
-    });
-
-    public static SystemOutputStream systemOutGetOrInit()
-    {
-        return systemOutGetOrInit.get();
-    }
-
     public static void premain(String agentArgs, Instrumentation inst)
             throws Exception
     {
-        JvmAgent.systemOutGetOrInit();
-
-        ClassPool cp = ClassPool.getDefault();
         String[] split = agentArgs.split(":");
         checkState(split.length == 2, "-javaagent:agent.jar=oldClass:newClass");
+
+        ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(split[0]);
         cc.setName(split[1]);
-        Platform.defineClass(cc.toBytecode(), ClassLoader.getSystemClassLoader());
+        byte[] bytes = cc.toBytecode();
+        //Platform.doPrivileged((PrivilegedAction<Class<?>>) () -> Platform.defineClass(bytes, ClassLoader.getSystemClassLoader()));
+        Platform.defineClassByUnsafe(cc.toBytecode(), ClassLoader.getSystemClassLoader());
     }
 }

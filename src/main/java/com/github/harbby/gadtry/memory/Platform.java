@@ -17,6 +17,11 @@ package com.github.harbby.gadtry.memory;
 
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.base.Maths;
+import com.github.harbby.gadtry.base.Throwables;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtField;
+import javassist.Modifier;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
@@ -25,6 +30,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
@@ -152,6 +164,114 @@ public final class Platform
         }
         catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e1) {
             throwException(e1);
+        }
+        throw new IllegalStateException("unchecked");
+    }
+
+    private static Class<?> jdk9plus(byte[] classBytes, ClassLoader classLoader, ProtectionDomain defaultDomain)
+    {
+        try {
+            ClassPool classPool = new ClassPool(true);
+            CtClass ctClass = classPool.getCtClass(ProxyAccess.class.getName());
+            ctClass.setName(Unsafe.class.getName());
+            byte[] poxyBytes = ctClass.toBytecode();
+            Class<?> poxyCLass = unsafe.defineAnonymousClass(Unsafe.class, poxyBytes, new Object[0]);
+
+            return (Class<?>) poxyCLass.getMethod("run", byte[].class, ClassLoader.class, ProtectionDomain.class)
+                    .invoke(null, classBytes, classLoader, defaultDomain);
+        }
+        catch (Exception e) {
+            throwException(e);
+            throw new IllegalStateException("unchecked");
+        }
+    }
+
+    public static class ProxyAccess
+    {
+        public static Class<?> run(byte[] classBytes, ClassLoader classLoader, ProtectionDomain defaultDomain)
+                throws Exception
+        {
+            Object theInternalUnsafe = Class.forName("jdk.internal.misc.Unsafe")
+                    .getMethod("getUnsafe")
+                    .invoke(null);
+
+            return (Class<?>) Class.forName("jdk.internal.misc.Unsafe").getMethod("defineClass",
+                    String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
+                    .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T doPrivileged(Class<?> privilegedClass, PrivilegedAction<T> action)
+    {
+        try {
+            ClassPool classPool = new ClassPool(true);
+            CtClass ctClass = classPool.getCtClass(action.getClass().getName());
+
+            ctClass.setName(privilegedClass.getName());
+            ctClass.setModifiers(Modifier.PUBLIC);
+            ctClass.setSuperclass(classPool.getCtClass(Object.class.getName()));
+
+
+
+            Map<String, Object> map = new LinkedHashMap<>();
+            Arrays.stream(action.getClass().getDeclaredFields()).forEach(f-> {
+                f.setAccessible(true);
+                try {
+                    map.put(f.getName(), f.get(action));
+                }
+                catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            for(CtField ctField : ctClass.getDeclaredFields()) {
+                if (ctField.getFieldInfo().getName().startsWith("this$")) {
+                    ctField.setType(classPool.getCtClass(Object.class.getName()));
+                }
+            }
+            CtField[] fields = ctClass.getDeclaredFields();
+
+            ctClass.writeFile();
+            byte[] poxyBytes = ctClass.toBytecode();
+            Class<?> poxyCLass = unsafe.defineAnonymousClass(privilegedClass, poxyBytes, new Object[0]);
+            Object a1= poxyCLass.getDeclaredFields();
+
+            Object ins = Platform.allocateInstance(poxyCLass);
+            Arrays.stream(poxyCLass.getDeclaredFields()).forEach(f-> {
+                f.setAccessible(true);
+                try {
+                    f.set(ins, map.get(f.getName()));
+                }
+                catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            return (T) poxyCLass.getMethod("run").invoke(ins);
+        }
+        catch (Exception e) {
+            throwException(e);
+            throw new IllegalStateException("unchecked");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
+    {
+        final ProtectionDomain defaultDomain =
+                new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
+                        null, classLoader, null);
+
+        try {
+            Method method = Unsafe.class.getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
+            return (Class<T>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+        }
+        catch (NoSuchMethodException e) {
+            return (Class<T>) jdk9plus(classBytes, classLoader, defaultDomain);
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+            throwException(e);
         }
         throw new IllegalStateException("unchecked");
     }

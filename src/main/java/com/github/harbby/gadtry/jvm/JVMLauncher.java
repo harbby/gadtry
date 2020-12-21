@@ -15,11 +15,16 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.base.ObjectInputStreamProxy;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
+import java.io.FilterOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.util.function.Supplier;
 
 public interface JVMLauncher<R extends Serializable>
 {
@@ -41,10 +46,24 @@ public interface JVMLauncher<R extends Serializable>
     public VmFuture<R> startAsync(VmCallable<R> task)
             throws JVMException;
 
+    static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
+        try {
+            Field field = FilterOutputStream.class.getDeclaredField("out");
+            field.setAccessible(true);
+            SystemOutputStream mock = new SystemOutputStream((OutputStream) field.get(System.out));
+            field.set(System.out, mock);
+            field.set(System.err, mock);
+            return mock;
+        }
+        catch (Exception e) {
+            throw new UnsupportedOperationException(e);
+        }
+    });
+
     public static void main(String[] args)
             throws Exception
     {
-        SystemOutputStream outputStream = JvmAgent.systemOutGetOrInit();
+        SystemOutputStream outputStream = systemOutGetOrInit.get();
         VmResult<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {

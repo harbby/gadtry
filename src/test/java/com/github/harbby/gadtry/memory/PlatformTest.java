@@ -24,7 +24,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 public class PlatformTest
@@ -107,7 +110,48 @@ public class PlatformTest
     }
 
     @Test
-    public void throwException()
+    public void doPrivilegedTest()
+            throws Exception
+    {
+        String log = "hello;";
+        OutputStream out = Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<>()
+        {
+            @Override
+            public OutputStream run()
+            {
+                System.out.println(log);
+                try {
+                    Field field = FilterOutputStream.class.getDeclaredField("out");
+                    field.setAccessible(true);
+                    return (OutputStream) field.get(System.out);
+                }
+                catch (Exception e) {
+                    unsafe.throwException(e);
+                    throw new IllegalStateException("unchecked");
+                }
+            }
+        });
+        Assert.assertNotNull(out);
+    }
+
+    @Test
+    public void defineClassByUnsafeTestReturnSetProxyClass()
+            throws NotFoundException, IOException, CannotCompileException
+    {
+        ClassPool classPool = new ClassPool(true);
+        CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
+        ctClass.setName("com.github.harbby.gadtry.memory.TestDome");
+        byte[] bytes = ctClass.toBytecode();
+
+        Class<?> newClass = Platform.defineClassByUnsafe(bytes, PlatformTest.class.getClassLoader());
+        Assert.assertNotNull(newClass);
+
+        newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);
+        Assert.assertNotNull(newClass);
+    }
+
+    @Test
+    public void throwExceptionTest()
     {
         try {
             Platform.throwException(new IOException("IO_test"));
