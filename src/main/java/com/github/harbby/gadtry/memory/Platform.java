@@ -166,7 +166,7 @@ public final class Platform
     }
 
     /**
-     * 这是一个魔术方法，他可以帮我们轻松绕开jdk9模块化引入访问限制:
+     * 这是一个魔术方法，他可以帮我们轻松绕开jdk9模块化引入的访问限制:
      * 具体有两大类功能:
      * 1. 非法反射访问警告消除
      * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过他我们可以访问任何jdk限制的内部代码
