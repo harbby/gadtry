@@ -22,24 +22,13 @@ public final class ClassLoaders
 {
     private ClassLoaders() {}
 
+    /**
+     * jdk8:  sun.misc.VM.latestUserDefinedLoader()
+     * jdk9+: jdk.internal.misc.VM.latestUserDefinedLoader()
+     */
     public static ClassLoader latestUserDefinedLoader()
     {
-        try {
-            return (ClassLoader) Class.forName("sun.misc.VM")
-                    .getMethod("latestUserDefinedLoader")
-                    .invoke(null);
-        }
-        catch (Exception ignored) {}
-        //jdk9+
-        try {
-            return (ClassLoader) Class.forName("jdk.internal.misc.VM")
-                    .getMethod("latestUserDefinedLoader")
-                    .invoke(null);
-        }
-        catch (Exception e) {
-            throw new UnsupportedOperationException("this jdk " + System.getProperty("java.version")
-                    + " not support latestUserDefinedLoader");
-        }
+        throw new UnsupportedOperationException();
     }
 
     /**

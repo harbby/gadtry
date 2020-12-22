@@ -40,8 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.noCatch;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class JavaTypes
 {
@@ -278,16 +277,23 @@ public class JavaTypes
         }
     }
 
-    private static <T, R> R getReflectMethod(Method method, T t)
-            throws InvocationTargetException, IllegalAccessException
+    @SuppressWarnings("unchecked")
+    public static <R> R getReflectMethod(Class<?> aClass, String name, Object ins, Object... value)
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException
     {
+        Method method = aClass.getDeclaredMethod(name);
         method.setAccessible(true);
-        return (R) method.invoke(t);
+        return (R) method.invoke(ins, value);
     }
 
     public static String getClassGenericString(Class<?> javaClass)
     {
-        return noCatch(() -> getReflectMethod(Class.class.getDeclaredMethod("getGenericSignature0"), javaClass));
+        try {
+            return getReflectMethod(Class.class, "getGenericSignature0", javaClass);
+        }
+        catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new UnsupportedOperationException("jdk not support Class.class.getGenericSignature0()");
+        }
     }
 
     /**
@@ -300,13 +306,13 @@ public class JavaTypes
     {
         try {
             Map<String, TypeArgument[]> typeSignatureMap = new LinkedHashMap<>();
-            ClassRepository classRepository = getReflectMethod(Class.class.getDeclaredMethod("getGenericInfo"), javaClass);
+            ClassRepository classRepository = getReflectMethod(Class.class, "getGenericInfo", javaClass);
 
             if (classRepository == null) {
                 return Collections.emptyMap();
             }
             //-----2
-            ClassSignature tree = getReflectMethod(AbstractRepository.class.getDeclaredMethod("getTree"), classRepository);
+            ClassSignature tree = getReflectMethod(AbstractRepository.class, "getTree", classRepository);
             //FormalTypeParameter[] formalTypeParameters = tree.getFormalTypeParameters();  //type 个数  === type[]
             SimpleClassTypeSignature typeSignature = tree.getSuperclass().getPath().get(0);
             typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
@@ -318,20 +324,24 @@ public class JavaTypes
             return typeSignatureMap;
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 
     public static List<Type> getClassGenericTypes(Class<?> javaClass)
     {
-        ClassRepository classRepository = noCatch(() -> getReflectMethod(Class.class.getDeclaredMethod("getGenericInfo"),
-                javaClass));
+        ClassRepository classRepository;
+        try {
+            classRepository = getReflectMethod(Class.class, "getGenericInfo", javaClass);
+        }
+        catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new UnsupportedOperationException("jdk not support Class.class.getGenericInfo()");
+        }
 
         if (classRepository == null) {
             return Collections.emptyList();
         }
 
-        classRepository.getSuperclass();
         return MutableList.asList(classRepository.getSuperclass(), classRepository.getSuperInterfaces());
     }
 

@@ -171,7 +171,9 @@ public class JavaTypesTest
     @Test
     public void getClassGenericString()
     {
-        Assert.assertEquals("Ljava/lang/Object;Lcom/github/harbby/gadtry/function/Function1<Ljava/util/Map<Ljava/lang/String;Ljava/lang/Integer;>;Ljava/lang/String;>;Ljava/util/concurrent/Callable<Ljava/lang/Double;>;",
+        String check = "Ljava/lang/Object;Lcom/github/harbby/gadtry/function/Function1<Ljava/util/Map<Ljava/lang/String;" +
+                "Ljava/lang/Integer;>;Ljava/lang/String;>;Ljava/util/concurrent/Callable<Ljava/lang/Double;>;";
+        Assert.assertEquals(check,
                 JavaTypes.getClassGenericString(GenericClassTest.class));
     }
 

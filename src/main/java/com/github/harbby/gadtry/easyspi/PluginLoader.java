@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.easyspi;
 
-import com.github.harbby.gadtry.base.ClassLoaders;
 import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.MutableList;
@@ -182,7 +181,7 @@ public final class PluginLoader<T>
                 spiLoader = pluginClass.getClassLoader();
             }
             if (spiLoader == null) {
-                spiLoader = ClassLoaders.latestUserDefinedLoader();
+                spiLoader = ClassLoader.getSystemClassLoader();
             }
 
             MutableList.Builder<Module<T>> builder = MutableList.builder();

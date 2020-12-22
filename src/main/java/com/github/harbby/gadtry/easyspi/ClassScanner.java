@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.easyspi;
 
-import com.github.harbby.gadtry.base.ClassLoaders;
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.ioc.InjectorException;
@@ -78,9 +77,7 @@ public class ClassScanner
 
     public static Builder builder(String basePackage)
     {
-        return new Builder(basePackage)
-        {
-        };
+        return new Builder(basePackage);
     }
 
     public static class Builder
@@ -135,7 +132,7 @@ public class ClassScanner
             Set<Class<?>> classSet;
             try {
                 if (classLoader == null) {
-                    classLoader = ClassLoaders.latestUserDefinedLoader();
+                    classLoader = ClassLoader.getSystemClassLoader();
                 }
                 classSet = scanClasses(basePackage, classLoader, errorHandler);
             }
@@ -157,13 +154,6 @@ public class ClassScanner
             classSet = classStream.collect(Collectors.toSet());
             return new ClassScanner(classSet);
         }
-    }
-
-    public static Set<Class<?>> scanClasses(String basePackage)
-            throws IOException
-    {
-        ClassLoader classLoader = ClassLoaders.latestUserDefinedLoader();
-        return scanClasses(basePackage, classLoader);
     }
 
     public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader)
