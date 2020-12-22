@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 public final class ClassLoaders
 {
@@ -25,23 +25,57 @@ public final class ClassLoaders
     public static ClassLoader latestUserDefinedLoader()
     {
         try {
-            try {
-                Method method = Class.forName("sun.misc.VM").getDeclaredMethod("latestUserDefinedLoader");
-                method.setAccessible(true);
-                return (ClassLoader) method.invoke(null);
-            }
-            catch (ClassNotFoundException e) {
-                Method method = Class.forName("jdk.internal.misc.VM").getDeclaredMethod("latestUserDefinedLoader");
-                method.setAccessible(true);
-                return (ClassLoader) method.invoke(null);
-            }
+            return (ClassLoader) Class.forName("sun.misc.VM")
+                    .getMethod("latestUserDefinedLoader")
+                    .invoke(null);
         }
-        catch (ClassNotFoundException | NoSuchMethodException e) {
+        catch (Exception ignored) {}
+        //jdk9+
+        try {
+            return (ClassLoader) Class.forName("jdk.internal.misc.VM")
+                    .getMethod("latestUserDefinedLoader")
+                    .invoke(null);
+        }
+        catch (Exception e) {
             throw new UnsupportedOperationException("this jdk " + System.getProperty("java.version")
                     + " not support latestUserDefinedLoader");
         }
-        catch (InvocationTargetException | IllegalAccessException e) {
+    }
+
+    /**
+     * 用户系统类加载器
+     */
+    public static ClassLoader getAppClassLoader()
+    {
+        return ClassLoader.getSystemClassLoader();
+    }
+
+    /**
+     * 获取jdk类加载器
+     */
+    public static ClassLoader getBootstrapClassLoader()
+    {
+        try {
+            Object upath = Class.forName("sun.misc.Launcher").getMethod("getBootstrapClassPath").invoke(null);
+            URL[] urls = (URL[]) Class.forName("sun.misc.URLClassPath").getMethod("getURLs").invoke(upath);
+            return new URLClassLoader(urls, null);
+        }
+        catch (Exception ignored) {
+        }
+        //jdk9+
+        try {
+            return (ClassLoader) Class.forName("java.lang.ClassLoader").getMethod("getPlatformClassLoader").invoke(null);
+        }
+        catch (Exception e) {
             throw Throwables.throwsThrowable(e);
         }
+    }
+
+    /**
+     * java8特有扩展类加载器,java11已经移除
+     */
+    public static ClassLoader getExtensionClassLoader()
+    {
+        throw new UnsupportedOperationException("jdk11 not support, jdk8 use ClassLoader.getSystemClassLoader().getParent()");
     }
 }

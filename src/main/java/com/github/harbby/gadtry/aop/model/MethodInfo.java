@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

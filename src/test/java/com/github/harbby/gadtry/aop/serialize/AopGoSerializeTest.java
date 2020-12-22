@@ -20,7 +20,7 @@ import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 

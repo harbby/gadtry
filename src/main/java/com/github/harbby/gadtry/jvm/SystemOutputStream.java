@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.memory.Platform;
-import com.github.harbby.gadtry.memory.PrivilegedAction;
+import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.function.PrivilegedAction;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class SystemOutputStream
         extends OutputStream
 {
     private static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
-        return (SystemOutputStream) Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<>()
+        return (SystemOutputStream) Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<Object>()
         {
             @Override
             public Object run()

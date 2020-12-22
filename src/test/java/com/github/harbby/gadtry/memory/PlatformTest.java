@@ -16,6 +16,8 @@
 package com.github.harbby.gadtry.memory;
 
 import com.github.harbby.gadtry.base.Closeables;
+import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.function.PrivilegedAction;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -117,7 +119,7 @@ public class PlatformTest
             throws Exception
     {
         String log = "hello;";
-        OutputStream out = Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<>()
+        OutputStream out = Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<OutputStream>()
         {
             @Override
             public OutputStream run()

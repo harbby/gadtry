@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 

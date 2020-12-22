@@ -15,8 +15,9 @@
  */
 package com.github.harbby.gadtry.memory.collection;
 
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableMap;
+import com.github.harbby.gadtry.collection.MutableSet;
+import com.github.harbby.gadtry.collection.offheap.OffHeapMap;
 import org.junit.Assert;
 import org.junit.Test;
 

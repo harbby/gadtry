@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Threads;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
+import com.github.harbby.gadtry.collection.MutableList;
+import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 

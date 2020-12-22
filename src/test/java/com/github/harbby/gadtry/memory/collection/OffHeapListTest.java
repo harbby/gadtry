@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.memory.collection;
 
+import com.github.harbby.gadtry.collection.offheap.OffHeapList;
 import org.junit.Assert;
 import org.junit.Test;
 

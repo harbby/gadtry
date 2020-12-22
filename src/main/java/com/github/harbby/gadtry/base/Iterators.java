@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;

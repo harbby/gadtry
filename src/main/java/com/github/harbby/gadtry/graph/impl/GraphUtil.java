@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.graph.Node;
 
 import java.util.Deque;

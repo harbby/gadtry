@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.aop.mock;
 
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 

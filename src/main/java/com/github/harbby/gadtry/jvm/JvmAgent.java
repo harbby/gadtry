@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.memory.Platform;
+import com.github.harbby.gadtry.base.Platform;
 import javassist.ClassPool;
 import javassist.CtClass;
 

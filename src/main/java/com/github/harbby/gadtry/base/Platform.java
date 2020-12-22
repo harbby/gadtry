@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.memory;
+package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.base.Maths;
+import com.github.harbby.gadtry.function.PrivilegedAction;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
@@ -196,6 +195,7 @@ public final class Platform
                 fieldValues.put(f.getName(), f.get(action));
             }
 
+            ClassLoader bootClassLoader = ClassLoaders.getBootstrapClassLoader();
             for (CtField ctField : ctClass.getDeclaredFields()) {
                 if (ctField.getFieldInfo().getName().startsWith("this$0")) {
                     ctField.setType(classPool.getCtClass(Object.class.getName()));
@@ -205,7 +205,8 @@ public final class Platform
                 while (checkType.isArray()) {
                     checkType = ctField.getType().getComponentType();
                 }
-                assert checkType.isPrimitive() || ClassLoader.getPlatformClassLoader().loadClass(checkType.getName()) != null;
+
+                assert checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null;
                 ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
             }
             Class<?> poxyCLass = unsafe.defineAnonymousClass(privilegedClass, ctClass.toBytecode(), new Object[0]);
@@ -222,6 +223,9 @@ public final class Platform
         }
     }
 
+    /**
+     * 这个方法在jdk9+上运行时 不会抛出异常和非法反射warring警告
+     */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
     {
@@ -235,7 +239,7 @@ public final class Platform
         }
         catch (NoSuchMethodException e) {
             //jdk9+
-            return doPrivileged(Unsafe.class, new PrivilegedAction<>()
+            return doPrivileged(Unsafe.class, new PrivilegedAction<Class<T>>()
             {
                 @Override
                 public Class<T> run()

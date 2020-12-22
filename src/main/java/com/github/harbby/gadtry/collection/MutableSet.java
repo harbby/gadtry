@@ -13,47 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.collection.mutable;
+package com.github.harbby.gadtry.collection;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class MutableList
+public class MutableSet
 {
-    private MutableList() {}
+    private MutableSet() {}
 
-    public static <T> List<T> asList(T first, T[] rest)
+    public static <T> Set<T> copy(Iterable<? extends T> iterable)
     {
-        return MutableList.<T>builder().add(first).addAll(rest).build();
-    }
-
-    public static <T> List<T> copy(Iterable<? extends T> iterable)
-    {
-        if (iterable instanceof Collection) {
-            return new ArrayList<>((Collection<? extends T>) iterable);
-        }
-        List<T> list = new ArrayList<>();
+        MutableSet.Builder<T> builder = MutableSet.builder();
         for (T it : iterable) {
-            list.add(it);
+            builder.add(it);
         }
-        return list;
-    }
-
-    public static <T> List<T> copy(Iterator<? extends T> iterator)
-    {
-        List<T> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
-        }
-        return list;
+        return builder.build();
     }
 
     @SafeVarargs
-    public static <T> List<T> of(T... t)
+    public static <T> Set<T> of(T... t)
     {
-        return MutableList.<T>builder().addAll(t).build();
+        return MutableSet.<T>builder().addAll(t).build();
     }
 
     public static <T> Builder<T> builder()
@@ -63,7 +46,7 @@ public class MutableList
 
     public static class Builder<T>
     {
-        private List<T> builder = new ArrayList<>();
+        private Stream.Builder<T> builder = Stream.builder();
 
         public Builder<T> add(T t)
         {
@@ -96,9 +79,9 @@ public class MutableList
             return this;
         }
 
-        public List<T> build()
+        public Set<T> build()
         {
-            return builder;
+            return builder.build().collect(Collectors.toSet());
         }
     }
 }

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.github.harbby.gadtry.collection.immutable;
+package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.base.Iterators;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.io.Serializable;
 import java.util.AbstractList;

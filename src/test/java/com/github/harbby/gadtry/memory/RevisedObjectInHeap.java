@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.memory;
 
+import com.github.harbby.gadtry.base.Platform;
 import sun.misc.Unsafe;
 
 public class RevisedObjectInHeap

@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
+import com.github.harbby.gadtry.collection.MutableMap;
 import com.github.harbby.gadtry.function.Creator;
 
 import java.util.HashMap;

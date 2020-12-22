@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.io;
 
 import com.github.harbby.gadtry.aop.AopFactory;
-import com.github.harbby.gadtry.memory.Platform;
+import com.github.harbby.gadtry.base.Platform;
 import org.junit.Assert;
 import org.junit.Test;
 

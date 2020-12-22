@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import sun.reflect.generics.repository.AbstractRepository;
 import sun.reflect.generics.repository.ClassRepository;
 import sun.reflect.generics.tree.ClassSignature;

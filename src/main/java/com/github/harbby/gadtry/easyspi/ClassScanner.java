@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.classloader;
+package com.github.harbby.gadtry.easyspi;
 
 import com.github.harbby.gadtry.base.ClassLoaders;
 import com.github.harbby.gadtry.base.Files;
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.ioc.InjectorException;
 
 import java.io.File;

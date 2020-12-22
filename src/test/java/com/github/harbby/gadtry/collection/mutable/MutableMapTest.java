@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.collection.mutable;
 
+import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 

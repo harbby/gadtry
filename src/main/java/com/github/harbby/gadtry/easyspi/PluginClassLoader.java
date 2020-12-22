@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.classloader;
+package com.github.harbby.gadtry.easyspi;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

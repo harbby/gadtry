@@ -17,7 +17,7 @@ package com.github.harbby.gadtry;
 
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.base.Streams;
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
+import com.github.harbby.gadtry.collection.MutableMap;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import org.junit.Assert;
 import org.junit.Test;

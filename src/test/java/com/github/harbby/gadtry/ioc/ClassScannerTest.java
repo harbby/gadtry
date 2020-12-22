@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.classloader.ClassScanner;
+import com.github.harbby.gadtry.easyspi.ClassScanner;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

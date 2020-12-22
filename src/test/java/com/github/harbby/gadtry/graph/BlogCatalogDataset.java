@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableSet;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.nio.cs.StreamDecoder;

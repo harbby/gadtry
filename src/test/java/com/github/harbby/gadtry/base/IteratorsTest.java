@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableList;
+import com.github.harbby.gadtry.collection.MutableSet;
 import org.junit.Assert;
 import org.junit.Test;
 
