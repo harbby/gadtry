@@ -15,12 +15,43 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.gadtry.memory.Platform;
+import com.github.harbby.gadtry.memory.PrivilegedAction;
+
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.util.function.Supplier;
 
 public class SystemOutputStream
         extends OutputStream
 {
+    private static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
+        return (SystemOutputStream) Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<>()
+        {
+            @Override
+            public Object run()
+                    throws Exception
+            {
+                Field field = FilterOutputStream.class.getDeclaredField("out");
+                field.setAccessible(true);
+                Object mock = ClassLoader.getSystemClassLoader().loadClass("com.github.harbby.gadtry.jvm.SystemOutputStream")
+                        .getConstructor(OutputStream.class)
+                        .newInstance((OutputStream) field.get(System.out));
+                field.set(System.out, mock);
+                field.set(System.err, mock);
+                return mock;
+            }
+        });
+    });
+
+    public static SystemOutputStream getOrCreate()
+    {
+        return systemOutGetOrInit.get();
+    }
+
     private final OutputStream out;
     private volatile boolean tryClose;
 

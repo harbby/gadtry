@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.memory;
 
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.base.Maths;
-import com.github.harbby.gadtry.base.Throwables;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
@@ -33,9 +32,7 @@ import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -168,39 +165,20 @@ public final class Platform
         throw new IllegalStateException("unchecked");
     }
 
-    private static Class<?> jdk9plus(byte[] classBytes, ClassLoader classLoader, ProtectionDomain defaultDomain)
-    {
-        try {
-            ClassPool classPool = new ClassPool(true);
-            CtClass ctClass = classPool.getCtClass(ProxyAccess.class.getName());
-            ctClass.setName(Unsafe.class.getName());
-            byte[] poxyBytes = ctClass.toBytecode();
-            Class<?> poxyCLass = unsafe.defineAnonymousClass(Unsafe.class, poxyBytes, new Object[0]);
-
-            return (Class<?>) poxyCLass.getMethod("run", byte[].class, ClassLoader.class, ProtectionDomain.class)
-                    .invoke(null, classBytes, classLoader, defaultDomain);
-        }
-        catch (Exception e) {
-            throwException(e);
-            throw new IllegalStateException("unchecked");
-        }
-    }
-
-    public static class ProxyAccess
-    {
-        public static Class<?> run(byte[] classBytes, ClassLoader classLoader, ProtectionDomain defaultDomain)
-                throws Exception
-        {
-            Object theInternalUnsafe = Class.forName("jdk.internal.misc.Unsafe")
-                    .getMethod("getUnsafe")
-                    .invoke(null);
-
-            return (Class<?>) Class.forName("jdk.internal.misc.Unsafe").getMethod("defineClass",
-                    String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
-                    .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
-        }
-    }
-
+    /**
+     * 这是一个魔术方法，他可以帮我们轻松绕开jdk9模块化引入访问限制:
+     * 具体有两大类功能:
+     * 1. 非法反射访问警告消除
+     * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过他我们可以访问任何jdk限制的内部代码
+     * <p>
+     * 但他还存在一些缺陷:
+     * 1: 目前存在action不能依赖任何用户类,否则会throw java.lang.NoClassDefFoundError
+     * 2: 不支持java8 lambda
+     *
+     * @param privilegedClass action将获取privilegedClass的权限
+     * @param action          希望特权运行的code
+     * @throws java.lang.NoClassDefFoundError user dep class
+     */
     @SuppressWarnings("unchecked")
     public static <T> T doPrivileged(Class<?> privilegedClass, PrivilegedAction<T> action)
     {
@@ -209,45 +187,33 @@ public final class Platform
             CtClass ctClass = classPool.getCtClass(action.getClass().getName());
 
             ctClass.setName(privilegedClass.getName());
-            ctClass.setModifiers(Modifier.PUBLIC);
+            ctClass.setModifiers(Modifier.setPublic(ctClass.getModifiers())); // set Modifier.PUBLIC
             ctClass.setSuperclass(classPool.getCtClass(Object.class.getName()));
 
-
-
-            Map<String, Object> map = new LinkedHashMap<>();
-            Arrays.stream(action.getClass().getDeclaredFields()).forEach(f-> {
+            Map<String, Object> fieldValues = new HashMap<>();
+            for (Field f : action.getClass().getDeclaredFields()) {
                 f.setAccessible(true);
-                try {
-                    map.put(f.getName(), f.get(action));
-                }
-                catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            });
+                fieldValues.put(f.getName(), f.get(action));
+            }
 
-            for(CtField ctField : ctClass.getDeclaredFields()) {
-                if (ctField.getFieldInfo().getName().startsWith("this$")) {
+            for (CtField ctField : ctClass.getDeclaredFields()) {
+                if (ctField.getFieldInfo().getName().startsWith("this$0")) {
                     ctField.setType(classPool.getCtClass(Object.class.getName()));
                 }
+                //check class is system jdk
+                CtClass checkType = ctField.getType();
+                while (checkType.isArray()) {
+                    checkType = ctField.getType().getComponentType();
+                }
+                assert checkType.isPrimitive() || ClassLoader.getPlatformClassLoader().loadClass(checkType.getName()) != null;
+                ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
             }
-            CtField[] fields = ctClass.getDeclaredFields();
-
-            ctClass.writeFile();
-            byte[] poxyBytes = ctClass.toBytecode();
-            Class<?> poxyCLass = unsafe.defineAnonymousClass(privilegedClass, poxyBytes, new Object[0]);
-            Object a1= poxyCLass.getDeclaredFields();
-
+            Class<?> poxyCLass = unsafe.defineAnonymousClass(privilegedClass, ctClass.toBytecode(), new Object[0]);
             Object ins = Platform.allocateInstance(poxyCLass);
-            Arrays.stream(poxyCLass.getDeclaredFields()).forEach(f-> {
+            for (Field f : poxyCLass.getFields()) {
                 f.setAccessible(true);
-                try {
-                    f.set(ins, map.get(f.getName()));
-                }
-                catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            });
-
+                f.set(ins, fieldValues.get(f.getName()));
+            }
             return (T) poxyCLass.getMethod("run").invoke(ins);
         }
         catch (Exception e) {
@@ -268,7 +234,22 @@ public final class Platform
             return (Class<T>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
         }
         catch (NoSuchMethodException e) {
-            return (Class<T>) jdk9plus(classBytes, classLoader, defaultDomain);
+            //jdk9+
+            return doPrivileged(Unsafe.class, new PrivilegedAction<>()
+            {
+                @Override
+                public Class<T> run()
+                        throws Exception
+                {
+                    Object theInternalUnsafe = Class.forName("jdk.internal.misc.Unsafe")
+                            .getMethod("getUnsafe")
+                            .invoke(null);
+
+                    return (Class<T>) Class.forName("jdk.internal.misc.Unsafe").getMethod("defineClass",
+                            String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
+                            .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+                }
+            });
         }
         catch (IllegalAccessException | InvocationTargetException e) {
             throwException(e);

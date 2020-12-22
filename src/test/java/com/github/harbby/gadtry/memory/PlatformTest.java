@@ -30,6 +30,9 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
+/**
+ * ./gradlew clean test -Pjdk=java11 --tests *PlatformTest --info
+ */
 public class PlatformTest
 {
     private final Unsafe unsafe = Platform.getUnsafe();
@@ -99,10 +102,10 @@ public class PlatformTest
     {
         ClassPool classPool = new ClassPool(true);
         CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
-        ctClass.setName("com.github.harbby.gadtry.memory.TestDome");
+        ctClass.setName("com.github.harbby.gadtry.memory.TestDomeDefineClass");
         byte[] bytes = ctClass.toBytecode();
 
-        Class<?> newClass = Platform.defineClass(bytes, PlatformTest.class.getClassLoader());
+        Class<?> newClass = Platform.defineClass(bytes, ClassLoader.getSystemClassLoader());
         Assert.assertNotNull(newClass);
 
         newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);
@@ -140,10 +143,10 @@ public class PlatformTest
     {
         ClassPool classPool = new ClassPool(true);
         CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
-        ctClass.setName("com.github.harbby.gadtry.memory.TestDome");
+        ctClass.setName("com.github.harbby.gadtry.memory.TestDomeDefineClassByUnsafe");
         byte[] bytes = ctClass.toBytecode();
 
-        Class<?> newClass = Platform.defineClassByUnsafe(bytes, PlatformTest.class.getClassLoader());
+        Class<?> newClass = Platform.defineClassByUnsafe(bytes, ClassLoader.getSystemClassLoader());
         Assert.assertNotNull(newClass);
 
         newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);

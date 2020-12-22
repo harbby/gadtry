@@ -36,8 +36,6 @@ public class JvmAgent
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(split[0]);
         cc.setName(split[1]);
-        byte[] bytes = cc.toBytecode();
-        //Platform.doPrivileged((PrivilegedAction<Class<?>>) () -> Platform.defineClass(bytes, ClassLoader.getSystemClassLoader()));
         Platform.defineClassByUnsafe(cc.toBytecode(), ClassLoader.getSystemClassLoader());
     }
 }
