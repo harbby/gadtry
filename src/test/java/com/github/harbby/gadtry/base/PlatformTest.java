@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.offheap.OffHeapIntArray;
 import com.github.harbby.gadtry.function.PrivilegedAction;
 import javassist.CannotCompileException;
 import javassist.ClassPool;

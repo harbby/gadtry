@@ -47,8 +47,8 @@ public interface Graph<E, R>
     /**
      * 搜索出in到out符合规则的所有路径
      *
-     * @param in 搜索起点
-     * @param out 搜索终点
+     * @param in   搜索起点
+     * @param out  搜索终点
      * @param rule 规则
      * @return 搜索到的路径
      */

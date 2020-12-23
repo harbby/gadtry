@@ -19,8 +19,8 @@ import com.github.harbby.gadtry.aop.Binder;
 import com.github.harbby.gadtry.aop.model.ClassInfo;
 import com.github.harbby.gadtry.aop.model.MethodInfo;
 import com.github.harbby.gadtry.aop.model.Pointcut;
-import com.github.harbby.gadtry.easyspi.ClassScanner;
 import com.github.harbby.gadtry.collection.MutableSet;
+import com.github.harbby.gadtry.easyspi.ClassScanner;
 import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;

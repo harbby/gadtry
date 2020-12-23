@@ -33,8 +33,8 @@ public class Streams
 
     /**
      * @param start 计数从 start 开始.默认是从 0 开始. 例如range(5)等价于range(0,5)
-     * @param stop 计数到 stop 结束,但不包括 stop
-     * @param step 步长,默认为1
+     * @param stop  计数到 stop 结束,但不包括 stop
+     * @param step  步长,默认为1
      * @return IntStream
      */
     public static IntStream range(final int start, int stop, int step)

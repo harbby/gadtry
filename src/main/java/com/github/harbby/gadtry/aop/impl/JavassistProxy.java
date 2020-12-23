@@ -17,10 +17,10 @@ package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mock.MockGoException;
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Strings;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableSet;
-import com.github.harbby.gadtry.base.Platform;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -343,15 +343,14 @@ public class JavassistProxy
     }
 
     /**
-     *     @Override
-     *     public final int getAge() {
-     *         return (Integer)this.handler.invoke(this, _method5, new Object[0]);
-     *     }
-     *
-     *     public int $_getAge() {
-     *         return super.getAge();
-     *     }
-     * */
+     * @Override public final int getAge() {
+     * return (Integer)this.handler.invoke(this, _method5, new Object[0]);
+     * }
+     * <p>
+     * public int $_getAge() {
+     * return super.getAge();
+     * }
+     */
     private static void addSupperMethod2(CtClass proxyClass, CtMethod ctMethod, String methodNewName)
             throws NotFoundException, CannotCompileException
     {

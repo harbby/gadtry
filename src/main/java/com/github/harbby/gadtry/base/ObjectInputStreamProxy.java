@@ -44,7 +44,7 @@ public class ObjectInputStreamProxy
      * ObjectInputStreamProxy used by user classLoader
      * <p>
      *
-     * @param in InputStream
+     * @param in          InputStream
      * @param classLoader used by loadObject
      * @throws IOException IOException
      */

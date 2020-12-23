@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public final class Platform
@@ -232,7 +233,7 @@ public final class Platform
                     checkType = ctField.getType().getComponentType();
                 }
 
-                assert checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null;
+                checkState(checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null);
                 ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
             }
             Class<?> poxyCLass = unsafe.defineAnonymousClass(privilegedClass, ctClass.toBytecode(), new Object[0]);

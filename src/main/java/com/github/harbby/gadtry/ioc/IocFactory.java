@@ -26,7 +26,7 @@ public interface IocFactory
 {
     /**
      * @param driver Class waiting to be acquired
-     * @param <T> is driver type
+     * @param <T>    is driver type
      * @return Driver instance object
      * @throws InjectorException Injector error
      */
@@ -36,9 +36,9 @@ public interface IocFactory
     }
 
     /**
-     * @param driver Class waiting to be acquired
+     * @param driver      Class waiting to be acquired
      * @param userCreator User-provided implementation
-     * @param <T> is driver type
+     * @param <T>         is driver type
      * @return T Driver instance object
      * @throws InjectorException Injector error
      */

@@ -21,9 +21,9 @@ import com.github.harbby.gadtry.aop.impl.JdkProxy;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.exception.Function;
-import com.github.harbby.gadtry.base.Platform;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

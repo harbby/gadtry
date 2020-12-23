@@ -32,7 +32,7 @@ public class Arrays
 
     /**
      * @param arrayType String.class Integer.class ...
-     * @param length array length
+     * @param length    array length
      * @return
      */
     @SuppressWarnings("unchecked")
@@ -49,7 +49,7 @@ public class Arrays
 
     /**
      * @param arrayType String.class Integer.class ...
-     * @param length array length
+     * @param length    array length
      * @return
      */
     @SuppressWarnings("unchecked")
@@ -60,7 +60,7 @@ public class Arrays
 
     /**
      * @param arrayClass String[].class
-     * @param length array length
+     * @param length     array length
      * @return T[]
      */
     @SuppressWarnings("unchecked")
@@ -77,7 +77,7 @@ public class Arrays
 
     /**
      * @param arrayClass String[].class
-     * @param length array length
+     * @param length     array length
      * @return T[]
      */
     @SuppressWarnings("unchecked")
@@ -96,7 +96,7 @@ public class Arrays
      * java list[T] to array[T]
      * arrayClass do not support Primitive int[].class ...
      *
-     * @param list java list
+     * @param list       java list
      * @param arrayClass demo: Integer[].class  String[].class
      * @return T[]
      * @see Arrays#createArray(Class, int)
@@ -112,7 +112,7 @@ public class Arrays
     /**
      * java list[T] to array[T]
      *
-     * @param list java list
+     * @param list       java list
      * @param arrayClass demo: Integer[].class  String[].class
      * @return T[]
      * @see Arrays#createArray(Class, int)
@@ -224,7 +224,7 @@ public class Arrays
 
     /**
      * @param first firstValue
-     * @param rest array
+     * @param rest  array
      * @return merge array
      */
     public static <T> T[] asArray(T first, T[] rest, Class<T> type)
@@ -237,7 +237,7 @@ public class Arrays
 
     /**
      * @param first firstValue
-     * @param rest Collection
+     * @param rest  Collection
      * @return merge array
      */
     public static <T> T[] asArray(T first, Collection<T> rest, Class<T> type)

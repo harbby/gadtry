@@ -32,7 +32,7 @@ public interface Binder
      * Define a pointcut
      *
      * @param pointName cut name
-     * @param location cut location
+     * @param location  cut location
      * @return next set CutMode
      */
     @Deprecated

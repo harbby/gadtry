@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.mock.MockGoException;
-import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.base.Streams;
 import javassist.ClassPool;
 import javassist.CtClass;
 import org.junit.Assert;
