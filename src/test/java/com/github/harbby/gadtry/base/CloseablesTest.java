@@ -57,7 +57,7 @@ public class CloseablesTest
             throw new IOException("close");
         })) {
             Assert.assertNull(closeables.get());
-            Throwables.throwsException(IOException.class);
+            Throwables.throwsThrowable(IOException.class);
         }
         catch (IOException e) {
             Assert.assertEquals(e.getMessage(), "close");

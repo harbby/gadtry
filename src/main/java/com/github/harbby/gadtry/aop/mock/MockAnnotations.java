@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.harbby.gadtry.aop.mock.MockGo.mock;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class MockAnnotations
 {
@@ -35,7 +35,7 @@ public class MockAnnotations
             injectField(testObject);
         }
         catch (Exception e) {
-            throwsException(e);
+            throwsThrowable(e);
         }
     }
 

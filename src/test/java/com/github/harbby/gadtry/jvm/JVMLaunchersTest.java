@@ -15,9 +15,11 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableMap;
+import com.github.harbby.gadtry.function.PrivilegedAction;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -69,7 +71,7 @@ public class JVMLaunchersTest
                     //TimeUnit.SECONDS.sleep(1000000);
                     System.err.write(666);
                     StackTraceElement element = Threads.getJvmMainClass();
-                    Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x-> System.out.println(x));
+                    Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x -> System.out.println(x));
                     System.out.println(element);
                     return element.getClassName();
                 })
@@ -97,12 +99,27 @@ public class JVMLaunchersTest
             urls.addAll(urlArr);
         }
         else {
-            Field field = classLoader.getClass().getDeclaredField("ucp");
-            field.setAccessible(true);
-            Object ucp = field.get(classLoader);
-            Method method = ucp.getClass().getDeclaredMethod("getURLs");
-            method.setAccessible(true);
-            URL[] urlArr = (URL[]) method.invoke(ucp);
+            /*
+             * Unable to make field final jdk.internal.loader.URLClassPath
+             * jdk.internal.loader.ClassLoaders$AppClassLoader.ucp accessible: module java.base does not "opens jdk.internal.loader" to unnamed module
+             *
+             * 这里如果不使用Platform.doPrivileged 则必须在启动Jvm时添加 --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
+             */
+            URL[] urlArr = Platform.doPrivileged(ClassLoader.class, new PrivilegedAction<URL[]>()
+            {
+                @Override
+                public URL[] run()
+                        throws Exception
+                {
+                    Field field = classLoader.getClass().getDeclaredField("ucp");
+                    field.setAccessible(true);
+                    Object ucp = field.get(classLoader);
+                    Method method = ucp.getClass().getDeclaredMethod("getURLs");
+                    method.setAccessible(true);
+                    return (URL[]) method.invoke(ucp);
+                }
+            });
+
             System.out.println();
             urls.addAll(urlArr);
         }

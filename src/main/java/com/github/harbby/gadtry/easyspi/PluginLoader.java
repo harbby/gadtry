@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public final class PluginLoader<T>
@@ -101,7 +101,7 @@ public final class PluginLoader<T>
             }
         }
         catch (Exception e) {
-            throwsException(e);  //module reload failed
+            throwsThrowable(e);  //module reload failed
         }
     }
 

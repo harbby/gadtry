@@ -20,7 +20,7 @@ import com.github.harbby.gadtry.function.exception.Consumer;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public interface Closeables<T>
         extends AutoCloseable, Serializable
@@ -62,7 +62,7 @@ public interface Closeables<T>
                         runnable.apply(instance);
                     }
                     catch (Exception e) {
-                        throwsException(e);
+                        throwsThrowable(e);
                     }
                 }
             }
@@ -82,7 +82,7 @@ public interface Closeables<T>
                 runnable.close();
             }
             catch (Exception e) {
-                throwsException(e);
+                throwsThrowable(e);
             }
         };
     }

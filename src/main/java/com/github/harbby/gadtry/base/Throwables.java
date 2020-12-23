@@ -84,7 +84,7 @@ public class Throwables
             runnable.apply();
         }
         catch (Exception e) {
-            throwsException(e);
+            throwsThrowable(e);
         }
     }
 
@@ -94,20 +94,8 @@ public class Throwables
             return callable.call();
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
-    }
-
-    public static <T extends Exception> void throwsException(Class<T> clazz)
-            throws T
-    {}
-
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <T extends Exception> RuntimeException throwsException(Exception e)
-            throws T
-    {
-        throw (T) e;
     }
 
     @SuppressWarnings("unchecked")

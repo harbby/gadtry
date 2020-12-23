@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 class InternalContext
@@ -86,7 +85,7 @@ class InternalContext
             throw throwsThrowable(e.getTargetException());
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 

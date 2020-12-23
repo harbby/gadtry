@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public interface Pointcut
 {
@@ -39,7 +39,7 @@ public interface Pointcut
                         return (Method) field.get(null);
                     }
                     catch (IllegalAccessException e) {
-                        throw throwsException(e);
+                        throw throwsThrowable(e);
                     }
                 })
                 .filter(this::methodFilter)

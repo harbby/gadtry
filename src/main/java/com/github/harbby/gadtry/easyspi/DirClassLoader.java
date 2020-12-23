@@ -24,7 +24,7 @@ import java.text.DateFormat;
 import java.util.Date;
 
 import static com.github.harbby.gadtry.base.MoreObjects.firstNonNull;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class DirClassLoader
         extends URLClassLoader
@@ -74,7 +74,7 @@ public class DirClassLoader
             this.addURL(jarfile.toURI().toURL());
         }
         catch (MalformedURLException e) {
-            throwsException(e);
+            throwsThrowable(e);
         }
     }
 

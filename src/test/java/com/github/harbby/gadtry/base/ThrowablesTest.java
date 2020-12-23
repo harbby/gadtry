@@ -25,7 +25,6 @@ import java.net.URL;
 import java.sql.SQLException;
 
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class ThrowablesTest
@@ -42,7 +41,7 @@ public class ThrowablesTest
                 }
             });
             Assert.fail();
-            Throwables.throwsException(MalformedURLException.class);
+            Throwables.throwsThrowable(MalformedURLException.class);
         }
         catch (MalformedURLException ignored) {
         }
@@ -52,7 +51,7 @@ public class ThrowablesTest
                 throw new MalformedURLException();
             });
             Assert.fail();
-            Throwables.throwsException(MalformedURLException.class);
+            Throwables.throwsThrowable(MalformedURLException.class);
         }
         catch (MalformedURLException ignored) {
         }
@@ -62,7 +61,7 @@ public class ThrowablesTest
     public void testThrowsException1()
     {
         try {
-            throwsException(new IOException("IO_test"));
+            Throwables.throwsThrowable(new IOException("IO_test"));
             Assert.fail();
         }
         catch (Exception e) {
@@ -91,7 +90,7 @@ public class ThrowablesTest
             URL url = new URL("file:");
         }
         catch (IOException e) {
-            throwsException(e);
+            Throwables.throwsThrowable(e);
         }
 
         try {
@@ -99,7 +98,7 @@ public class ThrowablesTest
                 URL url = new URL("/harbby");
             }
             catch (IOException e) {
-                throwsException(e);
+                Throwables.throwsThrowable(e);
             }
             Assert.fail();
         }
@@ -113,7 +112,7 @@ public class ThrowablesTest
             throws IOException
     {
         //强制 抛出IOException个异常
-        throwsException(IOException.class);
+        Throwables.throwsThrowable(IOException.class);
     }
 
     @Test

@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class ObjectInputStreamProxy
         extends java.io.ObjectInputStream
@@ -91,7 +91,7 @@ public class ObjectInputStreamProxy
             return primClasses;
         }
         catch (NoSuchFieldException | IllegalAccessException e) {
-            throw throwsException(e);  //"Not compatible with java version"
+            throw throwsThrowable(e);  //"Not compatible with java version"
         }
     }
 

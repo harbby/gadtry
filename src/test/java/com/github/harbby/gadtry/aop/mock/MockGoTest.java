@@ -90,7 +90,7 @@ public class MockGoTest
         try {
             proxy.get(0);
             Assert.fail();
-            Throwables.throwsException(IOException.class);
+            Throwables.throwsThrowable(IOException.class);
         }
         catch (IOException e) {
             Assert.assertEquals(e.getMessage(), "mockDoThrow");

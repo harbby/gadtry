@@ -33,7 +33,6 @@ import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -93,62 +92,51 @@ public final class Platform
 
     public static void registerForClean(AutoCloseable closeable)
     {
-        Method createMethod = cleanerCreateMethod.get();
-        try {
-            createMethod.invoke(null, closeable, (Runnable) () -> {
-                try {
-                    closeable.close();
-                }
-                catch (Exception e) {
-                    throwException(e);
-                }
-            });
-        }
-        catch (InvocationTargetException | IllegalAccessException e) {
-            throwException(e);
-        }
-    }
-
-    public static int[] getInts(long address, int count)
-    {
-        int[] values = new int[count];
-        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, count << 2);
-        return values;
-    }
-
-    public static void getInts(long address, int[] values, int count)
-    {
-        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, count << 2);
-    }
-
-    public static void putInts(long address, int[] values)
-    {
-        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, values.length << 2);
-    }
-
-    public static void putInts(long address, int[] values, int count)
-    {
-        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, count << 2);
-    }
-
-    private static final Supplier<Method> cleanerCreateMethod = Lazys.goLazy(() -> {
-        try {
-            Method createMethod;
+        createCleaner(closeable, (Runnable) () -> {
             try {
-                createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+                closeable.close();
             }
-            catch (ClassNotFoundException e) {
-                //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
-                createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+            catch (Exception e) {
+                throwException(e);
             }
+        });
+    }
+
+    /**
+     * Creates a new cleaner.
+     *
+     * @param ob    the referent object to be cleaned
+     * @param thunk The cleanup code to be run when the cleaner is invoked.  The
+     *              cleanup code is run directly from the reference-handler thread,
+     *              so it should be as simple and straightforward as possible.
+     * @return The new cleaner
+     */
+    public static Object createCleaner(Object ob, Runnable thunk)
+    {
+        try {
+            Method createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
             createMethod.setAccessible(true);
-            return createMethod;
+            return createMethod.invoke(null, ob, thunk);
         }
-        catch (ClassNotFoundException | NoSuchMethodException e) {
+        catch (ClassNotFoundException | NoSuchMethodException ignored) {
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
             throwException(e);
         }
-        throw new IllegalStateException("unchecked");
-    });
+        //jdk9+
+        //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+        return Platform.doPrivileged(ByteBuffer.class, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+                    throws Exception
+            {
+                Method createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
+                createMethod.setAccessible(true);
+                return createMethod.invoke(null, ob, thunk);
+            }
+        });
+    }
 
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineClass(byte[] classBytes, ClassLoader classLoader)
@@ -160,6 +148,44 @@ public final class Platform
         }
         catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e1) {
             throwException(e1);
+        }
+        throw new IllegalStateException("unchecked");
+    }
+
+    /**
+     * 这个方法在jdk9+上运行时 打印非法反射warring警告
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
+    {
+        final ProtectionDomain defaultDomain =
+                new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
+                        null, classLoader, null);
+
+        try {
+            Method method = Unsafe.class.getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
+            return (Class<T>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+        }
+        catch (NoSuchMethodException e) {
+            //jdk9+
+            return doPrivileged(Unsafe.class, new PrivilegedAction<Class<T>>()
+            {
+                @Override
+                public Class<T> run()
+                        throws Exception
+                {
+                    Object theInternalUnsafe = Class.forName("jdk.internal.misc.Unsafe")
+                            .getMethod("getUnsafe")
+                            .invoke(null);
+
+                    return (Class<T>) Class.forName("jdk.internal.misc.Unsafe").getMethod("defineClass",
+                            String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
+                            .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+                }
+            });
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+            throwException(e);
         }
         throw new IllegalStateException("unchecked");
     }
@@ -224,43 +250,13 @@ public final class Platform
     }
 
     /**
-     * 这个方法在jdk9+上运行时 不会抛出异常和非法反射warring警告
+     * 创建匿名内部类
+     *
+     * @param hostClass  宿主类
+     * @param classBytes 内部类的字节码
+     * @param cpPatches  cpPatches
+     * @return 创建并加载的内部类，注意该类只能访问bootClassLoader中的系统类,无法访问任何用户类
      */
-    @SuppressWarnings("unchecked")
-    public static <T> Class<T> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
-    {
-        final ProtectionDomain defaultDomain =
-                new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
-                        null, classLoader, null);
-
-        try {
-            Method method = Unsafe.class.getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
-            return (Class<T>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
-        }
-        catch (NoSuchMethodException e) {
-            //jdk9+
-            return doPrivileged(Unsafe.class, new PrivilegedAction<Class<T>>()
-            {
-                @Override
-                public Class<T> run()
-                        throws Exception
-                {
-                    Object theInternalUnsafe = Class.forName("jdk.internal.misc.Unsafe")
-                            .getMethod("getUnsafe")
-                            .invoke(null);
-
-                    return (Class<T>) Class.forName("jdk.internal.misc.Unsafe").getMethod("defineClass",
-                            String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
-                            .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
-                }
-            });
-        }
-        catch (IllegalAccessException | InvocationTargetException e) {
-            throwException(e);
-        }
-        throw new IllegalStateException("unchecked");
-    }
-
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineAnonymousClass(Class<?> hostClass, byte[] classBytes, Object[] cpPatches)
     {
@@ -293,8 +289,7 @@ public final class Platform
             cleanerField.setAccessible(true);
             long memory = unsafe.allocateMemory(size);
             ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
-            Method createMethod = cleanerCreateMethod.get();
-            Object cleaner = createMethod.invoke(null, buffer, (Runnable) () -> unsafe.freeMemory(memory));
+            Object cleaner = createCleaner(buffer, (Runnable) () -> unsafe.freeMemory(memory));
             //Cleaner cleaner = Cleaner.create(buffer, () -> _UNSAFE.freeMemory(memory));
             cleanerField.set(buffer, cleaner);
             return buffer;

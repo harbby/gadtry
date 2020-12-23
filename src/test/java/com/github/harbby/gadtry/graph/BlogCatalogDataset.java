@@ -16,16 +16,16 @@
 package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.collection.MutableSet;
+import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.nio.cs.StreamDecoder;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -34,9 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author : http://socialcomputing.asu.edu/datasets/BlogCatalog
@@ -211,9 +209,8 @@ public class BlogCatalogDataset
     {
         private final FileInputStream inputStream;
         private final BufferedReader reader;
-        private final FileChannel channel;
 
-        private String line;
+        private Tuple1<String> line = new Tuple1<>(null);
 
         public FileCloseableIterator(File path, int buffSize)
                 throws IOException
@@ -225,28 +222,26 @@ public class BlogCatalogDataset
                 throws IOException
         {
             this.inputStream = new FileInputStream(path.toFile());
-            this.channel = inputStream.getChannel();
-            StreamDecoder streamDecoder = StreamDecoder.forDecoder(channel, UTF_8.newDecoder(), buffSize);
-            this.reader = new BufferedReader(streamDecoder);
-            this.line = reader.readLine();
+            this.reader = new BufferedReader(new InputStreamReader(inputStream));
+            line.f1 = reader.readLine();
         }
 
         @Override
         public boolean hasNext()
         {
-            return line != null;
+            return line.f1 != null;
         }
 
         @Override
         public String next()
         {
-            String old = line;
+            String old = line.f1;
             try {
-                line = reader.readLine();
+                line.f1 = reader.readLine();
                 return old;
             }
             catch (IOException e) {
-                throw throwsException(e);
+                throw throwsThrowable(e);
             }
         }
 
@@ -256,9 +251,6 @@ public class BlogCatalogDataset
         {
             if (reader != null) {
                 reader.close();
-            }
-            if (channel != null) {
-                channel.close();
             }
             if (inputStream != null) {
                 inputStream.close();

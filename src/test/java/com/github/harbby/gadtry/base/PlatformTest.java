@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.memory;
+package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.base.Closeables;
-import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.collection.offheap.OffHeapIntArray;
 import com.github.harbby.gadtry.function.PrivilegedAction;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -57,29 +56,6 @@ public class PlatformTest
     }
 
     @Test
-    public void putIntsTest()
-    {
-        int[] arr = new int[] {1, 2, 3, 4, 5};
-        long intArr = unsafe.allocateMemory(10 << 2);
-        Platform.putInts(intArr, arr);
-        Assert.assertArrayEquals(Platform.getInts(intArr, 5), arr);
-        //--------------------
-        int[] arr2 = new int[3];
-        Platform.getInts(intArr, arr2, 2);
-        Assert.assertArrayEquals(arr2, new int[] {1, 2, 0});
-    }
-
-    @Test
-    public void putCountInts()
-    {
-        long intArr = Platform.allocateMemory(10 << 2);
-        Platform.putInts(intArr, new int[] {1, 1, 1, 1, 1, 1});
-        int[] arr = new int[] {1, 2, 3, 4, 5};
-        Platform.putInts(intArr, arr, 3);
-        Assert.assertArrayEquals(Platform.getInts(intArr, 5), new int[] {1, 2, 3, 1, 1});
-    }
-
-    @Test
     public void reallocateMemory()
     {
         long address = unsafe.allocateMemory(1024);
@@ -104,7 +80,7 @@ public class PlatformTest
     {
         ClassPool classPool = new ClassPool(true);
         CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
-        ctClass.setName("com.github.harbby.gadtry.memory.TestDomeDefineClass");
+        ctClass.setName(PlatformTest.class.getName() + "$TestDomeDefineClass");
         byte[] bytes = ctClass.toBytecode();
 
         Class<?> newClass = Platform.defineClass(bytes, ClassLoader.getSystemClassLoader());
@@ -145,7 +121,7 @@ public class PlatformTest
     {
         ClassPool classPool = new ClassPool(true);
         CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
-        ctClass.setName("com.github.harbby.gadtry.memory.TestDomeDefineClassByUnsafe");
+        ctClass.setName(PlatformTest.class.getName() + "$TestDomeDefineClassByUnsafe");
         byte[] bytes = ctClass.toBytecode();
 
         Class<?> newClass = Platform.defineClassByUnsafe(bytes, ClassLoader.getSystemClassLoader());
