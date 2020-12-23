@@ -34,8 +34,6 @@ public abstract class ImmutableList<E>
         extends AbstractList<E>
         implements List<E>
 {
-    private ImmutableList() {}
-
     private static final List<?> EMPTY = new ImmutableArrayList<>(new Object[0]);
 
     public static <T> List<T> copy(Iterable<? extends T> iterable)
