@@ -99,6 +99,7 @@ public class JVMLaunchersTest
             urls.addAll(urlArr);
         }
         else {
+            //jdk9+
             /*
              * Unable to make field final jdk.internal.loader.URLClassPath
              * jdk.internal.loader.ClassLoaders$AppClassLoader.ucp accessible: module java.base does not "opens jdk.internal.loader" to unnamed module

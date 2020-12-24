@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.7.3-SNAPSHOT"  //SNAPSHOT
+version = "1.8.0-SNAPSHOT"  //SNAPSHOT
 
 def jdk = project.hasProperty('jdk') ? project.jdk : 'java8'  //or java11  use -Pjdk=java8
 //def jdk = System.getProperty("jdk") ?: "java8"  //or java11   use -Djdk=java8
@@ -17,13 +17,13 @@ apply from: "profile-${jdk}.gradle"
 sourceSets {
   main {
     resources {
-      srcDirs = ["src/main/resources", "src/main/profile/$jdk"]
+      srcDirs += ["src/main/resources", "src/main/profile/$jdk"]
     }
   }
 
   test {
     java {
-      srcDirs = ['src/test/java', "src/test/$jdk"]
+      srcDirs += ['src/test/java', "src/test/$jdk"]
     }
   }
 }

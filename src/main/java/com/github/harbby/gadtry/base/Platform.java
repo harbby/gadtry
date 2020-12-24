@@ -27,12 +27,17 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -132,9 +137,9 @@ public final class Platform
             public Object run()
                     throws Exception
             {
-                Method createMethod = Class.forName("jdk.internal.ref.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
-                createMethod.setAccessible(true);
-                return createMethod.invoke(null, ob, thunk);
+                return Class.forName("jdk.internal.ref.Cleaner")
+                        .getMethod("create", Object.class, Runnable.class)
+                        .invoke(null, ob, thunk);
             }
         });
     }
@@ -201,53 +206,104 @@ public final class Platform
      * 1: 目前存在action不能依赖任何用户类,否则会throw java.lang.NoClassDefFoundError
      * 2: 不支持java8 lambda
      *
-     * @param privilegedClass action将获取privilegedClass的权限
-     * @param action          希望特权运行的code
+     * @param hostClass action将获取hostClass的权限
+     * @param action    希望特权运行的code
      * @throws java.lang.NoClassDefFoundError user dep class
      */
     @SuppressWarnings("unchecked")
-    public static <T> T doPrivileged(Class<?> privilegedClass, PrivilegedAction<T> action)
+    public static <T> T doPrivileged(Class<?> hostClass, PrivilegedAction<T> action)
     {
         try {
-            ClassPool classPool = new ClassPool(true);
-            CtClass ctClass = classPool.getCtClass(action.getClass().getName());
-
-            ctClass.setName(privilegedClass.getName());
-            ctClass.setModifiers(Modifier.setPublic(ctClass.getModifiers())); // set Modifier.PUBLIC
-            ctClass.setSuperclass(classPool.getCtClass(Object.class.getName()));
-
             Map<String, Object> fieldValues = new HashMap<>();
             for (Field f : action.getClass().getDeclaredFields()) {
                 f.setAccessible(true);
                 fieldValues.put(f.getName(), f.get(action));
             }
 
-            ClassLoader bootClassLoader = ClassLoaders.getBootstrapClassLoader();
-            for (CtField ctField : ctClass.getDeclaredFields()) {
-                if (ctField.getFieldInfo().getName().startsWith("this$0")) {
-                    ctField.setType(classPool.getCtClass(Object.class.getName()));
-                }
-                //check class is system jdk
-                CtClass checkType = ctField.getType();
-                while (checkType.isArray()) {
-                    checkType = ctField.getType().getComponentType();
-                }
-
-                checkState(checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null);
-                ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
-            }
-            Class<?> poxyCLass = unsafe.defineAnonymousClass(privilegedClass, ctClass.toBytecode(), new Object[0]);
-            Object ins = Platform.allocateInstance(poxyCLass);
-            for (Field f : poxyCLass.getFields()) {
-                f.setAccessible(true);
-                f.set(ins, fieldValues.get(f.getName()));
-            }
-            return (T) poxyCLass.getMethod("run").invoke(ins);
+            Object ins = definePrivilegedClass(hostClass, action, fieldValues);
+            return (T) ins.getClass().getMethod("run").invoke(ins);
         }
         catch (Exception e) {
             throwException(e);
             throw new IllegalStateException("unchecked");
         }
+    }
+
+    public static <T> T doPrivileged(Class<T> jInterface, T action)
+            throws Exception
+    {
+        checkState(jInterface.isInterface(), "jInterface must is java interface");
+        checkState(!action.getClass().isInterface(), "not support lambda");
+        checkState(Arrays.stream(jInterface.getDeclaredMethods()).noneMatch(Method::isDefault), "not support Interface default Method");
+
+        Map<Optional<Privilege>, List<Method>> groups = Arrays.stream(jInterface.getDeclaredMethods())
+                .collect(Collectors.groupingBy(k -> Optional.ofNullable(k.getAnnotation(Privilege.class))));
+        Map<String, Object> fieldValues = new HashMap<>();
+        for (Field f : action.getClass().getDeclaredFields()) {
+            f.setAccessible(true);
+            fieldValues.put(f.getName(), f.get(action));
+        }
+
+        final Map<Method, Object> privileged = new HashMap<>();
+        for (Map.Entry<Optional<Privilege>, List<Method>> entry : groups.entrySet()) {
+            Privilege ann = entry.getKey().orElse(jInterface.getAnnotation(Privilege.class));
+            if (ann == null) {
+                // warring
+                entry.getValue().forEach(m -> privileged.put(m, action));
+                continue;
+            }
+            Class<?> host = ann.value();
+            Object instance = definePrivilegedClass(host, action, fieldValues);
+            entry.getValue().forEach(m -> privileged.put(m, instance));
+        }
+
+        @SuppressWarnings("unchecked")
+        T proxy = (T) Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[] {jInterface}, (proxy1, method, args) -> {
+            Object instance = privileged.get(method);
+            try {
+                return instance.getClass().getMethod(method.getName(), method.getParameterTypes()).invoke(instance, args);
+            }
+            catch (InvocationTargetException e) {
+                throw e.getTargetException();
+            }
+        });
+        return proxy;
+    }
+
+    private static <T> Object definePrivilegedClass(Class<?> hostClass, T action, Map<String, Object> actionFieldValues)
+            throws Exception
+    {
+        ClassPool classPool = new ClassPool(true);
+
+        CtClass ctClass = classPool.getCtClass(action.getClass().getName());
+        ctClass.setName(hostClass.getName());
+        ctClass.setModifiers(Modifier.setPublic(ctClass.getModifiers())); // set Modifier.PUBLIC
+
+        ctClass.setSuperclass(classPool.getCtClass(Object.class.getName()));
+        ctClass.setInterfaces(new CtClass[0]);
+
+        ClassLoader bootClassLoader = ClassLoaders.getBootstrapClassLoader();
+        for (CtField ctField : ctClass.getDeclaredFields()) {
+            if (ctField.getFieldInfo().getName().startsWith("this$0")) {
+                ctField.setType(classPool.getCtClass(Object.class.getName()));
+            }
+            //check class is system jdk
+            CtClass checkType = ctField.getType();
+            while (checkType.isArray()) {
+                checkType = ctField.getType().getComponentType();
+            }
+
+            checkState(checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null);
+            ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
+        }
+        //---init
+        Class<?> anonymousClass = unsafe.defineAnonymousClass(hostClass, ctClass.toBytecode(), new Object[0]);
+        Object instance = Platform.allocateInstance(anonymousClass);
+        for (Field f : instance.getClass().getFields()) {
+            f.setAccessible(true);
+            f.set(instance, actionFieldValues.get(f.getName()));
+        }
+        return instance;
     }
 
     /**

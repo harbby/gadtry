@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.PrivilegedAction;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -24,10 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 /**
@@ -87,31 +83,6 @@ public class PlatformTest
 
         newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);
         Assert.assertNotNull(newClass);
-    }
-
-    @Test
-    public void doPrivilegedTest()
-            throws Exception
-    {
-        String log = "hello;";
-        OutputStream out = Platform.doPrivileged(FilterOutputStream.class, new PrivilegedAction<OutputStream>()
-        {
-            @Override
-            public OutputStream run()
-            {
-                System.out.println(log);
-                try {
-                    Field field = FilterOutputStream.class.getDeclaredField("out");
-                    field.setAccessible(true);
-                    return (OutputStream) field.get(System.out);
-                }
-                catch (Exception e) {
-                    unsafe.throwException(e);
-                    throw new IllegalStateException("unchecked");
-                }
-            }
-        });
-        Assert.assertNotNull(out);
     }
 
     @Test
