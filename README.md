@@ -11,7 +11,7 @@ Contains: ioc. aop. mock. exec. graph ...
 <dependency>
   <groupId>com.github.harbby</groupId>
   <artifactId>gadtry</artifactId>
-  <version>1.7.1</version>
+  <version>1.8.1</version>
 </dependency>
 ```
 
