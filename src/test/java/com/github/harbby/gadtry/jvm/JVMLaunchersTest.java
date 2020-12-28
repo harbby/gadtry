@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableMap;
-import com.github.harbby.gadtry.function.PrivilegedAction;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -106,23 +105,19 @@ public class JVMLaunchersTest
              *
              * 这里如果不使用Platform.doPrivileged 则必须在启动Jvm时添加 --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
              */
-            URL[] urlArr = Platform.doPrivileged(ClassLoader.class, new PrivilegedAction<URL[]>()
-            {
-                @Override
-                public URL[] run()
-                        throws Exception
-                {
-                    Field field = classLoader.getClass().getDeclaredField("ucp");
-                    field.setAccessible(true);
-                    Object ucp = field.get(classLoader);
-                    Method method = ucp.getClass().getDeclaredMethod("getURLs");
-                    method.setAccessible(true);
-                    return (URL[]) method.invoke(ucp);
-                }
-            });
-
-            System.out.println();
-            urls.addAll(urlArr);
+            Platform.addOpenJavaModules(classLoader.getClass(), JVMLaunchersTest.class);
+            try {
+                Field field = classLoader.getClass().getDeclaredField("ucp");
+                field.setAccessible(true);
+                Object ucp = field.get(classLoader);
+                Method method = ucp.getClass().getDeclaredMethod("getURLs");
+                method.setAccessible(true);
+                URL[] urlArr = (URL[]) method.invoke(ucp);
+                urls.addAll(urlArr);
+            }
+            catch (Exception e) {
+                throw new UnsupportedOperationException(e);
+            }
         }
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()

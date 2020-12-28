@@ -28,5 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 public @interface Privilege
 {
-    Class<?> value();
+    Class<?>[] value() default {};
+
+    String[] classString() default {};
 }

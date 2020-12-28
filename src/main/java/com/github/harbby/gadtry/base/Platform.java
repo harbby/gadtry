@@ -15,29 +15,26 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.PrivilegedAction;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.Modifier;
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -131,17 +128,16 @@ public final class Platform
         }
         //jdk9+
         //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
-        return Platform.doPrivileged(ByteBuffer.class, new PrivilegedAction<Object>()
-        {
-            @Override
-            public Object run()
-                    throws Exception
-            {
-                return Class.forName("jdk.internal.ref.Cleaner")
-                        .getMethod("create", Object.class, Runnable.class)
-                        .invoke(null, ob, thunk);
-            }
-        });
+        try {
+            Class<?> cleanerCLass = Class.forName("jdk.internal.ref.Cleaner");
+            addOpenJavaModules(cleanerCLass, Platform.class);
+            return cleanerCLass
+                    .getMethod("create", Object.class, Runnable.class)
+                    .invoke(null, ob, thunk);
+        }
+        catch (Exception e) {
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -158,37 +154,30 @@ public final class Platform
         throw new IllegalStateException("unchecked");
     }
 
-    /**
-     * 这个方法在jdk9+上运行时 打印非法反射warring警告
-     */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
     {
         final ProtectionDomain defaultDomain =
                 new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
                         null, classLoader, null);
-
         try {
             Method method = Unsafe.class.getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
             return (Class<T>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
         }
         catch (NoSuchMethodException e) {
             //jdk9+
-            return doPrivileged(Unsafe.class, new PrivilegedAction<Class<T>>()
-            {
-                @Override
-                public Class<T> run()
-                        throws Exception
-                {
-                    Object theInternalUnsafe = Class.forName("jdk.internal.misc.Unsafe")
-                            .getMethod("getUnsafe")
-                            .invoke(null);
-
-                    return (Class<T>) Class.forName("jdk.internal.misc.Unsafe").getMethod("defineClass",
-                            String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
-                            .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
-                }
-            });
+            try {
+                Class<?> aClass = Class.forName("jdk.internal.misc.Unsafe");
+                //add-opens aClass Module to Platform.class
+                addOpenJavaModules(aClass, Platform.class);
+                Object theInternalUnsafe = aClass.getMethod("getUnsafe").invoke(null);
+                return (Class<T>) aClass.getMethod("defineClass",
+                        String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
+                        .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+            }
+            catch (Exception e1) {
+                throw new IllegalStateException(e1);
+            }
         }
         catch (IllegalAccessException | InvocationTargetException e) {
             throwException(e);
@@ -197,8 +186,17 @@ public final class Platform
     }
 
     /**
-     * 这是一个魔术方法，他可以帮我们轻松绕开jdk9模块化引入的访问限制:
-     * 具体有两大类功能:
+     * java8 52
+     * java11 55
+     * java15 59
+     */
+    public static int getVmClassVersion()
+    {
+        return (int) Float.parseFloat(System.getProperty("java.class.version"));
+    }
+
+    /**
+     * 帮我们轻松绕开jdk9模块化引入的访问限制:
      * 1. 非法反射访问警告消除
      * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过他我们可以访问任何jdk限制的内部代码
      * <p>
@@ -206,86 +204,77 @@ public final class Platform
      * 1: 目前存在action不能依赖任何用户类,否则会throw java.lang.NoClassDefFoundError
      * 2: 不支持java8 lambda
      *
-     * @param hostClass action将获取hostClass的权限
-     * @param action    希望特权运行的code
+     * @param hostClass   action将获取hostClass的权限
+     * @param targetClass 希望获取权限的类
      * @throws java.lang.NoClassDefFoundError user dep class
+     * @since jdk9+
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T doPrivileged(Class<?> hostClass, PrivilegedAction<T> action)
+    public static void addOpenJavaModules(Class<?> hostClass, Class<?> targetClass)
     {
+        checkState(getVmClassVersion() > 52, "This method can only run above Jdk9+");
         try {
-            Map<String, Object> fieldValues = new HashMap<>();
-            for (Field f : action.getClass().getDeclaredFields()) {
-                f.setAccessible(true);
-                fieldValues.put(f.getName(), f.get(action));
-            }
+            Method getModule = Class.class.getMethod("getModule");
+            Class<?> mouleClass = getModule.getReturnType();
+            Method getPackageName = Class.class.getMethod("getPackageName");
+            Method addOpens = mouleClass.getMethod("addOpens", String.class, mouleClass);
+            Method isOpenMethod = mouleClass.getMethod("isOpen", String.class, mouleClass);
+            //---------------------
+            boolean isNamed = (boolean) mouleClass.getMethod("isNamed").invoke(getModule.invoke(targetClass));
+            checkState(!isNamed, "targetClass " + targetClass + " must UNNAMED moule");
+            //----------------------
+            Object hostModule = getModule.invoke(hostClass);
+            String hostPackageName = (String) getPackageName.invoke(hostClass);
 
-            Object ins = definePrivilegedClass(hostClass, action, fieldValues);
-            return (T) ins.getClass().getMethod("run").invoke(ins);
+            Object actionModule = getModule.invoke(targetClass);
+            boolean isOpen = (boolean) isOpenMethod.invoke(hostModule, hostPackageName, actionModule);
+            if (isOpen) {
+                addOpens.invoke(hostModule, hostPackageName, actionModule);
+            }
+            else {
+                addOpens.invoke(getModule.invoke(mouleClass), (String) getPackageName.invoke(mouleClass), getModule.invoke(Platform.class));
+                Method method = mouleClass.getDeclaredMethod("implAddExportsOrOpens", String.class, mouleClass, boolean.class, boolean.class);
+                method.setAccessible(true);
+                //--add-opens=java.base/$hostPackageName=ALL-UNNAMED
+                method.invoke(hostModule, hostPackageName, actionModule, /*open*/true, /*syncVM*/true);
+            }
         }
-        catch (Exception e) {
+        catch (NoSuchMethodException e) {
+            throw new UnsupportedOperationException(e);
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
             throwException(e);
-            throw new IllegalStateException("unchecked");
         }
     }
 
-    public static <T> T doPrivileged(Class<T> jInterface, T action)
+    /**
+     * @forRemoval = true
+     * @since = "jdk15"
+     */
+    public static Object defineAnonymousClass(Class<?> hostClass, Object action)
             throws Exception
     {
-        checkState(jInterface.isInterface(), "jInterface must is java interface");
-        checkState(!action.getClass().isInterface(), "not support lambda");
-        checkState(Arrays.stream(jInterface.getDeclaredMethods()).noneMatch(Method::isDefault), "not support Interface default Method");
-
-        Map<Optional<Privilege>, List<Method>> groups = Arrays.stream(jInterface.getDeclaredMethods())
-                .collect(Collectors.groupingBy(k -> Optional.ofNullable(k.getAnnotation(Privilege.class))));
-        Map<String, Object> fieldValues = new HashMap<>();
+        Map<String, Object> actionFieldValues = new HashMap<>();
         for (Field f : action.getClass().getDeclaredFields()) {
             f.setAccessible(true);
-            fieldValues.put(f.getName(), f.get(action));
+            actionFieldValues.put(f.getName(), f.get(action));
         }
 
-        final Map<Method, Object> privileged = new HashMap<>();
-        for (Map.Entry<Optional<Privilege>, List<Method>> entry : groups.entrySet()) {
-            Privilege ann = entry.getKey().orElse(jInterface.getAnnotation(Privilege.class));
-            if (ann == null) {
-                // warring
-                entry.getValue().forEach(m -> privileged.put(m, action));
-                continue;
-            }
-            Class<?> host = ann.value();
-            Object instance = definePrivilegedClass(host, action, fieldValues);
-            entry.getValue().forEach(m -> privileged.put(m, instance));
-        }
-
-        @SuppressWarnings("unchecked")
-        T proxy = (T) Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[] {jInterface}, (proxy1, method, args) -> {
-            Object instance = privileged.get(method);
-            try {
-                return instance.getClass().getMethod(method.getName(), method.getParameterTypes()).invoke(instance, args);
-            }
-            catch (InvocationTargetException e) {
-                throw e.getTargetException();
-            }
-        });
-        return proxy;
-    }
-
-    private static <T> Object definePrivilegedClass(Class<?> hostClass, T action, Map<String, Object> actionFieldValues)
-            throws Exception
-    {
         ClassPool classPool = new ClassPool(true);
-
         CtClass ctClass = classPool.getCtClass(action.getClass().getName());
-        ctClass.setName(hostClass.getName());
-        ctClass.setModifiers(Modifier.setPublic(ctClass.getModifiers())); // set Modifier.PUBLIC
+        ctClass.setName(hostClass.getName() + "$");
 
+        ctClass.setModifiers(Modifier.setPublic(ctClass.getModifiers())); // set Modifier.PUBLIC
         ctClass.setSuperclass(classPool.getCtClass(Object.class.getName()));
         ctClass.setInterfaces(new CtClass[0]);
+        for (CtConstructor c : ctClass.getConstructors()) {
+            ctClass.removeConstructor(c);
+        }
 
         ClassLoader bootClassLoader = ClassLoaders.getBootstrapClassLoader();
         for (CtField ctField : ctClass.getDeclaredFields()) {
             if (ctField.getFieldInfo().getName().startsWith("this$0")) {
-                ctField.setType(classPool.getCtClass(Object.class.getName()));
+                ctClass.removeField(ctField);
+                continue;
             }
             //check class is system jdk
             CtClass checkType = ctField.getType();
@@ -295,9 +284,12 @@ public final class Platform
 
             checkState(checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null);
             ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
+            if (Modifier.isFinal(ctField.getModifiers())) {
+                ctField.setModifiers(ctField.getModifiers() & (~Modifier.FINAL));
+            }
         }
         //---init
-        Class<?> anonymousClass = unsafe.defineAnonymousClass(hostClass, ctClass.toBytecode(), new Object[0]);
+        Class<?> anonymousClass = Platform.defineAnonymousClass(hostClass, ctClass.toBytecode(), new Object[0]);
         Object instance = Platform.allocateInstance(anonymousClass);
         for (Field f : instance.getClass().getFields()) {
             f.setAccessible(true);
@@ -312,12 +304,37 @@ public final class Platform
      * @param hostClass  宿主类
      * @param classBytes 内部类的字节码
      * @param cpPatches  cpPatches
-     * @return 创建并加载的内部类，注意该类只能访问bootClassLoader中的系统类,无法访问任何用户类
+     * @return 创建并加载的匿名类，注意该类只能访问bootClassLoader中的系统类,无法访问任何用户类,该类会获得hostClass的访问域
      */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> defineAnonymousClass(Class<?> hostClass, byte[] classBytes, Object[] cpPatches)
     {
-        return (Class<T>) unsafe.defineAnonymousClass(hostClass, classBytes, cpPatches);
+        try {
+            return (Class<T>) Unsafe.class.getMethod("defineAnonymousClass", Class.class, byte[].class, Object[].class)
+                    .invoke(unsafe, hostClass, classBytes, cpPatches);
+        }
+        catch (NoSuchMethodException ignored) {
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+            throw new UnsupportedOperationException(e);
+        }
+        //jdk15+
+        checkState(getVmClassVersion() >= 59, "This method can only run above Jdk15+");
+        try {
+            Platform.addOpenJavaModules(MethodHandles.Lookup.class, Platform.class);
+            Constructor constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
+            constructor.setAccessible(true);
+            MethodHandles.Lookup lookup = (MethodHandles.Lookup) constructor.newInstance(hostClass);
+
+            Object options = Array.newInstance(Class.forName(MethodHandles.Lookup.class.getName() + "$ClassOption"), 0);
+            lookup = (MethodHandles.Lookup) MethodHandles.Lookup.class.getMethod("defineHiddenClass", byte[].class, boolean.class, options.getClass())
+                    .invoke(lookup, classBytes, true, options);
+            Class<?> nClasss = lookup.lookupClass();
+            return (Class<T>) nClasss;
+        }
+        catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static long reallocateMemory(long address, long oldSize, long newSize)
