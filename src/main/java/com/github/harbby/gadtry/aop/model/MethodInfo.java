@@ -24,6 +24,8 @@ import java.util.Map;
 
 public interface MethodInfo
 {
+    Method getMethod();
+
     String getName();
 
     Class<?> getReturnType();
@@ -50,6 +52,12 @@ public interface MethodInfo
     {
         return new MethodInfo()
         {
+            @Override
+            public Method getMethod()
+            {
+                return method;
+            }
+
             @Override
             public String getName()
             {

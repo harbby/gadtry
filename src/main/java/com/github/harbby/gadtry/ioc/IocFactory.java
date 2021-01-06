@@ -55,18 +55,4 @@ public interface IocFactory
         BindMapping bindMapping = BindMapping.create(beans);
         return new IocFactoryImpl(bindMapping, beans);
     }
-
-    public interface ReplaceHandler
-    {
-        <T> T replace(Class<T> key, T instance);
-
-        static final ReplaceHandler INSTANCE = new ReplaceHandler()
-        {
-            @Override
-            public <T> T replace(Class<T> key, T instance)
-            {
-                return instance;
-            }
-        };
-    }
 }

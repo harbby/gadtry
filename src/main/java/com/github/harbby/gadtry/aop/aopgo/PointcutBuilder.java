@@ -93,6 +93,12 @@ public class PointcutBuilder<T>
         return this;
     }
 
+    public PointcutBuilder<T> methodName(String... names)
+    {
+        filters.add(method -> Stream.of(names).anyMatch(x -> method.getName().equals(x)));
+        return this;
+    }
+
     public void allMethod()
     {
     }

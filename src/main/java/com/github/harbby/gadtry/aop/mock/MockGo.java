@@ -22,6 +22,7 @@ import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.exception.Function;
 
@@ -37,7 +38,11 @@ import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
  */
 public class MockGo
 {
-    static final ThreadLocal<Tuple2<Object, Method>> LAST_MOCK_BY_WHEN_METHOD = new ThreadLocal<>();
+    /**
+     * ThreadLocal容器性能较差,降低代理函数调用性能
+     * 且这个容器只会在when().then()场景有用．因此不再考虑并发when().then()
+     */
+    static final Tuple1<Tuple2<Object, Method>> LAST_MOCK_BY_WHEN_METHOD = new Tuple1<>(null);
 
     private MockGo() {}
 
@@ -156,7 +161,7 @@ public class MockGo
         public WhenThenBuilder()
         {
             this.lastWhenMethod = LAST_MOCK_BY_WHEN_METHOD.get();
-            LAST_MOCK_BY_WHEN_METHOD.remove();
+            LAST_MOCK_BY_WHEN_METHOD.set(null);
             if (lastWhenMethod == null) {
                 throw new MockGoException("when(...) does not select any Method\n" +
                         "Example of: \n" +

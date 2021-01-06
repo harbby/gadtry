@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.serialize;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.base.Serializables;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,12 +34,14 @@ public class AopFactorySerializeTest
     public void beforeSerializeTest0()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .whereMethod(methodInfo -> true)
-                .before(methodInfo -> {
-                    System.out.println("beforeSerializeTest1");
-                });
+                .aop(binder -> {
+                    binder.doBefore(methodInfo -> {
+                        System.out.println("beforeSerializeTest1");
+                    }).whereMethod(methodInfo -> true);
+                })
+                .build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -49,11 +51,14 @@ public class AopFactorySerializeTest
     public void beforeSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .before(methodInfo -> {
-                    System.out.println("beforeSerializeTest1");
-                });
+                .aop(binder -> {
+                    binder.doBefore(methodInfo -> {
+                        System.out.println("beforeSerializeTest1");
+                    }).allMethod();
+                })
+                .build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -63,11 +68,14 @@ public class AopFactorySerializeTest
     public void beforeSerializeTest2()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .before(methodInfo -> {
-                    System.out.println(methodInfo);
-                });
+                .aop(binder -> {
+                    binder.doBefore(methodInfo -> {
+                        System.out.println(methodInfo);
+                    }).allMethod();
+                })
+                .build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -77,11 +85,14 @@ public class AopFactorySerializeTest
     public void afterReturningSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .afterReturning(methodInfo -> {
-                    System.out.println("afterReturningSerializeTest1");
-                });
+                .aop(binder -> {
+                    binder.doAfterReturning(methodInfo -> {
+                        System.out.println("afterReturningSerializeTest1");
+                    }).allMethod();
+                })
+                .build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -91,11 +102,14 @@ public class AopFactorySerializeTest
     public void afterThrowingSerializeTest2()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .afterThrowing(methodInfo -> {
-                    System.out.println(methodInfo);
-                });
+                .aop(binder -> {
+                    binder.doAfterThrowing(methodInfo -> {
+                        System.out.println(methodInfo);
+                    }).allMethod();
+                })
+                .build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -105,11 +119,14 @@ public class AopFactorySerializeTest
     public void aroundSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .around(proxyContext -> {
-                    return proxyContext.proceed();
-                });
+                .aop(binder -> {
+                    binder.doAround(proxyContext -> {
+                        return proxyContext.proceed();
+                    }).allMethod();
+                })
+                .build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -119,13 +136,15 @@ public class AopFactorySerializeTest
     public void aroundSerializeTest2()
             throws Exception
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .around(proxyContext -> {
-                    Object value = proxyContext.proceed();
-                    System.out.println(value);
-                    return value;
-                });
+                .aop(binder -> {
+                    binder.doAround(proxyContext -> {
+                        Object value = proxyContext.proceed();
+                        System.out.println(value);
+                        return value;
+                    }).allMethod();
+                }).build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -135,11 +154,13 @@ public class AopFactorySerializeTest
     public void afterSerializeTest1()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .after(methodInfo -> {
-                    System.out.println("afterSerializeTest1");
-                });
+                .aop(binder -> {
+                    binder.doAfter(methodInfo -> {
+                        System.out.println("afterSerializeTest1");
+                    }).allMethod();
+                }).build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);
@@ -149,11 +170,13 @@ public class AopFactorySerializeTest
     public void afterSerializeTest2()
             throws IOException, ClassNotFoundException
     {
-        Function<String, Integer> proxy = AopFactory.proxy(Function.class)
+        Function<String, Integer> proxy = AopGo.proxy(Function.class)
                 .byInstance(function)
-                .after(methodInfo -> {
-                    System.out.println(methodInfo);
-                });
+                .aop(binder -> {
+                    binder.doAfter(methodInfo -> {
+                        System.out.println(methodInfo);
+                    }).allMethod();
+                }).build();
 
         byte[] bytes = Serializables.serialize((Serializable) proxy);
         Assert.assertTrue(Serializables.byteToObject(bytes) instanceof Function);

@@ -15,13 +15,18 @@
  */
 package com.github.harbby.gadtry;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopBinder;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.aop.Aspect;
+import com.github.harbby.gadtry.aop.aopgo.MockBinder;
+import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.BindMapping;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.ioc.IocFactoryImpl;
+import com.github.harbby.gadtry.ioc.IocHandler;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class GadTry
@@ -36,22 +41,17 @@ public class GadTry
     public static class Builder
     {
         private Bean[] beans;
-        private AopFactory aopFactory;
+        private Aspect[] aspects;
 
         public Builder(Bean... beans)
         {
             this.beans = beans;
         }
 
-        public Builder aop(AopFactory aopFactory)
-        {
-            this.aopFactory = aopFactory;
-            return this;
-        }
-
         public Builder aop(Aspect... aspects)
         {
-            return this.aop(AopFactory.create(aspects));
+            this.aspects = aspects;
+            return this;
         }
 
         public Builder setConfigurationProperties(Map<String, Object> config)
@@ -61,12 +61,33 @@ public class GadTry
 
         public IocFactory initialize()
         {
-            IocFactory.ReplaceHandler handler = new IocFactory.ReplaceHandler()
+            Map<Class<?>, Object> pointcutMap = new HashMap<>();
+            AopBinder binder0 = new AopBinder()
             {
                 @Override
-                public <T> T replace(Class<T> key, T instance)
+                public <T> PointBuilder<T> bind(Class<T> inputClass)
                 {
-                    return aopFactory.proxy(key, instance);
+                    return binder -> pointcutMap.put(inputClass, binder);
+                }
+            };
+            for (Aspect aspect : aspects) {
+                aspect.register(binder0);
+            }
+
+            IocHandler handler = new IocHandler()
+            {
+                @Override
+                public <T> T onCreate(Class<T> key, T instance)
+                {
+                    @SuppressWarnings("unchecked")
+                    Consumer<MockBinder<T>, Throwable> pointcut = (Consumer<MockBinder<T>, Throwable>) pointcutMap.get(key);
+                    if (pointcut == null) {
+                        return instance;
+                    }
+                    return AopGo.proxy(key)
+                            .byInstance(instance)
+                            .aop(pointcut)
+                            .build();
                 }
             };
             BindMapping bindMapping = BindMapping.create(handler, beans);

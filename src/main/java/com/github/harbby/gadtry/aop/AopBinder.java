@@ -15,22 +15,20 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.model.After;
-import com.github.harbby.gadtry.aop.model.AfterReturning;
-import com.github.harbby.gadtry.aop.model.AfterThrowing;
-import com.github.harbby.gadtry.aop.model.Before;
+import com.github.harbby.gadtry.aop.aopgo.MockBinder;
 import com.github.harbby.gadtry.function.exception.Consumer;
-import com.github.harbby.gadtry.function.exception.Function;
 
-public interface CutMode<T>
+public interface AopBinder
 {
-    public T around(Function<JoinPoint, Object, Throwable> runnable);
+    /**
+     * Define a pointcut
+     *
+     * @return LocationOrClass
+     */
+    public abstract <T> PointBuilder<T> bind(Class<T> inputClass);
 
-    public T before(Consumer<Before, Exception> runnable);
-
-    public T afterReturning(Consumer<AfterReturning, Exception> runnable);
-
-    public T after(Consumer<After, Exception> runnable);
-
-    public T afterThrowing(Consumer<AfterThrowing, Exception> runnable);
+    public interface PointBuilder<T>
+    {
+        public void aop(Consumer<MockBinder<T>, Throwable> binder);
+    }
 }

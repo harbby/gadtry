@@ -17,5 +17,5 @@ package com.github.harbby.gadtry.aop;
 
 public interface Aspect
 {
-    public void register(Binder binder);
+    public void register(AopBinder binder);
 }
