@@ -11,7 +11,7 @@ Contains: ioc. aop. mock. exec. graph ...
 <dependency>
   <groupId>com.github.harbby</groupId>
   <artifactId>gadtry</artifactId>
-  <version>1.7.1</version>
+  <version>1.8.3</version>
 </dependency>
 ```
 
@@ -45,55 +45,52 @@ public class TestInject
 ```
 
 ## Aop
-Does not rely on ioc containers:
+support concentric ring model
 ```
-T proxy = AopFactory.proxy(Class<T>)
-    .byInstance(instance)
-    .returnType(void.class, Boolean.class)
-    //.methodAnnotated(Setter.class)
-    .around(proxyContext -> {
-            String name = proxyContext.getInfo().getName();
-            System.out.println(name);
-            Object value = proxyContext.proceed();
-            switch (name) {
-                case "add":
-                    Assert.assertEquals(true, value);  //Set or List
-                    break;
-                case "size":
-                    Assert.assertTrue(value instanceof Integer);
-                    break;
-            }
-            return value;
+List<String> actions = new ArrayList<>();
+Set set = AopGo.proxy(Set.class)
+        .byInstance(new HashSet<>())
+        .aop(binder -> {
+            binder.doBefore(before -> {
+                actions.add("before1");
+            }).when().size();
+            binder.doAround(cut -> {
+                actions.add("before2");
+                int value = (int) cut.proceed() + 1;
+                actions.add("before3");
+                return value;
+            }).whereMethod(method -> method.getName().startsWith("size"));
+            binder.doBefore(before -> {
+                actions.add("before4");
+            }).when().size();
+        })
+        .build();
+Assert.assertEquals(set.size(), 1);
+Assert.assertEquals(MutableList.of("before1", "before2", "before4", "before3"), actions);
+```
+can also be combined with ioc container
+```
+IocFactory iocFactory = GadTry.create(binder -> {
+    binder.bind(Map.class).byCreator(HashMap::new).withSingle();
+    binder.bind(HashSet.class).by(HashSet.class).withSingle();
+}).aop(binder -> {
+    binder.bind(HashSet.class).aop(binder1 -> {
+        binder1.doAfter(methodInfo -> {
+            System.out.println("after2");
+        }).whereMethod(methodInfo -> methodInfo.getName().startsWith("add"));
+        binder1.doBefore((info) -> {
+            Assert.assertEquals("add", info.getName());
+            System.out.println("before1");
+        }).methodName("add");
     });
-```
-Dependent on ioc container:
-```
-        IocFactory iocFactory = GadTry.create(binder -> {
-            binder.bind(Map.class).byCreator(HashMap::new).withSingle();
-            binder.bind(HashSet.class).by(HashSet.class).withSingle();
-        }).aop(binder -> {
-            binder.bind("point1")
-                    .withPackage("com.github.harbby")
-                    //.subclassOf(Map.class)
-                    //.classAnnotated(Service.class)
-                    .classes(HashMap.class, HashSet.class)
-                    .whereMethod(methodInfo -> methodInfo.getName().startsWith("add"))
-                    .build()
-                    .before((info) -> {
-                        Assert.assertEquals("add", info.getName());
-                        System.out.println("before1");
-                    })
-                    .after(() -> {
-                        Assert.assertTrue(true);
-                        System.out.println("after2");
-                    });
-        }).initialize();
+}).setConfigurationProperties(MutableMap.of())
+        .initialize();
 
-        Set set = iocFactory.getInstance(HashSet.class);
+Set set = iocFactory.getInstance(HashSet.class);
 ```
 
 ## Multiprocessing Exec Fork New Jvm
-Throw the task to the child process
+Throw the task to the child process, 
 ```
 JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
     .setCallable(() -> {
@@ -101,6 +98,7 @@ JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
         System.out.println("************ runing your task ***************");
         return 1;
     })
+    .setName("set this jvm jps name")   //set fork jvm jps name
     .setEnvironment("TestEnv", envValue)  //set Fork Jvm Env
     .addUserjars(Collections.emptyList())
     .setXms("16m")
@@ -110,18 +108,6 @@ JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
 
 Integer out = launcher.startAndGet();
 Assert.assertEquals(out.intValue(), 1);
-```
-* Async Api:
-```
-VmFuture<Integer> vmFuture = launcher.startAsync();
-VmFuture<Integer> vmFuture = launcher.startAsync(()->{
-    ...
-    return 0;
-});
-int pid = vmFuture.getPid();  //get pid
-vmFuture.isRunning();
-vmFuture.cancel();
-vmFuture.get() and vmFuture.get(3, TimeUnit.SECONDS);  //block get
 ```
 
 ## Graph

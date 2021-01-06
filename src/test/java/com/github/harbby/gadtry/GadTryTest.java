@@ -38,13 +38,12 @@ public class GadTryTest
         }).aop(binder -> {
             binder.bind(HashSet.class).aop(binder1 -> {
                 binder1.doAfter(methodInfo -> {
-                    Assert.assertTrue(true);
                     System.out.println("after2");
                 }).whereMethod(methodInfo -> methodInfo.getName().startsWith("add"));
                 binder1.doBefore((info) -> {
                     Assert.assertEquals("add", info.getName());
                     System.out.println("before1");
-                }).whereMethod(methodInfo -> methodInfo.getName().startsWith("add"));
+                }).methodName("add");
             });
         }).setConfigurationProperties(MutableMap.of())
                 .initialize();
