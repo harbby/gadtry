@@ -71,7 +71,6 @@ public class AopInvocationHandler
             Method method = entry.getKey();
             String methodName = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
-            //Class<?> methodClass = method.getDeclaringClass();
 
             Function<JoinPoint, Object, Throwable> value = entry.getValue();
             mappings.add(new Tuple3<>(methodName, parameterTypes, value));
@@ -89,6 +88,7 @@ public class AopInvocationHandler
             throw new MockGoException("Gadtry aopGo proxy object serializable failed. proxyClass is null");
         }
         //--------------------------------
+        @SuppressWarnings("unchecked")
         List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>> mockMethodLoader =
                 (List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>>) in.readObject();
         for (Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>> tp : mockMethodLoader) {
@@ -184,7 +184,7 @@ public class AopInvocationHandler
     {
         LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
         try {
-            //method.setAccessible(true);  //todo: 如果未来需要默认开启所有访问权限时。设置此处为 true 即可
+            //method.setAccessible(true);  //如果需要默认开启所有访问权限时。设置为true
             return this.handler.invoke(proxy, method, args);
         }
         catch (InvocationTargetException e) {

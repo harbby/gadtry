@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.easyspi;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -75,7 +75,7 @@ public class PluginLoaderTest
         catch (ClassNotFoundException ignored) {
         }
 
-        moduleClassLoader.loadClass(AopFactory.class.getName());
+        moduleClassLoader.loadClass(AopGo.class.getName());
         moduleClassLoader.loadClass(AtomicInteger.class.getName());
         Assert.assertTrue(Driver.class.isAssignableFrom(moduleClassLoader.loadClass("org.h2.Driver")));
 

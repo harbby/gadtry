@@ -13,28 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop.v1;
+package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.aop.model.ClassInfo;
-import com.github.harbby.gadtry.function.Function1;
-
-import java.lang.annotation.Annotation;
-
-public interface ClassFilter<T>
+public interface IocHandler
 {
-    public T withPackage(String packageName);
+    <T> T onCreate(Class<T> key, T instance);
 
-    public T classAnnotated(Class<? extends Annotation>... classAnnotations);
-
-    public T classes(Class<?>... inputClass);
-
-    /**
-     * or
-     *
-     * @param subclasses sub class
-     * @return FilterBuilder
-     */
-    public T subclassOf(Class<?>... subclasses);
-
-    public T whereClass(Function1<ClassInfo, Boolean> whereClass);
+    static final IocHandler NO_AOP_HANDLER = new IocHandler()
+    {
+        @Override
+        public <T> T onCreate(Class<T> key, T instance)
+        {
+            return instance;
+        }
+    };
 }

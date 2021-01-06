@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -56,12 +56,12 @@ public class BindMappingTest
     @Test
     public void createGiveKeyAndInstance()
     {
-        BindMapping bindMapping = BindMapping.create(new IocFactory.ReplaceHandler()
+        BindMapping bindMapping = BindMapping.create(new IocHandler()
         {
             @Override
-            public <T> T replace(Class<T> key, T instance)
+            public <T> T onCreate(Class<T> key, T instance)
             {
-                return AopFactory.proxy(key).byInstance(instance).before(a -> {});
+                return AopGo.proxy(key).byInstance(instance).aop(biner-> biner.doBefore(a-> {})).build();
             }
         }, binder -> binder.bind(Map.class, new HashMap()));
         Assert.assertEquals(bindMapping.getAllBeans().size(), 1);
@@ -71,12 +71,12 @@ public class BindMappingTest
     @Test
     public void createGiveKeyByInstance()
     {
-        BindMapping bindMapping = BindMapping.create(new IocFactory.ReplaceHandler()
+        BindMapping bindMapping = BindMapping.create(new IocHandler()
         {
             @Override
-            public <T> T replace(Class<T> key, T instance)
+            public <T> T onCreate(Class<T> key, T instance)
             {
-                return AopFactory.proxy(key).byInstance(instance).before(a -> {});
+                return AopGo.proxy(key).byInstance(instance).aop(biner-> biner.doBefore(a-> {})).build();
             }
         }, binder -> binder.bind(Map.class).byInstance(new HashMap()));
         Assert.assertEquals(bindMapping.get(Map.class).get(), new HashMap());

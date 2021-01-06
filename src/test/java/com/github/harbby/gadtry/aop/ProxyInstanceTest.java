@@ -44,13 +44,14 @@ public class ProxyInstanceTest
     public void proxyAfterReturningTest()
     {
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
-        AopFactoryTest supplier = AopFactory.proxy(AopFactoryTest.class)
-                .byInstance(new AopFactoryTest())
-                .methodAnnotated(Ignore.class)
-                .afterReturning(methodInfo -> {
-                    atomicBoolean.set(true);
-                    Assert.assertEquals(methodInfo.getName(), "get");
-                });
+        ProxyInstanceTest supplier = AopGo.proxy(ProxyInstanceTest.class)
+                .byInstance(new ProxyInstanceTest())
+                .aop(binder -> {
+                    binder.doAfterReturning(methodInfo -> {
+                        atomicBoolean.set(true);
+                        Assert.assertEquals(methodInfo.getName(), "get");
+                    }).annotated(Ignore.class);
+                }).build();
 
         Assert.assertEquals(supplier.get(), "hello");
         Assert.assertTrue(atomicBoolean.get());
@@ -67,9 +68,11 @@ public class ProxyInstanceTest
                 .add(String.class)
                 .build();
 
-        Set set = AopFactory.proxy(Set.class).byInstance(new HashSet<String>())
-                .returnType(allTypes.toArray(new Class[0]))
-                .before(methodInfo -> {});
+        Set set = AopGo.proxy(Set.class).byInstance(new HashSet<String>())
+                .aop(binder -> {
+                    binder.doBefore(methodInfo -> {}).returnType(allTypes.toArray(new Class[0]));
+                })
+                .build();
         Assert.assertTrue(set.isEmpty());
     }
 
@@ -77,24 +80,26 @@ public class ProxyInstanceTest
     public void jdkPropyTest()
     {
         List<String> actions = new ArrayList<>();
-        Set set = AopFactory.proxy(Set.class).byInstance(new HashSet<String>())
-                .returnType(void.class, Boolean.class)
-                //.methodAnnotated(Override.class, Override.class)
-                .around(proxyContext -> {
-                    String name = proxyContext.getName();
-                    actions.add(name);
-                    System.out.println("around: " + name);
-                    Object value = proxyContext.proceed();
-                    switch (name) {
-                        case "add":
-                            Assert.assertEquals(true, value);  //Set or List
-                            break;
-                        case "size":
-                            Assert.assertTrue(value instanceof Integer);
-                            break;
-                    }
-                    return value;
-                });
+        Set set = AopGo.proxy(Set.class).byInstance(new HashSet<String>())
+                .aop(binder -> {
+                    binder.doAround(proxyContext -> {
+                        String name = proxyContext.getName();
+                        actions.add(name);
+                        System.out.println("around: " + name);
+                        Object value = proxyContext.proceed();
+                        switch (name) {
+                            case "add":
+                                Assert.assertEquals(true, value);  //Set or List
+                                break;
+                            case "size":
+                                Assert.assertTrue(value instanceof Integer);
+                                break;
+                        }
+                        return value;
+                    }).returnType(void.class, Boolean.class);
+                    //.methodAnnotated(Override.class, Override.class)
+                }).build();
+
         set.clear();
         set.add("t1");
         Assert.assertEquals(1, set.size());
@@ -105,13 +110,14 @@ public class ProxyInstanceTest
     public void noJdkPropyTest()
     {
         List<String> actions = new ArrayList<>();
-        Set set = AopFactory.proxy(HashSet.class).byInstance(new HashSet<String>())
-                .returnType(void.class, Boolean.class)
-                //.methodAnnotated(Override.class, Override.class)
-                .after(methodInfo -> {
-                    String name = methodInfo.getName();
-                    actions.add(name);
-                });
+        Set set = AopGo.proxy(HashSet.class).byInstance(new HashSet<String>())
+                .aop(binder -> {
+                    binder.doAfter(methodInfo -> {
+                        String name = methodInfo.getName();
+                        actions.add(name);
+                    }).returnType(void.class, Boolean.class);
+                    //.methodAnnotated(Override.class, Override.class)
+                }).build();
         set.clear();
         set.add("t1");
         Assert.assertEquals(1, set.size());

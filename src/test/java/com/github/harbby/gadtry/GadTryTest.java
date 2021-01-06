@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.collection.MutableMap;
 import com.github.harbby.gadtry.ioc.IocFactory;
@@ -36,21 +36,16 @@ public class GadTryTest
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();
             binder.bind(HashSet.class).by(HashSet.class).withSingle();
         }).aop(binder -> {
-            binder.bind("point1")
-                    .withPackage("com.github.harbby")
-                    //.subclassOf(Map.class)
-                    .classAnnotated()
-                    .classes(HashMap.class, HashSet.class)
-                    .whereMethod(methodInfo -> methodInfo.getName().startsWith("add"))
-                    .build()
-                    .before((info) -> {
-                        Assert.assertEquals("add", info.getName());
-                        System.out.println("before1");
-                    })
-                    .after(methodInfo -> {
-                        Assert.assertTrue(true);
-                        System.out.println("after2");
-                    });
+            binder.bind(HashSet.class).aop(binder1 -> {
+                binder1.doAfter(methodInfo -> {
+                    Assert.assertTrue(true);
+                    System.out.println("after2");
+                }).whereMethod(methodInfo -> methodInfo.getName().startsWith("add"));
+                binder1.doBefore((info) -> {
+                    Assert.assertEquals("add", info.getName());
+                    System.out.println("before1");
+                }).whereMethod(methodInfo -> methodInfo.getName().startsWith("add"));
+            });
         }).setConfigurationProperties(MutableMap.of())
                 .initialize();
 
@@ -65,11 +60,14 @@ public class GadTryTest
     public void testConcurrent10()
     {
         Streams.range(10).parallel().forEach(x -> {
-            Set set = AopFactory.proxy(HashSet.class).byInstance(new HashSet<String>())
-                    .returnType(void.class, Boolean.class)
-                    .after(after -> {
-                        String name = after.getName();
-                    });
+            Set set = AopGo.proxy(HashSet.class).byInstance(new HashSet<String>())
+                    .aop(binder -> {
+                        binder.doAfter(after -> {
+                            String name = after.getName();
+                            System.out.println(name);
+                        }).returnType(void.class, Boolean.class);
+                    }).build();
+            set.clear();
         });
     }
 }

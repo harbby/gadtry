@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.io;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.base.Platform;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,16 +46,18 @@ public class IOUtilsTest
             throws IOException, InstantiationException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = AopFactory.proxy(PrintStream.class)
+        PrintStream printStream = AopGo.proxy(PrintStream.class)
                 .byInstance(Platform.allocateInstance(PrintStream.class))
-                .whereMethod(methodInfo -> methodInfo.getName().equals("write") &&
-                        Arrays.equals(methodInfo.getParameterTypes(),
-                                new Class[] {byte[].class, int.class, int.class}))
-                .around(proxyContext -> {
-                    byte[] buf = (byte[]) proxyContext.getArgs()[0];
-                    outputStream.write(buf, (int) proxyContext.getArgs()[1], (int) proxyContext.getArgs()[2]);
-                    return null;
-                });
+                .aop(binder -> {
+                    binder.doAround(proxyContext -> {
+                        byte[] buf = (byte[]) proxyContext.getArgs()[0];
+                        outputStream.write(buf, (int) proxyContext.getArgs()[1], (int) proxyContext.getArgs()[2]);
+                        return null;
+                    }).whereMethod(method -> method.getName().equals("write") &&
+                            Arrays.equals(method.getParameterTypes(),
+                                    new Class[] {byte[].class, int.class, int.class}));
+                })
+                .build();
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
             IOUtils.copyBytes(inputStream, printStream, 1024, false);
@@ -68,10 +70,13 @@ public class IOUtilsTest
             throws InstantiationException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = AopFactory.proxy(PrintStream.class)
+        PrintStream printStream = AopGo.proxy(PrintStream.class)
                 .byInstance(Platform.allocateInstance(PrintStream.class))
-                .whereMethod(methodInfo -> methodInfo.getName().equals("checkError"))
-                .around(proxyContext -> true);
+                .aop(binder -> {
+                    binder.doAround(proxyContext -> true)
+                            .whereMethod(methodInfo -> methodInfo.getName().equals("checkError"));
+                })
+                .build();
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
             IOUtils.copyBytes(inputStream, printStream, 1024, false);

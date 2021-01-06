@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
@@ -99,7 +99,7 @@ public class JavaTypesTest
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
         Assert.assertTrue(JavaTypes.isClassType(type));
-        Assert.assertFalse(JavaTypes.isClassType(AopFactory.proxy(Type.class).byInstance(String.class).before(a -> {})));
+        Assert.assertFalse(JavaTypes.isClassType(AopGo.proxy(Type.class).byInstance(String.class).aop(biner -> biner.doBefore(a -> {})).build()));
         Assert.assertTrue(JavaTypes.isClassType(String.class));
     }
 
@@ -121,7 +121,7 @@ public class JavaTypesTest
         Assert.assertEquals(JavaTypes.typeToClass(arrayType), List[].class);
 
         try {
-            JavaTypes.typeToClass(AopFactory.proxy(Type.class).byInstance(String.class).before(a -> {}));
+            JavaTypes.typeToClass(AopGo.proxy(Type.class).byInstance(String.class).aop(biner -> biner.doBefore(a -> {})).build());
             Assert.fail();
         }
         catch (IllegalArgumentException e) {

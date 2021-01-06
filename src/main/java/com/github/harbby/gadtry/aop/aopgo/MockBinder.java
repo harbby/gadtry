@@ -26,14 +26,13 @@ import com.github.harbby.gadtry.function.exception.Function;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class MockBinder<T>
 {
     private final AopInvocationHandler aopInvocationHandler;
     private final T proxy;
-    private final AtomicReference<PointcutBuilder<T>> last = new AtomicReference<>();
-    private final List<Aspect> aspects = new ArrayList<>();
+    private final List<PointcutBuilder<T>> aspects = new ArrayList<>();
 
     public MockBinder(T proxy, AopInvocationHandler aopInvocationHandler)
     {
@@ -61,30 +60,20 @@ public class MockBinder<T>
         return createMethodSelect(AroundHandler.doAfter(after));
     }
 
-    public PointcutBuilder<T> doAround(Function<JoinPoint, Object, Throwable> aroundContext)
+    public PointcutBuilder<T> doAround(AroundHandler aroundContext)
     {
         return createMethodSelect(aroundContext);
     }
 
-    private void flush()
-    {
-        if (last.get() != null) {
-            Aspect aspect = last.get().build();
-            aspects.add(aspect);
-        }
-    }
-
     List<Aspect> build()
     {
-        this.flush();
-        return aspects;
+        return aspects.stream().map(PointcutBuilder::build).collect(Collectors.toList());
     }
 
     private PointcutBuilder<T> createMethodSelect(Function<JoinPoint, Object, Throwable> function)
     {
-        this.flush();
         PointcutBuilder<T> pointcutBuilder = new PointcutBuilder<T>(aopInvocationHandler, proxy, function);
-        last.set(pointcutBuilder);
+        aspects.add(pointcutBuilder);
         return pointcutBuilder;
     }
 }
