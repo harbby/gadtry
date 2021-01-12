@@ -58,7 +58,7 @@ public class MockGo
         }
     }
 
-    public static <T> T spy(Class<T> superclass, T target)
+    private static <T> T spy(Class<T> superclass, T target)
     {
         AopInvocationHandler aopInvocationHandler = new AopInvocationHandler(target);
         ProxyRequest<T> request = ProxyRequest.builder(superclass)

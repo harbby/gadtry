@@ -60,7 +60,7 @@ public class MockGoAnnotations
             Spy spy = field.getAnnotation(Spy.class);
             if (spy != null) {
                 Object value = field.get(instance);
-                Object m = MockGo.spy((Class<Object>) field.getType(), value);
+                Object m = MockGo.spy(value);
                 field.set(instance, m);
                 Bean bean = binder -> binder.bind((Class<Object>) field.getType(), m);
                 beans.add(bean);

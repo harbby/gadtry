@@ -61,7 +61,7 @@ public class MockGoTest
         List<String> proxy = MockGo.spy(MutableList.of("1", "2", "3"));
         spyListChecks(proxy);
 
-        List<String> proxy1 = MockGo.spy(JavaTypes.classTag(List.class), MutableList.of("1", "2", "3"));
+        List<String> proxy1 = MockGo.spy(MutableList.of("1", "2", "3"));
         spyListChecks(proxy1);
 
         List<String> proxy3 = MockGo.spy(JavaTypes.classTag(ArrayList.class));
