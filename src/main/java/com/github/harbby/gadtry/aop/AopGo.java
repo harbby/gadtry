@@ -23,7 +23,6 @@ import com.github.harbby.gadtry.aop.model.AfterReturning;
 import com.github.harbby.gadtry.aop.model.AfterThrowing;
 import com.github.harbby.gadtry.aop.model.Before;
 import com.github.harbby.gadtry.function.exception.Consumer;
-import com.github.harbby.gadtry.function.exception.Function;
 
 public class AopGo
 {
@@ -49,7 +48,7 @@ public class AopGo
         return doAround(AroundHandler.doBefore(before));
     }
 
-    public static MockGo.DoBuilder doAround(Function<JoinPoint, Object, Throwable> function)
+    public static MockGo.DoBuilder doAround(AroundHandler function)
     {
         return MockGo.doAround(function);
     }

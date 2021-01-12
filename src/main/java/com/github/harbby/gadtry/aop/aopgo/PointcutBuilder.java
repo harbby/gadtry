@@ -27,25 +27,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.harbby.gadtry.aop.impl.Proxy.getInvocationHandler;
+
 /**
  * Method Selector
  */
 public class PointcutBuilder<T>
 {
-    private final AopInvocationHandler aopInvocationHandler;
     private final T proxy;
     private final Function<JoinPoint, Object, Throwable> function;
     protected final List<Function1<Method, Boolean>> filters = new ArrayList<>();
 
     public PointcutBuilder(AopInvocationHandler aopInvocationHandler, T proxy, Function<JoinPoint, Object, Throwable> function)
     {
-        this.aopInvocationHandler = aopInvocationHandler;
         this.proxy = proxy;
         this.function = function;
     }
 
     public T when()
     {
+        AopInvocationHandler aopInvocationHandler = getInvocationHandler(proxy);
         aopInvocationHandler.setHandler((proxy, method, args) -> {
             filters.add(method1 -> method1 == method);
             aopInvocationHandler.initHandler();

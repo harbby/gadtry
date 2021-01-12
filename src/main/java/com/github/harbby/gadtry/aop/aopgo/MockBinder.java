@@ -30,13 +30,11 @@ import java.util.stream.Collectors;
 
 public class MockBinder<T>
 {
-    private final AopInvocationHandler aopInvocationHandler;
     private final T proxy;
     private final List<PointcutBuilder<T>> aspects = new ArrayList<>();
 
-    public MockBinder(T proxy, AopInvocationHandler aopInvocationHandler)
+    public MockBinder(T proxy)
     {
-        this.aopInvocationHandler = aopInvocationHandler;
         this.proxy = proxy;
     }
 

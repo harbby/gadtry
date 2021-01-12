@@ -33,7 +33,8 @@ public class Arrays
     /**
      * @param arrayType String.class Integer.class ...
      * @param length    array length
-     * @return
+     * @param <T> type
+     * @return T array
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] createArray(Class<T> arrayType, int length)
@@ -50,7 +51,8 @@ public class Arrays
     /**
      * @param arrayType String.class Integer.class ...
      * @param length    array length
-     * @return
+     * @param <T> type
+     * @return T
      */
     @SuppressWarnings("unchecked")
     public static <T> T createPrimitiveArray(Class<?> arrayType, int length)
@@ -61,6 +63,7 @@ public class Arrays
     /**
      * @param arrayClass String[].class
      * @param length     array length
+     * @param <T> type
      * @return T[]
      */
     @SuppressWarnings("unchecked")
@@ -98,6 +101,7 @@ public class Arrays
      *
      * @param list       java list
      * @param arrayClass demo: Integer[].class  String[].class
+     * @param <T> type
      * @return T[]
      * @see Arrays#createArray(Class, int)
      */
@@ -114,6 +118,7 @@ public class Arrays
      *
      * @param list       java list
      * @param arrayClass demo: Integer[].class  String[].class
+     * @param <T> type
      * @return T[]
      * @see Arrays#createArray(Class, int)
      */
@@ -225,6 +230,8 @@ public class Arrays
     /**
      * @param first firstValue
      * @param rest  array
+     * @param type array type
+     * @param <T> type
      * @return merge array
      */
     public static <T> T[] asArray(T first, T[] rest, Class<T> type)

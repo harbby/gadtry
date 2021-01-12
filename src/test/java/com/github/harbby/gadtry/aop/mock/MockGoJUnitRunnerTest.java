@@ -31,7 +31,7 @@ public class MockGoJUnitRunnerTest
     private Map<String, Integer> map;
 
     @InjectMock
-    private MockAnnotationsTest.InjectMockClass injectMockClass;
+    private MockGoAnnotationsTest.InjectMockClass injectMockClass;
 
     @Test
     public void initMocks()

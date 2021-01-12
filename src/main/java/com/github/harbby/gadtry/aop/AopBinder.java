@@ -23,7 +23,9 @@ public interface AopBinder
     /**
      * Define a pointcut
      *
-     * @return LocationOrClass
+     * @param <T> type
+     * @param inputClass class
+     * @return handler
      */
     public abstract <T> PointBuilder<T> bind(Class<T> inputClass);
 

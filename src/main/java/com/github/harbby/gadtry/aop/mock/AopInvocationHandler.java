@@ -54,7 +54,7 @@ public class AopInvocationHandler
     /**
      * 因为 mockMethods对象中Method 不可序列化 导致不能使用常规Serializable方式进行序列化
      */
-    private final Map<Method, Function<JoinPoint, Object, Throwable>> mockMethods = new IdentityHashMap<>();
+    private final Map<Method, AroundHandler> mockMethods = new IdentityHashMap<>();
 
     @Override
     public void writeExternal(ObjectOutput out)
@@ -66,13 +66,13 @@ public class AopInvocationHandler
         out.writeObject(handler);
         out.writeObject(proxyClass);
         //-------------------------------
-        List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>> mappings = new ArrayList<>(mockMethods.size());
-        for (Map.Entry<Method, Function<JoinPoint, Object, Throwable>> entry : mockMethods.entrySet()) {
+        List<Tuple3<String, Class<?>[], AroundHandler>> mappings = new ArrayList<>(mockMethods.size());
+        for (Map.Entry<Method, AroundHandler> entry : mockMethods.entrySet()) {
             Method method = entry.getKey();
             String methodName = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
 
-            Function<JoinPoint, Object, Throwable> value = entry.getValue();
+            AroundHandler value = entry.getValue();
             mappings.add(new Tuple3<>(methodName, parameterTypes, value));
         }
         out.writeObject(mappings);
@@ -108,8 +108,7 @@ public class AopInvocationHandler
             Class<?>[] parameterTypes)
     {
         Method res = null;
-        for (int i = 0; i < methods.length; i++) {
-            Method m = methods[i];
+        for (Method m : methods) {
             if (m.getName().equals(name) &&
                     Arrays.deepEquals(parameterTypes, m.getParameterTypes()) &&
                     (res == null ||
@@ -173,7 +172,7 @@ public class AopInvocationHandler
     /**
      * WhenThen register
      */
-    public void register(Method method, Function<JoinPoint, Object, Throwable> advice)
+    public void register(Method method, AroundHandler advice)
     {
         mockMethods.put(method, advice);
     }

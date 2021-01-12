@@ -15,21 +15,17 @@
  */
 package com.github.harbby.gadtry.aop.mock;
 
-import com.github.harbby.gadtry.aop.JoinPoint;
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.aop.impl.JdkProxy;
+import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
 import com.github.harbby.gadtry.aop.impl.Proxy;
-import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
-import com.github.harbby.gadtry.function.exception.Function;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.aop.impl.Proxy.getInvocationHandler;
 import static com.github.harbby.gadtry.base.Strings.lowerFirst;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
@@ -92,7 +88,7 @@ public class MockGo
 
     public static void initMocks(Object testObject)
     {
-        MockAnnotations.initMocks(testObject);
+        MockGoAnnotations.initMocks(testObject);
     }
 
     public static DoBuilder doReturn(Object value)
@@ -113,28 +109,28 @@ public class MockGo
         });
     }
 
-    public static DoBuilder doAnswer(Function<JoinPoint, Object, Throwable> function)
+    public static DoBuilder doAnswer(AroundHandler function)
     {
         return doAround(function);
     }
 
-    public static DoBuilder doAround(Function<JoinPoint, Object, Throwable> function)
+    public static DoBuilder doAround(AroundHandler function)
     {
         return new DoBuilder(function);
     }
 
     public static class DoBuilder
     {
-        private final Function<JoinPoint, Object, Throwable> function;
+        private final AroundHandler function;
 
-        public DoBuilder(Function<JoinPoint, Object, Throwable> function)
+        public DoBuilder(AroundHandler function)
         {
             this.function = function;
         }
 
         public <T> T when(T instance)
         {
-            AopInvocationHandler aopInvocationHandler = getMockInvocationHandler(instance);
+            AopInvocationHandler aopInvocationHandler = getInvocationHandler(instance);
             aopInvocationHandler.setHandler((proxy, method, args) -> {
                 aopInvocationHandler.initHandler();
                 aopInvocationHandler.register(method, function);
@@ -174,7 +170,7 @@ public class MockGo
             bind(p -> value);
         }
 
-        public void thenAround(Function<JoinPoint, Object, Throwable> function)
+        public void thenAround(AroundHandler function)
         {
             bind(function);
         }
@@ -184,21 +180,10 @@ public class MockGo
             bind(f -> { throw e; });
         }
 
-        private void bind(Function<JoinPoint, Object, Throwable> pointcut)
+        private void bind(AroundHandler pointcut)
         {
-            AopInvocationHandler handler = getMockInvocationHandler(lastWhenMethod.f1());
+            AopInvocationHandler handler = getInvocationHandler(lastWhenMethod.f1());
             handler.register(lastWhenMethod.f2(), pointcut);
         }
-    }
-
-    private static AopInvocationHandler getMockInvocationHandler(Object instance)
-    {
-        if (JdkProxy.isProxyClass(instance.getClass())) {
-            return (AopInvocationHandler) JdkProxy.getInvocationHandler(instance);
-        }
-        ProxyHandler proxy = (ProxyHandler) instance;
-        InvocationHandler handler = proxy.getHandler();
-        checkState(handler instanceof AopInvocationHandler, "instance not mock proxy");
-        return (AopInvocationHandler) handler;
     }
 }

@@ -25,9 +25,9 @@ import java.util.List;
 import static com.github.harbby.gadtry.aop.mock.MockGo.mock;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
-public class MockAnnotations
+public class MockGoAnnotations
 {
-    private MockAnnotations() {}
+    private MockGoAnnotations() {}
 
     public static void initMocks(Object testObject)
     {
@@ -39,6 +39,7 @@ public class MockAnnotations
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void injectField(Object instance)
             throws Exception
     {
@@ -52,7 +53,16 @@ public class MockAnnotations
             if (mock != null) {
                 Object m = mock(field.getType());
                 field.set(instance, m);
-                Bean bean = binder -> binder.bind((Class<? super Object>) field.getType(), m);
+                Bean bean = binder -> binder.bind((Class<Object>) field.getType(), m);
+                beans.add(bean);
+            }
+
+            Spy spy = field.getAnnotation(Spy.class);
+            if (spy != null) {
+                Object value = field.get(instance);
+                Object m = MockGo.spy((Class<Object>) field.getType(), value);
+                field.set(instance, m);
+                Bean bean = binder -> binder.bind((Class<Object>) field.getType(), m);
                 beans.add(bean);
             }
 
@@ -62,7 +72,7 @@ public class MockAnnotations
             }
         }
 
-        IocFactory iocFactory = IocFactory.create(beans.toArray(new Bean[beans.size()]));
+        IocFactory iocFactory = IocFactory.create(beans.toArray(new Bean[0]));
         for (Field field : injectMocks) {
             field.setAccessible(true);
             field.set(instance, iocFactory.getInstance(field.getType()));

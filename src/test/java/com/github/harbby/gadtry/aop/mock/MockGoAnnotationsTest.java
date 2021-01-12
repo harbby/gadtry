@@ -22,7 +22,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-public class MockAnnotationsTest
+public class MockGoAnnotationsTest
 {
     @Mock
     private List<String> list;

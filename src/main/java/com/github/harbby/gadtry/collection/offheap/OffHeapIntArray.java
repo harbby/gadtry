@@ -26,7 +26,7 @@ public class OffHeapIntArray
 
     public OffHeapIntArray(int len)
     {
-        address = Platform.allocateMemory(len << 2);
+        address = Platform.allocateMemory((long) len << 2);
     }
 
     public long getAddress()
@@ -37,22 +37,22 @@ public class OffHeapIntArray
     public static int[] getInts(long address, int count)
     {
         int[] values = new int[count];
-        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, count << 2);
+        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, (long) count << 2);
         return values;
     }
 
     public static void getInts(long address, int[] values, int count)
     {
-        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, count << 2);
+        unsafe.copyMemory(null, address, values, Unsafe.ARRAY_INT_BASE_OFFSET, (long) count << 2);
     }
 
     public static void putInts(long address, int[] values)
     {
-        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, values.length << 2);
+        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, (long) values.length << 2);
     }
 
     public static void putInts(long address, int[] values, int count)
     {
-        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, count << 2);
+        unsafe.copyMemory(values, Unsafe.ARRAY_INT_BASE_OFFSET, null, address, (long) count << 2);
     }
 }

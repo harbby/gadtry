@@ -20,13 +20,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-@Target({FIELD, PARAMETER})  //add METHOD  PARAMETER
+@Target({FIELD})
 @Retention(RUNTIME)
 @Documented
-@Deprecated
 public @interface InjectMock
 {
 }
