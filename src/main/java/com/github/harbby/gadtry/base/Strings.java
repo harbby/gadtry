@@ -45,7 +45,9 @@ public class Strings
     }
 
     /**
-     * 字符串的首字母小写
+     * 将字符串的首字母小写
+     * @param oldStr old string
+     * @return string
      */
     public static String lowerFirst(String oldStr)
     {

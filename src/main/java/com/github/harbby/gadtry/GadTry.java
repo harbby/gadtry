@@ -18,8 +18,11 @@ package com.github.harbby.gadtry;
 import com.github.harbby.gadtry.aop.AopBinder;
 import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.aop.Aspect;
+import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.aopgo.MockBinder;
-import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.aop.impl.Proxy;
+import com.github.harbby.gadtry.aop.impl.ProxyHandler;
+import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.BindMapping;
 import com.github.harbby.gadtry.ioc.IocFactory;
@@ -28,6 +31,8 @@ import com.github.harbby.gadtry.ioc.IocHandler;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.github.harbby.gadtry.base.MoreObjects.nullElse;
 
 public class GadTry
 {
@@ -61,13 +66,23 @@ public class GadTry
 
         public IocFactory initialize()
         {
-            Map<Class<?>, Object> pointcutMap = new HashMap<>();
+            Map<Class<?>, MockBinder<?>> pointcutMap = new HashMap<>();
             AopBinder binder0 = new AopBinder()
             {
+                @SuppressWarnings("unchecked")
                 @Override
-                public <T> PointBuilder<T> bind(Class<T> inputClass)
+                public <T> MockBinder<T> bind(Class<T> superclass)
                 {
-                    return binder -> pointcutMap.put(inputClass, binder);
+                    return (MockBinder<T>) pointcutMap.computeIfAbsent(superclass, (k) -> {
+                        ClassLoader loader = nullElse(superclass.getClassLoader(), ProxyHandler.class.getClassLoader());
+                        final AopInvocationHandler aopInvocationHandler = new AopInvocationHandler();
+                        ProxyRequest<T> request = ProxyRequest.builder(superclass)
+                                .setInvocationHandler(aopInvocationHandler)
+                                .setClassLoader(loader)
+                                .build();
+                        T proxy = Proxy.proxy(request);
+                        return new MockBinder<>(proxy);
+                    });
                 }
             };
             for (Aspect aspect : aspects) {
@@ -80,13 +95,13 @@ public class GadTry
                 public <T> T onCreate(Class<T> key, T instance)
                 {
                     @SuppressWarnings("unchecked")
-                    Consumer<MockBinder<T>, Throwable> pointcut = (Consumer<MockBinder<T>, Throwable>) pointcutMap.get(key);
+                    MockBinder<T> pointcut = (MockBinder<T>) pointcutMap.get(key);
                     if (pointcut == null) {
                         return instance;
                     }
                     return AopGo.proxy(key)
                             .byInstance(instance)
-                            .aop(pointcut)
+                            .aop(binder0 -> MockBinder.copyWrite(pointcut, binder0))
                             .build();
                 }
             };

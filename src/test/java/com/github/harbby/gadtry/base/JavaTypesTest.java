@@ -19,8 +19,6 @@ import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
-import sun.reflect.generics.tree.TypeArgument;
 
 import java.io.File;
 import java.io.IOException;
@@ -115,7 +113,7 @@ public class JavaTypesTest
     public void typeToClassGiveGenericArrayType()
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
-        Type arrayType = GenericArrayTypeImpl.make(type);
+        Type arrayType = ArrayType.make(type);
 
         Assert.assertTrue(JavaTypes.isClassType(arrayType));
         Assert.assertEquals(JavaTypes.typeToClass(arrayType), List[].class);
@@ -178,22 +176,6 @@ public class JavaTypesTest
     }
 
     @Test
-    public void getClassGenericInfo()
-    {
-        Map<String, TypeArgument[]> types2 = JavaTypes.getClassGenericInfo(GenericClassTest.class);
-        Assert.assertEquals(types2.size(), 3);
-        TypeArgument[] a1 = types2.get(Function1.class.getName());
-        Assert.assertEquals(a1.length, 2);
-    }
-
-    @Test
-    public void getClassGenericInfoReturnEmpGiveJavaTypesTest()
-    {
-        Map<String, TypeArgument[]> types = JavaTypes.getClassGenericInfo(JavaTypesTest.class);
-        Assert.assertTrue(types == Collections.EMPTY_MAP);
-    }
-
-    @Test
     public void getClassGenericTypes()
     {
         List<Type> types = JavaTypes.getClassGenericTypes(GenericClassTest.class);
@@ -204,7 +186,7 @@ public class JavaTypesTest
     public void getClassGenericTypesReturnEmpGiveJavaTypesTest()
     {
         List<Type> types = JavaTypes.getClassGenericTypes(JavaTypesTest.class);
-        Assert.assertTrue(types == Collections.EMPTY_LIST);
+        Assert.assertEquals(types, Collections.singletonList(Object.class));
     }
 
     @Test

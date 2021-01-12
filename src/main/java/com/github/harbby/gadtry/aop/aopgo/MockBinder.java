@@ -15,23 +15,19 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.JoinPoint;
-import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
 import com.github.harbby.gadtry.aop.model.After;
 import com.github.harbby.gadtry.aop.model.AfterReturning;
 import com.github.harbby.gadtry.aop.model.AfterThrowing;
 import com.github.harbby.gadtry.aop.model.Before;
 import com.github.harbby.gadtry.function.exception.Consumer;
-import com.github.harbby.gadtry.function.exception.Function;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class MockBinder<T>
 {
     private final T proxy;
-    private final List<PointcutBuilder<T>> aspects = new ArrayList<>();
+    private final Map<AroundHandler, PointcutBuilder<T>> aspects = new LinkedHashMap<>();
 
     public MockBinder(T proxy)
     {
@@ -63,15 +59,21 @@ public class MockBinder<T>
         return createMethodSelect(aroundContext);
     }
 
-    List<Aspect> build()
+    Map<AroundHandler, PointcutBuilder<T>> build()
     {
-        return aspects.stream().map(PointcutBuilder::build).collect(Collectors.toList());
+        return aspects;
     }
 
-    private PointcutBuilder<T> createMethodSelect(Function<JoinPoint, Object, Throwable> function)
+    private PointcutBuilder<T> createMethodSelect(AroundHandler function)
     {
-        PointcutBuilder<T> pointcutBuilder = new PointcutBuilder<T>(aopInvocationHandler, proxy, function);
-        aspects.add(pointcutBuilder);
+        PointcutBuilder<T> pointcutBuilder = new PointcutBuilder<T>(proxy);
+        aspects.put(function, pointcutBuilder);
         return pointcutBuilder;
+    }
+
+    public static <T> void copyWrite(MockBinder<T> copyIn, MockBinder<T> copyOut)
+    {
+        copyOut.aspects.clear();
+        copyOut.aspects.putAll(copyIn.aspects);
     }
 }

@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.base;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -66,6 +67,24 @@ public class MoreObjects
         }
     }
 
+    public static <T> T nullElse(T value, T defaultValue)
+    {
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    public static <T> T nullElse(T value, Supplier<T> defaultValue)
+    {
+        requireNonNull(defaultValue, "defaultValue is null");
+        if (value == null) {
+            return defaultValue.get();
+        }
+        return value;
+    }
+
+    @SafeVarargs
     public static <T> T firstNonNull(T... values)
     {
         requireNonNull(values, "Both parameters are null");

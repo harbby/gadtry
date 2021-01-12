@@ -25,6 +25,8 @@ public final class ClassLoaders
     /**
      * jdk8:  sun.misc.VM.latestUserDefinedLoader()
      * jdk9+: jdk.internal.misc.VM.latestUserDefinedLoader()
+     *
+     * @return latestUserDefinedLoader
      */
     public static ClassLoader latestUserDefinedLoader()
     {
@@ -33,6 +35,8 @@ public final class ClassLoaders
 
     /**
      * 用户系统类加载器
+     *
+     * @return appClassLoader
      */
     public static ClassLoader getAppClassLoader()
     {
@@ -41,6 +45,8 @@ public final class ClassLoaders
 
     /**
      * 获取jdk类加载器
+     *
+     * @return bootstrap ClassLoader
      */
     public static ClassLoader getBootstrapClassLoader()
     {
@@ -62,6 +68,8 @@ public final class ClassLoaders
 
     /**
      * java8特有扩展类加载器,java11已经移除
+     *
+     * @return java8 ExtensionClassLoader
      */
     public static ClassLoader getExtensionClassLoader()
     {

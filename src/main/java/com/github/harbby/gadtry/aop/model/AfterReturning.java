@@ -22,6 +22,7 @@ public interface AfterReturning
 {
     /**
      * get Method return value
+     * @return return value
      */
     public Object getValue();
 

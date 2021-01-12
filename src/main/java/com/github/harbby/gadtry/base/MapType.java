@@ -37,6 +37,11 @@ public class MapType
                 null);
     }
 
+    public static MapType make(Class<? extends Map> mapClass, Type keyType, Type valueType)
+    {
+        return new MapType(mapClass, keyType, valueType);
+    }
+
     @Override
     public Type[] getActualTypeArguments()
     {

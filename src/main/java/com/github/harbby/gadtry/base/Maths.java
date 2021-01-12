@@ -37,6 +37,10 @@ public final class Maths
 
     /**
      * mod/remainder
+     *
+     * @param value number
+     * @param powerOfTwo 2^?
+     * @return mod
      */
     public static int remainder(int value, int powerOfTwo)
     {

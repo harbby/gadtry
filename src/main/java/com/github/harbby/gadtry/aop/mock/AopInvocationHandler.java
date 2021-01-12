@@ -16,7 +16,8 @@
 package com.github.harbby.gadtry.aop.mock;
 
 import com.github.harbby.gadtry.aop.JoinPoint;
-import com.github.harbby.gadtry.aop.aopgo.Pointcut;
+import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
+import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.collection.tuple.Tuple3;
 import com.github.harbby.gadtry.function.exception.Function;
@@ -89,15 +90,13 @@ public class AopInvocationHandler
         }
         //--------------------------------
         @SuppressWarnings("unchecked")
-        List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>> mockMethodLoader =
-                (List<Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>>>) in.readObject();
-        for (Tuple3<String, Class<?>[], Function<JoinPoint, Object, Throwable>> tp : mockMethodLoader) {
+        List<Tuple3<String, Class<?>[], AroundHandler>> mockMethodLoader =
+                (List<Tuple3<String, Class<?>[], AroundHandler>>) in.readObject();
+        Method[] methods = Proxy.filter(this.proxyClass, Collections.emptyList()).toArray(new Method[0]);
+        for (Tuple3<String, Class<?>[], AroundHandler> tp : mockMethodLoader) {
             String methodName = tp.f1();
             Class<?>[] parameterTypes = tp.f2();
-            Function<JoinPoint, Object, Throwable> value = tp.f3();
-
-            Pointcut pointcut = Collections::emptyList;
-            Method[] methods = pointcut.filter(this.proxyClass).toArray(new Method[0]);
+            AroundHandler value = tp.f3();
             Method findMethod = searchMethods(methods, methodName, parameterTypes);
             mockMethods.put(findMethod, value);
         }
@@ -169,7 +168,7 @@ public class AopInvocationHandler
         this.handler = requireNonNull(defaultHandler, "defaultHandler is null");
     }
 
-    /**
+    /*
      * WhenThen register
      */
     public void register(Method method, AroundHandler advice)

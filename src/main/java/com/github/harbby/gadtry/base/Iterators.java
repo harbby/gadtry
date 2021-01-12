@@ -16,17 +16,15 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.MutableList;
-import com.github.harbby.gadtry.collection.tuple.Tuple1;
+import com.github.harbby.gadtry.collection.StateOption;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Spliterator;
@@ -310,96 +308,6 @@ public class Iterators
         iterator.forEachRemaining(function);
     }
 
-    public enum JoinMode
-    {
-        LEFT_JOIN,
-        RIGHT_JOIN,
-        INNER_JOIN,
-        FULL_JOIN;
-    }
-
-    public static <K> Iterator<Tuple2<K, Iterable<?>[]>> join(Iterator<Tuple2<K, Object>>... iterators)
-    {
-        return join(Iterators.of(iterators), iterators.length);
-    }
-
-    public static <K> Iterator<Tuple2<K, Iterable<?>[]>> join(Iterator<Iterator<Tuple2<K, Object>>> iterators, int length)
-    {
-        Map<K, Iterable<?>[]> memAppendMap = new HashMap<>();
-        int i = 0;
-        while (iterators.hasNext()) {
-            if (i >= length) {
-                throw new IllegalStateException("must length = iterators.size()");
-            }
-
-            Iterator<? extends Tuple2<K, Object>> iterator = iterators.next();
-            while (iterator.hasNext()) {
-                Tuple2<K, Object> t = iterator.next();
-                Collection<Object>[] values = (Collection<Object>[]) memAppendMap.get(t.f1());
-                if (values == null) {
-                    values = new Collection[length];
-                    for (int j = 0; j < length; j++) {
-                        values[j] = new ArrayList<>();
-                    }
-                    memAppendMap.put(t.f1(), values);
-                }
-
-                values[i].add(t.f2());
-            }
-            i++;
-        }
-
-        return memAppendMap.entrySet().stream().map(x -> new Tuple2<>(x.getKey(), x.getValue()))
-                .iterator();
-    }
-
-    public static <F1, F2> Iterator<Tuple2<F1, F2>> cartesian(
-            Iterable<F1> iterable,
-            Iterable<F2> iterable2,
-            JoinMode joinMode)
-    {
-        requireNonNull(iterable);
-        requireNonNull(iterable2);
-        requireNonNull(joinMode);
-
-        final Collection<F2> collection = (iterable2 instanceof Collection) ?
-                (Collection<F2>) iterable2 : MutableList.copy(iterable2);
-
-        Function<F1, Stream<Tuple2<F1, F2>>> mapper = null;
-        switch (joinMode) {
-            case INNER_JOIN:
-                if (collection.isEmpty()) {
-                    return Iterators.empty();
-                }
-                mapper = x2 -> collection.stream().map(x3 -> new Tuple2<>(x2, x3));
-                break;
-            case LEFT_JOIN:
-                mapper = x2 -> collection.isEmpty() ?
-                        Stream.of(new Tuple2<>(x2, null)) :
-                        collection.stream().map(x3 -> new Tuple2<>(x2, x3));
-                break;
-            default:
-                //todo: other
-                throw new UnsupportedOperationException();
-        }
-
-        return toStream(iterable)
-                .flatMap(mapper)
-                .iterator();
-    }
-
-    public static <F1, F2> Iterator<Tuple2<F1, F2>> cartesian(
-            Iterator<F1> iterator,
-            Iterator<F2> iterator2,
-            JoinMode joinMode)
-    {
-        requireNonNull(iterator);
-        requireNonNull(iterator2);
-        requireNonNull(joinMode);
-
-        return cartesian(() -> iterator, () -> iterator2, joinMode);
-    }
-
     public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator, Function<E1, Iterator<E2>> flatMap)
     {
         requireNonNull(iterator, "iterator is null");
@@ -482,17 +390,18 @@ public class Iterators
         requireNonNull(filter, "filter is null");
         return new Iterator<E>()
         {
-            private final Tuple1<E> e = new Tuple1<>(null);
+            private final StateOption<E> option = StateOption.empty();
 
             @Override
             public boolean hasNext()
             {
-                if (e.f1 != null) {
+                if (option.isDefined()) {
                     return true;
                 }
                 while (iterator.hasNext()) {
-                    e.f1 = iterator.next();
-                    if (filter.apply(e.f1)) {
+                    E e = iterator.next();
+                    if (filter.apply(e)) {
+                        option.update(e);
                         return true;
                     }
                 }
@@ -505,20 +414,20 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                E out = e.f1;
-                this.e.f1 = null;
-                return out;
+                return option.remove();
             }
         };
     }
 
-    public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max)
-    {
-        return sample(iterator, setp, max, new Random());
-    }
-
     /**
-     * double fraction = 1 / max
+     * double fraction = setp / max
+     *
+     * @param iterator 待抽样的Iterator
+     * @param setp     setp
+     * @param max      max
+     * @param seed     随机因子
+     * @param <E>      type
+     * @return 抽样后的Iterator
      */
     public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max, long seed)
     {
@@ -530,18 +439,18 @@ public class Iterators
         requireNonNull(iterator, "iterators is null");
         return new Iterator<E>()
         {
-            private final Tuple1<E> e = new Tuple1<>(null);
+            private final StateOption<E> option = StateOption.empty();
 
             @Override
             public boolean hasNext()
             {
-                if (e.f1 != null) {
+                if (option.isDefined()) {
                     return true;
                 }
                 while (iterator.hasNext()) {
-                    this.e.f1 = iterator.next();
-                    int i = random.nextInt(max);
-                    if (i < setp) {
+                    E e = iterator.next();
+                    if (random.nextInt(max) < setp) {
+                        option.update(e);
                         return true;
                     }
                 }
@@ -554,9 +463,7 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                E out = e.f1;
-                this.e.f1 = null;
-                return out;
+                return option.remove();
             }
         };
     }

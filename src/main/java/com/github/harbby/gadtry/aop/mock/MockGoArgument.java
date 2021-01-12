@@ -108,6 +108,7 @@ public class MockGoArgument
      * e.equals(input)
      *
      * @param e equals e
+     * @param <E> e type
      * @return e;
      */
     public static <E> E eq(E e)
@@ -120,6 +121,7 @@ public class MockGoArgument
      * e == input
      *
      * @param e same e
+     * @param <E> e type
      * @return e
      */
     public static <E> E same(E e)

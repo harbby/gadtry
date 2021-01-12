@@ -35,15 +35,9 @@ public interface JVMLauncher<R extends Serializable>
     public R startAndGet(VmCallable<R> task)
             throws JVMException;
 
-    /**
-     * @since 1.4
-     */
     public VmFuture<R> startAsync()
             throws JVMException;
 
-    /**
-     * @since 1.4
-     */
     public VmFuture<R> startAsync(VmCallable<R> task)
             throws JVMException;
 

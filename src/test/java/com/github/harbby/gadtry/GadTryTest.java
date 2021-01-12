@@ -22,8 +22,11 @@ import com.github.harbby.gadtry.ioc.IocFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,27 +35,29 @@ public class GadTryTest
     @Test
     public void aopTest()
     {
+        List<String> actions = new ArrayList<>();
         IocFactory iocFactory = GadTry.create(binder -> {
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();
             binder.bind(HashSet.class).by(HashSet.class).withSingle();
         }).aop(binder -> {
-            binder.bind(HashSet.class).aop(binder1 -> {
-                binder1.doAfter(methodInfo -> {
-                    System.out.println("after2");
-                }).whereMethod(methodInfo -> methodInfo.getName().startsWith("add"));
-                binder1.doBefore((info) -> {
-                    Assert.assertEquals("add", info.getName());
-                    System.out.println("before1");
-                }).methodName("add");
-            });
+            binder.bind(Map.class).doBefore(before -> {
+                actions.add("before1");
+            }).when().size();
+            binder.bind(Map.class).doAround(cut -> {
+                actions.add("before2");
+                int value = (int) cut.proceed() + 1;
+                actions.add("before3");
+                return value;
+            }).whereMethod(method -> method.getName().startsWith("size"));
+            binder.bind(Map.class).doBefore(before -> {
+                actions.add("before4");
+            }).methodName("size");
         }).setConfigurationProperties(MutableMap.of())
                 .initialize();
 
-        Set set = iocFactory.getInstance(HashSet.class);
-        System.out.println("************");
-        set.add("a1");
-        System.out.println("************");
-        System.out.println(set);
+        Map set = iocFactory.getInstance(Map.class);
+        Assert.assertEquals(set.size(), 1);
+        Assert.assertEquals(Arrays.asList("before1", "before2", "before4", "before3"), actions);
     }
 
     @Test

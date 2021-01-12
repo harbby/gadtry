@@ -16,12 +16,6 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.MutableList;
-import sun.reflect.generics.repository.AbstractRepository;
-import sun.reflect.generics.repository.ClassRepository;
-import sun.reflect.generics.tree.ClassSignature;
-import sun.reflect.generics.tree.ClassTypeSignature;
-import sun.reflect.generics.tree.SimpleClassTypeSignature;
-import sun.reflect.generics.tree.TypeArgument;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -33,14 +27,11 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class JavaTypes
 {
@@ -59,7 +50,7 @@ public class JavaTypes
      * <p> This method throws a MalformedParameterizedTypeException
      * under the following circumstances:
      * If the number of actual type arguments (i.e., the size of the
-     * array <tt>typeArgs</tt>) does not correspond to the number of
+     * array typeArgs) does not correspond to the number of
      * formal type arguments.
      * If any of the actual type arguments is not an instance of the
      * bounds on the corresponding formal.
@@ -69,7 +60,7 @@ public class JavaTypes
      * @param actualTypeArguments - a (possibly empty) array of types
      *                            representing the actual type arguments to the parameterized type
      * @param ownerType           - the enclosing type, if known.
-     * @return An instance of <tt>ParameterizedType</tt>
+     * @return An instance of ParameterizedType
      * @throws MalformedParameterizedTypeException - if the instantiation
      *                                             is invalid
      */
@@ -109,6 +100,9 @@ public class JavaTypes
 
     /**
      * Convert ParameterizedType or Class to a Class.
+     *
+     * @param type java type
+     * @return Type class
      */
     public static Class<?> typeToClass(Type type)
     {
@@ -119,7 +113,7 @@ public class JavaTypes
             return ((Class<?>) ((ParameterizedType) type).getRawType());
         }
         else if (type instanceof GenericArrayType) {
-            Class typeToClass = typeToClass(((GenericArrayType) type).getGenericComponentType());
+            Class<?> typeToClass = typeToClass(((GenericArrayType) type).getGenericComponentType());
             return Arrays.getArrayClass(typeToClass);
         }
         throw new IllegalArgumentException("Cannot convert type to class");
@@ -127,6 +121,8 @@ public class JavaTypes
 
     /**
      * Checks if a type can be converted to a Class. This is true for ParameterizedType and Class.
+     * @param type java.lang.reflect.Type
+     * @return is Class
      */
     public static boolean isClassType(Type type)
     {
@@ -153,7 +149,8 @@ public class JavaTypes
     }
 
     /**
-     * return primitive wrapper
+     * @param aClass primitive class
+     * @return primitive wrapper
      */
     public static Class<?> getWrapperClass(Class<?> aClass)
     {
@@ -300,58 +297,17 @@ public class JavaTypes
      * 获取Class的泛型信息(Get generic information about class)
      *
      * @param javaClass Class
-     * @return TypeArgument[]
+     * @return List Type
      */
-    public static Map<String, TypeArgument[]> getClassGenericInfo(Class<?> javaClass)
-    {
-        try {
-            Map<String, TypeArgument[]> typeSignatureMap = new LinkedHashMap<>();
-            ClassRepository classRepository = getReflectMethod(Class.class, "getGenericInfo", javaClass);
-
-            if (classRepository == null) {
-                return Collections.emptyMap();
-            }
-            //-----2
-            ClassSignature tree = getReflectMethod(AbstractRepository.class, "getTree", classRepository);
-            //FormalTypeParameter[] formalTypeParameters = tree.getFormalTypeParameters();  //type 个数  === type[]
-            SimpleClassTypeSignature typeSignature = tree.getSuperclass().getPath().get(0);
-            typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
-
-            for (ClassTypeSignature it : tree.getSuperInterfaces()) {
-                typeSignature = it.getPath().get(0);
-                typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
-            }
-            return typeSignatureMap;
-        }
-        catch (Exception e) {
-            throw throwsThrowable(e);
-        }
-    }
-
     public static List<Type> getClassGenericTypes(Class<?> javaClass)
     {
-        ClassRepository classRepository;
-        try {
-            classRepository = getReflectMethod(Class.class, "getGenericInfo", javaClass);
-        }
-        catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-            throw new UnsupportedOperationException("jdk not support Class.class.getGenericInfo()");
-        }
-
-        if (classRepository == null) {
-            return Collections.emptyList();
-        }
-
-        return MutableList.asList(classRepository.getSuperclass(), classRepository.getSuperInterfaces());
+        return MutableList.asList(javaClass.getGenericSuperclass(), javaClass.getGenericInterfaces());
     }
 
     @SuppressWarnings("unchecked")
     public static <T> Class<T> classTag(Class<?> runtimeClass)
     {
         checkState(!runtimeClass.isPrimitive(), "%s is isPrimitive", runtimeClass);
-//        if (runtimeClass.isPrimitive()) {
-//            return (Class<T>) JavaTypes.getWrapperClass(runtimeClass);
-//        }
         return (Class<T>) runtimeClass;
     }
 

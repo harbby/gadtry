@@ -59,6 +59,10 @@ public final class Platform
     /**
      * copy  {@link java.nio.ByteBuffer#allocateDirect(int)}
      * must alignByte = Math.sqrt(alignByte)
+     *
+     * @param len allocate direct mem size
+     * @param alignByte default 16
+     * @return [base, dataOffset]
      */
     public static long[] allocateAlignMemory(long len, long alignByte)
     {
@@ -140,13 +144,12 @@ public final class Platform
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Class<T> defineClass(byte[] classBytes, ClassLoader classLoader)
+    public static Class<?> defineClass(byte[] classBytes, ClassLoader classLoader)
     {
         try {
             Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
             defineClass.setAccessible(true);
-            return (Class<T>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
+            return (Class<?>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
         }
         catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e1) {
             throwException(e1);
@@ -154,15 +157,14 @@ public final class Platform
         throw new IllegalStateException("unchecked");
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Class<T> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
+    public static Class<?> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
     {
         final ProtectionDomain defaultDomain =
                 new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
                         null, classLoader, null);
         try {
             Method method = Unsafe.class.getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
-            return (Class<T>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
+            return (Class<?>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
         }
         catch (NoSuchMethodException e) {
             //jdk9+
@@ -171,7 +173,7 @@ public final class Platform
                 //add-opens aClass Module to Platform.class
                 addOpenJavaModules(aClass, Platform.class);
                 Object theInternalUnsafe = aClass.getMethod("getUnsafe").invoke(null);
-                return (Class<T>) aClass.getMethod("defineClass",
+                return (Class<?>) aClass.getMethod("defineClass",
                         String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
                         .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
             }
@@ -189,6 +191,8 @@ public final class Platform
      * java8 52
      * java11 55
      * java15 59
+     *
+     * @return vm class version
      */
     public static int getVmClassVersion()
     {
@@ -247,8 +251,15 @@ public final class Platform
     }
 
     /**
-     * @forRemoval = true
+     * forRemoval = true
+     *
+     * @param hostClass 宿主类
+     * @param action    被复制的类
+     * @return obj
+     * @throws Exception any Exception
      * @since = "jdk15"
+     * <p>
+     * 复制action类的字节码，注册成hostClass匿名内部类
      */
     public static Object defineAnonymousClass(Class<?> hostClass, Object action)
             throws Exception
@@ -306,11 +317,10 @@ public final class Platform
      * @param cpPatches  cpPatches
      * @return 创建并加载的匿名类，注意该类只能访问bootClassLoader中的系统类,无法访问任何用户类,该类会获得hostClass的访问域
      */
-    @SuppressWarnings("unchecked")
-    public static <T> Class<T> defineAnonymousClass(Class<?> hostClass, byte[] classBytes, Object[] cpPatches)
+    public static Class<?> defineAnonymousClass(Class<?> hostClass, byte[] classBytes, Object[] cpPatches)
     {
         try {
-            return (Class<T>) Unsafe.class.getMethod("defineAnonymousClass", Class.class, byte[].class, Object[].class)
+            return (Class<?>) Unsafe.class.getMethod("defineAnonymousClass", Class.class, byte[].class, Object[].class)
                     .invoke(unsafe, hostClass, classBytes, cpPatches);
         }
         catch (NoSuchMethodException ignored) {
@@ -322,15 +332,14 @@ public final class Platform
         checkState(getVmClassVersion() >= 59, "This method can only run above Jdk15+");
         try {
             Platform.addOpenJavaModules(MethodHandles.Lookup.class, Platform.class);
-            Constructor constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
+            Constructor<?> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
             constructor.setAccessible(true);
             MethodHandles.Lookup lookup = (MethodHandles.Lookup) constructor.newInstance(hostClass);
 
             Object options = Array.newInstance(Class.forName(MethodHandles.Lookup.class.getName() + "$ClassOption"), 0);
             lookup = (MethodHandles.Lookup) MethodHandles.Lookup.class.getMethod("defineHiddenClass", byte[].class, boolean.class, options.getClass())
                     .invoke(lookup, classBytes, true, options);
-            Class<?> nClasss = lookup.lookupClass();
-            return (Class<T>) nClasss;
+            return lookup.lookupClass();
         }
         catch (Exception e) {
             throw new IllegalStateException(e);

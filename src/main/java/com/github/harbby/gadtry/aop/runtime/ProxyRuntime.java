@@ -66,7 +66,7 @@ public final class ProxyRuntime
     {
         Method method = proxyClass.getDeclaredMethod(methodName, parameterTypes);
         requireNonNull(methodNameField, "methodNameField is null");
-        methodNameField.set(method, method.getName().substring(2));
+        methodNameField.set(method, method.getName().substring(METHOD_START.length()));
         return method;
     }
 }

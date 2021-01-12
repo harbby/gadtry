@@ -19,15 +19,13 @@ import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.impl.Proxy;
 import com.github.harbby.gadtry.aop.impl.ProxyHandler;
 import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
-import com.github.harbby.gadtry.function.exception.Consumer;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class AopBuilder<T>
@@ -35,7 +33,7 @@ public class AopBuilder<T>
     private final Class<T> superclass;
     private final T target;
 
-    private Consumer<MockBinder<T>, Throwable>[] binders = new Consumer[0];
+    private Consumer<MockBinder<T>>[] binders = new Consumer[0];
     private String basePackage;
 
     public AopBuilder(Class<T> superclass, T target)
@@ -51,7 +49,7 @@ public class AopBuilder<T>
     }
 
     @SafeVarargs
-    public final AopBuilder<T> aop(Consumer<MockBinder<T>, Throwable>... binders)
+    public final AopBuilder<T> aop(Consumer<MockBinder<T>>... binders)
     {
         this.binders = binders;
         return this;
@@ -71,23 +69,18 @@ public class AopBuilder<T>
         T proxy = Proxy.proxy(request);
         aopInvocationHandler.setProxyClass(proxy.getClass());
         //---------------------------
-        final MockBinder<T> mockBinder = new MockBinder<>(proxy, aopInvocationHandler);
-        for (Consumer<MockBinder<T>, Throwable> it : binders) {
-            try {
-                it.apply(mockBinder);
-            }
-            catch (Throwable throwable) {
-                throwsThrowable(throwable);
-            }
+        final MockBinder<T> mockBinder = new MockBinder<>(proxy);
+        for (Consumer<MockBinder<T>> it : binders) {
+            it.accept(mockBinder);
         }
-        List<Aspect> aspects = mockBinder.build();
-        Map<Method, Advice> methodAdviceMap = new HashMap<>();
-        for (Aspect aspect : aspects) {
-            List<Method> methods = aspect.getPointcut().filter(proxy.getClass());
+        Map<AroundHandler, PointcutBuilder<T>> aspects = mockBinder.build();
+        Map<Method, AroundHandler> methodAdviceMap = new HashMap<>();
+        aspects.forEach((k, v) -> {
+            List<Method> methods = Proxy.filter(proxy.getClass(), v.build());
             //merge aspect
-            Arrays.stream(aspect.getAdvices()).reduce(Advice::merge).ifPresent(advice ->
-                    methods.forEach(method -> methodAdviceMap.merge(method, advice, Advice::merge)));
-        }
+            methods.forEach(method -> methodAdviceMap.merge(method, k, AroundHandler::merge));
+        });
+
         methodAdviceMap.forEach(aopInvocationHandler::register);
         return proxy;
     }

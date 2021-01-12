@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.aopgo.MockBinder;
-import com.github.harbby.gadtry.function.exception.Consumer;
 
 public interface AopBinder
 {
@@ -27,10 +26,5 @@ public interface AopBinder
      * @param inputClass class
      * @return handler
      */
-    public abstract <T> PointBuilder<T> bind(Class<T> inputClass);
-
-    public interface PointBuilder<T>
-    {
-        public void aop(Consumer<MockBinder<T>, Throwable> binder);
-    }
+    public abstract <T> MockBinder<T> bind(Class<T> inputClass);
 }

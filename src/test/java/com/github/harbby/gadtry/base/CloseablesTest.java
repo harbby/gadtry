@@ -82,7 +82,6 @@ public class CloseablesTest
             throw new IOException("running error");
         }
         catch (IOException e) {
-            e.printStackTrace();
             Assert.assertEquals("running error", e.getMessage());
             Assert.assertEquals("close error", e.getSuppressed()[0].getMessage());
         }

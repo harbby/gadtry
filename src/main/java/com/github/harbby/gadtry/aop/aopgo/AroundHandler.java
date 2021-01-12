@@ -24,10 +24,39 @@ import com.github.harbby.gadtry.function.exception.Consumer;
 import com.github.harbby.gadtry.function.exception.Function;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public interface AroundHandler
         extends Function<JoinPoint, Object, Throwable>
 {
+    default AroundHandler merge(AroundHandler newAdvice)
+    {
+        return joinPoint -> {
+            final JoinPoint mergeJoinPoint = new JoinPoint()
+            {
+                @Override
+                public Method getMethod()
+                {
+                    return joinPoint.getMethod();
+                }
+
+                @Override
+                public Object[] getArgs()
+                {
+                    return joinPoint.getArgs();
+                }
+
+                @Override
+                public Object proceed(Object[] args)
+                        throws Throwable
+                {
+                    return newAdvice.apply(joinPoint);
+                }
+            };
+            return this.apply(mergeJoinPoint);
+        };
+    }
+
     static AroundHandler doBefore(Consumer<Before, Exception> before)
     {
         return f -> {

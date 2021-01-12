@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.base;
 
 import java.lang.reflect.Array;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -81,6 +80,7 @@ public class Arrays
     /**
      * @param arrayClass String[].class
      * @param length     array length
+     * @param <T>        type T
      * @return T[]
      */
     @SuppressWarnings("unchecked")
@@ -243,25 +243,12 @@ public class Arrays
     }
 
     /**
-     * @param first firstValue
-     * @param rest  Collection
-     * @return merge array
-     */
-    public static <T> T[] asArray(T first, Collection<T> rest, Class<T> type)
-    {
-        T[] arr = createArray(type, rest.size() + 1);
-        arr[0] = first;
-        int i = 1;
-        for (T t : rest) {
-            arr[i++] = t;
-        }
-        return arr;
-    }
-
-    /**
      * Returns a hash code based on the "deep contents" of the specified
      * array.
      * see: {@link java.util.Arrays#deepHashCode(Object[])}
+     *
+     * @param objects inputs
+     * @return hashCode
      */
     public static int deepHashCode(Object... objects)
     {
@@ -272,6 +259,7 @@ public class Arrays
      * array merge
      *
      * @param arrays input arrays
+     * @param <T>    array type
      * @return merged array
      */
     @SafeVarargs

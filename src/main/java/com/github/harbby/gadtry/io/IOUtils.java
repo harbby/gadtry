@@ -101,6 +101,9 @@ public class IOUtils
      * copyed jdk11
      *
      * @since 11
+     * @param inputStream input
+     * @return byye array
+     * @throws IOException throw IOException
      */
     public static byte[] readAllBytes(InputStream inputStream)
             throws IOException
@@ -112,18 +115,22 @@ public class IOUtils
      * copyed jdk11
      *
      * @since 11
+     * @param inputStream input
+     * @param len max len byte
+     * @return byte array
+     * @throws IOException throw IOException
      */
-    public static byte[] readNBytes(InputStream inputStream, int initialSize)
+    public static byte[] readNBytes(InputStream inputStream, int len)
             throws IOException
     {
-        if (initialSize < 0) {
+        if (len < 0) {
             throw new IllegalArgumentException("initialSize < 0");
         }
 
         List<byte[]> bufs = null;
         byte[] result = null;
         int total = 0;
-        int remaining = initialSize;
+        int remaining = len;
         int n;
         do {
             byte[] buf = new byte[Math.min(remaining, DEFAULT_BUFFER_SIZE)];

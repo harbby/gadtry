@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -207,13 +206,6 @@ public class ArraysTest
         catch (IllegalArgumentException e) {
             Assert.assertEquals("The given argument is no array.", e.getMessage());
         }
-    }
-
-    @Test
-    public void asArrayGiveList()
-    {
-        String[] arr = Arrays.asArray("1", MutableList.of("2", "3"), String.class);
-        Assert.assertArrayEquals(arr, new String[] {"1", "2", "3"});
     }
 
     @Test

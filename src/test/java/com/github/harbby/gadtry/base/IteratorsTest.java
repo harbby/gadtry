@@ -253,4 +253,24 @@ public class IteratorsTest
         List<Integer> out = MutableList.copy(iterator);
         Assert.assertEquals(out, Arrays.asList(27, 22, 20, 16, 15, 13, 11, 9, 8, 8, 7, 5, 4, 3, 1, 0));
     }
+
+    @Test
+    public void filterTest()
+    {
+        List<Integer> list1 = Arrays.asList(1, 2, 3, null, 5);
+        Iterator<Integer> iterator = Iterators.filter(list1.iterator(), x -> x == null || x > 2);
+        List<Integer> out = MutableList.copy(iterator);
+        System.out.println(out);
+        Assert.assertEquals(out, Arrays.asList(3, null, 5));
+    }
+
+    @Test
+    public void sampleTest()
+    {
+        List<Integer> list1 = Arrays.asList(1, 2, 3, null, 5, 6);
+        Iterator<Integer> iterator = Iterators.sample(list1.iterator(), 3, 6, 12345);
+        List<Integer> out = MutableList.copy(iterator);
+        System.out.println(out);
+        Assert.assertEquals(out, Arrays.asList(1, null, 5));
+    }
 }
