@@ -31,6 +31,8 @@ import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -43,7 +45,7 @@ public class JVMLaunchersTest
             throws InterruptedException
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
                     return 1;
@@ -54,10 +56,11 @@ public class JVMLaunchersTest
                 //.useDebug()
                 .setConsole(msg -> System.out.println(msg))
                 .build();
-
-        VmFuture<Integer> out = launcher.startAsync();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        VmFuture<Integer> out = launcher.startAsync(executor);
         System.out.println("pid is " + out.getPid());
         Assert.assertEquals(out.get().intValue(), 1);
+        executor.shutdown();
     }
 
     @Test
@@ -121,7 +124,7 @@ public class JVMLaunchersTest
         }
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
@@ -134,13 +137,17 @@ public class JVMLaunchersTest
                 .notDepThisJvmClassPath()
                 .build();
 
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            launcher.startAsync().get();
+            launcher.startAsync(executor).get();
             Assert.fail();
         }
         catch (JVMException e) {
             Assert.assertTrue(e.getMessage().contains(f));
             e.printStackTrace();
+        }
+        finally {
+            executor.shutdown();
         }
     }
 
@@ -152,7 +159,7 @@ public class JVMLaunchersTest
         System.out.println("--- vm test ---");
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
@@ -163,14 +170,17 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .notDepThisJvmClassPath()
                 .build();
-
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            launcher.startAsync().get();
+            launcher.startAsync(executor).get();
             Assert.fail();
         }
         catch (JVMException e) {
             Assert.assertTrue(e.getMessage().contains(JVMLauncher.class.getName()));
             e.printStackTrace();
+        }
+        finally {
+            executor.shutdown();
         }
     }
 
@@ -180,7 +190,7 @@ public class JVMLaunchersTest
     {
         String envValue = "value_007";
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
                     String env = System.getenv("TestEnv");
@@ -206,7 +216,7 @@ public class JVMLaunchersTest
     {
         String f = "testForkJvmThrowRuntimeException123";
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
@@ -235,7 +245,7 @@ public class JVMLaunchersTest
             throws JVMException, InterruptedException
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     return 2019;
                 })

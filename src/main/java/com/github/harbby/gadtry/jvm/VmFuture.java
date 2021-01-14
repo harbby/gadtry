@@ -22,7 +22,6 @@ import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,13 +35,11 @@ public class VmFuture<R extends Serializable>
     private final Process process;
     private final Future<VmResult<R>> future;
 
-    public VmFuture(AtomicReference<Process> processAtomic, Callable<VmResult<R>> callable)
+    public VmFuture(ExecutorService executor, AtomicReference<Process> processAtomic, Callable<VmResult<R>> callable)
             throws JVMException, InterruptedException
     {
         requireNonNull(processAtomic, "process is null");
-        ExecutorService service = Executors.newSingleThreadExecutor();
-        this.future = service.submit(callable);
-        service.shutdown();
+        this.future = executor.submit(callable);
 
         while (processAtomic.get() == null) {
             if (future.isDone()) {

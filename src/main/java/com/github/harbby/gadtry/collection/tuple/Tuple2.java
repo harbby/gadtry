@@ -44,6 +44,16 @@ public class Tuple2<F1, F2>
         return f2;
     }
 
+    public F1 getKey()
+    {
+        return f1;
+    }
+
+    public F2 getValue()
+    {
+        return f2;
+    }
+
     @Override
     public int hashCode()
     {

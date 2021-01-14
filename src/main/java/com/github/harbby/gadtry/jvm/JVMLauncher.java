@@ -25,6 +25,7 @@ import java.io.FilterOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 public interface JVMLauncher<R extends Serializable>
@@ -35,10 +36,10 @@ public interface JVMLauncher<R extends Serializable>
     public R startAndGet(VmCallable<R> task)
             throws JVMException;
 
-    public VmFuture<R> startAsync()
+    public VmFuture<R> startAsync(ExecutorService executor)
             throws JVMException;
 
-    public VmFuture<R> startAsync(VmCallable<R> task)
+    public VmFuture<R> startAsync(ExecutorService executor, VmCallable<R> task)
             throws JVMException;
 
     static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -97,21 +98,21 @@ public class JVMLauncherImpl<R extends Serializable>
     }
 
     @Override
-    public VmFuture<R> startAsync()
+    public VmFuture<R> startAsync(ExecutorService executor)
             throws JVMException
     {
-        return startAsync(this.task);
+        return startAsync(executor, this.task);
     }
 
     @Override
-    public VmFuture<R> startAsync(VmCallable<R> task)
+    public VmFuture<R> startAsync(ExecutorService executor, VmCallable<R> task)
             throws JVMException
     {
         checkState(task != null, "Fork VM Task is null");
         try {
             byte[] bytes = Serializables.serialize(task);
             AtomicReference<Process> processAtomic = new AtomicReference<>();
-            return new VmFuture<>(processAtomic, () -> this.startAndGetByte(processAtomic, bytes));
+            return new VmFuture<>(executor, processAtomic, () -> this.startAndGetByte(processAtomic, bytes));
         }
         catch (IOException | InterruptedException e) {
             throw new JVMException(e);
