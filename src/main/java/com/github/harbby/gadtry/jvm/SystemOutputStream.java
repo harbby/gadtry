@@ -50,18 +50,10 @@ public class SystemOutputStream
         if (tryClose) {
             return;
         }
-        if ((len - off) == 1 && buf[0] == 10) { //filter '\n'
-            return;
-        }
-
-        int length = len;
-        if (buf[buf.length - 1] == 10) {  //use trim()
-            length = len - 1;
-        }
-
         out.write(1);
-        this.writeInt(length - off);
-        out.write(buf, off, length);
+        this.writeInt(len - off);
+        out.write(buf, off, len);
+        out.flush();
     }
 
     private void writeInt(int v)
@@ -87,6 +79,5 @@ public class SystemOutputStream
         this.writeInt(resultBytes.length);
         out.write(resultBytes);
         out.flush();
-        //out.close();
     }
 }

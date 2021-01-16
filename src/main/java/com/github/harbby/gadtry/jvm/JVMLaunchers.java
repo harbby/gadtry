@@ -95,21 +95,27 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> setXms(String xms)
-        {
-            otherVmOps.add("-Xms" + xms);
-            return this;
-        }
-
         public VmBuilder<T> setName(String name)
         {
             this.taskProcessName = requireNonNull(name, "task process name is null");
             return this;
         }
 
+        public VmBuilder<T> setXms(String xms)
+        {
+            otherVmOps.add("-Xms" + xms);
+            return this;
+        }
+
         public VmBuilder<T> setXmx(String xmx)
         {
             otherVmOps.add("-Xmx" + xmx);
+            return this;
+        }
+
+        public VmBuilder<T> addVmOps(String ops)
+        {
+            otherVmOps.add(ops);
             return this;
         }
 
