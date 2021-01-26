@@ -167,8 +167,8 @@ public class IteratorsTest
     @Test
     public void iteratorMapperReduceTest()
     {
-        List<String> list = Arrays.asList("1", "2", "3");
-        int sum = Iterators.reduce(list.iterator(), x -> Integer.parseInt(x), (x, y) -> x + y);
+        List<Integer> list = Arrays.asList(1, 2, 3);
+        int sum = Iterators.reduce(list.iterator(), (x, y) -> x + y).get();
         Assert.assertEquals(6, sum);
     }
 
