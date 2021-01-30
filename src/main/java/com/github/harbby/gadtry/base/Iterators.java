@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -252,26 +253,18 @@ public class Iterators
         };
     }
 
-    public static <F1, F2> F2 reduce(Iterator<F1> iterator, Function<F1, F2> mapper, BinaryOperator<F2> reducer)
-    {
-        return reduce(map(iterator, mapper), reducer);
-    }
-
-    public static <T> T reduce(Iterator<T> iterator, BinaryOperator<T> reducer)
+    public static <T> Optional<T> reduce(Iterator<T> iterator, BinaryOperator<T> reducer)
     {
         requireNonNull(iterator);
         requireNonNull(reducer);
-        T lastValue = null;
-        while (iterator.hasNext()) {
-            T value = iterator.next();
-            if (lastValue != null) {
-                lastValue = reducer.apply(lastValue, value);
-            }
-            else {
-                lastValue = value;
-            }
+        if (!iterator.hasNext()) {
+            return Optional.empty();
         }
-        return lastValue;
+        T lastValue = iterator.next();
+        while (iterator.hasNext()) {
+            lastValue = reducer.apply(lastValue, iterator.next());
+        }
+        return Optional.ofNullable(lastValue);
     }
 
     public static <T> Iterator<T> limit(Iterator<T> iterator, int limit)

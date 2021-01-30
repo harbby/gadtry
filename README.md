@@ -1,4 +1,4 @@
-# Gadtry [![Build Status](http://img.shields.io/travis/harbby/gadtry.svg?style=flat&branch=master)](https://travis-ci.org/harbby/gadtry) [![codecov](https://codecov.io/gh/harbby/gadtry/branch/master/graph/badge.svg)](https://codecov.io/gh/harbby/gadtry)
+# Gadtry [![Build Status](https://api.travis-ci.com/harbby/gadtry.svg?branch=master)](https://travis-ci.com/harbby/gadtry) [![codecov](https://codecov.io/gh/harbby/gadtry/branch/master/graph/badge.svg)](https://codecov.io/gh/harbby/gadtry)
 
 Welcome to gadtry !
 
