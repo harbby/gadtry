@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.github.harbby.gadtry.collection;
 
 import java.io.Serializable;
@@ -27,6 +26,7 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public abstract class ImmutableList<E>
@@ -117,22 +117,31 @@ public abstract class ImmutableList<E>
         private static final ImmutableArrayList<Object> EMPTY = new ImmutableArrayList<>(new Object[0]);
 
         private final E[] array;
+        private final int fromIndex;
+        private final int toIndex;
 
         private ImmutableArrayList(E[] array)
         {
+            this(array, 0, array.length);
+        }
+
+        private ImmutableArrayList(E[] array, int fromIndex, int toIndex)
+        {
             this.array = array;
+            this.fromIndex = fromIndex;
+            this.toIndex = toIndex;
         }
 
         @Override
         public E get(int index)
         {
-            return array[index];
+            return array[index + fromIndex];
         }
 
         @Override
         public int size()
         {
-            return array.length;
+            return toIndex - fromIndex;
         }
 
         @Override
@@ -144,13 +153,38 @@ public abstract class ImmutableList<E>
         @Override
         public ListIterator<E> listIterator(int index)
         {
-            return new ImmutableListIterator<>(array, index);
+            if (index < 0) {
+                throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            }
+            if (index > this.size()) {
+                throw new IndexOutOfBoundsException("index = " + toIndex);
+            }
+            return new ImmutableListIterator<>(array, fromIndex + index, toIndex);
         }
 
         @Override
         public void sort(Comparator<? super E> c)
         {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ImmutableArrayList<E> subList(int fromIndex, int toIndex)
+        {
+            if (fromIndex < 0) {
+                throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            }
+            if (toIndex > this.size()) {
+                throw new IndexOutOfBoundsException("toIndex = " + toIndex);
+            }
+            checkState(fromIndex <= toIndex, "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+            return new ImmutableArrayList<>(array, this.fromIndex + fromIndex, this.fromIndex + toIndex);
+        }
+
+        @Override
+        public ListIterator<E> listIterator()
+        {
+            return listIterator(0);
         }
     }
 
@@ -159,57 +193,63 @@ public abstract class ImmutableList<E>
     {
         private final E[] array;
         private int position;
+        private final int fromIndex;
+        private final int toIndex;
 
-        private ImmutableListIterator(E[] array, int index)
+        private ImmutableListIterator(E[] array, int fromIndex, int toIndex)
         {
             this.array = array;
-            this.position = index;
+            this.position = fromIndex;
+            this.fromIndex = fromIndex;
+            this.toIndex = toIndex;
         }
 
         @Override
         public boolean hasNext()
         {
-            return position < array.length;
+            return position < toIndex;
         }
 
         @Override
         public E next()
         {
-            if (position < array.length) {
-                return array[position++];
-            }
-            else {
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
+            return array[position++];
         }
 
         @Override
         public boolean hasPrevious()
         {
-            return position > 0;
+            return position > fromIndex;
         }
 
         @Override
         public E previous()
         {
-            if (position > -1) {
-                return array[--position];
-            }
-            else {
+            if (!hasPrevious()) {
                 throw new NoSuchElementException();
             }
+            return array[--position];
         }
 
         @Override
         public int nextIndex()
         {
-            return position;
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return position - fromIndex;
         }
 
         @Override
         public int previousIndex()
         {
-            return position - 1;
+            if (!hasPrevious()) {
+                throw new NoSuchElementException();
+            }
+            return position - 1 - fromIndex;
         }
 
         @Override
