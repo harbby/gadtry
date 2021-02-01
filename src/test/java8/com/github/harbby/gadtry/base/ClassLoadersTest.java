@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 
 public class ClassLoadersTest
 {
@@ -60,5 +61,23 @@ public class ClassLoadersTest
                 .myDefineClass(ctClass.toBytecode());
         Object ins = aClass.newInstance();
         System.out.println(ins);
+    }
+
+    @Test
+    public void loadExtJarToSystemClassLoaderTest()
+            throws ClassNotFoundException
+    {
+        try {
+            Class.forName("org.h2.Driver");
+            Assert.fail();
+        }
+        catch (ClassNotFoundException ignored) { }
+        String resourceName = "version1/h2-1.4.191.jar";
+        URL url = this.getClass().getClassLoader().getResource(resourceName);
+        ClassLoaders.loadExtJarToSystemClassLoader(Collections.singletonList(url));
+        Class<?> driver = Class.forName("org.h2.Driver");
+        Assert.assertTrue(java.sql.Driver.class.isAssignableFrom(driver));
+        Assert.assertTrue(ClassLoaders.getSystemClassLoaderJars().stream()
+                .anyMatch(x -> x.getPath().endsWith(resourceName)));
     }
 }

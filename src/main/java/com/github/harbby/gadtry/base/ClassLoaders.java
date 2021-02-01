@@ -15,8 +15,13 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.List;
 
 public final class ClassLoaders
 {
@@ -74,5 +79,68 @@ public final class ClassLoaders
     public static ClassLoader getExtensionClassLoader()
     {
         throw new UnsupportedOperationException("jdk11 not support, jdk8 use ClassLoader.getSystemClassLoader().getParent()");
+    }
+
+    /**
+     * load other jar to system classLoader
+     *
+     * @param urls jars
+     */
+    public static void loadExtJarToSystemClassLoader(List<URL> urls)
+    {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        if (classLoader instanceof URLClassLoader) {
+            try {
+                Method addURLMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+                addURLMethod.setAccessible(true);
+                for (URL uri : urls) {
+                    addURLMethod.invoke(classLoader, uri);
+                }
+                return;
+            }
+            catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                throw Throwables.throwsThrowable(e);
+            }
+        }
+        //java11+
+        try {
+            Field field = classLoader.getClass().getDeclaredField("ucp");
+            Platform.addOpenJavaModules(field.getType(), ClassLoaders.class);
+            field.setAccessible(true);
+            Object ucp = field.get(classLoader);
+            Method addURLMethod = ucp.getClass().getMethod("addURL", URL.class);
+            for (URL url : urls) {
+                addURLMethod.invoke(ucp, url);
+            }
+        }
+        catch (NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException e) {
+            throw new UnsupportedOperationException("this jdk not support", e);
+        }
+    }
+
+    /**
+     * get system classLoader ucp jars
+     *
+     * @return system classLoader ucp jars
+     */
+    public static List<URL> getSystemClassLoaderJars()
+    {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        if (classLoader instanceof URLClassLoader) {
+            return java.util.Arrays.asList(((URLClassLoader) classLoader).getURLs());
+        }
+        //java11+
+        try {
+            Field field = classLoader.getClass().getDeclaredField("ucp");
+            Platform.addOpenJavaModules(field.getType(), ClassLoaders.class);
+            field.setAccessible(true);
+            Object ucp = field.get(classLoader);
+            Method getURLs = ucp.getClass().getMethod("getURLs");
+            URL[] urls = (URL[]) getURLs.invoke(ucp);
+            return Arrays.asList(urls);
+        }
+        catch (NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException e) {
+            throw new UnsupportedOperationException("this jdk not support", e);
+        }
     }
 }
