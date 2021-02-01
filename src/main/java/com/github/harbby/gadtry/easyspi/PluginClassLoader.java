@@ -44,8 +44,7 @@ public class PluginClassLoader
     {
         this(urls,
                 spiClassLoader,
-                // plugins should not have access to the system (application) class loader
-                spiPackages.isEmpty() ? spiClassLoader : PLATFORM_CLASS_LOADER,
+                spiPackages == null ? spiClassLoader : PLATFORM_CLASS_LOADER,
                 spiPackages);
     }
 
@@ -55,7 +54,6 @@ public class PluginClassLoader
             ClassLoader parent,
             Collection<String> spiPackages)
     {
-        // plugins should not have access to the system (application) class loader
         super(urls.toArray(new URL[0]), parent);
         this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
         this.spiPackages = MutableList.copy(spiPackages);  //== MutableList.copyOf()

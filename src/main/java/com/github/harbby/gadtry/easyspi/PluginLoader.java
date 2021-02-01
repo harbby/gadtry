@@ -27,7 +27,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -112,7 +111,7 @@ public final class PluginLoader<T>
 
     public static class Builder<T>
     {
-        private List<String> spiPackages = Collections.emptyList();
+        private List<String> spiPackages = null;
         private Supplier<Collection<File>> scanner;
         private Class<T> pluginClass;
         private java.util.function.Function<File, List<File>> filter = moduleDir -> Files.listFiles(moduleDir, true);
@@ -198,9 +197,12 @@ public final class PluginLoader<T>
         {
             long loadTime = moduleDir.lastModified();
             URLClassLoader moduleClassLoader = buildClassLoaderFromDirectory(moduleDir);
-            try (Closeables ignored = Closeables.openThreadContextClassLoader(moduleClassLoader)) {
+            try (Closeables<?> ignored = Closeables.openThreadContextClassLoader(moduleClassLoader)) {
                 ServiceLoader<T> serviceLoader = ServiceLoader.load(pluginClass, moduleClassLoader);
-                List<T> plugins = MutableList.copy(serviceLoader);
+                List<T> plugins = new ArrayList<>();
+                for (T t : serviceLoader) {
+                    plugins.add(t);
+                }
                 Module<T> module = new Module<>(moduleDir, loadTime, plugins, moduleClassLoader, closeHandler);
                 loadHandler.accept(module);
                 return module;
@@ -214,7 +216,7 @@ public final class PluginLoader<T>
             for (File file : filter.apply(dir)) {
                 urls.add(file.toURI().toURL());
             }
-
+            // plugins should not have access to the system (application) class loader
             return new PluginClassLoader(urls, spiLoader, spiPackages);
         }
     }

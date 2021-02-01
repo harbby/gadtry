@@ -16,19 +16,19 @@
 package com.github.harbby.gadtry.easyspi;
 
 import com.github.harbby.gadtry.aop.AopGo;
+import com.github.harbby.gadtry.base.Files;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -97,7 +97,7 @@ public class PluginLoaderTest
         File reloadFile2 = new File(module.getModulePath().getParentFile(), "reload");
         try {
             byte[] value = String.valueOf(System.currentTimeMillis()).getBytes(UTF_8);
-            Files.write(Paths.get(reloadFile.toURI()), value, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            java.nio.file.Files.write(Paths.get(reloadFile.toURI()), value, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             reloadFile2.mkdirs();
             pluginLoader.reload();
             Assert.assertEquals(1, closeNumber.get());
@@ -114,7 +114,7 @@ public class PluginLoaderTest
 
     @Test
     public void loadFilterTest()
-            throws IOException
+            throws Exception
     {
         final PluginLoader<Driver> pluginLoader = PluginLoader.<Driver>newScanner()
                 .setScanDir(() -> {
@@ -129,9 +129,10 @@ public class PluginLoaderTest
                         return new ArrayList<>();
                     }
                     else {
-                        return Arrays.stream(file.listFiles()).collect(Collectors.toList());
+                        return Files.listFiles(file, false);
                     }
                 })
+                .onlyAccessSpiPackages(Collections.emptyList())
                 .load();
 
         Assert.assertEquals(1, pluginLoader.getPlugins().size());
