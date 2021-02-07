@@ -61,7 +61,7 @@ public final class Platform
      * copy  {@link java.nio.ByteBuffer#allocateDirect(int)}
      * must alignByte = Math.sqrt(alignByte)
      *
-     * @param len allocate direct mem size
+     * @param len       allocate direct mem size
      * @param alignByte default 16
      * @return [base, dataOffset]
      */
@@ -386,10 +386,9 @@ public final class Platform
 
     /**
      * Free DirectBuffer
-     * java11需要在编译中加入:
+     * 可能需要在编译中加入:
      * --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
      * --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
-     * java15之后则不需要加入上述
      *
      * @param buffer DirectBuffer waiting to be released
      */

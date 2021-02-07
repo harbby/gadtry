@@ -9,9 +9,8 @@ jacoco {
 
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
-  options.compilerArgs << "--add-exports=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED"
-  options.compilerArgs << "--add-exports=java.base/sun.reflect.generics.tree=ALL-UNNAMED"
-  options.compilerArgs << "--add-exports=java.base/sun.reflect.generics.repository=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
 }
 
 sourceSets {
