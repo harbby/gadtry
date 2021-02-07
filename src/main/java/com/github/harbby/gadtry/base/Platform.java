@@ -21,6 +21,7 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.Modifier;
 import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 import sun.reflect.ReflectionFactory;
 
 import java.lang.invoke.MethodHandles;
@@ -200,13 +201,10 @@ public final class Platform
     }
 
     /**
-     * 帮我们轻松绕开jdk9模块化引入的访问限制:
+     * 绕开jdk9模块化引入的访问限制:
      * 1. 非法反射访问警告消除
      * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过他我们可以访问任何jdk限制的内部代码
      * <p>
-     * 但他还存在一些缺陷:
-     * 1: 目前存在action不能依赖任何用户类,否则会throw java.lang.NoClassDefFoundError
-     * 2: 不支持java8 lambda
      *
      * @param hostClass   action将获取hostClass的权限
      * @param targetClass 希望获取权限的类
@@ -252,6 +250,9 @@ public final class Platform
 
     /**
      * forRemoval = true
+     * 存在一些缺陷:
+     * 1: 目前存在action不能依赖任何用户类,否则会throw java.lang.NoClassDefFoundError
+     * 2: 不支持java8 lambda
      *
      * @param hostClass 宿主类
      * @param action    被复制的类
@@ -381,6 +382,30 @@ public final class Platform
             throwException(e);
         }
         throw new IllegalStateException("unreachable");
+    }
+
+    /**
+     * Free DirectBuffer
+     * java11需要在编译中加入:
+     * --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+     * --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+     * java15之后则不需要加入上述
+     *
+     * @param buffer DirectBuffer waiting to be released
+     */
+    public static void freeDirectBuffer(ByteBuffer buffer)
+    {
+        checkState(buffer.isDirect(), "buffer not direct");
+        if (((DirectBuffer) buffer).cleaner() != null) {
+            //java8字节码版本为52
+            if (Platform.getVmClassVersion() > 52) {
+                Platform.addOpenJavaModules(((DirectBuffer) buffer).cleaner().getClass(), Platform.class);
+            }
+            ((DirectBuffer) buffer).cleaner().clean();
+        }
+        else {
+            throw new IllegalStateException("LEAK: directBuffer was not set Cleaner");
+        }
     }
 
     @SuppressWarnings("unchecked")

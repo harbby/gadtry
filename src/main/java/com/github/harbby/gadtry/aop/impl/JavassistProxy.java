@@ -20,7 +20,6 @@ import com.github.harbby.gadtry.aop.mock.MockGoException;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Strings;
 import com.github.harbby.gadtry.collection.MutableList;
-import com.github.harbby.gadtry.collection.MutableSet;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -43,7 +42,6 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,6 +50,7 @@ import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.aop.runtime.ProxyRuntime.METHOD_START;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.copyOverwriteObjectState;
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavassistProxy
@@ -67,21 +66,21 @@ public class JavassistProxy
     public static <T> T newProxyInstance(ProxyRequest<T> request)
     {
         Class<?> aClass = getProxyClass(request);
-        Object obj;
+        Object proxyObj;
         try {
-            //--存在可能没有无参构造器的问题
-            obj = Platform.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
+            //support no Constructor if
+            proxyObj = Platform.getUnsafe().allocateInstance(aClass);  //aClass.newInstance();
         }
         catch (Exception e) {
             throw new MockGoException("new Instance " + aClass + "failed", e);
         }
-        ((ProxyHandler) obj).setHandler(request.getHandler());
+        ((ProxyHandler) proxyObj).setHandler(request.getHandler());
 
-        if (request.getTarget() != null) {
-            copyObjectFields(request.getSuperclass(), obj, request.getTarget());
+        if (request.getTarget() != null && !request.getSuperclass().isInterface()) {
+            copyOverwriteObjectState(request.getSuperclass(), request.getTarget(), proxyObj);
         }
 
-        return (T) obj;
+        return (T) proxyObj;
     }
 
     public static <T> T newProxyInstance(ClassLoader loader, InvocationHandler handler, Class<?>... interfaces)
@@ -94,30 +93,6 @@ public class JavassistProxy
                 .disableSuperMethod()
                 .build();
         return newProxyInstance(request);
-    }
-
-    private static void copyObjectFields(Class<?> superclass, Object proxyObj, Object target)
-    {
-        if (superclass.isInterface()) {
-            return;
-        }
-        Set<Field> fields = MutableSet.<Field>builder().addAll(superclass.getDeclaredFields())
-                .addAll(superclass.getFields())
-                .build();
-
-        for (Field field : fields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
-            field.setAccessible(true);
-            try {
-                Object value = field.get(target);
-                field.set(proxyObj, value);
-            }
-            catch (IllegalAccessException e) {
-                throw new MockGoException("init proxy object field " + field, e);
-            }
-        }
     }
 
     public static boolean isProxyClass(Class<?> cl)

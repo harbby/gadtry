@@ -15,8 +15,12 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.MutableSet;
+
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -24,6 +28,41 @@ import static java.util.Objects.requireNonNull;
 public class MoreObjects
 {
     private MoreObjects() {}
+
+    /**
+     * copy(浅) source object field data to target Object
+     *
+     * @param modelClass copy model
+     * @param source     source object
+     * @param target     target object
+     */
+    public static void copyOverwriteObjectState(Class<?> modelClass, Object source, Object target)
+    {
+        requireNonNull(modelClass, "modelClass is null");
+        requireNonNull(source, "source is null");
+        requireNonNull(target, "target is null");
+        checkState(!modelClass.isInterface(), "don't copy interface field");
+
+        Set<Field> fields = MutableSet.<Field>builder().addAll(modelClass.getDeclaredFields())
+                .addAll(modelClass.getFields())
+                .build();
+
+        for (Field field : fields) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            if (!field.isAccessible()) {
+                field.setAccessible(true);
+            }
+            try {
+                Object value = field.get(source);
+                field.set(target, value);
+            }
+            catch (IllegalAccessException e) {
+                throw Throwables.throwsThrowable(e);
+            }
+        }
+    }
 
     public static void checkState(boolean ok)
     {
