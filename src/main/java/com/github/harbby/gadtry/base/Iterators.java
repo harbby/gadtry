@@ -335,7 +335,7 @@ public class Iterators
         };
     }
 
-    public static <E> Iterator<E> concat(Iterator<Iterator<E>> iterators)
+    public static <E> Iterator<E> concat(Iterator<? extends Iterator<E>> iterators)
     {
         checkArgument(iterators != null, "iterators is null");
         if (!iterators.hasNext()) {
@@ -371,6 +371,7 @@ public class Iterators
         };
     }
 
+    @SafeVarargs
     public static <E> Iterator<E> concat(Iterator<E>... iterators)
     {
         requireNonNull(iterators, "iterators is null");
