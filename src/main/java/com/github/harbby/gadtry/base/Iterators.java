@@ -15,18 +15,17 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.StateOption;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -502,15 +501,19 @@ public class Iterators
         };
     }
 
-    public static <T> Iterator<T> mergeSorted(Iterable<? extends Iterator<? extends T>> inputs, Comparator<? super T> comparator)
+    @SafeVarargs
+    public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, Iterator<T>... inputs)
     {
-        final List<? extends Iterator<? extends T>> iterators = MutableList.copy(inputs);
-
-        final List<Tuple2<T, Integer>> sortArr = new ArrayList<>();
-        for (int i = 0; i < iterators.size(); i++) {
-            Iterator<? extends T> iterator = iterators.get(i);
+        requireNonNull(comparator, "comparator is null");
+        requireNonNull(inputs, "inputs is null");
+        if (inputs.length == 0) {
+            return Iterators.empty();
+        }
+        final PriorityQueue<Tuple2<T, Integer>> priorityQueue = new PriorityQueue<>(inputs.length, (o1, o2) -> comparator.compare(o1.f1, o2.f1));
+        for (int i = 0; i < inputs.length; i++) {
+            Iterator<? extends T> iterator = inputs[i];
             if (iterator.hasNext()) {
-                sortArr.add(new Tuple2<>(iterator.next(), i));
+                priorityQueue.add(Tuple2.of(iterator.next(), i));
             }
         }
 
@@ -524,13 +527,10 @@ public class Iterators
                 if (node != null) {
                     return true;
                 }
-                if (sortArr.isEmpty()) {
+                if (priorityQueue.isEmpty()) {
                     return false;
                 }
-                if (sortArr.size() > 1) {
-                    sortArr.sort((x1, x2) -> comparator.compare(x1.f1(), x2.f1()));
-                }
-                this.node = sortArr.get(0);
+                this.node = priorityQueue.poll();
                 return true;
             }
 
@@ -541,12 +541,10 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 T value = node.f1();
-                Iterator<? extends T> iterator = iterators.get(node.f2);
+                Iterator<? extends T> iterator = inputs[node.f2];
                 if (iterator.hasNext()) {
                     node.f1 = iterator.next();
-                }
-                else {
-                    sortArr.remove(0);
+                    priorityQueue.add(node);
                 }
                 this.node = null;
                 return value;
