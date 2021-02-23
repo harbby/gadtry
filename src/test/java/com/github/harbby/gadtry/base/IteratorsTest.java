@@ -232,7 +232,8 @@ public class IteratorsTest
         Iterator<Integer> iterator = Iterators.mergeSorted(Integer::compareTo,
                 list1.iterator(),
                 list2.iterator(),
-                list3.iterator());
+                list3.iterator(),
+                Iterators.empty());
         List<Integer> out = MutableList.copy(iterator);
         Assert.assertEquals(out, Arrays.asList(0, 1, 3, 4, 5, 7, 8, 8, 9, 11, 13, 15, 16, 20, 22, 27));
     }

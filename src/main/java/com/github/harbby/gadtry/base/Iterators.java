@@ -47,6 +47,7 @@ public class Iterators
 {
     private Iterators() {}
 
+    private static final Runnable DEFAULT_CLOSE = () -> {};
     private static final Iterable<?> EMPTY_ITERABLE = () -> new Iterator<Object>()
     {
         @Override
@@ -268,16 +269,27 @@ public class Iterators
 
     public static <T> Iterator<T> limit(Iterator<T> iterator, int limit)
     {
+        return limit(iterator, limit, DEFAULT_CLOSE);
+    }
+
+    public static <T> Iterator<T> limit(Iterator<T> iterator, int limit, Runnable autoClose)
+    {
         requireNonNull(iterator);
         checkArgument(limit >= 0, "limit must >= 0");
         return new Iterator<T>()
         {
-            private int number;
+            private int number = 0;
+            private boolean done = false;
 
             @Override
             public boolean hasNext()
             {
-                return number < limit && iterator.hasNext();
+                boolean hasNext = number < limit && iterator.hasNext();
+                if (!hasNext && !done) {
+                    autoClose.run();
+                    done = true;
+                }
+                return hasNext;
             }
 
             @Override
@@ -302,11 +314,20 @@ public class Iterators
 
     public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator, Function<E1, Iterator<E2>> flatMap)
     {
+        return flatMap(iterator, flatMap, DEFAULT_CLOSE);
+    }
+
+    public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator,
+            Function<E1, Iterator<E2>> flatMap,
+            Runnable autoClose)
+    {
         requireNonNull(iterator, "iterator is null");
         requireNonNull(flatMap, "flatMap is null");
+        requireNonNull(autoClose, "autoClose is null");
         return new Iterator<E2>()
         {
             private Iterator<E2> child = empty();
+            private boolean done = false;
 
             @Override
             public boolean hasNext()
@@ -319,6 +340,10 @@ public class Iterators
                     if (child.hasNext()) {
                         return true;
                     }
+                }
+                if (!done) {
+                    done = true;
+                    autoClose.run();
                 }
                 return false;
             }
@@ -508,6 +533,9 @@ public class Iterators
         requireNonNull(inputs, "inputs is null");
         if (inputs.length == 0) {
             return Iterators.empty();
+        }
+        if (inputs.length == 1) {
+            return inputs[0];
         }
         final PriorityQueue<Tuple2<T, Integer>> priorityQueue = new PriorityQueue<>(inputs.length, (o1, o2) -> comparator.compare(o1.f1, o2.f1));
         for (int i = 0; i < inputs.length; i++) {
