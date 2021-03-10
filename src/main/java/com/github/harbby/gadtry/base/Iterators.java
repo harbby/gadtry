@@ -15,9 +15,11 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.StateOption;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
+import com.github.harbby.gadtry.function.Reducer;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -47,7 +49,7 @@ public class Iterators
 {
     private Iterators() {}
 
-    private static final Runnable DEFAULT_CLOSE = () -> {};
+    public static final Runnable EMPTY_CLOSE = () -> {};
     private static final Iterable<?> EMPTY_ITERABLE = () -> new Iterator<Object>()
     {
         @Override
@@ -269,7 +271,7 @@ public class Iterators
 
     public static <T> Iterator<T> limit(Iterator<T> iterator, int limit)
     {
-        return limit(iterator, limit, DEFAULT_CLOSE);
+        return limit(iterator, limit, EMPTY_CLOSE);
     }
 
     public static <T> Iterator<T> limit(Iterator<T> iterator, int limit, Runnable autoClose)
@@ -314,7 +316,7 @@ public class Iterators
 
     public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator, Function<E1, Iterator<E2>> flatMap)
     {
-        return flatMap(iterator, flatMap, DEFAULT_CLOSE);
+        return flatMap(iterator, flatMap, EMPTY_CLOSE);
     }
 
     public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator,
@@ -526,28 +528,26 @@ public class Iterators
         };
     }
 
-    @SafeVarargs
-    public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, Iterator<T>... inputs)
+    public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, List<Iterator<T>> inputs)
     {
         requireNonNull(comparator, "comparator is null");
         requireNonNull(inputs, "inputs is null");
-        if (inputs.length == 0) {
+        if (inputs.size() == 0) {
             return Iterators.empty();
         }
-        if (inputs.length == 1) {
-            return inputs[0];
+        if (inputs.size() == 1) {
+            return inputs.get(0);
         }
-        final PriorityQueue<Tuple2<T, Integer>> priorityQueue = new PriorityQueue<>(inputs.length, (o1, o2) -> comparator.compare(o1.f1, o2.f1));
-        for (int i = 0; i < inputs.length; i++) {
-            Iterator<? extends T> iterator = inputs[i];
+        final PriorityQueue<Tuple2<T, Iterator<T>>> priorityQueue = new PriorityQueue<>(inputs.size() + 1, (o1, o2) -> comparator.compare(o1.f1, o2.f1));
+        for (Iterator<T> iterator : inputs) {
             if (iterator.hasNext()) {
-                priorityQueue.add(Tuple2.of(iterator.next(), i));
+                priorityQueue.add(Tuple2.of(iterator.next(), iterator));
             }
         }
 
         return new Iterator<T>()
         {
-            private Tuple2<T, Integer> node;
+            private Tuple2<T, Iterator<T>> node;
 
             @Override
             public boolean hasNext()
@@ -569,13 +569,73 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 T value = node.f1();
-                Iterator<? extends T> iterator = inputs[node.f2];
+                Iterator<? extends T> iterator = node.f2;
                 if (iterator.hasNext()) {
                     node.f1 = iterator.next();
                     priorityQueue.add(node);
                 }
                 this.node = null;
                 return value;
+            }
+        };
+    }
+
+    @SafeVarargs
+    public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, Iterator<T>... inputs)
+    {
+        return mergeSorted(comparator, ImmutableList.of(inputs));
+    }
+
+    public static <K, V> Iterator<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer)
+    {
+        return reduceSorted(input, reducer, EMPTY_CLOSE);
+    }
+
+    public static <K, V> Iterator<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer, Runnable autoClose)
+    {
+        requireNonNull(reducer, "reducer is null");
+        requireNonNull(input, "input iterator is null");
+        if (!input.hasNext()) {
+            return Iterators.empty();
+        }
+        return new Iterator<Tuple2<K, V>>()
+        {
+            private final StateOption<Tuple2<K, V>> option = StateOption.empty();
+            private Tuple2<K, V> lastRow = input.next();
+            private boolean done = false;
+
+            @Override
+            public boolean hasNext()
+            {
+                if (option.isDefined()) {
+                    return true;
+                }
+                if (done) {
+                    return false;
+                }
+                while (input.hasNext()) {
+                    Tuple2<K, V> tp = input.next();
+                    if (!tp.f1.equals(lastRow.f1)) {
+                        option.update(lastRow);
+                        this.lastRow = tp;
+                        return true;
+                    }
+                    lastRow.f2 = reducer.reduce(lastRow.f2, tp.f2);
+                }
+                option.update(lastRow);
+                this.lastRow = null;
+                this.done = true;
+                autoClose.run();
+                return true;
+            }
+
+            @Override
+            public Tuple2<K, V> next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return option.remove();
             }
         };
     }

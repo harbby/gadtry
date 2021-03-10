@@ -24,15 +24,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import static java.util.Objects.requireNonNull;
+
 public class LimitedNioChannelTest
 {
     @Test
-    public void readTest() throws IOException
+    public void readTest()
+            throws IOException
     {
-        File file = new File(LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt").getFile());
-
+        File file = new File(requireNonNull(LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt")).getFile());
         int length = (int) file.length();
-        Assert.assertTrue(length > 0);
+        Assert.assertEquals(length, 1988);
         ByteBuffer allBytes = ByteBuffer.allocate(length);
         ByteBuffer tmp = ByteBuffer.allocate(128);
         try (FileChannel fileChannel = new FileInputStream(file).getChannel()) {

@@ -46,26 +46,22 @@ public class LimitedNioChannel
     public int read(ByteBuffer dst)
             throws IOException
     {
-        if (this.left == 0L) {
+        if (this.left == 0) {
             return -1;
         }
+
+        if (dst.remaining() > this.left) {
+            int oldLimit = dst.limit();
+            dst.limit(dst.position() + (int) this.left);
+            int r = this.readChannel.read(dst);
+            this.left = 0;
+            dst.limit(oldLimit);
+            return r;
+        }
         else {
-            int result;
-            if (dst.remaining() > this.left) {
-                ByteBuffer tmp = ByteBuffer.allocate((int) this.left);
-                result = this.readChannel.read(tmp);
-                tmp.flip();
-                dst.put(tmp);
-            }
-            else {
-                result = this.readChannel.read(dst);
-            }
-
-            if (result != -1) {
-                this.left -= (long) result;
-            }
-
-            return result;
+            int r = this.readChannel.read(dst);
+            this.left = this.left - r;
+            return r;
         }
     }
 
@@ -94,7 +90,7 @@ public class LimitedNioChannel
     public long size()
             throws IOException
     {
-        return (int) Math.min((long) this.readChannel.size(), this.left);
+        return (int) Math.min(this.readChannel.size(), this.left);
     }
 
     @Override
