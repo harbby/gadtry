@@ -22,13 +22,14 @@ import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
 import java.io.FilterOutputStream;
+import java.io.NotSerializableException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-public interface JVMLauncher<R extends Serializable>
+public interface JVMLauncher<R>
 {
     public R startAndGet()
             throws JVMException;
@@ -71,8 +72,12 @@ public interface JVMLauncher<R extends Serializable>
         VmResult<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
-            VmCallable<? extends Serializable> task = (VmCallable<? extends Serializable>) ois.readObject();
-            future = new VmResult<>(task.call());
+            VmCallable<?> task = (VmCallable<?>) ois.readObject();
+            Object value = task.call();
+            if (value != null && !(value instanceof Serializable)) {
+                throw new NotSerializableException("not serialize result: " + value);
+            }
+            future = new VmResult<>((Serializable) value);
         }
         catch (Throwable e) {
             future = new VmResult<>(Throwables.getStackTraceAsString(e));

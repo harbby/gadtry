@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.jvm;
 
 import java.io.File;
-import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -35,11 +34,11 @@ public class JVMLaunchers
 {
     private JVMLaunchers() {}
 
-    public static class VmBuilder<T extends Serializable>
+    public static class VmBuilder<T>
     {
         private VmCallable<T> task;
         private boolean depThisJvm = true;
-        private Consumer<String> consoleHandler;
+        private Consumer<String> consoleHandler = System.out::print;
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
         private final Map<String, String> environment = new HashMap<>();
@@ -135,14 +134,13 @@ public class JVMLaunchers
 
         public JVMLauncher<T> build()
         {
-            requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
             return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm,
                     otherVmOps, environment, classLoader, workDir, taskProcessName);
         }
     }
 
-    public static <T extends Serializable> VmBuilder<T> newJvm()
+    public static <T> VmBuilder<T> newJvm()
     {
-        return new VmBuilder<T>();
+        return new VmBuilder<>();
     }
 }

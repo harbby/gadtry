@@ -21,11 +21,13 @@ import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.Reducer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -65,10 +67,16 @@ public class Iterators
         }
     };
 
-    @SafeVarargs
-    public static <E> Iterator<E> of(E... values)
+    public interface ResetIterator<E>
+            extends Iterator<E>
     {
-        return new Iterator<E>()
+        public void reset();
+    }
+
+    @SafeVarargs
+    public static <E> ResetIterator<E> of(E... values)
+    {
+        return new ResetIterator<E>()
         {
             private int index = 0;
 
@@ -85,6 +93,47 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 return values[index++];
+            }
+
+            @Override
+            public void reset()
+            {
+                this.index = 0;
+            }
+        };
+    }
+
+    @SafeVarargs
+    public static <E> ResetIterator<E> warp(E... values)
+    {
+        return of(values);
+    }
+
+    public static <E> ResetIterator<E> warp(List<E> values)
+    {
+        return new ResetIterator<E>()
+        {
+            private int index = 0;
+
+            @Override
+            public boolean hasNext()
+            {
+                return index < values.size();
+            }
+
+            @Override
+            public E next()
+            {
+                if (!this.hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return values.get(index++);
+            }
+
+            @Override
+            public void reset()
+            {
+                this.index = 0;
             }
         };
     }
@@ -128,11 +177,6 @@ public class Iterators
     {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
                 iterator, Spliterator.ORDERED | Spliterator.NONNULL), false);
-    }
-
-    public static <T> Stream<T> toStream(Iterator<T> iterator, Runnable close)
-    {
-        return toStream(iterator).onClose(close);
     }
 
     public static <T> T getFirst(Iterator<T> iterator, int index, T defaultValue)
@@ -363,7 +407,7 @@ public class Iterators
 
     public static <E> Iterator<E> concat(Iterator<? extends Iterator<E>> iterators)
     {
-        checkArgument(iterators != null, "iterators is null");
+        requireNonNull(iterators, "iterators is null");
         if (!iterators.hasNext()) {
             return empty();
         }
@@ -484,26 +528,6 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 return option.remove();
-            }
-        };
-    }
-
-    public static <E> Iterator<Tuple2<E, Integer>> zipIndex(Iterator<E> iterator, int startIndex)
-    {
-        return new Iterator<Tuple2<E, Integer>>()
-        {
-            private int i = startIndex;
-
-            @Override
-            public boolean hasNext()
-            {
-                return iterator.hasNext();
-            }
-
-            @Override
-            public Tuple2<E, Integer> next()
-            {
-                return new Tuple2<>(iterator.next(), i++);
             }
         };
     }
@@ -636,6 +660,81 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 return option.remove();
+            }
+        };
+    }
+
+    public static <K, V1, V2> Iterator<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(
+            Comparator<K> comparator,
+            Iterator<Tuple2<K, V1>> leftStream,
+            Iterator<Tuple2<K, V2>> rightStream)
+    {
+        if (!leftStream.hasNext() || !rightStream.hasNext()) {
+            return Iterators.empty();
+        }
+        return new Iterator<Tuple2<K, Tuple2<V1, V2>>>()
+        {
+            private Tuple2<K, V1> leftNode = leftStream.next();
+            private Tuple2<K, V2> rightNode = null;
+
+            private final List<Tuple2<K, V1>> leftSameKeys = new ArrayList<>();
+            private final ResetIterator<Tuple2<K, V1>> leftSameIterator = Iterators.warp(leftSameKeys);
+            private final Iterator<Tuple2<K, Tuple2<V1, V2>>> child = Iterators.map(leftSameIterator, x -> Tuple2.of(x.f1, Tuple2.of(x.f2, rightNode.f2)));
+
+            @Override
+            public boolean hasNext()
+            {
+                if (child.hasNext()) {
+                    return true;
+                }
+                if (!rightStream.hasNext()) {
+                    return false;
+                }
+                this.rightNode = rightStream.next();
+
+                if (!leftSameKeys.isEmpty() && Objects.equals(leftSameKeys.get(0).f1, rightNode.f1)) {
+                    leftSameIterator.reset();
+                    return true;
+                }
+                while (true) {
+                    int than = comparator.compare(leftNode.f1, rightNode.f1);
+                    if (than == 0) {
+                        leftSameKeys.clear();
+                        do {
+                            leftSameKeys.add(leftNode);
+                            if (leftStream.hasNext()) {
+                                leftNode = leftStream.next();
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        while (Objects.equals(leftNode.f1, rightNode.f1));
+                        leftSameIterator.reset();
+                        return true;
+                    }
+                    else if (than > 0) {
+                        if (!rightStream.hasNext()) {
+                            return false;
+                        }
+                        this.rightNode = rightStream.next();
+                    }
+                    else {
+                        if (!leftStream.hasNext()) {
+                            return false;
+                        }
+                        this.leftNode = leftStream.next();
+                    }
+                }
+            }
+
+            @Override
+            public Tuple2<K, Tuple2<V1, V2>> next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return child.next();
             }
         };
     }

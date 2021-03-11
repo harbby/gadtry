@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.jvm;
 
 import java.io.Serializable;
 
-public class VmResult<V extends Serializable>
+public class VmResult<V>
         implements Serializable
 {
     private V result;
