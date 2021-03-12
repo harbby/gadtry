@@ -24,7 +24,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +37,7 @@ import java.util.stream.Collectors;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class JVMLauncherImpl<R extends Serializable>
+public class JVMLauncherImpl<R>
         implements JVMLauncher<R>
 {
     private final VmCallable<R> task;

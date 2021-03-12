@@ -18,7 +18,7 @@ package com.github.harbby.gadtry.jvm;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
-public interface VmCallable<V extends Serializable>
+public interface VmCallable<V>
         extends Callable<V>, Serializable
 {
 }
