@@ -51,7 +51,6 @@ public class Iterators
 {
     private Iterators() {}
 
-    public static final Runnable EMPTY_CLOSE = () -> {};
     private static final Iterable<?> EMPTY_ITERABLE = () -> new Iterator<Object>()
     {
         @Override
@@ -315,27 +314,16 @@ public class Iterators
 
     public static <T> Iterator<T> limit(Iterator<T> iterator, int limit)
     {
-        return limit(iterator, limit, EMPTY_CLOSE);
-    }
-
-    public static <T> Iterator<T> limit(Iterator<T> iterator, int limit, Runnable autoClose)
-    {
         requireNonNull(iterator);
         checkArgument(limit >= 0, "limit must >= 0");
         return new Iterator<T>()
         {
             private int number = 0;
-            private boolean done = false;
 
             @Override
             public boolean hasNext()
             {
-                boolean hasNext = number < limit && iterator.hasNext();
-                if (!hasNext && !done) {
-                    autoClose.run();
-                    done = true;
-                }
-                return hasNext;
+                return number < limit && iterator.hasNext();
             }
 
             @Override
@@ -344,10 +332,8 @@ public class Iterators
                 if (!this.hasNext()) {
                     throw new NoSuchElementException();
                 }
-                else {
-                    number++;
-                    return iterator.next();
-                }
+                number++;
+                return iterator.next();
             }
         };
     }
@@ -358,22 +344,14 @@ public class Iterators
         iterator.forEachRemaining(function);
     }
 
-    public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator, Function<E1, Iterator<E2>> flatMap)
-    {
-        return flatMap(iterator, flatMap, EMPTY_CLOSE);
-    }
-
     public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator,
-            Function<E1, Iterator<E2>> flatMap,
-            Runnable autoClose)
+            Function<E1, Iterator<E2>> flatMap)
     {
         requireNonNull(iterator, "iterator is null");
         requireNonNull(flatMap, "flatMap is null");
-        requireNonNull(autoClose, "autoClose is null");
         return new Iterator<E2>()
         {
             private Iterator<E2> child = empty();
-            private boolean done = false;
 
             @Override
             public boolean hasNext()
@@ -386,10 +364,6 @@ public class Iterators
                     if (child.hasNext()) {
                         return true;
                     }
-                }
-                if (!done) {
-                    done = true;
-                    autoClose.run();
                 }
                 return false;
             }
@@ -562,7 +536,7 @@ public class Iterators
         if (inputs.size() == 1) {
             return inputs.get(0);
         }
-        final PriorityQueue<Tuple2<T, Iterator<T>>> priorityQueue = new PriorityQueue<>(inputs.size() + 1, (o1, o2) -> comparator.compare(o1.f1, o2.f1));
+        final PriorityQueue<Tuple2<T, Iterator<T>>> priorityQueue = new PriorityQueue<>(inputs.size(), (o1, o2) -> comparator.compare(o1.f1, o2.f1));
         for (Iterator<T> iterator : inputs) {
             if (iterator.hasNext()) {
                 priorityQueue.add(Tuple2.of(iterator.next(), iterator));
@@ -571,34 +545,24 @@ public class Iterators
 
         return new Iterator<T>()
         {
-            private Tuple2<T, Iterator<T>> node;
-
             @Override
             public boolean hasNext()
             {
-                if (node != null) {
-                    return true;
-                }
-                if (priorityQueue.isEmpty()) {
-                    return false;
-                }
-                this.node = priorityQueue.poll();
-                return true;
+                return !priorityQueue.isEmpty();
             }
 
             @Override
             public T next()
             {
-                if (!hasNext()) {
+                Tuple2<T, Iterator<T>> node = priorityQueue.poll();
+                if (node == null) {
                     throw new NoSuchElementException();
                 }
-                T value = node.f1();
-                Iterator<? extends T> iterator = node.f2;
-                if (iterator.hasNext()) {
-                    node.f1 = iterator.next();
+                T value = node.f1;
+                if (node.f2.hasNext()) {
+                    node.f1 = node.f2.next();
                     priorityQueue.add(node);
                 }
-                this.node = null;
                 return value;
             }
         };
@@ -612,11 +576,6 @@ public class Iterators
 
     public static <K, V> Iterator<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer)
     {
-        return reduceSorted(input, reducer, EMPTY_CLOSE);
-    }
-
-    public static <K, V> Iterator<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer, Runnable autoClose)
-    {
         requireNonNull(reducer, "reducer is null");
         requireNonNull(input, "input iterator is null");
         if (!input.hasNext()) {
@@ -624,33 +583,12 @@ public class Iterators
         }
         return new Iterator<Tuple2<K, V>>()
         {
-            private final StateOption<Tuple2<K, V>> option = StateOption.empty();
             private Tuple2<K, V> lastRow = input.next();
-            private boolean done = false;
 
             @Override
             public boolean hasNext()
             {
-                if (option.isDefined()) {
-                    return true;
-                }
-                if (done) {
-                    return false;
-                }
-                while (input.hasNext()) {
-                    Tuple2<K, V> tp = input.next();
-                    if (!tp.f1.equals(lastRow.f1)) {
-                        option.update(lastRow);
-                        this.lastRow = tp;
-                        return true;
-                    }
-                    lastRow.f2 = reducer.reduce(lastRow.f2, tp.f2);
-                }
-                option.update(lastRow);
-                this.lastRow = null;
-                this.done = true;
-                autoClose.run();
-                return true;
+                return input.hasNext() || lastRow != null;
             }
 
             @Override
@@ -659,7 +597,18 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return option.remove();
+                while (input.hasNext()) {
+                    Tuple2<K, V> tp = input.next();
+                    if (!Objects.equals(tp.f1, lastRow.f1)) {
+                        Tuple2<K, V> result = lastRow;
+                        this.lastRow = tp;
+                        return result;
+                    }
+                    lastRow.f2 = reducer.reduce(lastRow.f2, tp.f2);
+                }
+                Tuple2<K, V> result = lastRow;
+                lastRow = null;
+                return result;
             }
         };
     }
@@ -735,6 +684,32 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 return child.next();
+            }
+        };
+    }
+
+    public static <V> Iterator<V> autoClose(Iterator<V> iterator, Runnable autoClose)
+    {
+        requireNonNull(iterator, "iterator is null");
+        return new Iterator<V>()
+        {
+            private boolean done = false;
+
+            @Override
+            public boolean hasNext()
+            {
+                boolean hasNext = iterator.hasNext();
+                if (!hasNext && !done) {
+                    done = true;
+                    autoClose.run();
+                }
+                return hasNext;
+            }
+
+            @Override
+            public V next()
+            {
+                return iterator.next();
             }
         };
     }
