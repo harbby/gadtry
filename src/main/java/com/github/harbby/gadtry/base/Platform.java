@@ -15,6 +15,9 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.compiler.ByteClassLoader;
+import com.github.harbby.gadtry.compiler.JavaClassCompiler;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -34,8 +37,11 @@ import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -384,6 +390,41 @@ public final class Platform
         throw new IllegalStateException("unreachable");
     }
 
+    public interface DirectBufferCloseable
+    {
+        void free(sun.nio.ch.DirectBuffer directBuffer);
+    }
+
+    private static final Supplier<DirectBufferCloseable> closeableSupplier = Lazys.goLazy(() -> {
+        JavaClassCompiler javaClassCompiler = new JavaClassCompiler();
+        String className = "DirectBufferCloseableImpl";
+        String classCode = "public class DirectBufferCloseableImpl\n" +
+                "            implements com.github.harbby.gadtry.base.Platform.DirectBufferCloseable\n" +
+                "    {\n" +
+                "        @Override\n" +
+                "        public void free(sun.nio.ch.DirectBuffer buffer)\n" +
+                "        {\n" +
+                "            com.github.harbby.gadtry.base.MoreObjects.checkState(buffer.cleaner() != null, \"LEAK: directBuffer was not set Cleaner\");\n" +
+                "            if (" + Platform.class.getName() + ".getVmClassVersion() > 52) {\n" +
+                "                " + Platform.class.getName() + ".addOpenJavaModules(buffer.cleaner().getClass(), this.getClass());\n" +
+                "            }\n" +
+                "            buffer.cleaner().clean();\n" +
+                "        }\n" +
+                "    }";
+        List<String> ops = getVmClassVersion() > 52 ? ImmutableList.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED")
+                : Collections.emptyList();
+        byte[] bytes = javaClassCompiler.doCompile(className, classCode, ops).getClassByteCodes().get(className);
+        ByteClassLoader byteClassLoader = new ByteClassLoader(Platform.class.getClassLoader());
+        Class<DirectBufferCloseable> directBufferCloseableClass = (Class<DirectBufferCloseable>) byteClassLoader.loadClass(className, bytes);
+        try {
+            return directBufferCloseableClass.newInstance();
+        }
+        catch (InstantiationException | IllegalAccessException e) {
+            throw Throwables.throwsThrowable(e);
+        }
+    });
+
     /**
      * Free DirectBuffer
      * 可能需要在编译中加入:
@@ -395,16 +436,7 @@ public final class Platform
     public static void freeDirectBuffer(ByteBuffer buffer)
     {
         checkState(buffer.isDirect(), "buffer not direct");
-        if (((DirectBuffer) buffer).cleaner() != null) {
-            //java8字节码版本为52
-            if (Platform.getVmClassVersion() > 52) {
-                Platform.addOpenJavaModules(((DirectBuffer) buffer).cleaner().getClass(), Platform.class);
-            }
-            ((DirectBuffer) buffer).cleaner().clean();
-        }
-        else {
-            throw new IllegalStateException("LEAK: directBuffer was not set Cleaner");
-        }
+        closeableSupplier.get().free((DirectBuffer) buffer);
     }
 
     @SuppressWarnings("unchecked")

@@ -67,6 +67,7 @@ public class PlatformTest
         //jdk.internal.ref.Cleaner.create()
         ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
         Assert.assertNotNull(byteBuffer);
+        Platform.freeDirectBuffer(byteBuffer);
     }
 
     @Test

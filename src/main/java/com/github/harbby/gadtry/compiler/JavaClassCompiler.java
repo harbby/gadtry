@@ -22,7 +22,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -58,12 +60,18 @@ public class JavaClassCompiler
         this.compilerOptions = Collections.singletonList(debug ? "-g:source,lines,vars" : "-g:none");
     }
 
-    public JavaSourceObject doCompile(final String className, final String sourceCode)
+    public JavaSourceObject doCompile(
+            final String className,
+            final String sourceCode,
+            List<String> javacOps)
     {
         JavaSourceObject javaSource = new JavaSourceObject(className, sourceCode);
+        Set<String> ops = new HashSet<>(javacOps);
+        ops.addAll(compilerOptions);
         JavaCompiler.CompilationTask task = compiler.getTask(null,
                 fileManager,
-                listener, compilerOptions,
+                listener,
+                ops,
                 null,
                 Collections.singleton(javaSource));
         if (!task.call()) {
@@ -73,5 +81,10 @@ public class JavaClassCompiler
             throw new CompileException(className + ": Class file not created by compilation.");
         }
         return javaSource;
+    }
+
+    public JavaSourceObject doCompile(final String className, final String sourceCode)
+    {
+        return this.doCompile(className, sourceCode, Collections.emptyList());
     }
 }
