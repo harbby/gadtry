@@ -195,4 +195,9 @@ public interface IteratorPlus<E>
             }
         };
     }
+
+    default IteratorPlus<E> autoClose(Runnable autoClose)
+    {
+        return Iterators.autoClose(this, autoClose);
+    }
 }

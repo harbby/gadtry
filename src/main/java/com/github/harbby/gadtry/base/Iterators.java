@@ -16,8 +16,9 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.collection.MutableList;
+import com.github.harbby.gadtry.collection.IteratorPlus;
 import com.github.harbby.gadtry.collection.StateOption;
+import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.Function2;
@@ -53,7 +54,7 @@ public class Iterators
 {
     private Iterators() {}
 
-    private static final Iterable<?> EMPTY_ITERABLE = () -> new Iterator<Object>()
+    private static final IteratorPlus<?> EMPTY_ITERATOR = new IteratorPlus<Object>()
     {
         @Override
         public boolean hasNext()
@@ -69,9 +70,15 @@ public class Iterators
     };
 
     public interface ResetIterator<E>
-            extends Iterator<E>
+            extends IteratorPlus<E>
     {
         public void reset();
+    }
+
+    public static interface PeekIterator<V>
+            extends IteratorPlus<V>
+    {
+        public V peek();
     }
 
     @SafeVarargs
@@ -140,15 +147,15 @@ public class Iterators
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> Iterator<E> empty()
+    public static <E> IteratorPlus<E> empty()
     {
-        return (Iterator<E>) EMPTY_ITERABLE.iterator();
+        return (IteratorPlus<E>) EMPTY_ITERATOR;
     }
 
     @SuppressWarnings("unchecked")
     public static <E> Iterable<E> emptyIterable()
     {
-        return (Iterable<E>) EMPTY_ITERABLE;
+        return () -> (Iterator<E>) EMPTY_ITERATOR;
     }
 
     public static boolean isEmpty(Iterable<?> iterable)
@@ -274,11 +281,11 @@ public class Iterators
         return () -> map(iterable.iterator(), function);
     }
 
-    public static <F1, F2> Iterator<F2> map(Iterator<F1> iterator, Function<F1, F2> function)
+    public static <F1, F2> IteratorPlus<F2> map(Iterator<F1> iterator, Function<F1, F2> function)
     {
         requireNonNull(iterator);
         requireNonNull(function);
-        return new Iterator<F2>()
+        return new IteratorPlus<F2>()
         {
             @Override
             public boolean hasNext()
@@ -314,11 +321,11 @@ public class Iterators
         return Optional.ofNullable(lastValue);
     }
 
-    public static <T> Iterator<T> limit(Iterator<T> iterator, int limit)
+    public static <T> IteratorPlus<T> limit(Iterator<T> iterator, int limit)
     {
         requireNonNull(iterator);
         checkArgument(limit >= 0, "limit must >= 0");
-        return new Iterator<T>()
+        return new IteratorPlus<T>()
         {
             private int number = 0;
 
@@ -346,12 +353,12 @@ public class Iterators
         iterator.forEachRemaining(function);
     }
 
-    public static <E1, E2> Iterator<E2> flatMap(Iterator<E1> iterator,
+    public static <E1, E2> IteratorPlus<E2> flatMap(Iterator<E1> iterator,
             Function<E1, Iterator<E2>> flatMap)
     {
         requireNonNull(iterator, "iterator is null");
         requireNonNull(flatMap, "flatMap is null");
-        return new Iterator<E2>()
+        return new IteratorPlus<E2>()
         {
             private Iterator<E2> child = empty();
 
@@ -381,13 +388,13 @@ public class Iterators
         };
     }
 
-    public static <E> Iterator<E> concat(Iterator<? extends Iterator<E>> iterators)
+    public static <E> IteratorPlus<E> concat(Iterator<? extends Iterator<E>> iterators)
     {
         requireNonNull(iterators, "iterators is null");
         if (!iterators.hasNext()) {
             return empty();
         }
-        return new Iterator<E>()
+        return new IteratorPlus<E>()
         {
             private Iterator<E> child = requireNonNull(iterators.next(), "user flatMap not return null");
 
@@ -418,17 +425,17 @@ public class Iterators
     }
 
     @SafeVarargs
-    public static <E> Iterator<E> concat(Iterator<E>... iterators)
+    public static <E> IteratorPlus<E> concat(Iterator<E>... iterators)
     {
         requireNonNull(iterators, "iterators is null");
         return concat(Iterators.of(iterators));
     }
 
-    public static <E> Iterator<E> filter(Iterator<E> iterator, Function1<E, Boolean> filter)
+    public static <E> IteratorPlus<E> filter(Iterator<E> iterator, Function1<E, Boolean> filter)
     {
         requireNonNull(iterator, "iterator is null");
         requireNonNull(filter, "filter is null");
-        return new Iterator<E>()
+        return new IteratorPlus<E>()
         {
             private final StateOption<E> option = StateOption.empty();
 
@@ -469,15 +476,15 @@ public class Iterators
      * @param <E>      type
      * @return 抽样后的Iterator
      */
-    public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max, long seed)
+    public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, long seed)
     {
         return sample(iterator, setp, max, new Random(seed));
     }
 
-    public static <E> Iterator<E> sample(Iterator<E> iterator, int setp, int max, Random random)
+    public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, Random random)
     {
         requireNonNull(iterator, "iterators is null");
-        return new Iterator<E>()
+        return new IteratorPlus<E>()
         {
             private final StateOption<E> option = StateOption.empty();
 
@@ -508,9 +515,9 @@ public class Iterators
         };
     }
 
-    public static <E> Iterator<Tuple2<E, Long>> zipIndex(Iterator<E> iterator, long startIndex)
+    public static <E> IteratorPlus<Tuple2<E, Long>> zipIndex(Iterator<E> iterator, long startIndex)
     {
-        return new Iterator<Tuple2<E, Long>>()
+        return new IteratorPlus<Tuple2<E, Long>>()
         {
             private long i = startIndex;
 
@@ -576,14 +583,14 @@ public class Iterators
         return mergeSorted(comparator, ImmutableList.of(inputs));
     }
 
-    public static <K, V> Iterator<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer)
+    public static <K, V> IteratorPlus<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer)
     {
         requireNonNull(reducer, "reducer is null");
         requireNonNull(input, "input iterator is null");
         if (!input.hasNext()) {
             return Iterators.empty();
         }
-        return new Iterator<Tuple2<K, V>>()
+        return new IteratorPlus<Tuple2<K, V>>()
         {
             private Tuple2<K, V> lastRow = input.next();
 
@@ -615,7 +622,7 @@ public class Iterators
         };
     }
 
-    public static <K, V1, V2> Iterator<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(
+    public static <K, V1, V2> IteratorPlus<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(
             Comparator<K> comparator,
             Iterator<Tuple2<K, V1>> leftStream,
             Iterator<Tuple2<K, V2>> rightStream)
@@ -623,7 +630,7 @@ public class Iterators
         if (!leftStream.hasNext() || !rightStream.hasNext()) {
             return Iterators.empty();
         }
-        return new Iterator<Tuple2<K, Tuple2<V1, V2>>>()
+        return new IteratorPlus<Tuple2<K, Tuple2<V1, V2>>>()
         {
             private Tuple2<K, V1> leftNode = leftStream.next();
             private Tuple2<K, V2> rightNode = null;
@@ -690,10 +697,10 @@ public class Iterators
         };
     }
 
-    public static <V> Iterator<V> autoClose(Iterator<V> iterator, Runnable autoClose)
+    public static <V> IteratorPlus<V> autoClose(Iterator<V> iterator, Runnable autoClose)
     {
         requireNonNull(iterator, "iterator is null");
-        return new Iterator<V>()
+        return new IteratorPlus<V>()
         {
             private boolean done = false;
 
@@ -716,22 +723,99 @@ public class Iterators
         };
     }
 
-    public static <K, V, O> Iterator<Tuple2<K, O>> mapGroupSorted(Iterator<Tuple2<K, V>> input, Function2<K, Iterable<V>, O> mapGroupFunc)
+    public static <V> IteratorPlus<V> tryFilter(PeekIterator<V> iterator, Function1<V, Boolean> matcher)
+    {
+        return new IteratorPlus<V>()
+        {
+            private final StateOption<V> option = StateOption.empty();
+            private boolean done = false;
+
+            @Override
+            public boolean hasNext()
+            {
+                if (done) {
+                    return false;
+                }
+                if (option.isDefined()) {
+                    return true;
+                }
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+                if (matcher.apply(iterator.peek())) {
+                    done = true;
+                    return false;
+                }
+                option.update(iterator.next());
+                return true;
+            }
+
+            @Override
+            public V next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return option.remove();
+            }
+        };
+    }
+
+    public static <V> PeekIterator<V> peekIterator(Iterator<V> iterator)
+    {
+        return new PeekIterator<V>()
+        {
+            private final StateOption<V> option = StateOption.empty();
+
+            @Override
+            public boolean hasNext()
+            {
+                if (option.isDefined()) {
+                    return true;
+                }
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+                option.update(iterator.next());
+                return true;
+            }
+
+            @Override
+            public V next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return option.remove();
+            }
+
+            @Override
+            public V peek()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return option.getValue();
+            }
+        };
+    }
+
+    public static <K, V, O> IteratorPlus<Tuple2<K, O>> mapGroupSorted(Iterator<Tuple2<K, V>> input, Function2<K, Iterator<V>, O> mapGroupFunc)
     {
         requireNonNull(input, "input Iterator is null");
         requireNonNull(mapGroupFunc, "mapGroupFunc is null");
         if (!input.hasNext()) {
             return Iterators.empty();
         }
-        return new Iterator<Tuple2<K, O>>()
+        PeekIterator<Tuple2<K, V>> iterator = peekIterator(input);
+        return new IteratorPlus<Tuple2<K, O>>()
         {
-            private Tuple2<K, V> lastRow = input.next();
-            private final List<V> buffer = MutableList.of(lastRow.getValue());
+            private final Tuple1<K> cKey = Tuple1.of(null);
 
             @Override
             public boolean hasNext()
             {
-                return input.hasNext() || !buffer.isEmpty();
+                return iterator.hasNext();
             }
 
             @Override
@@ -740,21 +824,9 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                while (input.hasNext()) {
-                    Tuple2<K, V> tp = input.next();
-                    if (!Objects.equals(lastRow.f1, tp.f1)) {
-                        Tuple2<K, O> out = Tuple2.of(lastRow.f1, mapGroupFunc.apply(lastRow.f1, buffer));
-                        buffer.clear();
-                        buffer.add(tp.f2);
-                        lastRow = tp;
-                        return out;
-                    }
-                    buffer.add(tp.f2);
-                    lastRow = tp;
-                }
-                Tuple2<K, O> out = Tuple2.of(lastRow.f1, mapGroupFunc.apply(lastRow.f1, buffer));
-                buffer.clear();
-                return out;
+                Iterator<V> child = Iterators.tryFilter(iterator, x -> !Objects.equals(x.f1, cKey.f1)).map(x -> x.f2);
+                cKey.f1 = iterator.peek().f1;
+                return Tuple2.of(cKey.f1, mapGroupFunc.apply(cKey.f1, child));
             }
         };
     }

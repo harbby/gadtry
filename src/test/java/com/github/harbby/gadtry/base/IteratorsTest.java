@@ -440,12 +440,12 @@ public class IteratorsTest
                 Tuple2.of(2, 1),
                 Tuple2.of(2, 1),
                 Tuple2.of(8, 1));
-        Iterator<Tuple2<Integer, Integer>> rs = Iterators.mapGroupSorted(input, (k, iterable)-> (int) Iterators.size(iterable.iterator()));
-        List<Tuple2<Integer, Integer>> data = ImmutableList.copy(rs);
+        Iterator<Tuple2<Integer, String>> rs = Iterators.mapGroupSorted(input, (k, iterator) -> k + "->" + Iterators.size(iterator));
+        List<Tuple2<Integer, String>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(
-                Tuple2.of(1, 1),
-                Tuple2.of(2, 2),
-                Tuple2.of(8, 1)
+                Tuple2.of(1, "1->1"),
+                Tuple2.of(2, "2->2"),
+                Tuple2.of(8, "8->1")
         ), data);
     }
 }
