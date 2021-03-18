@@ -59,7 +59,7 @@ public class IteratorsTest
     {
         List<String> number = ImmutableList.of("1", "2", "3");
 
-        Iterators.ResetIterator<String> iterator = Iterators.warp(number);
+        Iterators.ResetIterator<String> iterator = Iterators.wrap(number);
         Assert.assertEquals(number, ImmutableList.copy(() -> iterator));
         checkNoSuchElement(iterator);
         iterator.reset();
@@ -414,7 +414,7 @@ public class IteratorsTest
     @Test
     public void zipIndexTest()
     {
-        Iterator<Tuple2<String, Long>> rs = Iterators.zipIndex(Iterators.warp("a", "b", "c"), 0);
+        Iterator<Tuple2<String, Long>> rs = Iterators.zipIndex(Iterators.wrap("a", "b", "c"), 0);
         List<Tuple2<String, Long>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(
                 Tuple2.of("a", 0L),

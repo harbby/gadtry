@@ -84,6 +84,7 @@ public class Iterators
     @SafeVarargs
     public static <E> ResetIterator<E> of(E... values)
     {
+        requireNonNull(values, "values is null");
         return new ResetIterator<E>()
         {
             private int index = 0;
@@ -112,13 +113,14 @@ public class Iterators
     }
 
     @SafeVarargs
-    public static <E> ResetIterator<E> warp(E... values)
+    public static <E> ResetIterator<E> wrap(E... values)
     {
         return of(values);
     }
 
-    public static <E> ResetIterator<E> warp(List<E> values)
+    public static <E> ResetIterator<E> wrap(List<E> values)
     {
+        requireNonNull(values, "values is null");
         return new ResetIterator<E>()
         {
             private int index = 0;
@@ -152,15 +154,14 @@ public class Iterators
         return (IteratorPlus<E>) EMPTY_ITERATOR;
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> Iterable<E> emptyIterable()
     {
-        return () -> (Iterator<E>) EMPTY_ITERATOR;
+        return Iterators::empty;
     }
 
     public static boolean isEmpty(Iterable<?> iterable)
     {
-        requireNonNull(iterable);
+        requireNonNull(iterable, "iterable is null");
         if (iterable instanceof Collection) {
             return ((Collection<?>) iterable).isEmpty();
         }
@@ -169,12 +170,13 @@ public class Iterators
 
     public static boolean isEmpty(Iterator<?> iterator)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         return !iterator.hasNext();
     }
 
     public static <T> Stream<T> toStream(Iterable<T> iterable)
     {
+        requireNonNull(iterable, "iterable is null");
         if (iterable instanceof Collection) {
             return ((Collection<T>) iterable).stream();
         }
@@ -183,6 +185,7 @@ public class Iterators
 
     public static <T> Stream<T> toStream(Iterator<T> iterator)
     {
+        requireNonNull(iterator, "iterator is null");
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
                 iterator, Spliterator.ORDERED | Spliterator.NONNULL), false);
     }
@@ -194,7 +197,7 @@ public class Iterators
 
     public static <T> T getFirst(Iterator<T> iterator, int index, Supplier<T> defaultValue)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         requireNonNull(defaultValue);
         checkState(index >= 0, "must index >= 0");
         T value;
@@ -217,7 +220,7 @@ public class Iterators
 
     public static <T> T getLast(Iterator<T> iterator)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         T value = iterator.next();
         while (iterator.hasNext()) {
             value = iterator.next();
@@ -227,7 +230,7 @@ public class Iterators
 
     public static <T> T getLast(Iterator<T> iterator, T defaultValue)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         if (!iterator.hasNext()) {
             return defaultValue;
         }
@@ -236,7 +239,7 @@ public class Iterators
 
     public static <T> T getLast(Iterable<T> iterable)
     {
-        requireNonNull(iterable);
+        requireNonNull(iterable, "iterable is null");
         if (iterable instanceof List) {
             List<T> list = (List<T>) iterable;
             if (list.isEmpty()) {
@@ -251,7 +254,7 @@ public class Iterators
 
     public static <T> T getLast(Iterable<T> iterable, T defaultValue)
     {
-        requireNonNull(iterable);
+        requireNonNull(iterable, "iterable is null");
         if (iterable instanceof List) {
             List<T> list = (List<T>) iterable;
             if (list.isEmpty()) {
@@ -266,7 +269,7 @@ public class Iterators
 
     public static long size(Iterator<?> iterator)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         long i;
         for (i = 0; iterator.hasNext(); i++) {
             iterator.next();
@@ -276,15 +279,15 @@ public class Iterators
 
     public static <F1, F2> Iterable<F2> map(Iterable<F1> iterable, Function<F1, F2> function)
     {
-        requireNonNull(iterable);
-        requireNonNull(function);
+        requireNonNull(iterable, "iterable is null");
+        requireNonNull(function, "function is null");
         return () -> map(iterable.iterator(), function);
     }
 
     public static <F1, F2> IteratorPlus<F2> map(Iterator<F1> iterator, Function<F1, F2> function)
     {
-        requireNonNull(iterator);
-        requireNonNull(function);
+        requireNonNull(iterator, "iterator is null");
+        requireNonNull(function, "function is null");
         return new IteratorPlus<F2>()
         {
             @Override
@@ -309,8 +312,8 @@ public class Iterators
 
     public static <T> Optional<T> reduce(Iterator<T> iterator, BinaryOperator<T> reducer)
     {
-        requireNonNull(iterator);
-        requireNonNull(reducer);
+        requireNonNull(iterator, "iterator is null");
+        requireNonNull(reducer, "reducer is null");
         if (!iterator.hasNext()) {
             return Optional.empty();
         }
@@ -323,7 +326,7 @@ public class Iterators
 
     public static <T> IteratorPlus<T> limit(Iterator<T> iterator, int limit)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         checkArgument(limit >= 0, "limit must >= 0");
         return new IteratorPlus<T>()
         {
@@ -349,7 +352,7 @@ public class Iterators
 
     public static <T> void foreach(Iterator<T> iterator, Consumer<T> function)
     {
-        requireNonNull(iterator);
+        requireNonNull(iterator, "iterator is null");
         iterator.forEachRemaining(function);
     }
 
@@ -484,6 +487,7 @@ public class Iterators
     public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, Random random)
     {
         requireNonNull(iterator, "iterators is null");
+        requireNonNull(random, "random is null");
         return new IteratorPlus<E>()
         {
             private final StateOption<E> option = StateOption.empty();
@@ -517,6 +521,7 @@ public class Iterators
 
     public static <E> IteratorPlus<Tuple2<E, Long>> zipIndex(Iterator<E> iterator, long startIndex)
     {
+        requireNonNull(iterator, "input Iterator is null");
         return new IteratorPlus<Tuple2<E, Long>>()
         {
             private long i = startIndex;
@@ -580,7 +585,7 @@ public class Iterators
     @SafeVarargs
     public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, Iterator<T>... inputs)
     {
-        return mergeSorted(comparator, ImmutableList.of(inputs));
+        return mergeSorted(comparator, ImmutableList.copy(inputs));
     }
 
     public static <K, V> IteratorPlus<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer)
@@ -624,19 +629,22 @@ public class Iterators
 
     public static <K, V1, V2> IteratorPlus<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(
             Comparator<K> comparator,
-            Iterator<Tuple2<K, V1>> leftStream,
-            Iterator<Tuple2<K, V2>> rightStream)
+            Iterator<Tuple2<K, V1>> leftIterator,
+            Iterator<Tuple2<K, V2>> rightIterator)
     {
-        if (!leftStream.hasNext() || !rightStream.hasNext()) {
+        requireNonNull(comparator, "comparator is null");
+        requireNonNull(leftIterator, "leftIterator is null");
+        requireNonNull(rightIterator, "rightIterator is null");
+        if (!leftIterator.hasNext() || !rightIterator.hasNext()) {
             return Iterators.empty();
         }
         return new IteratorPlus<Tuple2<K, Tuple2<V1, V2>>>()
         {
-            private Tuple2<K, V1> leftNode = leftStream.next();
+            private Tuple2<K, V1> leftNode = leftIterator.next();
             private Tuple2<K, V2> rightNode = null;
 
             private final List<Tuple2<K, V1>> leftSameKeys = new ArrayList<>();
-            private final ResetIterator<Tuple2<K, V1>> leftSameIterator = Iterators.warp(leftSameKeys);
+            private final ResetIterator<Tuple2<K, V1>> leftSameIterator = Iterators.wrap(leftSameKeys);
             private final Iterator<Tuple2<K, Tuple2<V1, V2>>> child = Iterators.map(leftSameIterator, x -> Tuple2.of(x.f1, Tuple2.of(x.f2, rightNode.f2)));
 
             @Override
@@ -645,10 +653,10 @@ public class Iterators
                 if (child.hasNext()) {
                     return true;
                 }
-                if (!rightStream.hasNext()) {
+                if (!rightIterator.hasNext()) {
                     return false;
                 }
-                this.rightNode = rightStream.next();
+                this.rightNode = rightIterator.next();
 
                 if (!leftSameKeys.isEmpty() && Objects.equals(leftSameKeys.get(0).f1, rightNode.f1)) {
                     leftSameIterator.reset();
@@ -660,8 +668,8 @@ public class Iterators
                         leftSameKeys.clear();
                         do {
                             leftSameKeys.add(leftNode);
-                            if (leftStream.hasNext()) {
-                                leftNode = leftStream.next();
+                            if (leftIterator.hasNext()) {
+                                leftNode = leftIterator.next();
                             }
                             else {
                                 break;
@@ -672,16 +680,16 @@ public class Iterators
                         return true;
                     }
                     else if (than > 0) {
-                        if (!rightStream.hasNext()) {
+                        if (!rightIterator.hasNext()) {
                             return false;
                         }
-                        this.rightNode = rightStream.next();
+                        this.rightNode = rightIterator.next();
                     }
                     else {
-                        if (!leftStream.hasNext()) {
+                        if (!leftIterator.hasNext()) {
                             return false;
                         }
-                        this.leftNode = leftStream.next();
+                        this.leftNode = leftIterator.next();
                     }
                 }
             }
@@ -700,6 +708,7 @@ public class Iterators
     public static <V> IteratorPlus<V> autoClose(Iterator<V> iterator, Runnable autoClose)
     {
         requireNonNull(iterator, "iterator is null");
+        requireNonNull(autoClose, "autoClose is null");
         return new IteratorPlus<V>()
         {
             private boolean done = false;
@@ -723,8 +732,10 @@ public class Iterators
         };
     }
 
-    public static <V> IteratorPlus<V> tryFilter(PeekIterator<V> iterator, Function1<V, Boolean> matcher)
+    public static <V> IteratorPlus<V> anyMatchStop(PeekIterator<V> iterator, Function1<V, Boolean> stopMatcher)
     {
+        requireNonNull(iterator, "iterator is null");
+        requireNonNull(stopMatcher, "stopMatcher is null");
         return new IteratorPlus<V>()
         {
             private final StateOption<V> option = StateOption.empty();
@@ -742,7 +753,7 @@ public class Iterators
                 if (!iterator.hasNext()) {
                     return false;
                 }
-                if (matcher.apply(iterator.peek())) {
+                if (stopMatcher.apply(iterator.peek())) {
                     done = true;
                     return false;
                 }
@@ -763,6 +774,10 @@ public class Iterators
 
     public static <V> PeekIterator<V> peekIterator(Iterator<V> iterator)
     {
+        requireNonNull(iterator, "iterator is null");
+        if (iterator instanceof PeekIterator) {
+            return (PeekIterator<V>) iterator;
+        }
         return new PeekIterator<V>()
         {
             private final StateOption<V> option = StateOption.empty();
@@ -824,7 +839,7 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                Iterator<V> child = Iterators.tryFilter(iterator, x -> !Objects.equals(x.f1, cKey.f1)).map(x -> x.f2);
+                Iterator<V> child = Iterators.anyMatchStop(iterator, x -> !Objects.equals(x.f1, cKey.f1)).map(x -> x.f2);
                 cKey.f1 = iterator.peek().f1;
                 return Tuple2.of(cKey.f1, mapGroupFunc.apply(cKey.f1, child));
             }

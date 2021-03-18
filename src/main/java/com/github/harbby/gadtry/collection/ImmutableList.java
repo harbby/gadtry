@@ -27,7 +27,6 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static java.util.Objects.requireNonNull;
 
 public abstract class ImmutableList<E>
         extends AbstractList<E>
@@ -51,8 +50,7 @@ public abstract class ImmutableList<E>
     }
 
     @SuppressWarnings("unchecked")
-    @SafeVarargs
-    public static <T> List<T> of(T... elements)
+    public static <T> List<T> copy(T[] elements)
     {
         switch (elements.length) {
             case 0:
@@ -64,9 +62,28 @@ public abstract class ImmutableList<E>
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> wrap(T[] array)
+    {
+        switch (array.length) {
+            case 0:
+                return (List<T>) ImmutableArrayList.EMPTY;
+            case 1:
+                return Collections.singletonList(array[0]);
+            default:
+                return new ImmutableArrayList<>(array);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> of()
+    {
+        return (List<T>) ImmutableArrayList.EMPTY;
+    }
+
     public static <T> List<T> of(T t1)
     {
-        return checkedArr(t1);
+        return Collections.singletonList(t1);
     }
 
     public static <T> List<T> of(T t1, T t2)
@@ -105,9 +122,9 @@ public abstract class ImmutableList<E>
     }
 
     @SafeVarargs
-    private static <T> ImmutableArrayList<T> checkedArr(T... array)
+    private static <T> List<T> checkedArr(T... array)
     {
-        return new ImmutableArrayList<>(requireNonNull(array, "array is null"));
+        return wrap(array);
     }
 
     private static class ImmutableArrayList<E>
