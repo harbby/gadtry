@@ -431,4 +431,21 @@ public class IteratorsTest
         checkNoSuchElement(rs);
         Assert.assertFalse(Iterators.concat(Iterators.empty()).hasNext());
     }
+
+    @Test
+    public void mapGroupSortedTest()
+    {
+        Iterator<Tuple2<Integer, Integer>> input = Iterators.of(
+                Tuple2.of(1, 1),
+                Tuple2.of(2, 1),
+                Tuple2.of(2, 1),
+                Tuple2.of(8, 1));
+        Iterator<Tuple2<Integer, Integer>> rs = Iterators.mapGroupSorted(input, (k, iterable)-> (int) Iterators.size(iterable.iterator()));
+        List<Tuple2<Integer, Integer>> data = ImmutableList.copy(rs);
+        Assert.assertEquals(Arrays.asList(
+                Tuple2.of(1, 1),
+                Tuple2.of(2, 2),
+                Tuple2.of(8, 1)
+        ), data);
+    }
 }

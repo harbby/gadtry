@@ -16,9 +16,11 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.StateOption;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
+import com.github.harbby.gadtry.function.Function2;
 import com.github.harbby.gadtry.function.Reducer;
 
 import java.util.ArrayList;
@@ -710,6 +712,49 @@ public class Iterators
             public V next()
             {
                 return iterator.next();
+            }
+        };
+    }
+
+    public static <K, V, O> Iterator<Tuple2<K, O>> mapGroupSorted(Iterator<Tuple2<K, V>> input, Function2<K, Iterable<V>, O> mapGroupFunc)
+    {
+        requireNonNull(input, "input Iterator is null");
+        requireNonNull(mapGroupFunc, "mapGroupFunc is null");
+        if (!input.hasNext()) {
+            return Iterators.empty();
+        }
+        return new Iterator<Tuple2<K, O>>()
+        {
+            private Tuple2<K, V> lastRow = input.next();
+            private final List<V> buffer = MutableList.of(lastRow.getValue());
+
+            @Override
+            public boolean hasNext()
+            {
+                return input.hasNext() || !buffer.isEmpty();
+            }
+
+            @Override
+            public Tuple2<K, O> next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                while (input.hasNext()) {
+                    Tuple2<K, V> tp = input.next();
+                    if (!Objects.equals(lastRow.f1, tp.f1)) {
+                        Tuple2<K, O> out = Tuple2.of(lastRow.f1, mapGroupFunc.apply(lastRow.f1, buffer));
+                        buffer.clear();
+                        buffer.add(tp.f2);
+                        lastRow = tp;
+                        return out;
+                    }
+                    buffer.add(tp.f2);
+                    lastRow = tp;
+                }
+                Tuple2<K, O> out = Tuple2.of(lastRow.f1, mapGroupFunc.apply(lastRow.f1, buffer));
+                buffer.clear();
+                return out;
             }
         };
     }
