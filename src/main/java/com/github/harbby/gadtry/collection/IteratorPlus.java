@@ -29,11 +29,8 @@ import java.util.stream.Stream;
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Enhanced java Iterator
- */
 public interface IteratorPlus<E>
-        extends Iterator<E>, AutoCloseable, Serializable
+        extends Iterator<E>, Serializable
 {
     IteratorPlus<?> EMPTY = new IteratorPlus<Object>()
     {
@@ -102,13 +99,6 @@ public interface IteratorPlus<E>
             {
                 IteratorPlus.this.remove();
             }
-
-            @Override
-            public void close()
-                    throws Exception
-            {
-                IteratorPlus.this.close();
-            }
         };
     }
 
@@ -176,13 +166,6 @@ public interface IteratorPlus<E>
                 }
                 return option.remove();
             }
-
-            @Override
-            public void close()
-                    throws Exception
-            {
-                IteratorPlus.this.close();
-            }
         };
     }
 
@@ -210,18 +193,6 @@ public interface IteratorPlus<E>
                     return IteratorPlus.this.next();
                 }
             }
-
-            @Override
-            public void close()
-                    throws Exception
-            {
-                IteratorPlus.this.close();
-            }
         };
     }
-
-    @Override
-    default void close()
-            throws Exception
-    {}
 }
