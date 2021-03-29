@@ -18,6 +18,7 @@ package com.github.harbby.gadtry.base;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.compiler.ByteClassLoader;
 import com.github.harbby.gadtry.compiler.JavaClassCompiler;
+import com.github.harbby.gadtry.io.IOUtils;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -27,12 +28,15 @@ import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 import sun.reflect.ReflectionFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -56,6 +60,19 @@ public final class Platform
     public static Unsafe getUnsafe()
     {
         return unsafe;
+    }
+
+    public static byte[] readClassByteCode(Class<?> aClass)
+            throws IOException
+    {
+        CodeSource codeSource = requireNonNull(aClass.getProtectionDomain().getCodeSource(), "not found codeSource");
+        URL location = codeSource.getLocation();
+        if ("jar".equals(location.getProtocol()) || "file".equals(location.getProtocol())) {
+            try (InputStream inputStream = new URL(location, aClass.getName().replace(".", "/") + ".class").openStream()) {
+                return IOUtils.readAllBytes(inputStream);
+            }
+        }
+        throw new UnsupportedOperationException("not support location " + location);
     }
 
     public static long allocateMemory(long bytes)
