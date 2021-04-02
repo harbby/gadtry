@@ -50,6 +50,7 @@ public class JavaSourceObject
 
     /**
      * 含内部类
+     * @return className,class bytes
      */
     public Map<String, byte[]> getClassByteCodes()
     {

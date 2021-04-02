@@ -404,7 +404,7 @@ public final class Platform
                 "        @Override\n" +
                 "        public void free(sun.nio.ch.DirectBuffer buffer)\n" +
                 "        {\n" +
-                "            com.github.harbby.gadtry.base.MoreObjects.checkState(buffer.cleaner() != null, \"LEAK: directBuffer was not set Cleaner\");\n" +
+                "            " + MoreObjects.class.getName() + ".checkState(buffer.cleaner() != null, \"LEAK: directBuffer was not set Cleaner\");\n" +
                 "            if (" + Platform.class.getName() + ".getVmClassVersion() > 52) {\n" +
                 "                " + Platform.class.getName() + ".addOpenJavaModules(buffer.cleaner().getClass(), this.getClass());\n" +
                 "            }\n" +
