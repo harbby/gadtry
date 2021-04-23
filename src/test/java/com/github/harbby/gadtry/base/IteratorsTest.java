@@ -18,6 +18,7 @@ package com.github.harbby.gadtry.base;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableSet;
+import com.github.harbby.gadtry.collection.iterator.MarkIterator;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,8 +47,8 @@ public class IteratorsTest
     {
         String[] number = new String[] {"1", "2", "3"};
 
-        Iterators.ResetIterator<String> iterator = Iterators.of(number);
-
+        MarkIterator<String> iterator = Iterators.of(number);
+        iterator.mark();
         Assert.assertArrayEquals(number, ImmutableList.copy(() -> iterator).toArray(new String[0]));
         checkNoSuchElement(iterator);
         iterator.reset();
@@ -59,7 +60,8 @@ public class IteratorsTest
     {
         List<String> number = ImmutableList.of("1", "2", "3");
 
-        Iterators.ResetIterator<String> iterator = Iterators.wrap(number);
+        MarkIterator<String> iterator = Iterators.wrap(number);
+        iterator.mark();
         Assert.assertEquals(number, ImmutableList.copy(() -> iterator));
         checkNoSuchElement(iterator);
         iterator.reset();

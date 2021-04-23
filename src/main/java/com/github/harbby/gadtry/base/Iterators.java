@@ -18,6 +18,9 @@ package com.github.harbby.gadtry.base;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.IteratorPlus;
 import com.github.harbby.gadtry.collection.StateOption;
+import com.github.harbby.gadtry.collection.iterator.LengthIterator;
+import com.github.harbby.gadtry.collection.iterator.MarkIterator;
+import com.github.harbby.gadtry.collection.iterator.PeekIterator;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
@@ -69,30 +72,36 @@ public class Iterators
         }
     };
 
-    public interface ResetIterator<E>
-            extends IteratorPlus<E>
-    {
-        public void reset();
-    }
-
-    public static interface PeekIterator<V>
-            extends IteratorPlus<V>
-    {
-        public V peek();
-    }
+    private abstract static class MarkFixLenIterator<E>
+            implements MarkIterator<E>, LengthIterator<E> {}
 
     @SafeVarargs
-    public static <E> ResetIterator<E> of(E... values)
+    public static <E> MarkFixLenIterator<E> of(E... values)
+    {
+        return of(values, 0, values.length);
+    }
+
+    public static <E> MarkFixLenIterator<E> of(final E[] values, final int offset, final int length)
     {
         requireNonNull(values, "values is null");
-        return new ResetIterator<E>()
+        checkArgument(offset >= 0, "offset >= 0");
+        checkArgument(length >= 0, "length >= 0");
+        checkArgument(offset + length <= values.length, "offset + length <= values.length");
+        return new MarkFixLenIterator<E>()
         {
-            private int index = 0;
+            private int index = offset;
+            private int mark = offset;
+
+            @Override
+            public int length()
+            {
+                return length;
+            }
 
             @Override
             public boolean hasNext()
             {
-                return index < values.length;
+                return index < offset + length;
             }
 
             @Override
@@ -105,30 +114,52 @@ public class Iterators
             }
 
             @Override
+            public void mark()
+            {
+                this.mark = index;
+            }
+
+            @Override
             public void reset()
             {
-                this.index = 0;
+                this.index = this.mark;
             }
         };
     }
 
     @SafeVarargs
-    public static <E> ResetIterator<E> wrap(E... values)
+    public static <E> MarkFixLenIterator<E> wrap(E... values)
     {
         return of(values);
     }
 
-    public static <E> ResetIterator<E> wrap(List<E> values)
+    public static <E> MarkFixLenIterator<E> wrap(List<E> values)
+    {
+        return wrap(values, 0, values.size());
+    }
+
+    public static <E> MarkFixLenIterator<E> wrap(List<E> values, final int offset, final int length)
     {
         requireNonNull(values, "values is null");
-        return new ResetIterator<E>()
+        checkArgument(offset >= 0, "offset >= 0");
+        checkArgument(length >= 0, "length >= 0");
+        checkArgument(offset + length <= values.size(), "offset + length <= values.size");
+
+        return new MarkFixLenIterator<E>()
         {
-            private int index = 0;
+            private int index = offset;
+            private int mark = offset;
+
+            @Override
+            public int length()
+            {
+                return length;
+            }
 
             @Override
             public boolean hasNext()
             {
-                return index < values.size();
+                return index < offset + length;
             }
 
             @Override
@@ -141,9 +172,15 @@ public class Iterators
             }
 
             @Override
+            public void mark()
+            {
+                this.mark = index;
+            }
+
+            @Override
             public void reset()
             {
-                this.index = 0;
+                this.index = this.mark;
             }
         };
     }
@@ -627,6 +664,146 @@ public class Iterators
         };
     }
 
+    private static class MergeJoinIteratorByLeftPrimaryKey<K, V1, V2>
+            implements IteratorPlus<Tuple2<K, Tuple2<V1, V2>>>
+    {
+        private final Comparator<K> comparator;
+        private final Iterator<Tuple2<K, V1>> leftIterator;
+        private final Iterator<Tuple2<K, V2>> rightIterator;
+
+        private Tuple2<K, V1> leftNode;
+        private Tuple2<K, V2> rightNode = null;
+
+        private MergeJoinIteratorByLeftPrimaryKey(Comparator<K> comparator, Iterator<Tuple2<K, V1>> leftIterator, Iterator<Tuple2<K, V2>> rightIterator)
+        {
+            this.comparator = comparator;
+            this.leftIterator = leftIterator;
+            this.rightIterator = rightIterator;
+            checkArgument(leftIterator.hasNext());
+            leftNode = leftIterator.next();
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            if (rightNode != null) {
+                return true;
+            }
+            if (!rightIterator.hasNext()) {
+                return false;
+            }
+            this.rightNode = rightIterator.next();
+            while (true) {
+                int than = comparator.compare(leftNode.f1, rightNode.f1);
+                if (than == 0) {
+                    return true;
+                }
+                else if (than > 0) {
+                    if (!rightIterator.hasNext()) {
+                        return false;
+                    }
+                    this.rightNode = rightIterator.next();
+                }
+                else {
+                    if (!leftIterator.hasNext()) {
+                        return false;
+                    }
+                    this.leftNode = leftIterator.next();
+                }
+            }
+        }
+
+        @Override
+        public Tuple2<K, Tuple2<V1, V2>> next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            Tuple2<K, Tuple2<V1, V2>> out = Tuple2.of(leftNode.f1, Tuple2.of(leftNode.f2, rightNode.f2));
+            rightNode = null;
+            return out;
+        }
+    }
+
+    private static class MergeJoinIterator<K, V1, V2>
+            implements IteratorPlus<Tuple2<K, Tuple2<V1, V2>>>
+    {
+        private final Comparator<K> comparator;
+        private final Iterator<Tuple2<K, V1>> leftIterator;
+        private final Iterator<Tuple2<K, V2>> rightIterator;
+
+        private final List<Tuple2<K, V1>> leftSameKeys = new ArrayList<>();
+        private Tuple2<K, V1> leftNode;
+        private Tuple2<K, V2> rightNode = null;
+        private int index = 0;
+
+        private MergeJoinIterator(Comparator<K> comparator, Iterator<Tuple2<K, V1>> leftIterator, Iterator<Tuple2<K, V2>> rightIterator)
+        {
+            this.comparator = comparator;
+            this.leftIterator = leftIterator;
+            this.rightIterator = rightIterator;
+
+            leftNode = leftIterator.next();
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            if (index < leftSameKeys.size()) {
+                return true;
+            }
+            if (!rightIterator.hasNext()) {
+                return false;
+            }
+            this.rightNode = rightIterator.next();
+
+            if (!leftSameKeys.isEmpty() && Objects.equals(leftSameKeys.get(0).f1, rightNode.f1)) {
+                index = 0;
+                return true;
+            }
+            while (true) {
+                int than = comparator.compare(leftNode.f1, rightNode.f1);
+                if (than == 0) {
+                    leftSameKeys.clear();
+                    do {
+                        leftSameKeys.add(leftNode);
+                        if (leftIterator.hasNext()) {
+                            leftNode = leftIterator.next();
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    while (Objects.equals(leftNode.f1, rightNode.f1));
+                    index = 0;
+                    return true;
+                }
+                else if (than > 0) {
+                    if (!rightIterator.hasNext()) {
+                        return false;
+                    }
+                    this.rightNode = rightIterator.next();
+                }
+                else {
+                    if (!leftIterator.hasNext()) {
+                        return false;
+                    }
+                    this.leftNode = leftIterator.next();
+                }
+            }
+        }
+
+        @Override
+        public Tuple2<K, Tuple2<V1, V2>> next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            Tuple2<K, V1> x = leftSameKeys.get(index++);
+            return Tuple2.of(x.f1, Tuple2.of(x.f2, rightNode.f2));
+        }
+    }
+
     public static <K, V1, V2> IteratorPlus<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(
             Comparator<K> comparator,
             Iterator<Tuple2<K, V1>> leftIterator,
@@ -638,71 +815,7 @@ public class Iterators
         if (!leftIterator.hasNext() || !rightIterator.hasNext()) {
             return Iterators.empty();
         }
-        return new IteratorPlus<Tuple2<K, Tuple2<V1, V2>>>()
-        {
-            private Tuple2<K, V1> leftNode = leftIterator.next();
-            private Tuple2<K, V2> rightNode = null;
-
-            private final List<Tuple2<K, V1>> leftSameKeys = new ArrayList<>();
-            private final ResetIterator<Tuple2<K, V1>> leftSameIterator = Iterators.wrap(leftSameKeys);
-            private final Iterator<Tuple2<K, Tuple2<V1, V2>>> child = Iterators.map(leftSameIterator, x -> Tuple2.of(x.f1, Tuple2.of(x.f2, rightNode.f2)));
-
-            @Override
-            public boolean hasNext()
-            {
-                if (child.hasNext()) {
-                    return true;
-                }
-                if (!rightIterator.hasNext()) {
-                    return false;
-                }
-                this.rightNode = rightIterator.next();
-
-                if (!leftSameKeys.isEmpty() && Objects.equals(leftSameKeys.get(0).f1, rightNode.f1)) {
-                    leftSameIterator.reset();
-                    return true;
-                }
-                while (true) {
-                    int than = comparator.compare(leftNode.f1, rightNode.f1);
-                    if (than == 0) {
-                        leftSameKeys.clear();
-                        do {
-                            leftSameKeys.add(leftNode);
-                            if (leftIterator.hasNext()) {
-                                leftNode = leftIterator.next();
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                        while (Objects.equals(leftNode.f1, rightNode.f1));
-                        leftSameIterator.reset();
-                        return true;
-                    }
-                    else if (than > 0) {
-                        if (!rightIterator.hasNext()) {
-                            return false;
-                        }
-                        this.rightNode = rightIterator.next();
-                    }
-                    else {
-                        if (!leftIterator.hasNext()) {
-                            return false;
-                        }
-                        this.leftNode = leftIterator.next();
-                    }
-                }
-            }
-
-            @Override
-            public Tuple2<K, Tuple2<V1, V2>> next()
-            {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return child.next();
-            }
-        };
+        return new MergeJoinIterator<>(comparator, leftIterator, rightIterator);
     }
 
     public static <V> IteratorPlus<V> autoClose(Iterator<V> iterator, Runnable autoClose)
