@@ -51,7 +51,7 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Love Iterator
+ * java Iterator++
  */
 public class Iterators
 {
