@@ -37,9 +37,35 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.IntStream;
 
 public class JVMLaunchersTest
 {
+    @Test
+    public void returnValueTest()
+            throws Exception
+    {
+        JVMLauncher<byte[]> launcher = JVMLaunchers.<byte[]>newJvm()
+                .task(() -> {
+                    byte[] bytes = new byte[85000];
+                    Arrays.fill(bytes, (byte) 1);
+                    return bytes;
+                })
+                .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(msg -> System.out.print(msg))
+                .build();
+
+        byte[] bytes = new byte[85000];
+        Arrays.fill(bytes, (byte) 1);
+        IntStream.range(0, 3).forEach(i -> {
+            System.out.println("************ check" + i);
+            byte[] vmLoadBytes = launcher.startAndGet();
+            Assert.assertArrayEquals(vmLoadBytes, bytes);
+        });
+    }
+
     @Test
     public void testForkJvmReturn1()
             throws InterruptedException

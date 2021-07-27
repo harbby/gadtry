@@ -20,7 +20,6 @@ import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -86,7 +85,7 @@ public class JVMLauncherImpl<R>
         try {
             byte[] bytes = Serializables.serialize(task);
             AtomicReference<Process> processAtomic = new AtomicReference<>();
-            return this.startAndGetByte(processAtomic, bytes).get();
+            return this.startAndGetByte(processAtomic, bytes);
         }
         catch (JVMException e) {
             throw e;
@@ -118,7 +117,7 @@ public class JVMLauncherImpl<R>
         }
     }
 
-    private VmResult<R> startAndGetByte(AtomicReference<Process> processAtomic, byte[] task)
+    private R startAndGetByte(AtomicReference<Process> processAtomic, byte[] task)
             throws Exception
     {
         ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps))
@@ -134,21 +133,24 @@ public class JVMLauncherImpl<R>
         try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
             os.write(task);  //send task
         }
-        //IOUtils.copyBytes();
-
         try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
-            byte type;
-            while ((type = reader.readByte()) != -1) {
+            int b;
+            while ((b = reader.read()) != -1) {
+                byte type = (byte) b;
                 if (type == 1) {
                     consoleHandler.accept(new String(readLensByte(reader), UTF_8));
                 }
                 else if (type == 0) {
-                    VmResult<R> result = Serializables.byteToObject(readLensByte(reader), classLoader);
+                    R result = Serializables.byteToObject(readLensByte(reader), classLoader);
                     process.destroy();
                     return result;
                 }
+                else if (type == 2) {
+                    String error = new String(readLensByte(reader), UTF_8);
+                    throw new JVMException(error);
+                }
                 else {
-                    byte[] bytes = IOUtils.readAllBytes(reader); //java11 use reader.readAllBytes();
+                    byte[] bytes = IOUtils.readAllBytes(reader);
                     byte[] fullBytes = new byte[bytes.length + 1];
                     System.arraycopy(bytes, 0, fullBytes, 1, bytes.length);
                     fullBytes[0] = type;
@@ -156,12 +158,9 @@ public class JVMLauncherImpl<R>
                 }
             }
         }
-        catch (EOFException e) {
-            // 能执行到这里 并跳出上面的where 则说明子进程已经退出
-            if (process.isAlive()) {
-                process.destroy();
-                process.waitFor();
-            }
+        if (process.isAlive()) {
+            process.destroy();
+            process.waitFor();
         }
         throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
     }
@@ -171,7 +170,10 @@ public class JVMLauncherImpl<R>
     {
         int length = reader.readInt();
         byte[] bytes = new byte[length];
-        int len = reader.read(bytes);
+        int offset = 0;
+        while (offset < length) {
+            offset += reader.read(bytes, offset, length - offset);
+        }
         return bytes;
     }
 

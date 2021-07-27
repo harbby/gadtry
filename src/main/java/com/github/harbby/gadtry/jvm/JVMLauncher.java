@@ -26,6 +26,7 @@ import java.io.NotSerializableException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -69,23 +70,19 @@ public interface JVMLauncher<R>
             throws Exception
     {
         SystemOutputStream outputStream = JVMLauncher.getOrCreate();
-        VmResult<? extends Serializable> future;
-
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
             VmCallable<?> task = (VmCallable<?>) ois.readObject();
             Object value = task.call();
             if (value != null && !(value instanceof Serializable)) {
                 throw new NotSerializableException("not serialize result: " + value);
             }
-            future = new VmResult<>((Serializable) value);
+
+            byte[] result = Serializables.serialize((Serializable) value);
+            outputStream.release(false, result);
         }
         catch (Throwable e) {
-            future = new VmResult<>(Throwables.getStackTraceAsString(e));
+            byte[] err = Throwables.getStackTraceAsString(e).getBytes(StandardCharsets.UTF_8);
+            outputStream.release(true, err);
         }
-
-        byte[] result = Serializables.serialize(future);
-
-        outputStream.close();
-        outputStream.release(result);
     }
 }

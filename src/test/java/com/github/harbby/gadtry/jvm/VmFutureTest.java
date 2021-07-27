@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,22 +59,21 @@ public class VmFutureTest
     public void taskErrorExitTest()
             throws JVMException
     {
+        Random random = new Random();
+        int exitCode = random.nextInt(255);
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole((msg) -> System.out.print(msg))
                 .task(() -> {
-                    System.exit(-1);
+                    System.exit(exitCode);
                     return "done";
-                })
-                .build();
-
+                }).build();
         try {
             launcher.startAndGet();
             Assert.fail();
         }
         catch (JVMException e) {
-            Assert.assertEquals(e.getMessage(),
-                    "Jvm child process abnormal exit, exit code 255");
+            Assert.assertEquals(e.getMessage(), "Jvm child process abnormal exit, exit code " + exitCode);
         }
     }
 
@@ -166,7 +165,7 @@ public class VmFutureTest
         ExecutorService executor = Executors.newSingleThreadExecutor();
         AtomicReference<Process> processAtomic = new AtomicReference<>();
         try {
-            new VmFuture<>(executor, processAtomic, () -> new VmResult<>((Serializable) "done"));
+            new VmFuture<>(executor, processAtomic, () -> "done");
             Assert.fail();
         }
         catch (Exception e) {
@@ -206,7 +205,7 @@ public class VmFutureTest
         Process process = Runtime.getRuntime().exec(java.toString() + " --version");
         AtomicReference<Process> processAtomic = new AtomicReference<>(process);
 
-        VmFuture<String> vmFuture = new VmFuture<>(executor, processAtomic, () -> new VmResult<>((Serializable) "done"));
+        VmFuture<String> vmFuture = new VmFuture<>(executor, processAtomic, () -> "done");
         String result = vmFuture.get(100, TimeUnit.MILLISECONDS);
         executor.shutdown();
 
@@ -228,7 +227,7 @@ public class VmFutureTest
     {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         AtomicReference<Process> processAtomic = new AtomicReference<>(process);
-        VmFuture<String> vmFuture = new VmFuture<>(executor, processAtomic, () -> new VmResult<>((Serializable) "done"));
+        VmFuture<String> vmFuture = new VmFuture<>(executor, processAtomic, () -> "done");
         try {
             vmFuture.getPid();
             Assert.fail();

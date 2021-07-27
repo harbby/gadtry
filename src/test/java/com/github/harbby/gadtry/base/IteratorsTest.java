@@ -56,19 +56,6 @@ public class IteratorsTest
     }
 
     @Test
-    public void ofListIteratorTest()
-    {
-        List<String> number = ImmutableList.of("1", "2", "3");
-
-        MarkIterator<String> iterator = Iterators.wrap(number);
-        iterator.mark();
-        Assert.assertEquals(number, ImmutableList.copy(() -> iterator));
-        checkNoSuchElement(iterator);
-        iterator.reset();
-        Assert.assertEquals(number, ImmutableList.copy(iterator));
-    }
-
-    @Test
     public void toStreamTest()
     {
         List<String> number = ImmutableList.of("1", "2", "3");

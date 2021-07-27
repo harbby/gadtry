@@ -65,17 +65,12 @@ public class SystemOutputStream
         out.write((v) & 0xFF);
     }
 
-    @Override
-    public void close()
+    public synchronized void release(boolean failed, byte[] resultBytes)
             throws IOException
     {
         tryClose = true;
-    }
 
-    public synchronized void release(byte[] resultBytes)
-            throws IOException
-    {
-        out.write(0);
+        out.write(failed ? 2 : 0);
         this.writeInt(resultBytes.length);
         out.write(resultBytes);
         out.flush();

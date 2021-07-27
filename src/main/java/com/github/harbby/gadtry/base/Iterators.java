@@ -133,58 +133,6 @@ public class Iterators
         return of(values);
     }
 
-    public static <E> MarkFixLenIterator<E> wrap(List<E> values)
-    {
-        return wrap(values, 0, values.size());
-    }
-
-    public static <E> MarkFixLenIterator<E> wrap(List<E> values, final int offset, final int length)
-    {
-        requireNonNull(values, "values is null");
-        checkArgument(offset >= 0, "offset >= 0");
-        checkArgument(length >= 0, "length >= 0");
-        checkArgument(offset + length <= values.size(), "offset + length <= values.size");
-
-        return new MarkFixLenIterator<E>()
-        {
-            private int index = offset;
-            private int mark = offset;
-
-            @Override
-            public int length()
-            {
-                return length;
-            }
-
-            @Override
-            public boolean hasNext()
-            {
-                return index < offset + length;
-            }
-
-            @Override
-            public E next()
-            {
-                if (!this.hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return values.get(index++);
-            }
-
-            @Override
-            public void mark()
-            {
-                this.mark = index;
-            }
-
-            @Override
-            public void reset()
-            {
-                this.index = this.mark;
-            }
-        };
-    }
-
     @SuppressWarnings("unchecked")
     public static <E> IteratorPlus<E> empty()
     {

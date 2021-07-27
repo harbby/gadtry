@@ -15,13 +15,14 @@
  */
 package com.github.harbby.gadtry.easyspi;
 
-import com.github.harbby.gadtry.collection.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class PluginClassLoader
         this(urls,
                 spiClassLoader,
                 spiPackages == null ? spiClassLoader : PLATFORM_CLASS_LOADER,
-                spiPackages);
+                spiPackages == null ? Collections.emptyList() : ImmutableList.copy(spiPackages));
     }
 
     private PluginClassLoader(
@@ -56,7 +57,7 @@ public class PluginClassLoader
     {
         super(urls.toArray(new URL[0]), parent);
         this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
-        this.spiPackages = MutableList.copy(spiPackages);  //== MutableList.copyOf()
+        this.spiPackages = requireNonNull(spiPackages);  //== MutableList.copyOf()
         this.spiResources = spiPackages.stream().map(PluginClassLoader::classNameToResource).collect(Collectors.toList());
     }
 

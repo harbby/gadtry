@@ -22,7 +22,7 @@ public interface AopBinder
     /**
      * Define a pointcut
      *
-     * @param <T> type
+     * @param <T>        type
      * @param inputClass class
      * @return handler
      */

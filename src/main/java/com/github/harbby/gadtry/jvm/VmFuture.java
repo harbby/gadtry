@@ -32,9 +32,9 @@ import static java.util.Objects.requireNonNull;
 public class VmFuture<R>
 {
     private final Process process;
-    private final Future<VmResult<R>> future;
+    private final Future<R> future;
 
-    public VmFuture(ExecutorService executor, AtomicReference<Process> processAtomic, Callable<VmResult<R>> callable)
+    public VmFuture(ExecutorService executor, AtomicReference<Process> processAtomic, Callable<R> callable)
             throws JVMException, InterruptedException
     {
         requireNonNull(processAtomic, "process is null");
@@ -43,7 +43,7 @@ public class VmFuture<R>
         while (processAtomic.get() == null) {
             if (future.isDone()) {
                 try {
-                    R r = future.get().get();
+                    R r = future.get();
                     throw new JVMException("Async failed! future.isDone() result:" + r);
                 }
                 catch (ExecutionException e) {
@@ -84,7 +84,7 @@ public class VmFuture<R>
             throws JVMException, InterruptedException
     {
         try {
-            return future.get().get();
+            return future.get();
         }
         catch (ExecutionException e) {
             throw Throwables.throwsThrowable(e.getCause());
@@ -94,7 +94,7 @@ public class VmFuture<R>
     public R get(long timeout, TimeUnit unit)
             throws JVMException, InterruptedException, TimeoutException, ExecutionException
     {
-        return future.get(timeout, unit).get();
+        return future.get(timeout, unit);
     }
 
     public boolean isRunning()
