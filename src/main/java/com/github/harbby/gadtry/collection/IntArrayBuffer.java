@@ -15,8 +15,10 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import sun.misc.SharedSecrets;
+import com.github.harbby.gadtry.base.Platform;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
@@ -302,7 +304,16 @@ public class IntArrayBuffer
         if (size > 0) {
             // be like clone(), allocate array based upon size not capacity
             int capacity = calculateCapacity(elementData, size);
-            SharedSecrets.getJavaOISAccess().checkArray(s, int[].class, capacity);
+            //SharedSecrets.getJavaOISAccess().checkArray(s, int[].class, capacity);
+            try {
+                Method method = java.io.ObjectInputStream.class.getDeclaredMethod("checkArray", Class.class, int.class);
+                method.setAccessible(true);
+                method.invoke(s, int[].class, capacity);
+            }
+            catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+                Platform.throwException(e);
+            }
+
             ensureCapacityInternal(size);
 
             int[] a = elementData;
