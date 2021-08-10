@@ -22,43 +22,41 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class PluginClassLoader
+/**
+ * plugins should not have access to the system (application) class loader
+ */
+public class SecurityClassLoader
         extends DirClassLoader
 {
     private static final ClassLoader PLATFORM_CLASS_LOADER = findPlatformClassLoader();
 
     private final ClassLoader spiClassLoader;
-    private final Collection<String> spiPackages;
+    private final List<String> spiPackages;
     private final List<String> spiResources;
 
-    public PluginClassLoader(
-            List<URL> urls,
-            ClassLoader spiClassLoader,
-            Collection<String> spiPackages)
+    /**
+     * plugins should not have access to the system (application) class loader
+     *
+     * @param urls urls
+     * @param spi spi classloader
+     * @param securityPackages security Packages
+     */
+    public SecurityClassLoader(
+            URL[] urls,
+            ClassLoader spi,
+            Collection<String> securityPackages)
     {
-        this(urls,
-                spiClassLoader,
-                spiPackages == null ? spiClassLoader : PLATFORM_CLASS_LOADER,
-                spiPackages == null ? Collections.emptyList() : ImmutableList.copy(spiPackages));
-    }
+        super(requireNonNull(urls, "urls is null"), securityPackages == null ? spi : PLATFORM_CLASS_LOADER);
+        this.spiClassLoader = requireNonNull(spi, "spi ClassLoader is null");
 
-    private PluginClassLoader(
-            List<URL> urls,
-            ClassLoader spiClassLoader,
-            ClassLoader parent,
-            Collection<String> spiPackages)
-    {
-        super(urls.toArray(new URL[0]), parent);
-        this.spiClassLoader = requireNonNull(spiClassLoader, "spiClassLoader is null");
-        this.spiPackages = requireNonNull(spiPackages);  //== MutableList.copyOf()
-        this.spiResources = spiPackages.stream().map(PluginClassLoader::classNameToResource).collect(Collectors.toList());
+        this.spiPackages = securityPackages == null ? ImmutableList.empty() : ImmutableList.copy(securityPackages);
+        this.spiResources = this.spiPackages.stream().map(SecurityClassLoader::classNameToResource).collect(Collectors.toList());
     }
 
     @Override

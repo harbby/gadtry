@@ -20,20 +20,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
-import java.text.DateFormat;
-import java.util.Date;
 
-import static com.github.harbby.gadtry.base.MoreObjects.firstNonNull;
+import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class DirClassLoader
         extends URLClassLoader
 {
-    private final Date startDate = new Date();
+    private final long createTime = System.currentTimeMillis();
 
     public DirClassLoader(URL[] urls, ClassLoader parent)
     {
-        super(firstNonNull(urls, new URL[0]), parent);
+        super(getOrDefault(urls, new URL[0]), parent);
     }
 
     public DirClassLoader(ClassLoader parent)
@@ -92,7 +90,7 @@ public class DirClassLoader
                 }
             }
         }
-        else { //文件
+        else {
             this.addJarFile(path);
         }
     }
@@ -100,6 +98,6 @@ public class DirClassLoader
     @Override
     public String toString()
     {
-        return super.toString() + ",time:" + DateFormat.getTimeInstance().format(startDate);
+        return super.toString() + " time:" + createTime;
     }
 }

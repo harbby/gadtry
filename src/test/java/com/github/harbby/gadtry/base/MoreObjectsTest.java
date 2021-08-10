@@ -18,25 +18,22 @@ package com.github.harbby.gadtry.base;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Optional;
+
 public class MoreObjectsTest
 {
     @Test
     public void firstNonNull()
     {
-        int num = MoreObjects.firstNonNull(null, null, 2, null, 3);
-        Assert.assertEquals(num, 2);
+        Optional<Integer> num = MoreObjects.getFirstNonNull(null, null, 2, null, 3);
+        Assert.assertEquals(num.get().intValue(), 2);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void firstNonNullGiveNull()
+    @Test
+    public void getFirstNonNullGiveNull()
     {
-        try {
-            MoreObjects.firstNonNull((Object) null);
-            Assert.fail();
-        }
-        catch (NullPointerException ignored) {
-        }
-        MoreObjects.firstNonNull(null, null, null);
+        Assert.assertFalse(MoreObjects.getFirstNonNull((Object) null).isPresent());
+        Assert.assertFalse(MoreObjects.getFirstNonNull(null, null, null).isPresent());
     }
 
     @Test

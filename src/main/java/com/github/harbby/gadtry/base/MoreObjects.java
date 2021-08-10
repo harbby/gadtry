@@ -20,6 +20,7 @@ import com.github.harbby.gadtry.collection.MutableSet;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -36,7 +37,7 @@ public class MoreObjects
      * @param source     source object
      * @param target     target object
      */
-    public static void copyOverwriteObjectState(Class<?> modelClass, Object source, Object target)
+    public static void copyWriteObjectState(Class<?> modelClass, Object source, Object target)
     {
         requireNonNull(modelClass, "modelClass is null");
         requireNonNull(source, "source is null");
@@ -106,7 +107,7 @@ public class MoreObjects
         }
     }
 
-    public static <T> T nullElse(T value, T defaultValue)
+    public static <T> T getOrDefault(T value, T defaultValue)
     {
         if (value == null) {
             return defaultValue;
@@ -114,7 +115,7 @@ public class MoreObjects
         return value;
     }
 
-    public static <T> T nullElse(T value, Supplier<T> defaultValue)
+    public static <T> T getOrDefault(T value, Supplier<T> defaultValue)
     {
         requireNonNull(defaultValue, "defaultValue is null");
         if (value == null) {
@@ -124,16 +125,16 @@ public class MoreObjects
     }
 
     @SafeVarargs
-    public static <T> T firstNonNull(T... values)
+    public static <T> Optional<T> getFirstNonNull(T... values)
     {
         requireNonNull(values, "Both parameters are null");
         for (T value : values) {
             if (value != null) {
-                return value;
+                return Optional.of(value);
             }
         }
 
-        throw new NullPointerException("Both parameters are null");
+        return Optional.empty();
     }
 
     public static ToStringBuilder toStringHelper(Object object)

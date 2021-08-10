@@ -50,7 +50,7 @@ import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.aop.runtime.ProxyRuntime.METHOD_START;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.MoreObjects.copyOverwriteObjectState;
+import static com.github.harbby.gadtry.base.MoreObjects.copyWriteObjectState;
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavassistProxy
@@ -77,7 +77,7 @@ public class JavassistProxy
         ((ProxyHandler) proxyObj).setHandler(request.getHandler());
 
         if (request.getTarget() != null && !request.getSuperclass().isInterface()) {
-            copyOverwriteObjectState(request.getSuperclass(), request.getTarget(), proxyObj);
+            copyWriteObjectState(request.getSuperclass(), request.getTarget(), proxyObj);
         }
 
         return (T) proxyObj;

@@ -32,7 +32,7 @@ import com.github.harbby.gadtry.ioc.IocHandler;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.github.harbby.gadtry.base.MoreObjects.nullElse;
+import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 
 public class GadTry
 {
@@ -74,7 +74,7 @@ public class GadTry
                 public <T> MockBinder<T> bind(Class<T> superclass)
                 {
                     return (MockBinder<T>) pointcutMap.computeIfAbsent(superclass, (k) -> {
-                        ClassLoader loader = nullElse(superclass.getClassLoader(), ProxyHandler.class.getClassLoader());
+                        ClassLoader loader = getOrDefault(superclass.getClassLoader(), ProxyHandler.class.getClassLoader());
                         final AopInvocationHandler aopInvocationHandler = new AopInvocationHandler();
                         ProxyRequest<T> request = ProxyRequest.builder(superclass)
                                 .setInvocationHandler(aopInvocationHandler)

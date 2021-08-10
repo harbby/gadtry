@@ -107,7 +107,7 @@ public class JVMLaunchersTest
                 .setName(taskName)
                 .setXms("16m")
                 .setXmx("16m")
-                .setConsole(System.out::println)
+                .setConsole(System.out::print)
                 .build();
 
         Assert.assertEquals(launcher.startAndGet(), taskName);

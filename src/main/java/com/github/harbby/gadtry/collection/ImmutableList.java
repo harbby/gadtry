@@ -75,8 +75,13 @@ public abstract class ImmutableList<E>
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> List<T> of()
+    {
+        return empty();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> empty()
     {
         return (List<T>) ImmutableArrayList.EMPTY;
     }

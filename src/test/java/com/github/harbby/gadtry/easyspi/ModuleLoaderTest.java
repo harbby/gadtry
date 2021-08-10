@@ -32,44 +32,40 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class PluginLoaderTest
+public class ModuleLoaderTest
 {
-    private final AtomicInteger closeNumber = new AtomicInteger(0);
-    private final PluginLoader<Driver> pluginLoader = PluginLoader.<Driver>newScanner()
+    private final ModuleLoader<Driver> moduleLoader = ModuleLoader.<Driver>newScanner()
             .setScanDir(new File(this.getClass().getClassLoader().getResource("version1").getFile()).getParentFile())
             .setPlugin(Driver.class)
             .setLoadHandler(module -> {
                 System.out.println("load module " + Arrays.asList(module.getModulePath().list()) +
                         "  " + "loadTime " + module.getLoadTime());
             })
-            .setCloseHandler(module -> {
-                System.out.println("close module " + module.getName());
-                closeNumber.getAndIncrement();
-            })
             .setParentLoader(this.getClass().getClassLoader())
             .onlyAccessSpiPackages(Arrays.asList("com.github.harbby.gadtry.aop", "version2"))
             .load();
 
-    public PluginLoaderTest()
+    public ModuleLoaderTest()
             throws IOException
     {}
 
     @Test
     public void newPluginLoadTest()
+            throws IOException
     {
-        pluginLoader.reload();
-        Assert.assertEquals(2, pluginLoader.getPlugins().size());
+        moduleLoader.reload();
+        Assert.assertEquals(2, moduleLoader.getPlugins().size());
     }
 
     @Test
     public void onlyAccessSpiPackagesTest()
             throws ClassNotFoundException, IOException
     {
-        Module module = pluginLoader.getModules().get(0);
+        Module module = moduleLoader.getModules().get(0);
         ClassLoader moduleClassLoader = module.getModuleClassLoader();
 
         try {
-            moduleClassLoader.loadClass(PluginLoader.class.getName());
+            moduleClassLoader.loadClass(ModuleLoader.class.getName());
             Assert.fail();
         }
         catch (ClassNotFoundException ignored) {
@@ -91,24 +87,23 @@ public class PluginLoaderTest
     public void reloadTest()
             throws IOException
     {
-        Assert.assertEquals(3, pluginLoader.getModules().size());
-        Module module = pluginLoader.getModules().get(0);
+        Assert.assertEquals(3, moduleLoader.getModules().size());
+        Module module = moduleLoader.getModules().get(0);
         File reloadFile = new File(module.getModulePath(), "reload");
         File reloadFile2 = new File(module.getModulePath().getParentFile(), "reload");
         try {
             byte[] value = String.valueOf(System.currentTimeMillis()).getBytes(UTF_8);
             java.nio.file.Files.write(Paths.get(reloadFile.toURI()), value, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             reloadFile2.mkdirs();
-            pluginLoader.reload();
-            Assert.assertEquals(1, closeNumber.get());
-            Assert.assertEquals(4, pluginLoader.getModules().size());
-            Assert.assertEquals(2, pluginLoader.getPlugins().size());
+            moduleLoader.reload();
+            Assert.assertEquals(4, moduleLoader.getModules().size());
+            Assert.assertEquals(2, moduleLoader.getPlugins().size());
         }
         finally {
             reloadFile.delete();
             reloadFile2.delete();
-            pluginLoader.reload();
-            Assert.assertEquals(3, pluginLoader.getModules().size());
+            moduleLoader.reload();
+            Assert.assertEquals(3, moduleLoader.getModules().size());
         }
     }
 
@@ -116,14 +111,13 @@ public class PluginLoaderTest
     public void loadFilterTest()
             throws Exception
     {
-        final PluginLoader<Driver> pluginLoader = PluginLoader.<Driver>newScanner()
+        final ModuleLoader<Driver> moduleLoader = ModuleLoader.<Driver>newScanner()
                 .setScanDir(() -> {
                     return Arrays.asList(new File(this.getClass().getClassLoader().getResource("version1").getFile()),
                             new File(this.getClass().getClassLoader().getResource("version2").getFile()));
                 })
                 .setPlugin(Driver.class)
                 .setLoadHandler(module -> {})
-                .setCloseHandler(module -> {})
                 .setModuleDepFilter(file -> {
                     if ("version2".equalsIgnoreCase(file.getName())) {
                         return new ArrayList<>();
@@ -135,6 +129,6 @@ public class PluginLoaderTest
                 .onlyAccessSpiPackages(Collections.emptyList())
                 .load();
 
-        Assert.assertEquals(1, pluginLoader.getPlugins().size());
+        Assert.assertEquals(1, moduleLoader.getPlugins().size());
     }
 }
