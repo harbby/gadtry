@@ -52,18 +52,18 @@ public class IocFactoryTest
             binder.bind(StringBuilder.class).byCreator(StringBuilderCreator.class).withSingle();  //Single object
         });
         Assert.assertEquals(9, iocFactory.getAllBeans().getAllBeans().size());
-        Assert.assertTrue(iocFactory.analysis().printShow().size() > 0);
+        Assert.assertTrue(iocFactory.analyze().printShow().size() > 0);
     }
 
     @Test
     public void DeadDependencyAnalysis()
     {
-        IocFactory.create().analysis();
+        IocFactory.create().analyze();
         IocFactory iocFactory = IocFactory.create(binder -> {
             binder.bind(DeadDependency1.class).withSingle();
         });
         try {
-            iocFactory.analysis();
+            iocFactory.analyze();
             Assert.fail();
         }
         catch (IllegalArgumentException e) {

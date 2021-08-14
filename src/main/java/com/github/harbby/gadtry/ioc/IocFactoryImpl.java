@@ -57,7 +57,7 @@ public class IocFactoryImpl
     }
 
     @Override
-    public Graph<Void, Void> analysis()
+    public Graph<Void, Void> analyze()
     {
         Graph.GraphBuilder<Void, Void> builder = Graph.builder();
         final Set<Class> parserClass = new HashSet<>();
