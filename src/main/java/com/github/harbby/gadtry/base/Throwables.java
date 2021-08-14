@@ -21,14 +21,12 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.Callable;
 
-/**
- * copy code with com.google.common.base.Throwables
- */
 public class Throwables
 {
     private Throwables() {}
 
     /**
+     * copy code with com.google.common.base.Throwables
      * Returns a string containing the result of {@link Throwable#toString() toString()}, followed by
      * the full, recursive stack trace of {@code throwable}. Note that you probably should not be
      * parsing the resulting string; if you need programmatic access to the stack frames, you can call
@@ -45,6 +43,7 @@ public class Throwables
     }
 
     /**
+     * copy code with com.google.common.base.Throwables
      * Returns the innermost cause of {@code throwable}. The first throwable in a chain provides
      * context from when the error or exception was initially detected. Example usage:
      *
@@ -80,22 +79,12 @@ public class Throwables
 
     public static void noCatch(Runnable<Exception> runnable)
     {
-        try {
-            runnable.apply();
-        }
-        catch (Exception e) {
-            throwsThrowable(e);
-        }
+        Try.noCatch(runnable);
     }
 
     public static <T> T noCatch(Callable<T> callable)
     {
-        try {
-            return callable.call();
-        }
-        catch (Exception e) {
-            throw throwsThrowable(e);
-        }
+        return Try.noCatch(callable);
     }
 
     @SuppressWarnings("unchecked")
