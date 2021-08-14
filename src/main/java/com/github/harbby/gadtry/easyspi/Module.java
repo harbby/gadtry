@@ -23,56 +23,78 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class Module<T>
-        implements Closeable
+public interface Module<T>
+        extends Closeable
 {
-    private final List<T> plugins;
-    private final File modulePath;
-    private final long loadTime;
-    private final URLClassLoader moduleClassLoader;
+    File moduleFile();
 
-    Module(File modulePath, long loadTime, List<T> plugins, URLClassLoader moduleClassLoader)
-    {
-        this.plugins = plugins;
-        this.modulePath = modulePath;
-        this.moduleClassLoader = requireNonNull(moduleClassLoader, "module ClassLoader is null");
-        this.loadTime = loadTime;
-    }
+    String getName();
 
-    public File getModulePath()
-    {
-        return modulePath;
-    }
+    public List<T> getPlugins();
 
-    public String getName()
-    {
-        return modulePath.getName();
-    }
+    public long getLoadTime();
 
-    public List<T> getPlugins()
-    {
-        return plugins;
-    }
+    public URLClassLoader getModuleClassLoader();
 
-    public long getLoadTime()
-    {
-        return loadTime;
-    }
+    public boolean modified();
 
-    public URLClassLoader getModuleClassLoader()
+    public class ModuleImpl<T>
+            implements Module<T>
     {
-        return moduleClassLoader;
-    }
+        private final List<T> plugins;
+        private final File modulePath;
+        private final long loadTime;
+        private final URLClassLoader moduleClassLoader;
 
-    public boolean modified()
-    {
-        return loadTime != modulePath.lastModified();
-    }
+        ModuleImpl(File modulePath, long loadTime, List<T> plugins, URLClassLoader moduleClassLoader)
+        {
+            this.plugins = plugins;
+            this.modulePath = modulePath;
+            this.moduleClassLoader = requireNonNull(moduleClassLoader, "module ClassLoader is null");
+            this.loadTime = loadTime;
+        }
 
-    @Override
-    public void close()
-            throws IOException
-    {
-        moduleClassLoader.close();
+        @Override
+        public File moduleFile()
+        {
+            return modulePath;
+        }
+
+        @Override
+        public String getName()
+        {
+            return modulePath.getName();
+        }
+
+        @Override
+        public List<T> getPlugins()
+        {
+            return plugins;
+        }
+
+        @Override
+        public long getLoadTime()
+        {
+            return loadTime;
+        }
+
+        @Override
+        public URLClassLoader getModuleClassLoader()
+        {
+            return moduleClassLoader;
+        }
+
+        @Override
+        public boolean modified()
+        {
+            return loadTime != modulePath.lastModified();
+        }
+
+        @Override
+        public void close()
+                throws IOException
+        {
+            moduleClassLoader.close();
+        }
     }
 }

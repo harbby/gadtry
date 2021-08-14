@@ -42,9 +42,11 @@ public class SecurityClassLoader
 
     /**
      * plugins should not have access to the system (application) class loader
+     * <p>
+     * access class = JDK + this.urls + spiClassloader.securityPackages
      *
-     * @param urls urls
-     * @param spi spi classloader
+     * @param urls             urls
+     * @param spi              spi classloader
      * @param securityPackages security Packages
      */
     public SecurityClassLoader(
@@ -52,11 +54,17 @@ public class SecurityClassLoader
             ClassLoader spi,
             Collection<String> securityPackages)
     {
-        super(requireNonNull(urls, "urls is null"), securityPackages == null ? spi : PLATFORM_CLASS_LOADER);
+        super(requireNonNull(urls, "urls is null"), PLATFORM_CLASS_LOADER);
         this.spiClassLoader = requireNonNull(spi, "spi ClassLoader is null");
-
-        this.spiPackages = securityPackages == null ? ImmutableList.empty() : ImmutableList.copy(securityPackages);
+        this.spiPackages = ImmutableList.copy(requireNonNull(securityPackages, "security packages is null"));
         this.spiResources = this.spiPackages.stream().map(SecurityClassLoader::classNameToResource).collect(Collectors.toList());
+    }
+
+    public SecurityClassLoader(
+            ClassLoader spi,
+            Collection<String> securityPackages)
+    {
+        this(new URL[0], spi, securityPackages);
     }
 
     @Override
@@ -132,7 +140,7 @@ public class SecurityClassLoader
     }
 
     @SuppressWarnings("JavaReflectionMemberAccess")
-    private static ClassLoader findPlatformClassLoader()
+    static ClassLoader findPlatformClassLoader()
     {
         try {
             // use platform class loader on Java 9

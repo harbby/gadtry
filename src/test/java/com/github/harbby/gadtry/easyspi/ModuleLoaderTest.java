@@ -28,21 +28,25 @@ import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ModuleLoaderTest
 {
+    private final Map<String, Module<Driver>> modulesMap = new HashMap<>();
     private final ModuleLoader<Driver> moduleLoader = ModuleLoader.<Driver>newScanner()
             .setScanDir(new File(this.getClass().getClassLoader().getResource("version1").getFile()).getParentFile())
             .setPlugin(Driver.class)
             .setLoadHandler(module -> {
-                System.out.println("load module " + Arrays.asList(module.getModulePath().list()) +
+                modulesMap.put(module.getName(), module);
+                System.out.println("load module " + Arrays.asList(module.moduleFile().list()) +
                         "  " + "loadTime " + module.getLoadTime());
             })
             .setParentLoader(this.getClass().getClassLoader())
-            .onlyAccessSpiPackages(Arrays.asList("com.github.harbby.gadtry.aop", "version2"))
+            .accessSpiPackages(Arrays.asList("com.github.harbby.gadtry.aop", "version2"))
             .load();
 
     public ModuleLoaderTest()
@@ -53,15 +57,15 @@ public class ModuleLoaderTest
     public void newPluginLoadTest()
             throws IOException
     {
-        moduleLoader.reload();
-        Assert.assertEquals(2, moduleLoader.getPlugins().size());
+        moduleLoader.reload(modulesMap);
+        Assert.assertEquals(2, modulesMap.values().stream().mapToInt(driverModule -> driverModule.getPlugins().size()).sum());
     }
 
     @Test
     public void onlyAccessSpiPackagesTest()
             throws ClassNotFoundException, IOException
     {
-        Module module = moduleLoader.getModules().get(0);
+        Module module = modulesMap.values().stream().findFirst().get();
         ClassLoader moduleClassLoader = module.getModuleClassLoader();
 
         try {
@@ -87,23 +91,22 @@ public class ModuleLoaderTest
     public void reloadTest()
             throws IOException
     {
-        Assert.assertEquals(3, moduleLoader.getModules().size());
-        Module module = moduleLoader.getModules().get(0);
-        File reloadFile = new File(module.getModulePath(), "reload");
-        File reloadFile2 = new File(module.getModulePath().getParentFile(), "reload");
+        Assert.assertEquals(3, modulesMap.size());
+        Module module = modulesMap.values().stream().findFirst().get();
+        File reloadFile = new File(module.moduleFile(), "reload");
+        File reloadFile2 = new File(module.moduleFile().getParentFile(), "reload");
         try {
             byte[] value = String.valueOf(System.currentTimeMillis()).getBytes(UTF_8);
             java.nio.file.Files.write(Paths.get(reloadFile.toURI()), value, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             reloadFile2.mkdirs();
-            moduleLoader.reload();
-            Assert.assertEquals(4, moduleLoader.getModules().size());
-            Assert.assertEquals(2, moduleLoader.getPlugins().size());
+            moduleLoader.reload(modulesMap);
+            Assert.assertEquals(4, modulesMap.size());
         }
         finally {
             reloadFile.delete();
             reloadFile2.delete();
-            moduleLoader.reload();
-            Assert.assertEquals(3, moduleLoader.getModules().size());
+            moduleLoader.reload(modulesMap);
+            Assert.assertEquals(3, modulesMap.size());
         }
     }
 
@@ -111,13 +114,16 @@ public class ModuleLoaderTest
     public void loadFilterTest()
             throws Exception
     {
+        Map<String, Module<Driver>> modules = new HashMap<>();
         final ModuleLoader<Driver> moduleLoader = ModuleLoader.<Driver>newScanner()
                 .setScanDir(() -> {
                     return Arrays.asList(new File(this.getClass().getClassLoader().getResource("version1").getFile()),
                             new File(this.getClass().getClassLoader().getResource("version2").getFile()));
                 })
                 .setPlugin(Driver.class)
-                .setLoadHandler(module -> {})
+                .setLoadHandler(module -> {
+                    modules.put(module.getName(), module);
+                })
                 .setModuleDepFilter(file -> {
                     if ("version2".equalsIgnoreCase(file.getName())) {
                         return new ArrayList<>();
@@ -126,9 +132,9 @@ public class ModuleLoaderTest
                         return Files.listFiles(file, false);
                     }
                 })
-                .onlyAccessSpiPackages(Collections.emptyList())
+                .accessSpiPackages(Collections.emptyList())
                 .load();
 
-        Assert.assertEquals(1, moduleLoader.getPlugins().size());
+        Assert.assertEquals(1, modules.values().stream().mapToInt(driverModule -> driverModule.getPlugins().size()).sum());
     }
 }

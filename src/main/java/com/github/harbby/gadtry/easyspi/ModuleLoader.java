@@ -28,16 +28,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 import static java.util.Objects.requireNonNull;
 
 public final class ModuleLoader<T>
@@ -46,10 +45,8 @@ public final class ModuleLoader<T>
     private final Class<T> pluginClass;
     private final Function<File, List<File>> filter;
     private final Consumer<Module<T>> loadHandler;
-    private final ClassLoader parentLoader;
-    private final List<String> spiPackages;
-
-    private final ConcurrentMap<String, Module<T>> modulesMap = new ConcurrentHashMap<>();
+    private final Function<URL[], URLClassLoader> classLoaderFactory;
+    private final BiFunction<Class<T>, ClassLoader, Iterable<T>> loader;
 
     private ModuleLoader(
             Class<T> pluginClass,
@@ -57,59 +54,44 @@ public final class ModuleLoader<T>
             Supplier<Collection<File>> scanner,
             ClassLoader parentLoader,
             List<String> spiPackages,
-            Consumer<Module<T>> loadHandler)
+            Consumer<Module<T>> loadHandler,
+            Function<URL[], URLClassLoader> classLoaderFactory, BiFunction<Class<T>, ClassLoader, Iterable<T>> loader)
             throws IOException
     {
         this.pluginClass = pluginClass;
         this.filter = filter;
-        this.parentLoader = parentLoader;
-        this.spiPackages = spiPackages;
         this.scanner = scanner;
         this.loadHandler = loadHandler;
+        this.loader = loader;
+
+        if (classLoaderFactory == null) {
+            if (spiPackages == null) {
+                this.classLoaderFactory = urls -> new DirClassLoader(urls, parentLoader);
+            }
+            else {
+                this.classLoaderFactory = urls -> new SecurityClassLoader(urls, parentLoader, spiPackages);
+            }
+        }
+        else {
+            this.classLoaderFactory = classLoaderFactory;
+        }
 
         for (File dir : scanner.get()) {
-            Module<T> module = this.loadModule(dir);
-            modulesMap.put(module.getName(), module);
+            this.loadModule(dir);
         }
     }
 
-    public List<Module<T>> getModules()
-    {
-        return ImmutableList.copy(modulesMap.values());
-    }
-
-    public Optional<Module<T>> getModule(String id)
-    {
-        return Optional.ofNullable(modulesMap.get(id));
-    }
-
-    public void removeModule(String modName)
-            throws IOException
-    {
-        Module<T> module = modulesMap.remove(modName);
-        if (module != null) {
-            module.close();
-        }
-    }
-
-    public List<T> getPlugins()
-    {
-        return modulesMap.values().stream()
-                .flatMap(module -> module.getPlugins().stream())
-                .collect(Collectors.toList());
-    }
-
-    public synchronized void reload()
+    public void reload(Map<String, ? extends Module<T>> modulesMap)
             throws IOException
     {
         List<File> updates = new ArrayList<>();
-        Iterator<Module<T>> it = modulesMap.values().iterator();
+        Iterator<? extends Module<T>> it = modulesMap.values().iterator();
         while (it.hasNext()) {
-            Module<T> module = it.next();
+            Module<? extends T> module = it.next();
             if (module.modified()) {
                 it.remove();
                 module.close();
-                updates.add(module.getModulePath());
+                updates.add(module.moduleFile());
             }
         }
         for (File moduleDir : scanner.get()) {
@@ -120,36 +102,31 @@ public final class ModuleLoader<T>
 
         for (File moduleFile : updates) {
             if (moduleFile.exists()) {
-                Module<T> newModule = this.loadModule(moduleFile);
-                Module<T> old = modulesMap.put(newModule.getName(), newModule);
-                if (old != null) {
-                    old.close();
-                }
+                this.loadModule(moduleFile);
             }
         }
     }
 
-    private URLClassLoader buildClassLoaderFromDirectory(File dir)
+    private URLClassLoader prepareClassLoaderFromDirectory(File dir)
             throws IOException
     {
         List<URL> urls = new ArrayList<>();
         for (File file : filter.apply(dir)) {
             urls.add(file.toURI().toURL());
         }
-        return new SecurityClassLoader(urls.toArray(new URL[0]), parentLoader, spiPackages);
+        return classLoaderFactory.apply(urls.toArray(new URL[0]));
     }
 
-    private Module<T> loadModule(final File moduleDir)
+    private void loadModule(final File moduleDir)
             throws IOException
     {
         long loadTime = moduleDir.lastModified();
-        URLClassLoader moduleClassLoader = buildClassLoaderFromDirectory(moduleDir);
+        URLClassLoader moduleClassLoader = prepareClassLoaderFromDirectory(moduleDir);
         try (Closeables<?> ignored = Closeables.openThreadContextClassLoader(moduleClassLoader)) {
-            ServiceLoader<T> serviceLoader = ServiceLoader.load(pluginClass, moduleClassLoader);
+            Iterable<T> serviceLoader = loader.apply(pluginClass, moduleClassLoader);
             List<T> plugins = ImmutableList.copy(serviceLoader);
-            Module<T> module = new Module<>(moduleDir, loadTime, plugins, moduleClassLoader);
+            Module<T> module = new Module.ModuleImpl<>(moduleDir, loadTime, plugins, moduleClassLoader);
             loadHandler.accept(module);
-            return module;
         }
     }
 
@@ -166,8 +143,10 @@ public final class ModuleLoader<T>
         private java.util.function.Function<File, List<File>> filter = moduleDir -> Files.listFiles(moduleDir, true);
         private Consumer<Module<T>> loadHandler = plugins -> {};
         private ClassLoader parentLoader;
+        private Function<URL[], URLClassLoader> classLoaderFactory;
+        private BiFunction<Class<T>, ClassLoader, Iterable<T>> loader = ServiceLoader::load;
 
-        public Builder<T> onlyAccessSpiPackages(List<String> spiPackages)
+        public Builder<T> accessSpiPackages(List<String> spiPackages)
         {
             this.spiPackages = requireNonNull(spiPackages, "spiPackages is null");
             return this;
@@ -186,6 +165,18 @@ public final class ModuleLoader<T>
         public Builder<T> setScanDir(Supplier<Collection<File>> scanner)
         {
             this.scanner = requireNonNull(scanner, "scanner is null");
+            return this;
+        }
+
+        public Builder<T> setLoader(BiFunction<Class<T>, ClassLoader, Iterable<T>> loader)
+        {
+            this.loader = requireNonNull(loader, "loader is null");
+            return this;
+        }
+
+        public Builder<T> setClassLoaderFactory(Function<URL[], URLClassLoader> classLoaderFactory)
+        {
+            this.classLoaderFactory = requireNonNull(classLoaderFactory, "classLoaderFactory is null");
             return this;
         }
 
@@ -218,14 +209,10 @@ public final class ModuleLoader<T>
         {
             checkState(scanner != null, "scanner is null,your must setScanDir()");
             checkState(pluginClass != null, "pluginClass is null,your must setPlugin()");
-            if (parentLoader == null) {
-                parentLoader = pluginClass.getClassLoader();
-            }
-            if (parentLoader == null) {
-                parentLoader = ClassLoader.getSystemClassLoader();
-            }
+            parentLoader = getOrDefault(parentLoader, pluginClass.getClassLoader());
+            parentLoader = getOrDefault(parentLoader, ClassLoader.getSystemClassLoader());
 
-            return new ModuleLoader<>(pluginClass, filter, scanner, parentLoader, spiPackages, loadHandler);
+            return new ModuleLoader<>(pluginClass, filter, scanner, parentLoader, spiPackages, loadHandler, classLoaderFactory, loader);
         }
     }
 }
