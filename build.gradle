@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.9.2-SNAPSHOT"  //SNAPSHOT
+version = "1.9.3-SNAPSHOT"  //SNAPSHOT
 
 def jdk = project.hasProperty('jdk') ? project.jdk : 'java8'  //or java11  use -Pjdk=java8
 //def jdk = System.getProperty("jdk") ?: "java8"  //or java11   use -Djdk=java8
