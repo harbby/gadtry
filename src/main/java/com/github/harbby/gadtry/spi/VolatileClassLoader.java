@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.easyspi;
+package com.github.harbby.gadtry.spi;
 
 import java.io.IOException;
 import java.net.URL;
@@ -24,7 +24,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
-import static com.github.harbby.gadtry.easyspi.SecurityClassLoader.findPlatformClassLoader;
+import static com.github.harbby.gadtry.spi.SecurityClassLoader.findPlatformClassLoader;
 import static java.util.Objects.requireNonNull;
 
 public class VolatileClassLoader

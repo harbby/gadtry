@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.easyspi;
+package com.github.harbby.gadtry.spi;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
 
@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  * plugins should not have access to the system (application) class loader
  */
 public class SecurityClassLoader
-        extends DirClassLoader
+        extends DynamicClassLoader
 {
     private static final ClassLoader PLATFORM_CLASS_LOADER = findPlatformClassLoader();
 

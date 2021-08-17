@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.easyspi;
+package com.github.harbby.gadtry.spi;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -24,27 +24,27 @@ import java.net.URLStreamHandlerFactory;
 import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
-public class DirClassLoader
+public class DynamicClassLoader
         extends URLClassLoader
 {
     private final long createTime = System.currentTimeMillis();
 
-    public DirClassLoader(URL[] urls, ClassLoader parent)
+    public DynamicClassLoader(URL[] urls, ClassLoader parent)
     {
         super(getOrDefault(urls, new URL[0]), parent);
     }
 
-    public DirClassLoader(ClassLoader parent)
+    public DynamicClassLoader(ClassLoader parent)
     {
         super(new URL[0], parent);
     }
 
-    public DirClassLoader(URL[] urls)
+    public DynamicClassLoader(URL[] urls)
     {
         super(urls);
     }
 
-    public DirClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory)
+    public DynamicClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory)
     {
         super(urls, parent, factory);
     }

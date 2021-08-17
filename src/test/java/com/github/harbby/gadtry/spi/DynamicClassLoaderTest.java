@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.easyspi;
+package com.github.harbby.gadtry.spi;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,7 +22,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
 
-public class DirClassLoaderTest
+public class DynamicClassLoaderTest
 {
     private final URL url = this.getClass().getClassLoader().getResource("version2/h2-1.4.199.jar");
 
@@ -30,7 +30,7 @@ public class DirClassLoaderTest
     public void addURLJarFile()
             throws ClassNotFoundException
     {
-        DirClassLoader classLoader = new DirClassLoader(new URL[0]);
+        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
         classLoader.addJarFile(url);
 
         Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
@@ -40,7 +40,7 @@ public class DirClassLoaderTest
     public void addJarFile()
             throws ClassNotFoundException
     {
-        DirClassLoader classLoader = new DirClassLoader(new URL[0], this.getClass().getClassLoader());
+        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0], this.getClass().getClassLoader());
         classLoader.addJarFile(new File(url.getFile()));
         Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
     }
@@ -49,7 +49,7 @@ public class DirClassLoaderTest
     public void addJarFiles()
             throws ClassNotFoundException
     {
-        DirClassLoader classLoader = new DirClassLoader(this.getClass().getClassLoader());
+        DynamicClassLoader classLoader = new DynamicClassLoader(this.getClass().getClassLoader());
         classLoader.addJarFiles(Arrays.asList(new File(url.getFile())));
         Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
     }
@@ -58,7 +58,7 @@ public class DirClassLoaderTest
     public void addDir()
             throws ClassNotFoundException
     {
-        DirClassLoader classLoader = new DirClassLoader(new URL[0]);
+        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
 
         classLoader.addDir(new File(url.getFile()).getParentFile());
         Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
@@ -67,7 +67,7 @@ public class DirClassLoaderTest
     @Test
     public void toStringTest()
     {
-        DirClassLoader classLoader = new DirClassLoader(new URL[0]);
+        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
         Assert.assertTrue(classLoader.toString().contains("time:"));
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.easyspi;
+package com.github.harbby.gadtry.spi;
 
 import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.base.Files;
@@ -66,7 +66,7 @@ public final class ModuleLoader<T>
 
         if (classLoaderFactory == null) {
             if (spiPackages == null) {
-                this.classLoaderFactory = urls -> new DirClassLoader(urls, parentLoader);
+                this.classLoaderFactory = urls -> new DynamicClassLoader(urls, parentLoader);
             }
             else {
                 this.classLoaderFactory = urls -> new SecurityClassLoader(urls, parentLoader, spiPackages);
