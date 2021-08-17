@@ -23,13 +23,17 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,7 +55,7 @@ public class JVMLaunchersTest
                     Arrays.fill(bytes, (byte) 1);
                     return bytes;
                 })
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(msg -> System.out.print(msg))
@@ -67,6 +71,26 @@ public class JVMLaunchersTest
     }
 
     @Test
+    public void setJavaHomeTest()
+    {
+        JVMLauncher<List<String>> launcher = JVMLaunchers.<List<String>>newJvm()
+                .javaHome(System.getProperty("java.home"))
+                .task(() -> {
+                    RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+                    List<String> jvmArgs = runtimeMXBean.getInputArguments();
+                    return new ArrayList<>(jvmArgs.subList(0, 2));
+                })
+                .addUserJars(new URL[0])
+                .setXms("1m")
+                .addVmOps("-Xmx2m")
+                .setConsole(msg -> System.out.print(msg))
+                .build();
+
+        List<String> vmResult = launcher.startAndGet();
+        Assert.assertEquals(Arrays.asList("-Xms1m", "-Xmx2m"), vmResult);
+    }
+
+    @Test
     public void testForkJvmReturn1()
             throws InterruptedException
     {
@@ -76,7 +100,7 @@ public class JVMLaunchersTest
                     System.out.println("************ job start ***************");
                     return 1;
                 })
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
                 //.useDebug()
@@ -103,7 +127,7 @@ public class JVMLaunchersTest
                     System.out.println(element);
                     return element.getClassName();
                 })
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setName(taskName)
                 .setXms("16m")
                 .setXmx("16m")
@@ -154,13 +178,13 @@ public class JVMLaunchersTest
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
-                .addUserjars(Collections.emptyList())
-                .addUserjars(urls.build())
+                .addUserJars(Collections.emptyList())
+                .addUserJars(urls.build())
                 .setClassLoader(classLoader)
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
-                .notDepThisJvmClassPath()
+                .notDependParentJvmClassPath()
                 .build();
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -194,7 +218,7 @@ public class JVMLaunchersTest
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
-                .notDepThisJvmClassPath()
+                .notDependParentJvmClassPath()
                 .build();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -226,7 +250,7 @@ public class JVMLaunchersTest
                 })
                 .setEnvironment("TestEnv", envValue)
                 .setEnvironment(MutableMap.of("k1", "v1"))
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(msg -> System.out.println(msg))
@@ -246,7 +270,7 @@ public class JVMLaunchersTest
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
@@ -275,7 +299,7 @@ public class JVMLaunchersTest
                     System.out.println("************ job start ***************");
                     return 2019;
                 })
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
@@ -317,7 +341,7 @@ public class JVMLaunchersTest
     {
         File dir = new File("/tmp");
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
-                .addUserjars(Collections.emptyList())
+                .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
                 .setWorkDirectory(dir)

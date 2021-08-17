@@ -48,6 +48,7 @@ public class JVMLauncherImpl<R>
     private final ClassLoader classLoader;
     private final File workDirectory;
     private final String taskProcessName;
+    private final File javaCmd;
 
     public JVMLauncherImpl(VmCallable<R> task,
             Consumer<String> consoleHandler,
@@ -57,7 +58,8 @@ public class JVMLauncherImpl<R>
             Map<String, String> environment,
             ClassLoader classLoader,
             File workDirectory,
-            String taskProcessName)
+            String taskProcessName,
+            File javaCmd)
     {
         this.task = task;
         this.userJars = userJars;
@@ -68,6 +70,7 @@ public class JVMLauncherImpl<R>
         this.classLoader = classLoader;
         this.workDirectory = workDirectory;
         this.taskProcessName = taskProcessName;
+        this.javaCmd = javaCmd;
     }
 
     @Override
@@ -186,9 +189,8 @@ public class JVMLauncherImpl<R>
 
     protected List<String> buildMainArg(List<String> otherVmOps)
     {
-        File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
         List<String> ops = new ArrayList<>();
-        ops.add(java.toString());
+        ops.add(javaCmd.toString());
 
         ops.addAll(otherVmOps);
 

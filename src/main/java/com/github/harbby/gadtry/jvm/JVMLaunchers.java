@@ -19,6 +19,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,6 +46,15 @@ public class JVMLaunchers
         private ClassLoader classLoader;
         private File workDir;
         private String taskProcessName = JVMLauncher.class.getName();
+        private File javaCmd = new File(System.getProperty("java.home"), "bin/java");
+
+        public VmBuilder<T> javaHome(String javaHome)
+        {
+            File file = new File(javaHome, "bin/java");
+            checkState(file.exists() && file.isFile(), "not found java cmd");
+            this.javaCmd = file;
+            return this;
+        }
 
         public VmBuilder<T> task(VmCallable<T> task)
         {
@@ -72,15 +82,16 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> notDepThisJvmClassPath()
+        public VmBuilder<T> notDependParentJvmClassPath()
         {
             depThisJvm = false;
             return this;
         }
 
+        @Deprecated
         public VmBuilder<T> addUserURLClassLoader(URLClassLoader vmClassLoader)
         {
-            ClassLoader classLoader = vmClassLoader;
+            ClassLoader classLoader = requireNonNull(vmClassLoader, "classLoader is null");
             while (classLoader instanceof URLClassLoader) {
                 Collections.addAll(tmpJars, ((URLClassLoader) classLoader).getURLs());
                 classLoader = classLoader.getParent();
@@ -88,9 +99,15 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> addUserjars(Collection<URL> jars)
+        public VmBuilder<T> addUserJars(Collection<URL> jars)
         {
-            tmpJars.addAll(jars);
+            tmpJars.addAll(requireNonNull(jars, "jars is null"));
+            return this;
+        }
+
+        public VmBuilder<T> addUserJars(URL[] jars)
+        {
+            this.addUserJars(Arrays.asList(requireNonNull(jars, "jars is null")));
             return this;
         }
 
@@ -135,7 +152,7 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm,
-                    otherVmOps, environment, classLoader, workDir, taskProcessName);
+                    otherVmOps, environment, classLoader, workDir, taskProcessName, javaCmd);
         }
     }
 
