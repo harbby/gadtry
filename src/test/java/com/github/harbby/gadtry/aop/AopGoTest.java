@@ -15,15 +15,14 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.impl.JavassistProxy;
-import com.github.harbby.gadtry.aop.impl.JdkProxy;
+import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple4;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -31,7 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyInt;
+import static com.github.harbby.gadtry.aop.mockgo.MockGoArgument.anyInt;
 
 public class AopGoTest
 {
@@ -135,18 +134,25 @@ public class AopGoTest
         }
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void aopByAfterIsSuccessTestGive999ReturnFalse()
     {
+        List<Boolean> checkList = new ArrayList<>();
         Tuple1<String> proxy = AopGo.proxy(Tuple1.of("1"))
                 .aop(binder -> {
                     binder.doAfter(after -> {
-                        Assert.assertFalse(after.isSuccess());
+                        checkList.add(after.isSuccess());
                     }).when().getField(anyInt());
                 })
                 .build();
-        proxy.getField(999);
-        Assert.fail();
+        try {
+            proxy.getField(999);
+            Assert.fail();
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e instanceof IndexOutOfBoundsException);
+        }
+        Assert.assertEquals(checkList, ImmutableList.of(false));
     }
 
     @Test
@@ -157,14 +163,14 @@ public class AopGoTest
                 .byInstance(new ArrayList<>())
                 .aop(binder -> {
                     binder.doAround(cut ->
-                            (int) cut.proceed() + 1)
+                                    (int) cut.proceed() + 1)
                             .whereMethod(method -> method.getName().startsWith("size"));
                     binder.doBefore(before -> {
                         actions.add(before.getName());
                     }).when().isEmpty();
                 })
                 .build();
-        Assert.assertTrue(JdkProxy.isProxyClass(list.getClass()));
+        //Assert.assertTrue(JdkProxy.isProxyClass(list.getClass()));
         Assert.assertEquals(list.size(), 1);
         Assert.assertTrue(list.isEmpty());
         Assert.assertEquals(actions, MutableSet.of("isEmpty"));
@@ -176,8 +182,7 @@ public class AopGoTest
         Set<String> actions = new HashSet<>();
         List<String> list = AopGo.proxy(new ArrayList<String>())
                 .aop(binder -> {
-                    binder.doAround(cut ->
-                            (int) cut.proceed() + 1)
+                    binder.doAround(cut -> (int) cut.proceed() + 1)
                             .whereMethod(method -> method.getName().startsWith("size"));
                     binder.doBefore(before -> {
                         actions.add(before.getName());
@@ -194,7 +199,9 @@ public class AopGoTest
     public void aopGoUseReturnTypeSelector()
     {
         Set<String> actions = new HashSet<>();
-        List<String> list = AopGo.proxy(new ArrayList<String>())
+        List<String> list = AopGo
+                .proxy(JavaTypes.<List<String>>classTag(ImmutableList.class))
+                .byInstance(ImmutableList.<String>of())
                 .aop(binder -> {
                     binder.doBefore(before -> {
                         actions.add(before.getName());
@@ -215,7 +222,7 @@ public class AopGoTest
                 .aop(binder -> {
                     binder.doBefore(before -> {
                         actions.add(before.getName());
-                    }).annotated(Ignore.class, Ignore.class);
+                    }).annotated(Deprecated.class, Deprecated.class);
                 }).build();
         proxy.a1();
         proxy.a2();
@@ -226,7 +233,7 @@ public class AopGoTest
     {
         public void a1() {}
 
-        @Ignore
+        @Deprecated
         public void a2() {}
     }
 
@@ -252,8 +259,7 @@ public class AopGoTest
                     binder.doBefore(before -> {
                         actions.add("before4");
                     }).when().size();
-                })
-                .build();
+                }).build();
         Assert.assertEquals(set.size(), 1);
         Assert.assertEquals(MutableList.of("before1", "before2", "before4", "before3"), actions);
     }

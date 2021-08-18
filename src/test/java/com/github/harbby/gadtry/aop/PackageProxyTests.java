@@ -15,11 +15,11 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.mock.MockGo;
-import com.github.harbby.gadtry.aop.mock.MockGoException;
+import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.aop.resource.PackageTestName;
 import com.github.harbby.gadtry.aop.resource.impl.PackageTestUtil;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class PackageProxyTests
 {
@@ -41,7 +42,6 @@ public class PackageProxyTests
         try {
             AopGo.proxy(JavaTypes.<Set<String>>classTag(Set.class))
                     .byInstance(new HashSet<>())
-                    .basePackage("test.aop.int")
                     .aop(binder -> {
                         binder.doBefore(before -> {
                             actions.add("before1");
@@ -57,19 +57,15 @@ public class PackageProxyTests
     @Test
     public void packageProxyTest()
     {
-        String basePackage = "test.aop.package1";
         List<String> actions = new ArrayList<>();
-        Set<String> set = AopGo.proxy(JavaTypes.<Set<String>>classTag(Set.class))
-                .byInstance(new HashSet<>())
-                .basePackage(basePackage)
+        Set<String> set = AopGo.proxy(new HashSet<String>())
                 .aop(binder -> {
                     binder.doBefore(before -> {
                         actions.add("before1");
                     }).when().size();
                 })
                 .build();
-        Assert.assertTrue(set.getClass().getName().startsWith(basePackage));
-
+        Assert.assertTrue(set.getClass().getName().startsWith(PackageProxyTests.class.getPackage().getName()));
         set.size();
         Assert.assertEquals(Arrays.asList("before1"), actions);
     }
@@ -78,47 +74,28 @@ public class PackageProxyTests
     public void mockGoNotAccessMethod()
     {
         PackageTestName instance = PackageTestUtil.getInstance();
-        PackageTestName mockito = (PackageTestName) MockGo.mock(instance.getClass().getInterfaces()[0]);
+        PackageTestName mock = (PackageTestName) MockGo.mock(instance.getClass().getInterfaces()[0]);
         MockGo.doAnswer(joinPoint -> {
-            joinPoint.getMethod().setAccessible(true); //must
+            Assert.assertEquals(joinPoint.getName(), "getName");
             Object value = joinPoint.getMethod().invoke(instance, joinPoint.getArgs());
-            if (value == null && joinPoint.getMethod().getName().equals("getName")) {
-                return "harbby";
-            }
-            else {
-                return value;
-            }
-        }).when(mockito).getName();
-        Assert.assertEquals(mockito.getName(), "harbby1");
-        PackageTestUtil.getAge(mockito);
+            return value + "#123";
+        }).when(mock).getName();
+        Assert.assertEquals(mock.getName(), "harbby1#123");
+        PackageTestUtil.getAge(mock);
     }
 
     @Test
     public void mockitoGoNotAccessMethod()
     {
         PackageTestName instance = PackageTestUtil.getInstance();
-        PackageTestName mockito = (PackageTestName) Mockito.mock(instance.getClass().getInterfaces()[0]);
+        PackageTestName mock = (PackageTestName) Mockito.mock(instance.getClass().getInterfaces()[0]);
         Mockito.doAnswer(joinPoint -> {
-            //joinPoint.getMethod().setAccessible(true); //must
+            Assert.assertEquals(joinPoint.getMethod().getName(), "getName");
             Object value = joinPoint.getMethod().invoke(instance, joinPoint.getArguments());
-            if (value == null && joinPoint.getMethod().getName().equals("getName")) {
-                return "harbby";
-            }
-            else {
-                return value;
-            }
-        }).when(mockito).getName();
-        try {
-            Assert.assertEquals(mockito.getName(), "harbby1");
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            Assert.assertTrue(e.getMessage()
-                    .contains(this.getClass().getName()
-                            + " can not access a member of class "
-                            + instance.getClass().getInterfaces()[0].getName()));
-        }
-        PackageTestUtil.getAge(mockito);
+            return value + "#123";
+        }).when(mock).getName();
+        Assert.assertEquals(mock.getName(), "harbby1#123");
+        PackageTestUtil.getAge(mock);
     }
 
     /**
@@ -135,19 +112,22 @@ public class PackageProxyTests
 
         PackageTestName proxy = (PackageTestName) Proxy.newProxyInstance(
                 this.getClass().getClassLoader(),
-                instance.getClass().getInterfaces(),
+                MutableList.<Class<?>>builder()
+                        .addAll(instance.getClass().getInterfaces())
+                        .add(Supplier.class)
+                        .build().toArray(new Class[0]),
                 invocationHandler);
         Assert.assertEquals(proxy.getName(), "harbby1");
 
         try {
             PackageTestUtil.getAge(proxy);
+            Assert.fail();
         }
         catch (java.lang.reflect.UndeclaredThrowableException e) {
-            e.printStackTrace();
-            Assert.assertTrue(e.getCause().getMessage()
-                    .contains(this.getClass().getName()
-                            + " can not access a member of class "
-                            + instance.getClass().getInterfaces()[0].getName()));
+            String errorMsg = e.getCause().getMessage();
+            Assert.assertTrue(errorMsg.contains(this.getClass().getName()
+                    + " cannot access a member of interface "
+                    + instance.getClass().getInterfaces()[0].getName()));
         }
     }
 
@@ -176,11 +156,9 @@ public class PackageProxyTests
     @Test
     public void cannotAccessClassTest()
     {
-        String basePackage = "test.aop.package1";
         PackageTestName instance = PackageTestUtil.getInstance();
         try {
             AopGo.proxy(instance)
-                    .basePackage(basePackage)
                     .aop(binder -> {
                         binder.doBefore(before -> {}).allMethod();
                     })

@@ -15,17 +15,17 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
+import com.github.harbby.gadtry.aop.MethodSignature;
+import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.aop.impl.Proxy.getInvocationHandler;
+import static com.github.harbby.gadtry.aop.codegen.Proxy.getInvocationHandler;
 
 /**
  * Method Selector
@@ -33,7 +33,7 @@ import static com.github.harbby.gadtry.aop.impl.Proxy.getInvocationHandler;
 public class PointcutBuilder<T>
 {
     private final T proxy;
-    protected final List<Function1<Method, Boolean>> filters = new ArrayList<>();
+    protected final List<Function1<MethodSignature, Boolean>> filters = new ArrayList<>();
 
     public PointcutBuilder(T proxy)
     {
@@ -44,7 +44,7 @@ public class PointcutBuilder<T>
     {
         AopInvocationHandler aopInvocationHandler = getInvocationHandler(proxy);
         aopInvocationHandler.setHandler((proxy, method, args) -> {
-            filters.add(method1 -> method1 == method);
+            filters.add(method1 -> method1.getMethod() == method);
             aopInvocationHandler.initHandler();
             return JavaTypes.getClassInitValue(method.getReturnType());
         });
@@ -84,7 +84,7 @@ public class PointcutBuilder<T>
         return this;
     }
 
-    public PointcutBuilder<T> whereMethod(Function1<Method, Boolean> whereMethod)
+    public PointcutBuilder<T> whereMethod(Function1<MethodSignature, Boolean> whereMethod)
     {
         filters.add(whereMethod);
         return this;
@@ -100,7 +100,7 @@ public class PointcutBuilder<T>
     {
     }
 
-    List<Function1<Method, Boolean>> build()
+    List<Function1<MethodSignature, Boolean>> build()
     {
         return filters;
     }

@@ -16,6 +16,8 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
+import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
+import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,16 +55,19 @@ public class JavassistProxyV2Test
     @Test
     public void javassistProxyV2Test()
     {
+        /**
+         * v2 method 名字加了前缀$_
+         * */
         String name = "123123-1";
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
         Test1 old = new Test1(name);
         InvocationHandler handler = (proxy, method, args1) -> {
             System.out.println("before " + method.getName());
-            if ("name".equals(method.getName())) {
+            if ("$_name".equals(method.getName())) {
                 atomicBoolean.set(true);
             }
-            else if ("age".equals(method.getName())) {
+            else if ("$_age".equals(method.getName())) {
                 return (int) method.invoke(proxy, args1) - 1;
             }
             return method.invoke(proxy, args1);
@@ -70,6 +75,7 @@ public class JavassistProxyV2Test
         ProxyRequest<Test1> request = ProxyRequest.builder(Test1.class)
                 .setClassLoader(Test1.class.getClassLoader())
                 .setInvocationHandler(handler)
+                .enableV2()
                 .setTarget(old)
                 .build();
         Test1 proxy = JavassistProxy.newProxyInstance(request);
@@ -101,11 +107,11 @@ public class JavassistProxyV2Test
             }
             return method.invoke(old, args1);
         };
+        //使用v1代理，关闭this super支持，关闭方法间this调用支持
         ProxyRequest<Test1> request = ProxyRequest.builder(Test1.class)
                 .setClassLoader(Test1.class.getClassLoader())
                 .addInterface(Serializable.class)
                 .setInvocationHandler(handler)
-                .disableSuperMethod()  //使用v1代理，关闭this super支持，关闭方法间this调用支持
                 .setTarget(old)
                 .build();
         //Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class, Serializable.class);

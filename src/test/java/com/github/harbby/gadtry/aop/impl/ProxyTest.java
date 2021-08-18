@@ -16,7 +16,10 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.aop.mock.MockGoException;
+import com.github.harbby.gadtry.aop.codegen.JdkProxy;
+import com.github.harbby.gadtry.aop.codegen.Proxy;
+import com.github.harbby.gadtry.aop.mockgo.MockGoException;
+import com.github.harbby.gadtry.base.Arrays;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationHandler;
@@ -69,6 +72,8 @@ public class ProxyTest
                 .addInterface(Supplier.class)
                 .addInterface(Supplier.class)
                 .build();
-        Proxy.proxy(request);
+
+        Class<?>[] interfaces = Arrays.asArray(request.getSuperclass(), request.getInterfaces(), Class.class);
+        JdkProxy.newProxyInstance(request.getClassLoader(), request.getHandler(), interfaces);
     }
 }

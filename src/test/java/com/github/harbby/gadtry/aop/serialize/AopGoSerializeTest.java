@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.serialize;
 
 import com.github.harbby.gadtry.aop.AopGo;
-import com.github.harbby.gadtry.aop.impl.ProxyHandler;
-import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
+import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
+import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.collection.MutableList;
@@ -39,7 +39,8 @@ public class AopGoSerializeTest
             (Serializable & Function<String, Integer>) (str) -> str.length();
 
     @Test
-    public void aopGoSerializeTest1() throws Exception
+    public void aopGoSerializeTest1()
+            throws Exception
     {
         AbstractClass extendsClass = new AbstractClass.ExtendsClass();
 
@@ -64,7 +65,8 @@ public class AopGoSerializeTest
         Assert.assertEquals(18, serialized.getAge());
     }
 
-    private Map<Method, Object> getAopInvocationHandlerMethodMap(AopInvocationHandler handler) throws IllegalAccessException, NoSuchFieldException
+    private Map<Method, Object> getAopInvocationHandlerMethodMap(AopInvocationHandler handler)
+            throws IllegalAccessException, NoSuchFieldException
     {
         Field field = AopInvocationHandler.class.getDeclaredField("mockMethods");
         field.setAccessible(true);
@@ -117,7 +119,6 @@ public class AopGoSerializeTest
         Function<String, List<String>> proxy = AopGo
                 .proxy(JavaTypes.<Function<String, List<String>>>classTag(Function.class))
                 .byInstance((Serializable & Function<String, List<String>>) (str) -> MutableList.of(str))
-                .basePackage("gadtry.aop.javassist")
                 .aop(binder -> {
                     binder.doAround(joinPoint -> {
                         List<String> value = (List<String>) joinPoint.proceed();

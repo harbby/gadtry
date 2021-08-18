@@ -25,12 +25,11 @@ import static java.util.Objects.requireNonNull;
 public class ProxyRequest<T>
 {
     private ClassLoader classLoader;
-    private String basePackage;
     private InvocationHandler handler;
     private Class<?>[] interfaces;
     private Object target;
     private final Class<T> superclass;
-    private boolean disableSuperMethod = false;
+    private boolean enableV2 = false;
 
     public ProxyRequest(Class<T> superclass)
     {
@@ -40,11 +39,6 @@ public class ProxyRequest<T>
     public ClassLoader getClassLoader()
     {
         return classLoader;
-    }
-
-    public String getBasePackage()
-    {
-        return basePackage;
     }
 
     public InvocationHandler getHandler()
@@ -67,9 +61,9 @@ public class ProxyRequest<T>
         return target;
     }
 
-    public boolean isDisableSuperMethod()
+    public boolean isEnableV2()
     {
-        return disableSuperMethod;
+        return enableV2;
     }
 
     public static <T> Builder<T> builder(Class<T> superclass)
@@ -106,9 +100,9 @@ public class ProxyRequest<T>
             return this;
         }
 
-        public Builder<T> disableSuperMethod()
+        public Builder<T> enableV2()
         {
-            request.disableSuperMethod = true;
+            request.enableV2 = true;
             return this;
         }
 
@@ -121,12 +115,6 @@ public class ProxyRequest<T>
         public Builder<T> setTarget(Object target)
         {
             request.target = target;
-            return this;
-        }
-
-        public Builder<T> basePackage(String basePackage)
-        {
-            request.basePackage = basePackage;
             return this;
         }
 

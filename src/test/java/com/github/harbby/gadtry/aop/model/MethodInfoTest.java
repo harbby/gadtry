@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
-import org.junit.Assert;
+import com.github.harbby.gadtry.aop.MethodSignature;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,86 +36,18 @@ public class MethodInfoTest
     }
 
     private Method method;
-    private MethodInfo methodInfo;
+    private MethodSignature methodSign;
 
     @Before
     public void init()
             throws NoSuchMethodException
     {
         this.method = MethodInfoTest.class.getDeclaredMethod("getConnections", String.class, double.class);
-        this.methodInfo = MethodInfo.of(method);
+        this.methodSign = MethodSignature.of(method);
     }
 
     @Test
-    public void methodInfoGetNameTest()
+    public void allMethodTest()
     {
-        Assert.assertEquals(methodInfo.getName(), method.getName());
-    }
-
-    @Test
-    public void getModifiers()
-    {
-        Assert.assertEquals(methodInfo.getModifiers(), method.getModifiers());
-    }
-
-    @Test
-    public void getParameterCount()
-    {
-        Assert.assertEquals(methodInfo.getParameterCount(), method.getParameterCount());
-    }
-
-    @Test
-    public void getReturnType()
-    {
-        Assert.assertEquals(methodInfo.getReturnType(), method.getReturnType());
-    }
-
-    @Test
-    public void getExceptionTypes()
-    {
-        Assert.assertEquals(methodInfo.getExceptionTypes(), method.getExceptionTypes());
-    }
-
-    @Test
-    public void getParameterAnnotations()
-    {
-        Assert.assertEquals(methodInfo.getParameterAnnotations(), method.getParameterAnnotations());
-    }
-
-    @Test
-    public void getAnnotations()
-    {
-        Assert.assertArrayEquals(methodInfo.getAnnotations(), method.getAnnotations());
-        Assert.assertEquals(methodInfo.getAnnotations().length, 1);
-    }
-
-    @Test
-    public void getAnnotation()
-    {
-        Assert.assertEquals(methodInfo.getAnnotation(Test.class), method.getAnnotation(Test.class));
-    }
-
-    @Test
-    public void getParameterTypes()
-    {
-        Assert.assertEquals(methodInfo.getParameterTypes(), method.getParameterTypes());
-    }
-
-    @Test
-    public void isVarArgs()
-    {
-        Assert.assertEquals(methodInfo.isVarArgs(), method.isVarArgs());
-    }
-
-    @Test
-    public void isDefault()
-    {
-        Assert.assertEquals(methodInfo.isDefault(), method.isDefault());
-    }
-
-    @Test
-    public void toStringTest()
-    {
-        Assert.assertNotNull(methodInfo.toString());
     }
 }

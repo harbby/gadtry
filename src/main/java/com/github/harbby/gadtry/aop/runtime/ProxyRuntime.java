@@ -15,12 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.runtime;
 
-import com.github.harbby.gadtry.base.Throwables;
-
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-
-import static java.util.Objects.requireNonNull;
 
 public final class ProxyRuntime
 {
@@ -29,44 +24,10 @@ public final class ProxyRuntime
     }
 
     public static final String METHOD_START = "$_";
-    private static final Field methodNameField;
-
-    static {
-        Field field;
-        try {
-            field = Method.class.getDeclaredField("name");
-        }
-        catch (NoSuchFieldException e) {
-            field = getJava13MethodNameField();
-        }
-        field.setAccessible(true);
-        methodNameField = field;
-    }
-
-    private static Field getJava13MethodNameField()
-    {
-        try {
-            Method method = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-            method.setAccessible(true);
-            Field[] fields = (Field[]) method.invoke(Method.class, false);
-            for (Field f : fields) {
-                if ("name".equals(f.getName())) {
-                    return f;
-                }
-            }
-            throw new IllegalStateException();
-        }
-        catch (Exception e) {
-            throw Throwables.throwsThrowable(e);
-        }
-    }
 
     public static Method findProxyClassMethod(Class<?> proxyClass, String methodName, Class<?>... parameterTypes)
-            throws NoSuchMethodException, IllegalAccessException
+            throws NoSuchMethodException
     {
-        Method method = proxyClass.getDeclaredMethod(methodName, parameterTypes);
-        requireNonNull(methodNameField, "methodNameField is null");
-        methodNameField.set(method, method.getName().substring(METHOD_START.length()));
-        return method;
+        return proxyClass.getDeclaredMethod(methodName, parameterTypes);
     }
 }

@@ -17,11 +17,10 @@ package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.aopgo.AopBuilder;
 import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
-import com.github.harbby.gadtry.aop.mock.MockGo;
-import com.github.harbby.gadtry.aop.model.After;
-import com.github.harbby.gadtry.aop.model.AfterReturning;
-import com.github.harbby.gadtry.aop.model.AfterThrowing;
-import com.github.harbby.gadtry.aop.model.Before;
+import com.github.harbby.gadtry.aop.event.After;
+import com.github.harbby.gadtry.aop.event.AfterReturning;
+import com.github.harbby.gadtry.aop.event.AfterThrowing;
+import com.github.harbby.gadtry.aop.event.Before;
 import com.github.harbby.gadtry.function.exception.Consumer;
 
 public class AopGo

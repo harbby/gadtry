@@ -15,8 +15,6 @@
  */
 package com.github.harbby.gadtry.aop.resource.impl;
 
-import com.github.harbby.gadtry.aop.resource.PackageTestName;
-
 class PackageTestImpl
         implements PackageTestNameAge
 {
@@ -29,15 +27,5 @@ class PackageTestImpl
     public int getAge()
     {
         return 18;
-    }
-
-    private static class PackageTestAbstract
-            implements PackageTestName
-    {
-        @Override
-        public String getName()
-        {
-            return "harbby2";
-        }
     }
 }

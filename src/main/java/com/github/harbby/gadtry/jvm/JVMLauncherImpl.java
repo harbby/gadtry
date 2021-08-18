@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.io.IOUtils;
 
@@ -192,6 +193,11 @@ public class JVMLauncherImpl<R>
         List<String> ops = new ArrayList<>();
         ops.add(javaCmd.toString());
 
+        if (Platform.getClassVersion() > 52) {
+            ops.add("--add-opens=java.base/java.io=ALL-UNNAMED");
+            //Platform.addOpenJavaModules(FilterOutputStream.class, SystemOutputStream.class);
+        }
+
         ops.addAll(otherVmOps);
 
         ops.add("-classpath");
@@ -214,6 +220,9 @@ public class JVMLauncherImpl<R>
             url = ClassLoader.getSystemClassLoader().getResource("./agent.jar");
         }
         if (!JVMLauncher.class.getName().equals(taskProcessName) && url != null && url.getPath().endsWith(".jar")) {
+            if (Platform.getClassVersion() > 52) {
+                ops.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
+            }
             ops.add(String.format("-javaagent:%s=%s:%s", url.getPath(), JVMLauncher.class.getName(), taskProcessName));
             ops.add(taskProcessName);
         }

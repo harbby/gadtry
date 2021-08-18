@@ -15,7 +15,9 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Throwables;
+import com.github.harbby.gadtry.base.Try;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
@@ -62,9 +64,12 @@ public class VmFuture<R>
         return process;
     }
 
-    public int getPid()
+    public long getPid()
     {
         Process process = getVmProcess();
+        if (Platform.getClassVersion() >= 52) { //>= java11
+            return Try.noCatch(() -> (long) Process.class.getMethod("pid").invoke(process));
+        }
         String system = process.getClass().getName();
         try {
             Field field = process.getClass().getDeclaredField("pid");

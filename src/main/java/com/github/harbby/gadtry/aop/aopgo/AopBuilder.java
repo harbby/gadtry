@@ -16,37 +16,33 @@
 package com.github.harbby.gadtry.aop.aopgo;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.aop.impl.Proxy;
-import com.github.harbby.gadtry.aop.impl.ProxyHandler;
-import com.github.harbby.gadtry.aop.mock.AopInvocationHandler;
+import com.github.harbby.gadtry.aop.codegen.Proxy;
+import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
+import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.function.exception.Consumer;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
-import static java.util.Objects.requireNonNull;
 
-public class AopBuilder<T>
+public final class AopBuilder<T>
 {
     private final Class<T> superclass;
     private final T target;
 
     private Consumer<MockBinder<T>, Throwable>[] binders = new Consumer[0];
-    private String basePackage;
 
     public AopBuilder(Class<T> superclass, T target)
     {
+        int modifiers = superclass.getModifiers();
+        checkArgument(!Modifier.isFinal(modifiers), "cannot proxy Final class");
         this.superclass = superclass;
         this.target = target;
-    }
-
-    public final AopBuilder<T> basePackage(String basePackage)
-    {
-        this.basePackage = requireNonNull(basePackage, "basePackage is null");
-        return this;
     }
 
     @SafeVarargs
@@ -65,7 +61,6 @@ public class AopBuilder<T>
                 .setInvocationHandler(aopInvocationHandler)
                 .setClassLoader(loader)
                 .setTarget(target)
-                .basePackage(basePackage)
                 .build();
         T proxy = Proxy.proxy(request);
         aopInvocationHandler.setProxyClass(proxy.getClass());
