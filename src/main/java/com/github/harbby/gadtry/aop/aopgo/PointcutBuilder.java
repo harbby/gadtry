@@ -44,8 +44,8 @@ public class PointcutBuilder<T>
     {
         AopInvocationHandler aopInvocationHandler = getInvocationHandler(proxy);
         aopInvocationHandler.setHandler((proxy, method, args) -> {
-            filters.add(method1 -> method1.getMethod() == method);
             aopInvocationHandler.initHandler();
+            filters.add(method1 -> method1.getMethod() == method);
             return JavaTypes.getClassInitValue(method.getReturnType());
         });
         return proxy;

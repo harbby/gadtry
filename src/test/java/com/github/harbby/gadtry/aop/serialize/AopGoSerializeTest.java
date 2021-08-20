@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.serialize;
 
 import com.github.harbby.gadtry.aop.AopGo;
-import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Serializables;
@@ -55,8 +55,8 @@ public class AopGoSerializeTest
 
         byte[] bytes = Serializables.serialize(proxy);
         AbstractClass serialized = Serializables.byteToObject(bytes);
-        AopInvocationHandler handler = (AopInvocationHandler) ((ProxyHandler) proxy).getHandler();
-        AopInvocationHandler handler2 = (AopInvocationHandler) ((ProxyHandler) serialized).getHandler();
+        AopInvocationHandler handler = (AopInvocationHandler) ((ProxyAccess) proxy).getHandler();
+        AopInvocationHandler handler2 = (AopInvocationHandler) ((ProxyAccess) serialized).getHandler();
         Map<Method, Object> map1 = getAopInvocationHandlerMethodMap(handler);
         Map<Method, Object> map2 = getAopInvocationHandlerMethodMap(handler2);
 

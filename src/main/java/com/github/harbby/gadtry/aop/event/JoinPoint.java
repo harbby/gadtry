@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.event;
 
 import com.github.harbby.gadtry.aop.MethodSignature;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 
 import java.lang.reflect.Method;
 
@@ -28,6 +29,8 @@ import static java.util.Objects.requireNonNull;
 public interface JoinPoint
         extends Before
 {
+    Object mock();
+
     default Object proceed()
             throws Throwable
     {
@@ -37,7 +40,7 @@ public interface JoinPoint
     Object proceed(Object[] args)
             throws Throwable;
 
-    public static JoinPoint of(Object instance, Method method, Object[] args)
+    public static JoinPoint of(Object mock, Method method, Object[] args, Object instance)
     {
         requireNonNull(instance, "instance is null");
         MethodSignature methodSignature = MethodSignature.ofByGadtryAop(method);
@@ -50,9 +53,18 @@ public interface JoinPoint
             }
 
             @Override
+            public Object mock()
+            {
+                return mock;
+            }
+
+            @Override
             public Object proceed(Object[] args)
                     throws Exception
             {
+                if (mock instanceof ProxyAccess) {
+                    return ((ProxyAccess) mock).callRealMethod(method, instance, args);
+                }
                 return method.invoke(instance, args);
             }
 
@@ -64,7 +76,7 @@ public interface JoinPoint
         };
     }
 
-    public static JoinPoint of(Method method, Object[] args)
+    public static JoinPoint of(Object mock, Method method, Object[] args)
     {
         MethodSignature methodSignature = MethodSignature.ofByGadtryAop(method);
         return new JoinPoint()
@@ -73,6 +85,12 @@ public interface JoinPoint
             public MethodSignature getMethod()
             {
                 return methodSignature;
+            }
+
+            @Override
+            public Object mock()
+            {
+                return mock;
             }
 
             @Override

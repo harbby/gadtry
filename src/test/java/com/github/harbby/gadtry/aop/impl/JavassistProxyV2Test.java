@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -82,7 +82,7 @@ public class JavassistProxyV2Test
 
         Assert.assertEquals(18 - 1, proxy.age());
         Assert.assertEquals(name, proxy.name());
-        Assert.assertTrue(proxy instanceof ProxyHandler);
+        Assert.assertTrue(proxy instanceof ProxyAccess);
         Assert.assertTrue(atomicBoolean.get());
         System.out.println(proxy);
 
@@ -119,7 +119,7 @@ public class JavassistProxyV2Test
 
         Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
         Assert.assertEquals(name, proxy.name());
-        Assert.assertTrue(proxy instanceof ProxyHandler);
+        Assert.assertTrue(proxy instanceof ProxyAccess);
         Assert.assertTrue(atomicBoolean.get());
 
         //---不支持方法间this调用

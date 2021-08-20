@@ -16,8 +16,10 @@
 package com.github.harbby.gadtry.aop.codegen;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
-public interface ProxyHandler
+public interface ProxyAccess
 {
     /**
      * sets a handler.  It can be used for changing handlers
@@ -34,4 +36,7 @@ public interface ProxyHandler
      * @return handler {@link InvocationHandler}
      */
     public InvocationHandler getHandler();
+
+    public Object callRealMethod(Method method, Object instance, Object[] args)
+            throws InvocationTargetException, IllegalAccessException;
 }

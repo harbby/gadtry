@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
 import com.github.harbby.gadtry.aop.codegen.Proxy;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.event.JoinPoint;
 import com.github.harbby.gadtry.collection.tuple.Tuple3;
 import com.github.harbby.gadtry.function.exception.Function;
@@ -121,16 +122,19 @@ public class AopInvocationHandler
     {
         requireNonNull(target, "instance is null");
         this.defaultHandler = (InvocationHandler & Serializable) (proxy, method, args) -> {
-            //todo: 此处判断应该抽出去
-            boolean v2 = method.getDeclaringClass() == proxy.getClass();
-            Object instance = v2 ? proxy : target;
+//            boolean v2 = method.getDeclaringClass() == proxy.getClass();
+//            Object instance = v2 ? proxy : target;
+            Object instance = target;
 
             Function<JoinPoint, Object, Throwable> userCode = mockMethods.get(method);
             if (userCode != null) {
-                JoinPoint joinPoint = JoinPoint.of(instance, method, args);
+                JoinPoint joinPoint = JoinPoint.of(proxy, method, args, instance);
                 return userCode.apply(joinPoint);
             }
             else {
+                if (proxy instanceof ProxyAccess) {
+                    return ((ProxyAccess) proxy).callRealMethod(method, instance, args);
+                }
                 return method.invoke(instance, args);
             }
         };
@@ -142,7 +146,7 @@ public class AopInvocationHandler
         this.defaultHandler = (InvocationHandler & Serializable) (proxy, method, args) -> {
             Function<JoinPoint, Object, Throwable> userCode = mockMethods.get(method);
             if (userCode != null) {
-                return userCode.apply(JoinPoint.of(method, args));
+                return userCode.apply(JoinPoint.of(proxy, method, args));
             }
             else {
                 return getClassInitValue(method.getReturnType());

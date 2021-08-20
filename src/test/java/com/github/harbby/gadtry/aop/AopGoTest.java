@@ -215,6 +215,25 @@ public class AopGoTest
     }
 
     @Test
+    public void aopGoUseReturnTypeSelector2()
+    {
+        Set<String> actions = new HashSet<>();
+        List<String> list = AopGo
+                .proxy(ImmutableList.<String>of())
+                .aop(binder -> {
+                    binder.doBefore(before -> {
+                        before.getMethod().setAccessible(true);
+                        actions.add(before.getName());
+                    }).returnType(String.class, int.class);
+                }).build();
+
+        Assert.assertEquals(list.size(), 0);
+        Assert.assertEquals(list.toString(), "[]");
+        Assert.assertTrue(list.isEmpty());
+        Assert.assertEquals(actions, MutableSet.of("size", "toString"));
+    }
+
+    @Test
     public void aopGoUseAnnotatedSelector()
     {
         Set<String> actions = new HashSet<>();

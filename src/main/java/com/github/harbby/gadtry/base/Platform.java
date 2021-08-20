@@ -28,8 +28,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
+import java.util.List;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -39,6 +41,12 @@ public final class Platform
 {
     private Platform() {}
 
+    /**
+     * Limits the number of bytes to copy per {@link Unsafe#copyMemory(long, long, long)} to
+     * allow safepoint polling during a large copy.
+     */
+    private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
+
     private static final Unsafe unsafe;
     private static final int classVersion = getClassVersion0();
     private static final String JAVA_FULL_VERSION = System.getProperty("java.version");
@@ -47,6 +55,19 @@ public final class Platform
     public static Unsafe getUnsafe()
     {
         return unsafe;
+    }
+
+    static {
+        sun.misc.Unsafe obj = null;
+        try {
+            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+            unsafeField.setAccessible(true);
+            obj = (sun.misc.Unsafe) unsafeField.get(null);
+        }
+        catch (Throwable cause) {
+            throwException(cause);
+        }
+        unsafe = requireNonNull(obj);
     }
 
     public static byte[] readClassByteCode(Class<?> aClass)
@@ -197,6 +218,59 @@ public final class Platform
             return true;
         }
         return false;
+    }
+
+    /**
+     * jdk8:  sun.misc.VM.latestUserDefinedLoader()
+     * jdk9+: jdk.internal.misc.VM.latestUserDefinedLoader()
+     *
+     * @return latestUserDefinedLoader
+     */
+    public static ClassLoader latestUserDefinedLoader()
+    {
+        if (Platform.getJavaVersion() > 8) {
+            return jdk.internal.misc.VM.latestUserDefinedLoader();
+        }
+        else {
+            try {
+                return (ClassLoader) Class.forName("sun.misc.VM")
+                        .getMethod("latestUserDefinedLoader")
+                        .invoke(null);
+            }
+            catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                throw Throwables.throwsThrowable(e);
+            }
+        }
+    }
+
+    /**
+     * 用户系统类加载器
+     *
+     * @return appClassLoader
+     */
+    public static ClassLoader getAppClassLoader()
+    {
+        return ClassLoader.getSystemClassLoader();
+    }
+
+    /**
+     * 获取jdk类加载器
+     *
+     * @return bootstrap ClassLoader
+     */
+    public static ClassLoader getBootstrapClassLoader()
+    {
+        if (Platform.getJavaVersion() > 8) {
+            return java.lang.ClassLoader.getPlatformClassLoader();
+        }
+        try {
+            Object upath = Class.forName("sun.misc.Launcher").getMethod("getBootstrapClassPath").invoke(null);
+            URL[] urls = (URL[]) Class.forName("sun.misc.URLClassPath").getMethod("getURLs").invoke(upath);
+            return new URLClassLoader(urls, null);
+        }
+        catch (Exception e) {
+            throw Throwables.throwsThrowable(e);
+        }
     }
 
     /**
@@ -424,21 +498,54 @@ public final class Platform
     }
 
     /**
-     * Limits the number of bytes to copy per {@link Unsafe#copyMemory(long, long, long)} to
-     * allow safepoint polling during a large copy.
+     * get system classLoader ucp jars
+     *
+     * @return system classLoader ucp jars
      */
-    private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
-
-    static {
-        sun.misc.Unsafe obj = null;
+    public static List<URL> getSystemClassLoaderJars()
+    {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        if (classLoader instanceof URLClassLoader) {
+            return java.util.Arrays.asList(((URLClassLoader) classLoader).getURLs());
+        }
+        //java11+
         try {
-            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            obj = (sun.misc.Unsafe) unsafeField.get(null);
+            Field field = classLoader.getClass().getDeclaredField("ucp");
+            field.setAccessible(true);
+            Object ucp = field.get(classLoader);
+            Method getURLs = ucp.getClass().getMethod("getURLs");
+            URL[] urls = (URL[]) getURLs.invoke(ucp);
+            return java.util.Arrays.asList(urls);
         }
-        catch (Throwable cause) {
-            throwException(cause);
+        catch (NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException e) {
+            throw new UnsupportedOperationException("this jdk not support", e);
         }
-        unsafe = requireNonNull(obj);
+    }
+
+    /**
+     * load other jar to system classLoader
+     *
+     * @param urls jars
+     */
+    public static void loadExtJarToSystemClassLoader(List<URL> urls)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException
+    {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        if (classLoader instanceof URLClassLoader) {
+            Method addURLMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+            addURLMethod.setAccessible(true);
+            for (URL uri : urls) {
+                addURLMethod.invoke(classLoader, uri);
+            }
+            return;
+        }
+        //java11+
+        Field field = classLoader.getClass().getDeclaredField("ucp");
+        field.setAccessible(true);
+        Object ucp = field.get(classLoader);
+        Method addURLMethod = ucp.getClass().getMethod("addURL", URL.class);
+        for (URL url : urls) {
+            addURLMethod.invoke(ucp, url);
+        }
     }
 }

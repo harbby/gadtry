@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.aop.aopgo;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.codegen.Proxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.function.exception.Consumer;
 
@@ -54,7 +54,7 @@ public final class AopBuilder<T>
 
     public T build()
     {
-        ClassLoader loader = superclass.getClassLoader() == null ? ProxyHandler.class.getClassLoader() :
+        ClassLoader loader = superclass.getClassLoader() == null ? ProxyAccess.class.getClassLoader() :
                 superclass.getClassLoader();
         final AopInvocationHandler aopInvocationHandler = new AopInvocationHandler(target);
         ProxyRequest<T> request = ProxyRequest.builder(superclass)

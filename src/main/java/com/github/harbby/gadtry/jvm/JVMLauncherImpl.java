@@ -193,22 +193,13 @@ public class JVMLauncherImpl<R>
         List<String> ops = new ArrayList<>();
         ops.add(javaCmd.toString());
 
-        if (Platform.getClassVersion() > 52) {
-            ops.add("--add-opens=java.base/java.io=ALL-UNNAMED");
-            //Platform.addOpenJavaModules(FilterOutputStream.class, SystemOutputStream.class);
-        }
-
         ops.addAll(otherVmOps);
 
-        ops.add("-classpath");
-        //ops.add(System.getProperty("java.class.path"));
-        String userSdkJars = getUserAddClasspath(); //编译时还需要 用户的额外jar依赖
-        if (depThisJvm) {
-            ops.add(System.getProperty("java.class.path") + File.pathSeparator + userSdkJars);
-        }
-        else {
-            ops.add(userSdkJars);
-        }
+        String classpath = getUserAddClasspath();
+        classpath = depThisJvm ? System.getProperty("java.class.path") + File.pathSeparator + classpath : classpath;
+        //ops.add("-classpath");
+        //ops.add(classpath);
+        environment.put("CLASSPATH", classpath);
 
         String javaLibPath = System.getProperty("java.library.path");
         if (javaLibPath != null) {
@@ -227,7 +218,7 @@ public class JVMLauncherImpl<R>
             ops.add(taskProcessName);
         }
         else {
-            ops.add(JVMLauncher.class.getName()); //子进程会启动这个类 进行编译
+            ops.add(JVMLauncher.class.getName());
         }
 
         ops.add(String.valueOf(System.currentTimeMillis()));

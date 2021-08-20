@@ -61,14 +61,31 @@ public class MockGoTest
     @Test
     public void mockSpyByDoWhen()
     {
-        List<String> proxy = MockGo.spy(MutableList.of("1", "2", "3"));
-        spyListChecks(proxy);
-
-        List<String> proxy1 = MockGo.spy(MutableList.of("1", "2", "3"));
-        spyListChecks(proxy1);
+        spyListChecks(MockGo.spy(ImmutableList.of("1", "2", "3")));
+        spyListChecks(MockGo.spy(MutableList.of("1", "2", "3")));
 
         List<String> proxy3 = MockGo.spy(JavaTypes.classTag(ArrayList.class));
         Assert.assertTrue(proxy3 instanceof ArrayList);
+    }
+
+    @Test
+    public void mockSpyWhenMockito()
+            throws Exception
+    {
+        List<String> a1 = Mockito.spy(ImmutableList.of("1", "2", "3"));
+
+        Assert.assertEquals(3, a1.size());
+        Mockito.doReturn(99).when(a1).size();
+        Assert.assertEquals(99, a1.size());
+    }
+
+    @Test
+    public void mockSpyWhenMockGo()
+    {
+        List<String> a1 = MockGo.spy(ImmutableList.of("1", "2", "3"));
+        Assert.assertEquals(3, a1.size());
+        MockGo.doReturn(99).when(a1).size();
+        Assert.assertEquals(99, a1.size());
     }
 
     @Test

@@ -24,14 +24,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 public class ProxyInstanceTest
-        implements Supplier<String>
 {
-    @Override
     @Deprecated
-    public String get()
+    String get()
     {
         return "hello";
     }

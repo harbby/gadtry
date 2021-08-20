@@ -47,6 +47,12 @@ public interface AroundHandler
                 }
 
                 @Override
+                public Object mock()
+                {
+                    return joinPoint.mock();
+                }
+
+                @Override
                 public Object proceed(Object[] args)
                         throws Throwable
                 {

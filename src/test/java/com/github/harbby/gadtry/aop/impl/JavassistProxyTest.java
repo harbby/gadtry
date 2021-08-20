@@ -16,7 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyHandler;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.aop.resource.Test1;
 import com.github.harbby.gadtry.base.Platform;
@@ -46,7 +46,7 @@ public class JavassistProxyTest
     {
         try {
             JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class,
-                    ProxyHandler.class, HashMap.class);
+                    ProxyAccess.class, HashMap.class);
             Assert.fail();
         }
         catch (IllegalStateException e) {
@@ -59,7 +59,7 @@ public class JavassistProxyTest
             throws Exception
     {
         try {
-            JavassistProxy.getProxyClass(getClass().getClassLoader(), Boolean.class, Serializable.class, ProxyHandler.class);
+            JavassistProxy.getProxyClass(getClass().getClassLoader(), Boolean.class, Serializable.class, ProxyAccess.class);
             Assert.fail();
         }
         catch (MockGoException e) {
@@ -80,7 +80,7 @@ public class JavassistProxyTest
         };
 
         List<String> proxy = JavassistProxy.newProxyInstance(getClass().getClassLoader(), invocationHandler,
-                ArrayList.class, Serializable.class, ProxyHandler.class);
+                ArrayList.class, Serializable.class, ProxyAccess.class);
         Assert.assertTrue(invocationHandler == JavassistProxy.getInvocationHandler(proxy));
     }
 

@@ -41,7 +41,7 @@ public class Proxy
         Class<?> superclass = request.getSuperclass();
 
         Class<?>[] interfaces = Arrays.asArray(superclass, request.getInterfaces(), Class.class);
-        if (superclass.isInterface() && Platform.getClassVersion() < 60) {
+        if (superclass.isInterface() && Platform.getJavaVersion() < 16) {
             return JdkProxy.newProxyInstance(request.getClassLoader(), request.getHandler(), interfaces);
         }
         else {
@@ -56,7 +56,7 @@ public class Proxy
             return (AopInvocationHandler) JdkProxy.getInvocationHandler(instance);
         }
 
-        ProxyHandler proxy = (ProxyHandler) instance;
+        ProxyAccess proxy = (ProxyAccess) instance;
         InvocationHandler handler = proxy.getHandler();
         checkState(handler instanceof AopInvocationHandler, "instance not mock proxy");
         return (AopInvocationHandler) handler;

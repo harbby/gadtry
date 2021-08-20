@@ -15,25 +15,33 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Platform;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 
 public class SystemOutputStream
-        extends OutputStream
+        extends PrintStream
 {
     private final OutputStream out;
     private volatile boolean tryClose;
 
     public SystemOutputStream(OutputStream out)
     {
+        super(out);
         this.out = out;
     }
 
     @Override
     public void write(int b)
-            throws IOException
     {
-        this.write(new byte[] {(byte) b});
+        try {
+            this.write(new byte[] {(byte) b});
+        }
+        catch (IOException e) {
+            Platform.throwException(e);
+        }
     }
 
     @Override
@@ -45,15 +53,19 @@ public class SystemOutputStream
 
     @Override
     public synchronized void write(byte[] buf, int off, int len)
-            throws IOException
     {
         if (tryClose) {
             return;
         }
-        out.write(1);
-        this.writeInt(len - off);
-        out.write(buf, off, len);
-        out.flush();
+        try {
+            out.write(1);
+            this.writeInt(len - off);
+            out.write(buf, off, len);
+            out.flush();
+        }
+        catch (IOException e) {
+            Platform.throwException(e);
+        }
     }
 
     private void writeInt(int v)
