@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.base.ObjectInputStreamProxy;
-import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
@@ -45,9 +44,6 @@ public interface JVMLauncher<R>
             throws JVMException;
 
     static final Supplier<SystemOutputStream> systemOutGetOrInit = Lazys.goLazy(() -> {
-        if (Platform.getVmClassVersion() > 52) {
-            Platform.addOpenJavaModules(FilterOutputStream.class, SystemOutputStream.class);
-        }
         try {
             Field field = FilterOutputStream.class.getDeclaredField("out");
             field.setAccessible(true);

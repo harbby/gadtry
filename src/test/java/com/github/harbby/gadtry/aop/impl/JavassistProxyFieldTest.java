@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
+import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
 import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,13 +37,14 @@ public class JavassistProxyFieldTest
     }
 
     @Test
-    public void proxy()
+    public void v2proxyTest()
     {
         People people = new People();
         InvocationHandler invocationHandler = (proxy, method, args) -> method.invoke(proxy, args);
         ProxyRequest<People> request = ProxyRequest.builder(People.class)
                 .setInvocationHandler(invocationHandler)
                 .setClassLoader(getClass().getClassLoader())
+                .enableV2()
                 .setTarget(people)
                 .build();
         People proxy = JavassistProxy.newProxyInstance(request);

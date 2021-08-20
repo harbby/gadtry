@@ -15,10 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import javassist.CannotCompileException;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.NotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
@@ -64,42 +60,9 @@ public class PlatformTest
     @Test
     public void allocateDirectBuffer()
     {
-        //jdk.internal.ref.Cleaner.create()
         ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
         Assert.assertNotNull(byteBuffer);
         Platform.freeDirectBuffer(byteBuffer);
-    }
-
-    @Test
-    public void defineClassTestReturnSetProxyClass()
-            throws NotFoundException, IOException, CannotCompileException
-    {
-        ClassPool classPool = new ClassPool(true);
-        CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
-        ctClass.setName(PlatformTest.class.getName() + "$TestDomeDefineClass");
-        byte[] bytes = ctClass.toBytecode();
-
-        Class<?> newClass = Platform.defineClass(bytes, ClassLoader.getSystemClassLoader());
-        Assert.assertNotNull(newClass);
-
-        newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);
-        Assert.assertNotNull(newClass);
-    }
-
-    @Test
-    public void defineClassByUnsafeTestReturnSetProxyClass()
-            throws NotFoundException, IOException, CannotCompileException
-    {
-        ClassPool classPool = new ClassPool(true);
-        CtClass ctClass = classPool.getCtClass(PlatformTest.class.getName());
-        ctClass.setName(PlatformTest.class.getName() + "$TestDomeDefineClassByUnsafe");
-        byte[] bytes = ctClass.toBytecode();
-
-        Class<?> newClass = Platform.defineClassByUnsafe(bytes, ClassLoader.getSystemClassLoader());
-        Assert.assertNotNull(newClass);
-
-        newClass = Platform.defineAnonymousClass(PlatformTest.class, bytes, new Object[0]);
-        Assert.assertNotNull(newClass);
     }
 
     @Test

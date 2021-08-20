@@ -15,22 +15,26 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.MutableMap;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamClass;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.function.Supplier;
-
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class ObjectInputStreamProxy
         extends java.io.ObjectInputStream
 {
-    private static final Supplier<Map<String, Class<?>>> primClasses =
-            Lazys.goLazy(ObjectInputStreamProxy::getPrimClasses);
+    private static final Map<String, Class<?>> primClasses =
+            MutableMap.of("boolean", boolean.class,
+                    "byte", byte.class,
+                    "char", char.class,
+                    "short", short.class,
+                    "int", int.class,
+                    "long", long.class,
+                    "float", float.class,
+                    "double", double.class,
+                    "void", void.class);
 
     private ClassLoader classLoader;
 
@@ -55,46 +59,6 @@ public class ObjectInputStreamProxy
         this.classLoader = classLoader;
     }
 
-    /**
-     * get Method LatestUserDefinedLoader with java.io.ObjectInputStreamProxy
-     * with jdk.internal.misc.VM.latestUserDefinedLoader()
-     *
-     * @return Return user last used classloaer
-     */
-    public static ClassLoader getLatestUserDefinedLoader()
-    {
-        try {
-            Method method = java.io.ObjectInputStream.class.getDeclaredMethod("latestUserDefinedLoader");
-            method.setAccessible(true);
-            return (ClassLoader) method.invoke(null);
-        }
-        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new IllegalStateException("not support this jdk");
-        }
-        //super.latestUserDefinedLoader();
-        //jdk8: return sun.misc.VM.latestUserDefinedLoader();
-        //jdk11 return jdk.internal.misc.VM.latestUserDefinedLoader()
-    }
-
-    /**
-     * get field primClasses with java.io.ObjectInputStreamProxy
-     */
-    @SuppressWarnings("unchecked")
-    private static Map<String, Class<?>> getPrimClasses()
-    {
-        Class<?> class1 = java.io.ObjectInputStream.class;
-        Map<String, Class<?>> primClasses = null;
-        try {
-            Field field = class1.getDeclaredField("primClasses");
-            field.setAccessible(true);
-            primClasses = (Map<String, Class<?>>) field.get(class1);
-            return primClasses;
-        }
-        catch (NoSuchFieldException | IllegalAccessException e) {
-            throw throwsThrowable(e);  //"Not compatible with java version"
-        }
-    }
-
     @Override
     protected Class<?> resolveClass(ObjectStreamClass desc)
             throws IOException, ClassNotFoundException
@@ -109,7 +73,7 @@ public class ObjectInputStreamProxy
             return Class.forName(name, false, classLoader);
         }
         catch (ClassNotFoundException ex) {
-            Class<?> cl = primClasses.get().get(name);
+            Class<?> cl = primClasses.get(name);
             if (cl != null) {
                 return cl;
             }

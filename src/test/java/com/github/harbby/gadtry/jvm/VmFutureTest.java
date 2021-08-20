@@ -15,11 +15,8 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.aop.mock.Mock;
-import com.github.harbby.gadtry.aop.mock.MockGo;
 import com.github.harbby.gadtry.base.Closeables;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -211,32 +208,5 @@ public class VmFutureTest
 
         Assert.assertEquals(result, "done");
         Assert.assertFalse(vmFuture.isRunning());
-    }
-
-    @Mock private Process process;
-
-    @Before
-    public void setUp()
-    {
-        MockGo.initMocks(this);
-    }
-
-    @Test
-    public void getVmProcess()
-            throws InterruptedException
-    {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        AtomicReference<Process> processAtomic = new AtomicReference<>(process);
-        VmFuture<String> vmFuture = new VmFuture<>(executor, processAtomic, () -> "done");
-        try {
-            vmFuture.getPid();
-            Assert.fail();
-        }
-        catch (UnsupportedOperationException e) {
-            Assert.assertTrue(e.getMessage().contains("Only support for UNIX and Linux systems pid"));
-        }
-        finally {
-            executor.shutdown();
-        }
     }
 }

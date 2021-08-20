@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.aop.mock.Mock;
-import com.github.harbby.gadtry.aop.mock.MockGoJUnitRunner;
+import com.github.harbby.gadtry.aop.mockgo.Mock;
+import com.github.harbby.gadtry.aop.mockgo.MockGoJUnitRunner;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,17 +25,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectStreamClass;
 
-import static com.github.harbby.gadtry.aop.mock.MockGo.when;
+import static com.github.harbby.gadtry.aop.MockGo.when;
 
 @RunWith(MockGoJUnitRunner.class)
 public class ObjectInputStreamProxyTest
 {
-    @Test
-    public void getLatestUserDefinedLoader()
-    {
-        Assert.assertEquals(this.getClass().getClassLoader(), ObjectInputStreamProxy.getLatestUserDefinedLoader());
-    }
-
     @Mock
     private ObjectStreamClass objectStreamClass;
 
@@ -47,7 +41,7 @@ public class ObjectInputStreamProxyTest
 
         byte[] bytes = Serializables.serialize(1);
         ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(bytes);
-        ObjectInputStreamProxy objectInputStream = new ObjectInputStreamProxy(arrayInputStream, ObjectInputStreamProxy.getLatestUserDefinedLoader());
+        ObjectInputStreamProxy objectInputStream = new ObjectInputStreamProxy(arrayInputStream, this.getClass().getClassLoader());
 
         when(objectStreamClass.getName()).thenReturn("gadtry.gadtry.gadtry.gadtry");
         Assert.assertEquals(int.class, objectInputStream.resolveClass(intClass));

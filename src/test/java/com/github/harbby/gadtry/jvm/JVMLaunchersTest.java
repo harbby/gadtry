@@ -15,9 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
-import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,12 +23,7 @@ import org.junit.Test;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -78,20 +71,21 @@ public class JVMLaunchersTest
                 .task(() -> {
                     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
                     List<String> jvmArgs = runtimeMXBean.getInputArguments();
-                    return new ArrayList<>(jvmArgs.subList(0, 2));
+                    return jvmArgs;
                 })
                 .addUserJars(new URL[0])
-                .setXms("1m")
-                .addVmOps("-Xmx2m")
+                .setXms("5m")
+                .addVmOps("-Xmx5m")
                 .setConsole(msg -> System.out.print(msg))
                 .build();
 
         List<String> vmResult = launcher.startAndGet();
-        Assert.assertEquals(Arrays.asList("-Xms1m", "-Xmx2m"), vmResult);
+        Assert.assertTrue(vmResult.contains("-Xms5m"));
+        Assert.assertTrue(vmResult.contains("-Xmx5m"));
     }
 
     @Test
-    public void testForkJvmReturn1()
+    public void getForkJvmPidTest()
             throws InterruptedException
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
@@ -103,7 +97,6 @@ public class JVMLaunchersTest
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
-                //.useDebug()
                 .setConsole(msg -> System.out.println(msg))
                 .build();
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -143,48 +136,15 @@ public class JVMLaunchersTest
     {
         String f = "testForkJvmThrowRuntimeException123";
         System.out.println("--- vm test ---");
-        MutableList.Builder<URL> urls = MutableList.builder();
-        ClassLoader classLoader = this.getClass().getClassLoader();
-
-        if (classLoader instanceof URLClassLoader) {
-            URL[] urlArr = ((URLClassLoader) classLoader).getURLs();
-            urls.addAll(urlArr);
-        }
-        else {
-            //jdk9+
-            /*
-             * Unable to make field final jdk.internal.loader.URLClassPath
-             * jdk.internal.loader.ClassLoaders$AppClassLoader.ucp accessible: module java.base does not "opens jdk.internal.loader" to unnamed module
-             *
-             * 这里如果不使用Platform.doPrivileged 则必须在启动Jvm时添加 --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
-             */
-            Platform.addOpenJavaModules(classLoader.getClass(), JVMLaunchersTest.class);
-            try {
-                Field field = classLoader.getClass().getDeclaredField("ucp");
-                field.setAccessible(true);
-                Object ucp = field.get(classLoader);
-                Method method = ucp.getClass().getDeclaredMethod("getURLs");
-                method.setAccessible(true);
-                URL[] urlArr = (URL[]) method.invoke(ucp);
-                urls.addAll(urlArr);
-            }
-            catch (Exception e) {
-                throw new UnsupportedOperationException(e);
-            }
-        }
-
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .task(() -> {
                     System.out.println("************ job start ***************");
                     throw new RuntimeException(f);
                 })
                 .addUserJars(Collections.emptyList())
-                .addUserJars(urls.build())
-                .setClassLoader(classLoader)
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
-                .notDependParentJvmClassPath()
                 .build();
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -194,7 +154,6 @@ public class JVMLaunchersTest
         }
         catch (JVMException e) {
             Assert.assertTrue(e.getMessage().contains(f));
-            e.printStackTrace();
         }
         finally {
             executor.shutdown();
@@ -322,17 +281,6 @@ public class JVMLaunchersTest
         // LockSupport.class
         condition.await(600, TimeUnit.SECONDS); //睡眠进入等待池并让出锁
         lock.unlock();
-    }
-
-    @Test
-    public void getLatestUserDefinedLoader()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
-    {
-        Class<?> class1 = java.io.ObjectInputStream.class;
-        Method method = class1.getDeclaredMethod("latestUserDefinedLoader");
-        method.setAccessible(true);  //必须要加这个才能
-        Object a1 = method.invoke(null);
-        Assert.assertTrue(a1 instanceof ClassLoader);
     }
 
     @Test

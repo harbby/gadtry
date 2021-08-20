@@ -15,15 +15,7 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.compiler.ByteClassLoader;
-import com.github.harbby.gadtry.compiler.JavaClassCompiler;
 import com.github.harbby.gadtry.io.IOUtils;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtConstructor;
-import javassist.CtField;
-import javassist.Modifier;
 import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 import sun.reflect.ReflectionFactory;
@@ -31,7 +23,6 @@ import sun.reflect.ReflectionFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -39,13 +30,6 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.security.cert.Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -56,6 +40,9 @@ public final class Platform
     private Platform() {}
 
     private static final Unsafe unsafe;
+    private static final int classVersion = getClassVersion0();
+    private static final String JAVA_FULL_VERSION = System.getProperty("java.version");
+    private static final int javaVersion = getJavaVersion0();
 
     public static Unsafe getUnsafe()
     {
@@ -133,6 +120,85 @@ public final class Platform
         });
     }
 
+    public static int getJavaVersion()
+    {
+        return javaVersion;
+    }
+
+    public static int getClassVersion()
+    {
+        return classVersion;
+    }
+
+    private static int getJavaVersion0()
+    {
+        String javaSpecVersion = requireNonNull(System.getProperty("java.specification.version"),
+                "not found value for System.getProperty(java.specification.version)");
+        final String[] split = javaSpecVersion.split("\\.");
+        final int[] version = new int[split.length];
+        for (int i = 0; i < split.length; i++) {
+            version[i] = Integer.parseInt(split[i]);
+        }
+        if (version[0] == 1) {
+            return version[1];
+        }
+        else {
+            return version[0];
+        }
+    }
+
+    /**
+     * java8 52
+     * java9 53
+     * java10 54
+     * java11 55
+     * java15 59
+     * java16 60
+     * java17 61
+     *
+     * @return vm class major version
+     */
+    private static int getClassVersion0()
+    {
+        String javaClassVersion = requireNonNull(System.getProperty("java.class.version"),
+                "not found value for System.getProperty(java.class.version)");
+        final String[] split = javaClassVersion.split("\\.");
+        final int[] version = new int[split.length];
+        for (int i = 0; i < split.length; i++) {
+            version[i] = Integer.parseInt(split[i]);
+        }
+        //assert version[0] == 0;
+        return version[0];
+    }
+
+    public static boolean isWin()
+    {
+        return osName().startsWith("Windows");
+    }
+
+    public static boolean isMac()
+    {
+        return osName().startsWith("Mac OS X");
+    }
+
+    public static boolean isLinux()
+    {
+        return osName().startsWith("Linux");
+    }
+
+    public static String osName()
+    {
+        return System.getProperty("os.name", "");
+    }
+
+    public static boolean isJdkClass(Class<?> aClass)
+    {
+        if (aClass.getName().startsWith("java.") || aClass.getName().startsWith("jdk.")) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Creates a new cleaner.
      *
@@ -144,30 +210,23 @@ public final class Platform
      */
     public static Object createCleaner(Object ob, Runnable thunk)
     {
+        if (getJavaVersion() > 8) { //jdk9+
+            return jdk.internal.ref.Cleaner.create(ob, thunk);
+        }
+        //jdk9+: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
         try {
             Method createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
             createMethod.setAccessible(true);
             return createMethod.invoke(null, ob, thunk);
         }
-        catch (ClassNotFoundException | NoSuchMethodException ignored) {
-        }
-        catch (IllegalAccessException | InvocationTargetException e) {
-            throwException(e);
-        }
-        //jdk9+
-        //run vm: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
-        try {
-            Class<?> cleanerCLass = Class.forName("jdk.internal.ref.Cleaner");
-            addOpenJavaModules(cleanerCLass, Platform.class);
-            return cleanerCLass
-                    .getMethod("create", Object.class, Runnable.class)
-                    .invoke(null, ob, thunk);
-        }
-        catch (Exception e) {
-            throw new UnsupportedOperationException(e);
+        catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw Throwables.throwsThrowable(e);
         }
     }
 
+    /**
+     * java16 need: --add-opens=java.base/java.lang=ALL-UNNAMED
+     */
     public static Class<?> defineClass(byte[] classBytes, ClassLoader classLoader)
     {
         try {
@@ -181,62 +240,39 @@ public final class Platform
         throw new IllegalStateException("unchecked");
     }
 
-    public static Class<?> defineClassByUnsafe(byte[] classBytes, ClassLoader classLoader)
-    {
-        final ProtectionDomain defaultDomain =
-                new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
-                        null, classLoader, null);
-        try {
-            Method method = Unsafe.class.getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
-            return (Class<?>) method.invoke(unsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
-        }
-        catch (NoSuchMethodException e) {
-            //jdk9+
-            try {
-                Class<?> aClass = Class.forName("jdk.internal.misc.Unsafe");
-                //add-opens aClass Module to Platform.class
-                addOpenJavaModules(aClass, Platform.class);
-                Object theInternalUnsafe = aClass.getMethod("getUnsafe").invoke(null);
-                return (Class<?>) aClass.getMethod("defineClass",
-                        String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)
-                        .invoke(theInternalUnsafe, null, classBytes, 0, classBytes.length, classLoader, defaultDomain);
-            }
-            catch (Exception e1) {
-                throw new IllegalStateException(e1);
-            }
-        }
-        catch (IllegalAccessException | InvocationTargetException e) {
-            throwException(e);
-        }
-        throw new IllegalStateException("unchecked");
-    }
-
     /**
-     * java8 52
-     * java11 55
-     * java15 59
-     *
-     * @return vm class version
+     * Converts the class byte code to a java.lang.Class object
+     * This method is available in Java 9 or later
      */
-    public static int getVmClassVersion()
+    public static Class<?> defineClass(Class<?> buddyClass, byte[] classBytes)
     {
-        return (int) Float.parseFloat(System.getProperty("java.class.version"));
+        try {
+            Platform.class.getModule().addReads(buddyClass.getModule());
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            MethodHandles.Lookup prvlookup = MethodHandles.privateLookupIn(buddyClass, lookup);
+            return prvlookup.defineClass(classBytes);
+        }
+        catch (IllegalArgumentException | IllegalAccessException e) {
+            //buddyClass has no permission to define the class
+            throw Throwables.throwsThrowable(e);
+        }
     }
 
     /**
      * 绕开jdk9模块化引入的访问限制:
      * 1. 非法反射访问警告消除
-     * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过他我们可以访问任何jdk限制的内部代码
+     * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过这个方法我们可以访问任何jdk限制的内部代码
+     * 注: java16开始，你需要提供额外的java运行时参数: --add-opens=java.base/java.lang=ALL-UNNAMED 来使用该方法提供的功能
      * <p>
      *
-     * @param hostClass   action将获取hostClass的权限
+     * @param hostClass   action将获取hostClass的内部实现反射访问权限
      * @param targetClass 希望获取权限的类
      * @throws java.lang.NoClassDefFoundError user dep class
      * @since jdk9+
      */
     public static void addOpenJavaModules(Class<?> hostClass, Class<?> targetClass)
     {
-        checkState(getVmClassVersion() > 52, "This method can only run above Jdk9+");
+        checkState(getJavaVersion() > 8, "This method can only run above Jdk9+");
         try {
             Method getModule = Class.class.getMethod("getModule");
             Class<?> mouleClass = getModule.getReturnType();
@@ -271,105 +307,6 @@ public final class Platform
         }
     }
 
-    /**
-     * forRemoval = true
-     * 存在一些缺陷:
-     * 1: 目前存在action不能依赖任何用户类,否则会throw java.lang.NoClassDefFoundError
-     * 2: 不支持java8 lambda
-     *
-     * @param hostClass 宿主类
-     * @param action    被复制的类
-     * @return obj
-     * @throws Exception any Exception
-     * @since = "jdk15"
-     * <p>
-     * 复制action类的字节码，注册成hostClass匿名内部类
-     */
-    public static Object defineAnonymousClass(Class<?> hostClass, Object action)
-            throws Exception
-    {
-        Map<String, Object> actionFieldValues = new HashMap<>();
-        for (Field f : action.getClass().getDeclaredFields()) {
-            f.setAccessible(true);
-            actionFieldValues.put(f.getName(), f.get(action));
-        }
-
-        ClassPool classPool = new ClassPool(true);
-        CtClass ctClass = classPool.getCtClass(action.getClass().getName());
-        ctClass.setName(hostClass.getName() + "$");
-
-        ctClass.setModifiers(Modifier.setPublic(ctClass.getModifiers())); // set Modifier.PUBLIC
-        ctClass.setSuperclass(classPool.getCtClass(Object.class.getName()));
-        ctClass.setInterfaces(new CtClass[0]);
-        for (CtConstructor c : ctClass.getConstructors()) {
-            ctClass.removeConstructor(c);
-        }
-
-        ClassLoader bootClassLoader = ClassLoaders.getBootstrapClassLoader();
-        for (CtField ctField : ctClass.getDeclaredFields()) {
-            if (ctField.getFieldInfo().getName().startsWith("this$0")) {
-                ctClass.removeField(ctField);
-                continue;
-            }
-            //check class is system jdk
-            CtClass checkType = ctField.getType();
-            while (checkType.isArray()) {
-                checkType = ctField.getType().getComponentType();
-            }
-
-            checkState(checkType.isPrimitive() || bootClassLoader.loadClass(checkType.getName()) != null);
-            ctField.setModifiers(Modifier.setPublic(ctField.getModifiers()));
-            if (Modifier.isFinal(ctField.getModifiers())) {
-                ctField.setModifiers(ctField.getModifiers() & (~Modifier.FINAL));
-            }
-        }
-        //---init
-        Class<?> anonymousClass = Platform.defineAnonymousClass(hostClass, ctClass.toBytecode(), new Object[0]);
-        Object instance = Platform.allocateInstance(anonymousClass);
-        for (Field f : instance.getClass().getFields()) {
-            f.setAccessible(true);
-            f.set(instance, actionFieldValues.get(f.getName()));
-        }
-        return instance;
-    }
-
-    /**
-     * 创建匿名内部类
-     *
-     * @param hostClass  宿主类
-     * @param classBytes 内部类的字节码
-     * @param cpPatches  cpPatches
-     * @return 创建并加载的匿名类，注意该类只能访问bootClassLoader中的系统类,无法访问任何用户类,该类会获得hostClass的访问域
-     */
-    public static Class<?> defineAnonymousClass(Class<?> hostClass, byte[] classBytes, Object[] cpPatches)
-    {
-        try {
-            return (Class<?>) Unsafe.class.getMethod("defineAnonymousClass", Class.class, byte[].class, Object[].class)
-                    .invoke(unsafe, hostClass, classBytes, cpPatches);
-        }
-        catch (NoSuchMethodException ignored) {
-        }
-        catch (IllegalAccessException | InvocationTargetException e) {
-            throw new UnsupportedOperationException(e);
-        }
-        //jdk15+
-        checkState(getVmClassVersion() >= 59, "This method can only run above Jdk15+");
-        try {
-            Platform.addOpenJavaModules(MethodHandles.Lookup.class, Platform.class);
-            Constructor<?> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
-            constructor.setAccessible(true);
-            MethodHandles.Lookup lookup = (MethodHandles.Lookup) constructor.newInstance(hostClass);
-
-            Object options = Array.newInstance(Class.forName(MethodHandles.Lookup.class.getName() + "$ClassOption"), 0);
-            lookup = (MethodHandles.Lookup) MethodHandles.Lookup.class.getMethod("defineHiddenClass", byte[].class, boolean.class, options.getClass())
-                    .invoke(lookup, classBytes, true, options);
-            return lookup.lookupClass();
-        }
-        catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     public static long reallocateMemory(long address, long oldSize, long newSize)
     {
         long newMemory = unsafe.allocateMemory(newSize);
@@ -382,6 +319,8 @@ public final class Platform
      * Uses internal JDK APIs to allocate a DirectByteBuffer while ignoring the JVM's
      * MaxDirectMemorySize limit (the default limit is too low and we do not want to require users
      * to increase it).
+     * <p>
+     * jdk9+ need: --add-opens=java.base/java.nio=ALL-UNNAMED
      *
      * @param size allocate mem size
      * @return ByteBuffer
@@ -407,53 +346,28 @@ public final class Platform
         throw new IllegalStateException("unreachable");
     }
 
-    public interface DirectBufferCloseable
-    {
-        void free(sun.nio.ch.DirectBuffer directBuffer);
-    }
-
-    private static final Supplier<DirectBufferCloseable> closeableSupplier = Lazys.goLazy(() -> {
-        JavaClassCompiler javaClassCompiler = new JavaClassCompiler();
-        String className = "DirectBufferCloseableImpl";
-        String classCode = "public class DirectBufferCloseableImpl\n" +
-                "            implements com.github.harbby.gadtry.base.Platform.DirectBufferCloseable\n" +
-                "    {\n" +
-                "        @Override\n" +
-                "        public void free(sun.nio.ch.DirectBuffer buffer)\n" +
-                "        {\n" +
-                "            " + MoreObjects.class.getName() + ".checkState(buffer.cleaner() != null, \"LEAK: directBuffer was not set Cleaner\");\n" +
-                "            if (" + Platform.class.getName() + ".getVmClassVersion() > 52) {\n" +
-                "                " + Platform.class.getName() + ".addOpenJavaModules(buffer.cleaner().getClass(), this.getClass());\n" +
-                "            }\n" +
-                "            buffer.cleaner().clean();\n" +
-                "        }\n" +
-                "    }";
-        List<String> ops = getVmClassVersion() > 52 ? ImmutableList.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED",
-                "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED")
-                : Collections.emptyList();
-        byte[] bytes = javaClassCompiler.doCompile(className, classCode, ops).getClassByteCodes().get(className);
-        ByteClassLoader byteClassLoader = new ByteClassLoader(Platform.class.getClassLoader());
-        Class<DirectBufferCloseable> directBufferCloseableClass = (Class<DirectBufferCloseable>) byteClassLoader.loadClass(className, bytes);
-        try {
-            return directBufferCloseableClass.newInstance();
-        }
-        catch (InstantiationException | IllegalAccessException e) {
-            throw Throwables.throwsThrowable(e);
-        }
-    });
-
     /**
      * Free DirectBuffer
-     * 可能需要在编译中加入:
-     * --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-     * --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
      *
      * @param buffer DirectBuffer waiting to be released
      */
     public static void freeDirectBuffer(ByteBuffer buffer)
     {
         checkState(buffer.isDirect(), "buffer not direct");
-        closeableSupplier.get().free((DirectBuffer) buffer);
+        sun.nio.ch.DirectBuffer directBuffer = (DirectBuffer) buffer;
+        if (getJavaVersion() > 8) {
+            directBuffer.cleaner().clean();
+        }
+        else {
+            try {
+                Object cleaner = sun.nio.ch.DirectBuffer.class.getMethod("cleaner")
+                        .invoke(directBuffer);
+                Class.forName("sun.misc.Cleaner").getMethod("clean").invoke(cleaner);
+            }
+            catch (IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
+                throwException(e);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

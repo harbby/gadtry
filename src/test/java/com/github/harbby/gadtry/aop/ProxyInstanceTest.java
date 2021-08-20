@@ -15,10 +15,7 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.base.JavaTypes;
-import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -28,13 +25,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class ProxyInstanceTest
         implements Supplier<String>
 {
     @Override
-    @Ignore
+    @Deprecated
     public String get()
     {
         return "hello";
@@ -50,7 +46,7 @@ public class ProxyInstanceTest
                     binder.doAfterReturning(methodInfo -> {
                         atomicBoolean.set(true);
                         Assert.assertEquals(methodInfo.getName(), "get");
-                    }).annotated(Ignore.class);
+                    }).annotated(Deprecated.class);
                 }).build();
 
         Assert.assertEquals(supplier.get(), "hello");
@@ -60,20 +56,16 @@ public class ProxyInstanceTest
     @Test
     public void returnTypeTest()
     {
-        List<Class<?>> primitiveTypes = com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
-        List<Class<?>> classWraps = primitiveTypes.stream().map(JavaTypes::getWrapperClass).collect(Collectors.toList());
-        List<Class<?>> allTypes = MutableList.<Class<?>>builder()
-                .addAll(primitiveTypes)
-                .addAll(classWraps)
-                .add(String.class)
-                .build();
-
+        List<String> rs = new ArrayList<>();
         Set set = AopGo.proxy(Set.class).byInstance(new HashSet<String>())
                 .aop(binder -> {
-                    binder.doBefore(methodInfo -> {}).returnType(allTypes.toArray(new Class[0]));
+                    binder.doBefore(before -> {
+                        rs.add(before.getName());
+                    }).returnType(boolean.class);
                 })
                 .build();
         Assert.assertTrue(set.isEmpty());
+        Assert.assertEquals(Arrays.asList("isEmpty"), rs);
     }
 
     @Test
@@ -107,10 +99,10 @@ public class ProxyInstanceTest
     }
 
     @Test
-    public void noJdkPropyTest()
+    public void propyTest2()
     {
         List<String> actions = new ArrayList<>();
-        Set set = AopGo.proxy(HashSet.class).byInstance(new HashSet<String>())
+        Set set = AopGo.proxy(Set.class).byInstance(new HashSet<String>())
                 .aop(binder -> {
                     binder.doAfter(methodInfo -> {
                         String name = methodInfo.getName();

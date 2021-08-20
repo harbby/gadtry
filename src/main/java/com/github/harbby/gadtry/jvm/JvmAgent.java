@@ -36,6 +36,6 @@ public class JvmAgent
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(split[0]);
         cc.setName(split[1]);
-        Platform.defineClassByUnsafe(cc.toBytecode(), ClassLoader.getSystemClassLoader());
+        Platform.defineClass(cc.toBytecode(), ClassLoader.getSystemClassLoader());
     }
 }

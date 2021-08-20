@@ -15,16 +15,16 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.JoinPoint;
-import com.github.harbby.gadtry.aop.mock.Mock;
-import com.github.harbby.gadtry.aop.mock.MockGoJUnitRunner;
+import com.github.harbby.gadtry.aop.event.JoinPoint;
+import com.github.harbby.gadtry.aop.mockgo.Mock;
+import com.github.harbby.gadtry.aop.mockgo.MockGoJUnitRunner;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.sql.SQLException;
 
-import static com.github.harbby.gadtry.aop.mock.MockGo.when;
+import static com.github.harbby.gadtry.aop.MockGo.when;
 
 @RunWith(MockGoJUnitRunner.class)
 public class AroundHandlerTest
