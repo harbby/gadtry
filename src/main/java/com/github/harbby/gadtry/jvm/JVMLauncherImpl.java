@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.io.IOUtils;
 
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -134,10 +133,15 @@ public class JVMLauncherImpl<R>
         Process process = builder.start();
         processAtomic.set(process);
 
-        try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
-            os.write(task);  //send task
-        }
         try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
+            IOException sendError = null;
+            try (OutputStream os = process.getOutputStream()) {
+                os.write(task);  //send task
+            }
+            catch (IOException e) {
+                sendError = e;
+            }
+
             int b;
             while ((b = reader.read()) != -1) {
                 byte type = (byte) b;
@@ -158,7 +162,12 @@ public class JVMLauncherImpl<R>
                     byte[] fullBytes = new byte[bytes.length + 1];
                     System.arraycopy(bytes, 0, fullBytes, 1, bytes.length);
                     fullBytes[0] = type;
-                    throw new JVMException(new String(fullBytes, UTF_8));
+                    if (sendError != null) {
+                        throw new JVMException(new String(fullBytes, UTF_8), sendError);
+                    }
+                    else {
+                        throw new JVMException(new String(fullBytes, UTF_8));
+                    }
                 }
             }
         }

@@ -66,7 +66,7 @@ public class VmFuture<R>
     public long getPid()
     {
         Process process = getVmProcess();
-        if (Platform.getClassVersion() >= 52) { //>= java11
+        if (Platform.getClassVersion() > 52) { //>= java9
             return process.pid();
         }
         String system = process.getClass().getName();
