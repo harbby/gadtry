@@ -1,5 +1,6 @@
 plugins {
   id 'java'
+  id 'java-library'
   id 'signing'
   id 'checkstyle'
   id "com.github.hierynomus.license" version "0.16.1"
@@ -9,9 +10,6 @@ plugins {
 
 group = "com.github.harbby"
 version = "1.10.1-SNAPSHOT"  //SNAPSHOT
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 def jdk = project.hasProperty('jdk') ? project.jdk : 'java11'  //default -Pjdk=java11
 //def jdk = System.getProperty("jdk") ?: " -Djdk=java11
@@ -43,11 +41,10 @@ tasks.named("processResources") {
 tasks.withType(org.gradle.jvm.tasks.Jar) { duplicatesStrategy = 'include' }
 
 dependencies {
-  implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
-  compileOnly group: 'junit', name: 'junit', version: '4.12'
-  testImplementation group: 'junit', name: 'junit', version: '4.12'
-  testImplementation 'org.mockito:mockito-core:2.23.4'
+  api group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
 
+  testImplementation group: 'junit', name: 'junit', version: '4.12'
+  testImplementation 'org.mockito:mockito-core:3.11.2'
   testImplementation group: "org.openjdk.jmh", name: "jmh-core", version: "1.32"
   //testAnnotationProcessor group: "org.openjdk.jmh", name: "jmh-generator-annprocess", version: "1.32"
 }
@@ -76,7 +73,7 @@ checkstyle {
   configFile = rootProject.file('src/checkstyle/facebook_checks.xml')
   //configFile = file("${rootDir}/src/checkstyle/facebook_checks.xml")
 }
-assemble.dependsOn 'checkstyle'
+//assemble.dependsOn 'checkstyle'
 
 license {
   headerDefinitions {  //see: http://code.mycila.com/license-maven-plugin/#supported-comment-types

@@ -1,13 +1,17 @@
 //java 16
 
+sourceCompatibility = 16
+targetCompatibility = 16
+
 jacoco {
   toolVersion = "0.8.6"
 }
 
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
-//  options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-//  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
 }
 
 sourceSets {
