@@ -17,12 +17,12 @@ package com.github.harbby.gadtry.spi;
 
 import com.github.harbby.gadtry.base.Files;
 import com.github.harbby.gadtry.collection.MutableSet;
-import com.github.harbby.gadtry.ioc.InjectorException;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.JarURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -128,17 +128,14 @@ public class ClassScanner
         }
 
         public ClassScanner scan()
+                throws IOException, URISyntaxException
         {
             Set<Class<?>> classSet;
-            try {
-                if (classLoader == null) {
-                    classLoader = ClassLoader.getSystemClassLoader();
-                }
-                classSet = scanClasses(basePackage, classLoader, errorHandler);
+
+            if (classLoader == null) {
+                classLoader = ClassLoader.getSystemClassLoader();
             }
-            catch (IOException e) {
-                throw new InjectorException(e);
-            }
+            classSet = scanClasses(basePackage, classLoader, errorHandler);
 
             Stream<Class<?>> classStream = classSet.stream();
             if (annotations.length > 0) {
@@ -157,21 +154,19 @@ public class ClassScanner
     }
 
     public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader)
-            throws IOException
+            throws IOException, URISyntaxException
     {
         return scanClasses(basePackage, classLoader, (classString, error) -> throwsThrowable(error));
     }
 
     public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader, BiConsumer<String, Throwable> loadErrorHandler)
-            throws IOException
+            throws IOException, URISyntaxException
     {
         requireNonNull(classLoader, "classLoader is null");
         Set<String> classStrings = scanClassNames(basePackage, classLoader);
-
         MutableSet.Builder<Class<?>> classes = MutableSet.builder();
         for (String it : classStrings) {
-            String classString = it.substring(0, it.length() - 6).replace("/", ".");
-
+            String classString = it.substring(0, it.length() - 6);
             try {
                 Class<?> driver = Class.forName(classString, false, classLoader);  //classLoader.loadClass(classString)
                 classes.add(driver);  //
@@ -184,29 +179,29 @@ public class ClassScanner
     }
 
     public static Set<String> scanClassNames(String basePackage, ClassLoader classLoader)
-            throws IOException
+            throws IOException, URISyntaxException
     {
-        String packagePath = basePackage.replace('.', '/');
-
         MutableSet.Builder<String> classStrings = MutableSet.builder();
-        Enumeration<URL> resources = classLoader.getResources(packagePath);
+        Enumeration<URL> resources = classLoader.getResources(basePackage.replace('.', '/'));
         while (resources.hasMoreElements()) {
             URL url = resources.nextElement();
             String protocol = url.getProtocol();
             if ("file".equals(protocol)) {
-                classStrings.addAll(scanFileClass(packagePath, url, true));
+                classStrings.addAll(scanFileClass(basePackage, url, true));
             }
             else if ("jar".equals(protocol)) {
-                classStrings.addAll(scanJarClass(packagePath, url));
+                classStrings.addAll(scanJarClass(basePackage, url));
             }
         }
 
         return classStrings.build();
     }
 
-    private static Set<String> scanJarClass(String packagePath, URL url)
+    private static Set<String> scanJarClass(String basePackage, URL url)
             throws IOException
     {
+        char separator = '/';
+        String packagePath = basePackage.replace('.', separator);
         JarFile jarFile = ((JarURLConnection) url.openConnection()).getJarFile();
 
         Set<String> classSet = new HashSet<>();
@@ -222,19 +217,23 @@ public class ClassScanner
             }
 
             if (name.endsWith(".class") && !entry.isDirectory()) {
-                classSet.add(name);
+                classSet.add(name.replace(separator, '.'));
             }
         }
         return classSet;
     }
 
-    private static Set<String> scanFileClass(String packagePath, URL url, boolean recursive)
+    private static Set<String> scanFileClass(String basePackage, URL url, boolean recursive)
+            throws URISyntaxException
     {
-        List<File> files = Files.listFiles(new File(url.getPath()), recursive);
+        char separator = File.separatorChar;
+        String packagePath = basePackage.replace('.', separator);
+
+        List<File> files = Files.listFiles(new File(url.toURI()), recursive);
         return files.stream().map(file -> {
             String path = file.getPath();
             int start = path.indexOf(packagePath);
-            return path.substring(start);
+            return path.substring(start).replace(separator, '.');
         }).collect(Collectors.toSet());
     }
 }

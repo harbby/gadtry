@@ -114,7 +114,7 @@ public class SecurityClassLoader
             throws IOException
     {
         // If this is an SPI resource, use SPI resources
-        if (isSpiClass(name)) {
+        if (isSpiResource(name)) {
             return spiClassLoader.getResources(name);
         }
 
