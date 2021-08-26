@@ -23,6 +23,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -198,6 +199,7 @@ public class JVMLauncherImpl<R>
     }
 
     protected List<String> buildMainArg(List<String> otherVmOps)
+            throws URISyntaxException
     {
         List<String> ops = new ArrayList<>();
         ops.add(javaCmd.toString());
@@ -223,7 +225,7 @@ public class JVMLauncherImpl<R>
             if (Platform.getClassVersion() > 52) {
                 ops.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
             }
-            ops.add(String.format("-javaagent:%s=%s:%s", url.getPath(), JVMLauncher.class.getName(), taskProcessName));
+            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.toURI()).getPath(), JVMLauncher.class.getName(), taskProcessName));
             ops.add(taskProcessName);
         }
         else {
