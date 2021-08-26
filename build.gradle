@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.10.1-SNAPSHOT"  //SNAPSHOT
+version = "1.9.6-SNAPSHOT"  //SNAPSHOT
 
 def jdk = project.hasProperty('jdk') ? project.jdk : 'java11'  //default -Pjdk=java11
 //def jdk = System.getProperty("jdk") ?: " -Djdk=java11
@@ -41,7 +41,7 @@ tasks.named("processResources") {
 tasks.withType(org.gradle.jvm.tasks.Jar) { duplicatesStrategy = 'include' }
 
 dependencies {
-  api group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
+  implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
 
   testImplementation group: 'junit', name: 'junit', version: '4.12'
   testImplementation 'org.mockito:mockito-core:3.11.2'
@@ -113,12 +113,12 @@ task checkstyle(type: Checkstyle) {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-  classifier = 'sources'
+  archiveClassifier = 'sources'
   from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  classifier = 'javadoc'
+  archiveClassifier = 'javadoc'
   from javadoc.destinationDir
   javadoc.failOnError = false
 }
@@ -133,7 +133,8 @@ ext {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      artifact jar
+      from project.components.java
+      //artifact jar
       artifact sourcesJar
       artifact javadocJar
 
