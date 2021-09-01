@@ -8,16 +8,20 @@ install:
 matrix:
   include:
     - jdk: oraclejdk8
+      dist: trusty
       env: jdk=java8
     - jdk: openjdk11
       env: jdk=java11
+      dist: focal
     - jdk: openjdk16
+      dist: focal
       env:
         - jdk=java16
         - JAVA_OPTS='--add-opens java.prefs/java.util.prefs=ALL-UNNAMED'
 
 sudo: required
-dist: focal
+# dist: focal
+
 services:
   - docker
 
