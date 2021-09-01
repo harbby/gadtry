@@ -15,61 +15,55 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.Platform;
-
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 
-public class SystemOutputStream
+import static com.github.harbby.gadtry.jvm.JVMLauncherImpl.VM_HEADER;
+
+public class ChildVMSystemOutputStream
         extends PrintStream
 {
-    private final OutputStream out;
+    private final PrintStream out;
     private volatile boolean tryClose;
 
-    public SystemOutputStream(OutputStream out)
+    public ChildVMSystemOutputStream(PrintStream out)
     {
         super(out);
         this.out = out;
     }
 
+    public void writeVmHeader()
+    {
+        out.write(VM_HEADER, 0, VM_HEADER.length);
+    }
+
     @Override
     public void write(int b)
     {
-        try {
-            this.write(new byte[] {(byte) b});
+        if (tryClose) {
+            return;
         }
-        catch (IOException e) {
-            Platform.throwException(e);
-        }
+        this.writeInt(1);
+        out.write(b);
     }
 
     @Override
     public void write(byte[] b)
-            throws IOException
     {
         this.write(b, 0, b.length);
     }
 
     @Override
-    public synchronized void write(byte[] buf, int off, int len)
+    public void write(byte[] buf, int off, int len)
     {
         if (tryClose) {
             return;
         }
-        try {
-            out.write(1);
-            this.writeInt(len - off);
-            out.write(buf, off, len);
-            out.flush();
-        }
-        catch (IOException e) {
-            Platform.throwException(e);
-        }
+        this.writeInt(len - off);
+        out.write(buf, off, len);
+        out.flush();
     }
 
     private void writeInt(int v)
-            throws IOException
     {
         out.write((v >>> 24) & 0xFF);
         out.write((v >>> 16) & 0xFF);
@@ -77,14 +71,13 @@ public class SystemOutputStream
         out.write((v) & 0xFF);
     }
 
-    public synchronized void release(boolean failed, byte[] resultBytes)
-            throws IOException
+    public void release(boolean failed, byte[] resultBytes)
     {
         tryClose = true;
 
-        out.write(failed ? 2 : 0);
+        this.writeInt(failed ? -2 : -1);
         this.writeInt(resultBytes.length);
-        out.write(resultBytes);
+        out.write(resultBytes, 0, resultBytes.length);
         out.flush();
     }
 }

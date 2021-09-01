@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+
 public class IOUtils
 {
     private IOUtils() {}
@@ -100,10 +102,10 @@ public class IOUtils
     /**
      * copyed jdk11
      *
-     * @since 11
      * @param inputStream input
      * @return byye array
      * @throws IOException throw IOException
+     * @since 11
      */
     public static byte[] readAllBytes(InputStream inputStream)
             throws IOException
@@ -111,14 +113,31 @@ public class IOUtils
         return readNBytes(inputStream, Integer.MAX_VALUE);
     }
 
+    public static byte[] readLengthBytes(InputStream reader, int length)
+            throws IOException
+    {
+        byte[] bytes = new byte[length];
+        int offset = 0;
+        while (offset < length) {
+            int len = reader.read(bytes, offset, length - offset);
+            if (len == -1) {
+                //throw "should be read " + length + " bytes, but read " + offset
+                break;
+            }
+            offset += len;
+        }
+        checkState(offset == length, "should be read " + length + " bytes, but read " + offset);
+        return bytes;
+    }
+
     /**
      * copyed jdk11
      *
-     * @since 11
      * @param inputStream input
-     * @param len max len byte
+     * @param len         max len byte
      * @return byte array
      * @throws IOException throw IOException
+     * @since 11
      */
     public static byte[] readNBytes(InputStream inputStream, int len)
             throws IOException

@@ -165,14 +165,11 @@ public class JVMLaunchersTest
             throws Exception
     {
         String f = "testForkJvmThrowRuntimeException123";
-        System.out.println("--- vm test ---");
-
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .task(() -> {
-                    System.out.println("************ job start ***************");
-                    throw new RuntimeException(f);
+                    //----child vm task
+                    return 0;
                 })
-                //.addUserjars(Collections.emptyList())
                 .setClassLoader(this.getClass().getClassLoader())
                 .setXms("16m")
                 .setXmx("16m")

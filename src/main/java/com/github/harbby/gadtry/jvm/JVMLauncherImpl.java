@@ -17,9 +17,8 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.io.IOUtils;
 
-import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,6 +39,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class JVMLauncherImpl<R>
         implements JVMLauncher<R>
 {
+    public static final byte[] VM_HEADER = "hello gadtry!".getBytes(UTF_8);
+
     private final VmCallable<R> task;
     private final Collection<URL> userJars;
     private final Consumer<String> consoleHandler;
@@ -134,61 +135,39 @@ public class JVMLauncherImpl<R>
         Process process = builder.start();
         processAtomic.set(process);
 
-        try (DataInputStream reader = new DataInputStream(process.getInputStream())) {
-            IOException sendError = null;
+        try (ChildVMChannelInputStream reader = new ChildVMChannelInputStream(process.getInputStream())) {
+            reader.checkVMHeader();
+            //send task to child vm
             try (OutputStream os = process.getOutputStream()) {
-                os.write(task);  //send task
-            }
-            catch (IOException e) {
-                sendError = e;
+                os.write(task);
+                os.flush();
             }
 
-            int b;
-            while ((b = reader.read()) != -1) {
-                byte type = (byte) b;
-                if (type == 1) {
-                    consoleHandler.accept(new String(readLensByte(reader), UTF_8));
-                }
-                else if (type == 0) {
-                    R result = Serializables.byteToObject(readLensByte(reader), classLoader);
-                    process.destroy();
-                    return result;
-                }
-                else if (type == 2) {
-                    String error = new String(readLensByte(reader), UTF_8);
-                    throw new JVMException(error);
-                }
-                else {
-                    byte[] bytes = IOUtils.readAllBytes(reader);
-                    byte[] fullBytes = new byte[bytes.length + 1];
-                    System.arraycopy(bytes, 0, fullBytes, 1, bytes.length);
-                    fullBytes[0] = type;
-                    if (sendError != null) {
-                        throw new JVMException(new String(fullBytes, UTF_8), sendError);
-                    }
-                    else {
-                        throw new JVMException(new String(fullBytes, UTF_8));
-                    }
-                }
+            String line;
+            while ((line = reader.readLine()) != null) {
+                consoleHandler.accept(line);
+            }
+            byte[] bytes = reader.readResult();
+            if (reader.isSuccess()) {
+                R result = Serializables.byteToObject(bytes, classLoader);
+                process.destroy();
+                return result;
+            }
+            else {
+                throw new JVMException(new String(bytes, UTF_8));
             }
         }
-        if (process.isAlive()) {
-            process.destroy();
-            process.waitFor();
+        catch (EOFException e) {
+            if (process.isAlive()) {
+                process.destroy();
+                process.waitFor();
+            }
+            throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
         }
-        throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
-    }
-
-    private byte[] readLensByte(DataInputStream reader)
-            throws IOException
-    {
-        int length = reader.readInt();
-        byte[] bytes = new byte[length];
-        int offset = 0;
-        while (offset < length) {
-            offset += reader.read(bytes, offset, length - offset);
+        catch (IOException e) {
+            throw new JVMException("child jvm exec failed", e);
         }
-        return bytes;
+        //throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
     }
 
     private String getUserAddClasspath()

@@ -38,9 +38,9 @@ public interface JVMLauncher<R>
     public VmFuture<R> startAsync(ExecutorService executor, VmCallable<R> task)
             throws JVMException;
 
-    public static SystemOutputStream getOrCreate()
+    public static ChildVMSystemOutputStream getOrCreate()
     {
-        SystemOutputStream mock = new SystemOutputStream(System.out);
+        ChildVMSystemOutputStream mock = new ChildVMSystemOutputStream(System.out);
         System.setOut(mock);
         System.setErr(mock);
         return mock;
@@ -49,7 +49,10 @@ public interface JVMLauncher<R>
     public static void main(String[] args)
             throws Exception
     {
-        SystemOutputStream outputStream = JVMLauncher.getOrCreate();
+        ChildVMSystemOutputStream outputStream = JVMLauncher.getOrCreate();
+        //first write header
+        outputStream.writeVmHeader();
+
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
             VmCallable<?> task = (VmCallable<?>) ois.readObject();
             Object value = task.call();
