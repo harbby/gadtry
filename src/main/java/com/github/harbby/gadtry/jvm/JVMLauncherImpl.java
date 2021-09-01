@@ -135,13 +135,15 @@ public class JVMLauncherImpl<R>
         Process process = builder.start();
         processAtomic.set(process);
 
+        //send task to child vm
+        try (OutputStream os = process.getOutputStream()) {
+            os.write(task);
+            os.flush();
+        }
+        catch (IOException ignored) { //child not running
+        }
         try (ChildVMChannelInputStream reader = new ChildVMChannelInputStream(process.getInputStream())) {
             reader.checkVMHeader();
-            //send task to child vm
-            try (OutputStream os = process.getOutputStream()) {
-                os.write(task);
-                os.flush();
-            }
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -167,7 +169,6 @@ public class JVMLauncherImpl<R>
         catch (IOException e) {
             throw new JVMException("child jvm exec failed", e);
         }
-        //throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
     }
 
     private String getUserAddClasspath()

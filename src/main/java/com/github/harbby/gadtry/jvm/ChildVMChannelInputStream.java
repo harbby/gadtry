@@ -38,7 +38,7 @@ public class ChildVMChannelInputStream
     private final BufferedReader reader;
     private int length = 0;
     private int index = 0;
-    private byte[] result;
+    private byte[] result = new byte[0];
     private boolean isSuccess;
     private boolean isDone = false;
 
