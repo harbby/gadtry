@@ -45,13 +45,13 @@ public class JavaClassCompilerTest
                 "        {\n" +
                 "            " + MoreObjects.class.getName() + ".checkState(buffer.cleaner() != null, \"LEAK: directBuffer was not set Cleaner\");\n" +
                 "            if (" + Platform.class.getName() + ".getJavaVersion() > 8) {\n" +
-                "                " + Platform.class.getName() + ".addOpenJavaModules(buffer.cleaner().getClass(), this.getClass());\n" +
+                "                " + Platform.class.getName() + ".openJavaModuleToUnnamedModule(buffer.cleaner().getClass(), this.getClass());\n" +
                 "            }\n" +
                 "            buffer.cleaner().clean();\n" +
                 "        }\n" +
                 "    }";
-        List<String> ops = ImmutableList.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED",
-                "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED");
+        List<String> ops = Platform.getJavaVersion() > 8 ? ImmutableList.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED",
+                "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED") : ImmutableList.of();
         byte[] bytes = javaClassCompiler.doCompile(className, classCode, ops).getClassByteCodes().get(className);
         ByteClassLoader byteClassLoader = new ByteClassLoader(Platform.class.getClassLoader());
         Class<DirectBufferCloseable> directBufferCloseableClass = (Class<DirectBufferCloseable>) byteClassLoader.loadClass(className, bytes);

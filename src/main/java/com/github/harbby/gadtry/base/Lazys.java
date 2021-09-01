@@ -26,11 +26,16 @@ public class Lazys
 {
     private Lazys() {}
 
-    public static <T> Creator<T> memoize(Creator<T> delegate)
+    private static <T> Creator<T> memoize(Creator<T> delegate)
     {
         return delegate instanceof LazySupplier ?
                 delegate :
                 new LazySupplier<>(requireNonNull(delegate));
+    }
+
+    public static <T> Creator<T> of(Creator<T> delegate)
+    {
+        return memoize(delegate);
     }
 
     public static <T> Creator<T> goLazy(Creator<T> delegate)

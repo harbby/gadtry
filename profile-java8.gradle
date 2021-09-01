@@ -1,4 +1,6 @@
-//deploy to maven repo: ./gradlew clean assemble -Pjdk=java8
+/**
+ *
+ * */
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 

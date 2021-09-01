@@ -1,20 +1,20 @@
 //java 16
+//deploy to maven repo: ./gradlew clean assemble -Pjdk=java16 -Ptarget=8
 
-sourceCompatibility = 16
-targetCompatibility = 16
+def targetVersion = project.hasProperty("target") ? project.target : 16
+sourceCompatibility = targetVersion
+targetCompatibility = targetVersion
 
 jacoco {
-  toolVersion = "0.8.6"
-}
-
-tasks.withType(JavaCompile) {
-  options.encoding = 'UTF-8'
-  options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
-  options.compilerArgs << "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+  toolVersion = "0.8.7"
 }
 
 sourceSets {
+  main {
+    java {
+      srcDirs += ["src/main/java9+"]
+    }
+  }
   test {
     java {
       srcDirs += ["src/test/java9+"]
@@ -22,15 +22,24 @@ sourceSets {
   }
 }
 
-tasks.withType(Test) {
-  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/java.nio=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
-}
+if (targetVersion == 11) {
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+    options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+    options.compilerArgs << "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+  }
 
-tasks.withType(JavaExec) {
+  tasks.withType(Test) {
+    jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+    jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+    jvmArgs += "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    jvmArgs += "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+  }
+
+  tasks.withType(JavaExec) {
 //  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
 //  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
 //  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+  }
 }

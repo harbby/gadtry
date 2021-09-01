@@ -15,20 +15,23 @@
  */
 package com.github.harbby.gadtry.base;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-@Target({METHOD, TYPE})
-@Retention(RUNTIME)
-@Documented
-public @interface Privilege
+public class PlatFormUnsupportedOperation
+        extends RuntimeException
 {
-    Class<?>[] value() default {};
+    static final long serialVersionUID = -1111122222L;
 
-    String[] classString() default {};
+    public PlatFormUnsupportedOperation(String message)
+    {
+        super(message);
+    }
+
+    public PlatFormUnsupportedOperation(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public PlatFormUnsupportedOperation(Throwable cause)
+    {
+        super(cause);
+    }
 }

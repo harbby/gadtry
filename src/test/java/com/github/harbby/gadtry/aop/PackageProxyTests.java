@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.aop.resource.PackageTestName;
 import com.github.harbby.gadtry.aop.resource.impl.PackageTestUtil;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
@@ -125,9 +126,16 @@ public class PackageProxyTests
         }
         catch (java.lang.reflect.UndeclaredThrowableException e) {
             String errorMsg = e.getCause().getMessage();
-            Assert.assertTrue(errorMsg.contains(this.getClass().getName()
-                    + " cannot access a member of interface "
-                    + instance.getClass().getInterfaces()[0].getName()));
+            if (Platform.getJavaVersion() > 8) {
+                Assert.assertTrue(errorMsg.contains(this.getClass().getName()
+                        + " cannot access a member of interface "
+                        + instance.getClass().getInterfaces()[0].getName()));
+            }
+            else {
+                Assert.assertTrue(errorMsg.contains(this.getClass().getName()
+                        + " can not access a member of class "
+                        + instance.getClass().getInterfaces()[0].getName()));
+            }
         }
     }
 

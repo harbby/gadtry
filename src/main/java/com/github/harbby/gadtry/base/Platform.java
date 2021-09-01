@@ -22,7 +22,6 @@ import sun.reflect.ReflectionFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -32,6 +31,7 @@ import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -47,27 +47,60 @@ public final class Platform
      */
     private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
 
-    private static final Unsafe unsafe;
+    private static final Unsafe unsafe = getUnsafe0();
     private static final int classVersion = getClassVersion0();
     private static final String JAVA_FULL_VERSION = System.getProperty("java.version");
     private static final int javaVersion = getJavaVersion0();
+    private static final Supplier<PlatformBase> platformBase = Lazys.of(() -> {
+        checkState(getJavaVersion() > 8);
+        try {
+            return (PlatformBase) Class.forName("com.github.harbby.gadtry.base.PlatformBaseImpl").newInstance();
+        }
+        catch (Exception e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
+    });
 
     public static Unsafe getUnsafe()
     {
         return unsafe;
     }
 
-    static {
+    private static Unsafe getUnsafe0()
+    {
         sun.misc.Unsafe obj = null;
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
             obj = (sun.misc.Unsafe) unsafeField.get(null);
         }
-        catch (Throwable cause) {
+        catch (Exception cause) {
             throwException(cause);
         }
-        unsafe = requireNonNull(obj);
+        return requireNonNull(obj);
+    }
+
+    /**
+     * Java9引入模块化后，一些内部api具有破坏性兼容性。
+     * 这里的方法多数为Java9以上平台所添加的新方法
+     */
+    interface PlatformBase
+    {
+        Class<?> defineClass(Class<?> buddyClass, byte[] classBytes)
+                throws IllegalAccessException;
+
+        void openJavaModuleToUnnamedModule(Class<?> hostClass, Class<?> unnamedModuleClass)
+                throws PlatFormUnsupportedOperation;
+
+        void freeDirectBuffer(DirectBuffer buffer);
+
+        Object createCleaner(Object ob, Runnable thunk);
+
+        ClassLoader latestUserDefinedLoader();
+
+        ClassLoader getBootstrapClassLoader();
+
+        long getProcessPid(Process process);
     }
 
     public static byte[] readClassByteCode(Class<?> aClass)
@@ -229,7 +262,7 @@ public final class Platform
     public static ClassLoader latestUserDefinedLoader()
     {
         if (Platform.getJavaVersion() > 8) {
-            return jdk.internal.misc.VM.latestUserDefinedLoader();
+            return platformBase.get().latestUserDefinedLoader();
         }
         else {
             try {
@@ -238,7 +271,7 @@ public final class Platform
                         .invoke(null);
             }
             catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-                throw Throwables.throwsThrowable(e);
+                throw new PlatFormUnsupportedOperation(e);
             }
         }
     }
@@ -261,16 +294,34 @@ public final class Platform
     public static ClassLoader getBootstrapClassLoader()
     {
         if (Platform.getJavaVersion() > 8) {
-            return java.lang.ClassLoader.getPlatformClassLoader();
+            return platformBase.get().getBootstrapClassLoader();
         }
         try {
             Object upath = Class.forName("sun.misc.Launcher").getMethod("getBootstrapClassPath").invoke(null);
             URL[] urls = (URL[]) Class.forName("sun.misc.URLClassPath").getMethod("getURLs").invoke(upath);
             return new URLClassLoader(urls, null);
         }
-        catch (Exception e) {
-            throw Throwables.throwsThrowable(e);
+        catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new PlatFormUnsupportedOperation(e);
         }
+    }
+
+    public static long getProcessPid(Process process)
+    {
+        if (Platform.getJavaVersion() > 8) { //>= java9
+            return platformBase.get().getProcessPid(process);
+        }
+        if (Platform.isLinux()) {
+            try {
+                Field field = process.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                return (int) field.get(process);
+            }
+            catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new PlatFormUnsupportedOperation(e);
+            }
+        }
+        throw new UnsupportedOperationException("only support for UNIX and Linux systems pid");
     }
 
     /**
@@ -285,33 +336,34 @@ public final class Platform
     public static Object createCleaner(Object ob, Runnable thunk)
     {
         if (getJavaVersion() > 8) { //jdk9+
-            return jdk.internal.ref.Cleaner.create(ob, thunk);
+            //jdk9+: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+            return platformBase.get().createCleaner(ob, thunk);
         }
-        //jdk9+: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
         try {
             Method createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
             createMethod.setAccessible(true);
             return createMethod.invoke(null, ob, thunk);
         }
         catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw Throwables.throwsThrowable(e);
+            throw new IllegalStateException("unchecked", e);
         }
     }
 
     /**
      * java16 need: --add-opens=java.base/java.lang=ALL-UNNAMED
+     * If java version> 16 it is recommended to use {@link Platform#defineClass(Class, byte[])}
      */
     public static Class<?> defineClass(byte[] classBytes, ClassLoader classLoader)
+            throws PlatFormUnsupportedOperation, IllegalAccessException
     {
         try {
             Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
             defineClass.setAccessible(true);
             return (Class<?>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
         }
-        catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e1) {
-            throwException(e1);
+        catch (InvocationTargetException | NoSuchMethodException e) {
+            throw new PlatFormUnsupportedOperation(e);
         }
-        throw new IllegalStateException("unchecked");
     }
 
     /**
@@ -319,17 +371,10 @@ public final class Platform
      * This method is available in Java 9 or later
      */
     public static Class<?> defineClass(Class<?> buddyClass, byte[] classBytes)
+            throws IllegalAccessException
     {
-        try {
-            Platform.class.getModule().addReads(buddyClass.getModule());
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MethodHandles.Lookup prvlookup = MethodHandles.privateLookupIn(buddyClass, lookup);
-            return prvlookup.defineClass(classBytes);
-        }
-        catch (IllegalArgumentException | IllegalAccessException e) {
-            //buddyClass has no permission to define the class
-            throw Throwables.throwsThrowable(e);
-        }
+        checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
+        return platformBase.get().defineClass(buddyClass, classBytes);
     }
 
     /**
@@ -338,47 +383,18 @@ public final class Platform
      * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过这个方法我们可以访问任何jdk限制的内部代码
      * 注: java16开始，你需要提供额外的java运行时参数: --add-opens=java.base/java.lang=ALL-UNNAMED 来使用该方法提供的功能
      * <p>
+     * This method is available in Java 9 or later
      *
      * @param hostClass   action将获取hostClass的内部实现反射访问权限
      * @param targetClass 希望获取权限的类
      * @throws java.lang.NoClassDefFoundError user dep class
      * @since jdk9+
      */
-    public static void addOpenJavaModules(Class<?> hostClass, Class<?> targetClass)
+    public static void openJavaModuleToUnnamedModule(Class<?> hostClass, Class<?> targetClass)
+            throws PlatFormUnsupportedOperation
     {
-        checkState(getJavaVersion() > 8, "This method can only run above Jdk9+");
-        try {
-            Method getModule = Class.class.getMethod("getModule");
-            Class<?> mouleClass = getModule.getReturnType();
-            Method getPackageName = Class.class.getMethod("getPackageName");
-            Method addOpens = mouleClass.getMethod("addOpens", String.class, mouleClass);
-            Method isOpenMethod = mouleClass.getMethod("isOpen", String.class, mouleClass);
-            //---------------------
-            boolean isNamed = (boolean) mouleClass.getMethod("isNamed").invoke(getModule.invoke(targetClass));
-            checkState(!isNamed, "targetClass " + targetClass + " must UNNAMED moule");
-            //----------------------
-            Object hostModule = getModule.invoke(hostClass);
-            String hostPackageName = (String) getPackageName.invoke(hostClass);
-
-            Object actionModule = getModule.invoke(targetClass);
-            boolean isOpen = (boolean) isOpenMethod.invoke(hostModule, hostPackageName, actionModule);
-            if (isOpen) {
-                addOpens.invoke(hostModule, hostPackageName, actionModule);
-            }
-            else {
-                addOpens.invoke(getModule.invoke(mouleClass), (String) getPackageName.invoke(mouleClass), getModule.invoke(Platform.class));
-                Method method = mouleClass.getDeclaredMethod("implAddExportsOrOpens", String.class, mouleClass, boolean.class, boolean.class);
-                method.setAccessible(true);
-                //--add-opens=java.base/$hostPackageName=ALL-UNNAMED
-                method.invoke(hostModule, hostPackageName, actionModule, /*open*/true, /*syncVM*/true);
-            }
-        }
-        catch (NoSuchMethodException e) {
-            throw new UnsupportedOperationException(e);
-        }
-        catch (IllegalAccessException | InvocationTargetException e) {
-            throwException(e);
-        }
+        checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
+        platformBase.get().openJavaModuleToUnnamedModule(hostClass, targetClass);
     }
 
     public static long reallocateMemory(long address, long oldSize, long newSize)
@@ -400,6 +416,7 @@ public final class Platform
      * @return ByteBuffer
      */
     public static ByteBuffer allocateDirectBuffer(int size)
+            throws PlatFormUnsupportedOperation
     {
         try {
             Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
@@ -414,10 +431,9 @@ public final class Platform
             cleanerField.set(buffer, cleaner);
             return buffer;
         }
-        catch (Exception e) {
-            throwException(e);
+        catch (NoSuchFieldException | ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+            throw new PlatFormUnsupportedOperation(e);
         }
-        throw new IllegalStateException("unreachable");
     }
 
     /**
@@ -430,7 +446,7 @@ public final class Platform
         checkState(buffer.isDirect(), "buffer not direct");
         sun.nio.ch.DirectBuffer directBuffer = (DirectBuffer) buffer;
         if (getJavaVersion() > 8) {
-            directBuffer.cleaner().clean();
+            platformBase.get().freeDirectBuffer(directBuffer);
         }
         else {
             try {
@@ -439,26 +455,36 @@ public final class Platform
                 Class.forName("sun.misc.Cleaner").getMethod("clean").invoke(cleaner);
             }
             catch (IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
-                throwException(e);
+                throw new IllegalStateException("unchecked", e);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T allocateInstance(Class<T> tClass)
-            throws InstantiationException
+            throws PlatFormUnsupportedOperation
     {
-        return (T) unsafe.allocateInstance(tClass);
+        try {
+            return (T) unsafe.allocateInstance(tClass);
+        }
+        catch (InstantiationException e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T allocateInstance2(Class<T> tClass)
-            throws InstantiationException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
+            throws PlatFormUnsupportedOperation
     {
-        Constructor<T> superCons = (Constructor<T>) Object.class.getConstructor();
-        ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
-        Constructor<T> c = (Constructor<T>) reflFactory.newConstructorForSerialization(tClass, superCons);
-        return c.newInstance();
+        try {
+            Constructor<T> superCons = (Constructor<T>) Object.class.getConstructor();
+            ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
+            Constructor<T> c = (Constructor<T>) reflFactory.newConstructorForSerialization(tClass, superCons);
+            return c.newInstance();
+        }
+        catch (InvocationTargetException | InstantiationException | NoSuchMethodException | IllegalAccessException e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
     }
 
     public static void copyMemory(Object src, long srcOffset, Object dst, long dstOffset, long length)
@@ -503,6 +529,7 @@ public final class Platform
      * @return system classLoader ucp jars
      */
     public static List<URL> getSystemClassLoaderJars()
+            throws PlatFormUnsupportedOperation
     {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (classLoader instanceof URLClassLoader) {
@@ -518,7 +545,7 @@ public final class Platform
             return java.util.Arrays.asList(urls);
         }
         catch (NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException e) {
-            throw new UnsupportedOperationException("this jdk not support", e);
+            throw new PlatFormUnsupportedOperation(e);
         }
     }
 
@@ -528,24 +555,30 @@ public final class Platform
      * @param urls jars
      */
     public static void loadExtJarToSystemClassLoader(List<URL> urls)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException
+            throws PlatFormUnsupportedOperation
     {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        if (classLoader instanceof URLClassLoader) {
-            Method addURLMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            addURLMethod.setAccessible(true);
-            for (URL uri : urls) {
-                addURLMethod.invoke(classLoader, uri);
+        try {
+            if (classLoader instanceof URLClassLoader) {
+                Method addURLMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+                addURLMethod.setAccessible(true);
+                for (URL uri : urls) {
+                    addURLMethod.invoke(classLoader, uri);
+                }
+                return;
             }
-            return;
+            checkState(getJavaVersion() > 8, "check java version > 8 failed");
+            //java11+
+            Field field = classLoader.getClass().getDeclaredField("ucp");
+            field.setAccessible(true);
+            Object ucp = field.get(classLoader);
+            Method addURLMethod = ucp.getClass().getMethod("addURL", URL.class);
+            for (URL url : urls) {
+                addURLMethod.invoke(ucp, url);
+            }
         }
-        //java11+
-        Field field = classLoader.getClass().getDeclaredField("ucp");
-        field.setAccessible(true);
-        Object ucp = field.get(classLoader);
-        Method addURLMethod = ucp.getClass().getMethod("addURL", URL.class);
-        for (URL url : urls) {
-            addURLMethod.invoke(ucp, url);
+        catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new PlatFormUnsupportedOperation(e);
         }
     }
 }

@@ -1,31 +1,38 @@
 //java 11
+//deploy to maven repo: ./gradlew clean assemble -Pjdk=java11 -Ptarget=8
 
-sourceCompatibility = 11
-targetCompatibility = 11
-
-tasks.withType(JavaCompile) {
-  options.encoding = 'UTF-8'
-  options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
-  options.compilerArgs << "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
-}
-
+def targetVersion = project.hasProperty("target") ? project.target : 11
+sourceCompatibility = targetVersion
+targetCompatibility = targetVersion
 
 sourceSets {
+  main {
+    java {
+      srcDirs += ["src/main/java9+"]
+    }
+  }
   test {
     java {
       srcDirs += ["src/test/java9+"]
     }
   }
 }
+if (targetVersion == 11) {
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+    options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+    options.compilerArgs << "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+  }
 
-tasks.withType(Test) {
-  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
-}
+  tasks.withType(Test) {
+    jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+    jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+  }
 
-tasks.withType(JavaExec) {
+  tasks.withType(JavaExec) {
 //  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
 //  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
 //  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+  }
 }

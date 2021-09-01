@@ -17,6 +17,9 @@ apply from: "profile-${jdk}.gradle"
 
 sourceSets {
   main {
+    java {
+      srcDirs += ["src/main/$jdk"]
+    }
     resources {
       srcDirs += ["src/main/resources", "src/main/profile/$jdk"]
     }

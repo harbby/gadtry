@@ -18,7 +18,6 @@ package com.github.harbby.gadtry.jvm;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Throwables;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class VmFuture<R>
@@ -66,22 +64,7 @@ public class VmFuture<R>
     public long getPid()
     {
         Process process = getVmProcess();
-        if (Platform.getClassVersion() > 52) { //>= java9
-            return process.pid();
-        }
-        String system = process.getClass().getName();
-        try {
-            Field field = process.getClass().getDeclaredField("pid");
-            field.setAccessible(true);
-            int pid = (int) field.get(process);
-            return pid;
-        }
-        catch (NoSuchFieldException e) {
-            throw new UnsupportedOperationException("Only support for UNIX and Linux systems pid, Your " + system + " is Windows ?");
-        }
-        catch (IllegalAccessException e) {
-            throw throwsThrowable(e);
-        }
+        return Platform.getProcessPid(process);
     }
 
     public R get()
