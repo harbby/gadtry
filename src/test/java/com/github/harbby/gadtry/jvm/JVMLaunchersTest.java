@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
 import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
@@ -110,11 +111,12 @@ public class JVMLaunchersTest
     public void setTaskNameTest()
             throws InterruptedException
     {
-        String taskName = "gadtry.testForkJvmReturn1";
-        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+        String taskName = "TestForkJvmReturn1";
+        JVMLaunchers.VmBuilder<String> builder = JVMLaunchers.<String>newJvm()
                 .task(() -> {
                     //TimeUnit.SECONDS.sleep(1000000);
-                    System.err.write(666);
+                    System.out.println("System.out: child jvm is running.");
+                    System.err.println("System.err: child jvm is running.");
                     StackTraceElement element = Threads.getJvmMainClass();
                     Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x -> System.out.println(x));
                     System.out.println(element);
@@ -124,10 +126,12 @@ public class JVMLaunchersTest
                 .setName(taskName)
                 .setXms("16m")
                 .setXmx("16m")
-                .setConsole(System.out::print)
-                .build();
-
-        Assert.assertEquals(launcher.startAndGet(), taskName);
+                .setConsole(System.out::println);
+        if (Platform.getJavaVersion() >= 16) {
+            builder.addVmOps("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        }
+        JVMLauncher<String> launcher = builder.build();
+        Assert.assertEquals(launcher.startAndGet(), JVMLauncher.class.getPackage().getName() + "." + taskName);
     }
 
     @Test

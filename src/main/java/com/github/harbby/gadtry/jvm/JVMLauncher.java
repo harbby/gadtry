@@ -16,11 +16,14 @@
 package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.ObjectInputStreamProxy;
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
+import java.io.FilterOutputStream;
 import java.io.NotSerializableException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 
@@ -38,18 +41,34 @@ public interface JVMLauncher<R>
     public VmFuture<R> startAsync(ExecutorService executor, VmCallable<R> task)
             throws JVMException;
 
-    public static ChildVMSystemOutputStream getOrCreate()
+    /**
+     * 备选方法1:
+     * System.err.close();
+     * System.setErr(System.out);
+     * 备选方法2:
+     * if (Platform.getClassVersion() > 52) {
+     * ops.add("--add-opens=java.base/java.io=ALL-UNNAMED");
+     * }
+     */
+    public static ChildVMSystemOutputStream initSystemOutErrChannel()
+            throws NoSuchFieldException
     {
         ChildVMSystemOutputStream mock = new ChildVMSystemOutputStream(System.out);
         System.setOut(mock);
-        System.setErr(mock);
+        if (Platform.getJavaVersion() > 8) {
+            Field field = FilterOutputStream.class.getDeclaredField("out");
+            Platform.getUnsafe().putObject(System.err, Platform.getUnsafe().objectFieldOffset(field), mock);  //equals to: field.set(System.err, mock);
+        }
+        else {
+            System.setErr(mock);
+        }
         return mock;
     }
 
     public static void main(String[] args)
             throws Exception
     {
-        ChildVMSystemOutputStream outputStream = JVMLauncher.getOrCreate();
+        ChildVMSystemOutputStream outputStream = JVMLauncher.initSystemOutErrChannel();
         //first write header
         outputStream.writeVmHeader();
 

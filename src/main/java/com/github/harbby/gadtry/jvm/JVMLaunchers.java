@@ -45,7 +45,7 @@ public class JVMLaunchers
         private final Map<String, String> environment = new HashMap<>();
         private ClassLoader classLoader;
         private File workDir;
-        private String taskProcessName = JVMLauncher.class.getName();
+        private String taskProcessName;
         private File javaCmd = new File(System.getProperty("java.home"), "bin/java");
 
         public VmBuilder<T> javaHome(String javaHome)

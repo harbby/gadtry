@@ -31,11 +31,16 @@ public class JvmAgent
             throws Exception
     {
         String[] split = agentArgs.split(":");
-        checkState(split.length == 2, "-javaagent:agent.jar=oldClass:newClass");
+        checkState(split.length == 2, "-javaagent:agent.jar=oldClass:newClassName");
 
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(split[0]);
-        cc.setName(split[1]);
-        Platform.defineClass(cc.toBytecode(), ClassLoader.getSystemClassLoader());
+        cc.setName(cc.getPackageName() + "." + split[1]);
+        if (Platform.getJavaVersion() > 8) {
+            Platform.defineClass(Class.forName(split[0]), cc.toBytecode());
+        }
+        else {
+            Platform.defineClass(cc.toBytecode(), ClassLoader.getSystemClassLoader());
+        }
     }
 }

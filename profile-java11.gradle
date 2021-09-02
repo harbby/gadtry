@@ -1,7 +1,7 @@
 //java 11
 //deploy to maven repo: ./gradlew clean assemble -Pjdk=java11 -Ptarget=8
 
-def targetVersion = project.hasProperty("target") ? project.target : 11
+def targetVersion = project.hasProperty("target") ? project.target as Integer : 11
 sourceCompatibility = targetVersion
 targetCompatibility = targetVersion
 

@@ -31,13 +31,14 @@ public class ChildVMSystemOutputStream
         this.out = out;
     }
 
-    public void writeVmHeader()
+    public synchronized void writeVmHeader()
     {
         out.write(VM_HEADER, 0, VM_HEADER.length);
+        out.flush();
     }
 
     @Override
-    public void write(int b)
+    public synchronized void write(int b)
     {
         if (tryClose) {
             return;
@@ -53,7 +54,7 @@ public class ChildVMSystemOutputStream
     }
 
     @Override
-    public void write(byte[] buf, int off, int len)
+    public synchronized void write(byte[] buf, int off, int len)
     {
         if (tryClose) {
             return;
@@ -71,7 +72,7 @@ public class ChildVMSystemOutputStream
         out.write((v) & 0xFF);
     }
 
-    public void release(boolean failed, byte[] resultBytes)
+    public synchronized void release(boolean failed, byte[] resultBytes)
     {
         tryClose = true;
 

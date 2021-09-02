@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
+import com.github.harbby.gadtry.base.Strings;
 
 import java.io.EOFException;
 import java.io.File;
@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 public class JVMLauncherImpl<R>
         implements JVMLauncher<R>
@@ -183,7 +184,6 @@ public class JVMLauncherImpl<R>
     {
         List<String> ops = new ArrayList<>();
         ops.add(javaCmd.toString());
-
         ops.addAll(otherVmOps);
 
         String classpath = getUserAddClasspath();
@@ -199,14 +199,11 @@ public class JVMLauncherImpl<R>
 
         URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
         if (!url.getPath().endsWith(".jar")) {
-            url = ClassLoader.getSystemClassLoader().getResource("./agent.jar");
+            url = requireNonNull(ClassLoader.getSystemClassLoader().getResource("./agent.jar"), "not found resource ./agent.jar");
         }
-        if (!JVMLauncher.class.getName().equals(taskProcessName) && url != null && url.getPath().endsWith(".jar")) {
-            if (Platform.getClassVersion() > 52) {
-                ops.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
-            }
+        if (Strings.isNotBlank(taskProcessName)) {
             ops.add(String.format("-javaagent:%s=%s:%s", new File(url.toURI()).getPath(), JVMLauncher.class.getName(), taskProcessName));
-            ops.add(taskProcessName);
+            ops.add(JVMLauncher.class.getPackage().getName() + "." + taskProcessName);
         }
         else {
             ops.add(JVMLauncher.class.getName());

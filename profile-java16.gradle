@@ -1,7 +1,7 @@
 //java 16
 //deploy to maven repo: ./gradlew clean assemble -Pjdk=java16 -Ptarget=8
 
-def targetVersion = project.hasProperty("target") ? project.target : 16
+def targetVersion = project.hasProperty("target") ? project.target as Integer : 16
 sourceCompatibility = targetVersion
 targetCompatibility = targetVersion
 
