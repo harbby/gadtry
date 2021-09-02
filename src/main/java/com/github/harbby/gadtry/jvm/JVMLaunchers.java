@@ -39,7 +39,7 @@ public class JVMLaunchers
     {
         private VmCallable<T> task;
         private boolean depThisJvm = true;
-        private Consumer<String> consoleHandler = System.out::print;
+        private Consumer<String> consoleHandler = System.out::println;
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
         private final Map<String, String> environment = new HashMap<>();

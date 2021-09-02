@@ -43,7 +43,6 @@ public class ChildVMChannelInputStream
     private boolean isDone = false;
 
     public ChildVMChannelInputStream(InputStream inputStream)
-            throws IOException
     {
         this.in = requireNonNull(inputStream, "inputStream is null");
         this.reader = new BufferedReader(new InputStreamReader(this));

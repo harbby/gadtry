@@ -25,20 +25,19 @@ import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
 
 public interface JVMLauncher<R>
 {
     public R startAndGet()
-            throws JVMException;
+            throws JVMException, InterruptedException;
 
     public R startAndGet(VmCallable<R> task)
+            throws JVMException, InterruptedException;
+
+    public VmPromise<R> start(VmCallable<R> task)
             throws JVMException;
 
-    public VmFuture<R> startAsync(ExecutorService executor)
-            throws JVMException;
-
-    public VmFuture<R> startAsync(ExecutorService executor, VmCallable<R> task)
+    public VmPromise<R> start()
             throws JVMException;
 
     /**

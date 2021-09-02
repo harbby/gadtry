@@ -18,22 +18,17 @@ package com.github.harbby.gadtry.jvm;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Strings;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -78,53 +73,42 @@ public class JVMLauncherImpl<R>
 
     @Override
     public R startAndGet()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         return startAndGet(this.task);
     }
 
     @Override
+    public VmPromise<R> start(VmCallable<R> task)
+            throws JVMException
+    {
+        requireNonNull(task, "Fork VM Task is null");
+        try {
+            byte[] bytes = Serializables.serialize(task);
+            VmPromise<R> promise = this.startAndGetByte(bytes);
+            return promise;
+        }
+        catch (IOException e) {
+            throw new JVMException(e);
+        }
+    }
+
+    @Override
+    public VmPromise<R> start()
+            throws JVMException
+    {
+        return this.start(this.task);
+    }
+
+    @Override
     public R startAndGet(VmCallable<R> task)
-            throws JVMException
+            throws JVMException, InterruptedException
     {
-        checkState(task != null, "Fork VM Task is null");
-        try {
-            byte[] bytes = Serializables.serialize(task);
-            AtomicReference<Process> processAtomic = new AtomicReference<>();
-            return this.startAndGetByte(processAtomic, bytes);
-        }
-        catch (JVMException e) {
-            throw e;
-        }
-        catch (Exception e) {
-            throw new JVMException(e);
-        }
+        return this.start(task).call();
     }
 
-    @Override
-    public VmFuture<R> startAsync(ExecutorService executor)
-            throws JVMException
-    {
-        return startAsync(executor, this.task);
-    }
-
-    @Override
-    public VmFuture<R> startAsync(ExecutorService executor, VmCallable<R> task)
-            throws JVMException
-    {
-        checkState(task != null, "Fork VM Task is null");
-        try {
-            byte[] bytes = Serializables.serialize(task);
-            AtomicReference<Process> processAtomic = new AtomicReference<>();
-            return new VmFuture<>(executor, processAtomic, () -> this.startAndGetByte(processAtomic, bytes));
-        }
-        catch (IOException | InterruptedException e) {
-            throw new JVMException(e);
-        }
-    }
-
-    private R startAndGetByte(AtomicReference<Process> processAtomic, byte[] task)
-            throws Exception
+    private VmPromise<R> startAndGetByte(byte[] task)
+            throws IOException
     {
         ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps))
                 .redirectErrorStream(true);
@@ -134,7 +118,6 @@ public class JVMLauncherImpl<R>
         builder.environment().putAll(environment);
 
         Process process = builder.start();
-        processAtomic.set(process);
 
         //send task to child vm
         try (OutputStream os = process.getOutputStream()) {
@@ -143,33 +126,18 @@ public class JVMLauncherImpl<R>
         }
         catch (IOException ignored) { //child not running
         }
-        try (ChildVMChannelInputStream reader = new ChildVMChannelInputStream(process.getInputStream())) {
-            reader.checkVMHeader();
+        ChildVMChannelInputStream reader = new ChildVMChannelInputStream(process.getInputStream());
+        reader.checkVMHeader();
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                consoleHandler.accept(line);
+        VmPromise<byte[]> promise = new VmPromise.VmPromiseImpl(process, reader, consoleHandler);
+        return promise.map(bytes -> {
+            try {
+                return Serializables.byteToObject(bytes, classLoader);
             }
-            byte[] bytes = reader.readResult();
-            if (reader.isSuccess()) {
-                R result = Serializables.byteToObject(bytes, classLoader);
-                process.destroy();
-                return result;
+            catch (IOException | ClassNotFoundException e) {
+                throw new JVMException("child result decoder failed", e);
             }
-            else {
-                throw new JVMException(new String(bytes, UTF_8));
-            }
-        }
-        catch (EOFException e) {
-            if (process.isAlive()) {
-                process.destroy();
-                process.waitFor();
-            }
-            throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
-        }
-        catch (IOException e) {
-            throw new JVMException("child jvm exec failed", e);
-        }
+        });
     }
 
     private String getUserAddClasspath()
@@ -179,8 +147,7 @@ public class JVMLauncherImpl<R>
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    protected List<String> buildMainArg(List<String> otherVmOps)
-            throws URISyntaxException
+    private List<String> buildMainArg(List<String> otherVmOps)
     {
         List<String> ops = new ArrayList<>();
         ops.add(javaCmd.toString());
@@ -202,7 +169,7 @@ public class JVMLauncherImpl<R>
             url = requireNonNull(ClassLoader.getSystemClassLoader().getResource("./agent.jar"), "not found resource ./agent.jar");
         }
         if (Strings.isNotBlank(taskProcessName)) {
-            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.toURI()).getPath(), JVMLauncher.class.getName(), taskProcessName));
+            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.getPath()).getPath(), JVMLauncher.class.getName(), taskProcessName));
             ops.add(JVMLauncher.class.getPackage().getName() + "." + taskProcessName);
         }
         else {

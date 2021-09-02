@@ -34,11 +34,11 @@ public class VmFutureTest
 {
     @Test
     public void taskErrorTest()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole(System.out::println)
                 .task(() -> {
                     throw new IOException("form jvm task test");
                 }).build();
@@ -54,13 +54,13 @@ public class VmFutureTest
 
     @Test
     public void taskErrorExitTest()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         Random random = new Random();
         int exitCode = random.nextInt(255);
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
-                .setConsole((msg) -> System.out.print(msg))
+                .setConsole(System.out::println)
                 .task(() -> {
                     System.exit(exitCode);
                     return "done";
@@ -79,15 +79,16 @@ public class VmFutureTest
     {
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole(System.out::println)
                 .task(() -> {
                     LockSupport.park();
                     return "done";
                 })
                 .build();
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        try (Closeables<VmFuture<String>> vmFuture = Closeables.autoClose(launcher.startAsync(executor), VmFuture::cancel)) {
-            vmFuture.get().get(100, TimeUnit.MILLISECONDS);
+        VmPromise<String> vmPromise = launcher.start();
+        try (Closeables<VmPromise<String>> ignored = Closeables.autoClose(vmPromise, VmPromise::cancel)) {
+            executor.submit(vmPromise::call).get(100, TimeUnit.MILLISECONDS);
             Assert.fail();
         }
         catch (Exception e) {
@@ -109,12 +110,13 @@ public class VmFutureTest
                     return "done";
                 })
                 .build();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        try (Closeables<VmFuture<String>> vmFuture = Closeables.autoClose(launcher.startAsync(executor), VmFuture::cancel)) {
-            Assert.assertEquals(vmFuture.get().get(), "done");
+
+        VmPromise<String> promise = launcher.start();
+        try {
+            Assert.assertEquals(promise.call(), "done");
         }
         finally {
-            executor.shutdown();
+            promise.cancel();
         }
     }
 
@@ -128,12 +130,13 @@ public class VmFutureTest
                     LockSupport.park();
                     return "done";
                 }).build();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        try (Closeables<VmFuture<String>> vmFuture = Closeables.autoClose(launcher.startAsync(executor), VmFuture::cancel)) {
-            Assert.assertTrue(vmFuture.get().isRunning());
+
+        VmPromise<String> promise = launcher.start();
+        try {
+            Assert.assertFalse(promise.isDone());
         }
         finally {
-            executor.shutdown();
+            promise.cancel();
         }
     }
 
@@ -142,17 +145,17 @@ public class VmFutureTest
     {
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
-                .setConsole((msg) -> System.out.println(msg))
+                .setConsole(System.out::println)
                 .task(() -> {
                     LockSupport.park();
                     return "done";
                 }).build();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        try (Closeables<VmFuture<String>> vmFuture = Closeables.autoClose(launcher.startAsync(executor), VmFuture::cancel)) {
-            Assert.assertTrue(vmFuture.get().getPid() > 0);
+        VmPromise<String> promise = launcher.start();
+        try {
+            Assert.assertTrue(promise.pid() > 0);
         }
         finally {
-            executor.shutdown();
+            promise.cancel();
         }
     }
 

@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,23 +26,21 @@ import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.IntStream;
 
 public class JVMLaunchersTest
 {
     @Test
     public void returnValueTest()
-            throws Exception
+            throws InterruptedException
     {
         JVMLauncher<byte[]> launcher = JVMLaunchers.<byte[]>newJvm()
                 .task(() -> {
@@ -52,20 +51,21 @@ public class JVMLaunchersTest
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
-                .setConsole(msg -> System.out.print(msg))
+                .setConsole(System.out::println)
                 .build();
 
         byte[] bytes = new byte[85000];
         Arrays.fill(bytes, (byte) 1);
-        IntStream.range(0, 3).forEach(i -> {
+        for (int i = 0; i < 3; i++) {
             System.out.println("************ check" + i);
             byte[] vmLoadBytes = launcher.startAndGet();
             Assert.assertArrayEquals(vmLoadBytes, bytes);
-        });
+        }
     }
 
     @Test
     public void setJavaHomeTest()
+            throws InterruptedException
     {
         JVMLauncher<List<String>> launcher = JVMLaunchers.<List<String>>newJvm()
                 .javaHome(System.getProperty("java.home"))
@@ -77,7 +77,7 @@ public class JVMLaunchersTest
                 .addUserJars(new URL[0])
                 .setXms("5m")
                 .addVmOps("-Xmx5m")
-                .setConsole(msg -> System.out.print(msg))
+                .setConsole(System.out::println)
                 .build();
 
         List<String> vmResult = launcher.startAndGet();
@@ -98,13 +98,70 @@ public class JVMLaunchersTest
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
-                .setConsole(msg -> System.out.println(msg))
+                .setConsole(System.out::println)
                 .build();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        VmFuture<Integer> out = launcher.startAsync(executor);
-        System.out.println("pid is " + out.getPid());
-        Assert.assertEquals(out.get().intValue(), 1);
-        executor.shutdown();
+
+        VmPromise<Integer> out = launcher.start();
+        System.out.println("pid is " + out.pid());
+        Assert.assertEquals(out.call().intValue(), 1);
+    }
+
+    @Test
+    public void java11WarringTest()
+            throws InterruptedException
+    {
+        if (!(Platform.getJavaVersion() > 8 && Platform.getJavaVersion() < 16)) {
+            return;
+        }
+        List<String> childVmLogs = new ArrayList<>();
+        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+                .task(() -> {
+                    System.out.println("System.out: child jvm is running.");
+                    System.err.println("System.err: child jvm is running.");
+                    StackTraceElement element = Threads.getJvmMainClass();
+                    Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x -> System.out.println(x));
+                    System.out.println(element);
+                    return element.getClassName();
+                })
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(line -> {
+                    childVmLogs.add(line);
+                    System.out.println(line);
+                }).build();
+        String rs = launcher.startAndGet();
+        Assert.assertEquals(JVMLauncher.class.getName(), rs);
+        Assert.assertTrue(childVmLogs.contains("WARNING: An illegal reflective access operation has occurred"));
+        Assert.assertTrue(childVmLogs.contains("WARNING: Please consider reporting this to the maintainers of com.github.harbby.gadtry.base.Threads"));
+    }
+
+    @Test
+    public void java16PlusErrorTest()
+            throws InterruptedException
+    {
+        if (Platform.getJavaVersion() < 16) {
+            return;
+        }
+        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+                .task(() -> {
+                    System.out.println("System.out: child jvm is running.");
+                    System.err.println("System.err: child jvm is running.");
+                    StackTraceElement element = Threads.getJvmMainClass();
+                    return element.getClassName();
+                })
+                .setXms("16m")
+                .setXmx("16m")
+                .build();
+
+        try {
+            launcher.startAndGet();
+            Assert.fail();
+        }
+        catch (JVMException e) {
+            Assert.assertTrue(e.getMessage().contains("java.lang.reflect.InaccessibleObjectException: Unable to" +
+                    " make private static native java.lang.Thread[] java.lang.Thread.getThreads()" +
+                    " accessible: module java.base does not \"opens java.lang\" to unnamed module"));
+        }
     }
 
     @Test
@@ -151,16 +208,12 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .build();
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            launcher.startAsync(executor).get();
+            launcher.start().call();
             Assert.fail();
         }
         catch (JVMException e) {
             Assert.assertTrue(e.getMessage().contains(f));
-        }
-        finally {
-            executor.shutdown();
         }
     }
 
@@ -180,23 +233,19 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .notDependParentJvmClassPath()
                 .build();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            launcher.startAsync(executor).get();
+            launcher.start().call();
             Assert.fail();
         }
         catch (JVMException e) {
             Assert.assertTrue(e.getMessage().contains(JVMLauncher.class.getName()));
             e.printStackTrace();
         }
-        finally {
-            executor.shutdown();
-        }
     }
 
     @Test
     public void testForkJvmEnv()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         String envValue = "value_007";
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
@@ -213,7 +262,7 @@ public class JVMLaunchersTest
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
-                .setConsole(msg -> System.out.println(msg))
+                .setConsole(System.out::println)
                 .build();
 
         String out = launcher.startAndGet();
@@ -239,7 +288,14 @@ public class JVMLaunchersTest
         // 使用如下方式 对actor模型 进行测试
         final Object lock = new Object();
         synchronized (lock) {
-            CompletableFuture.runAsync(launcher::startAndGet).whenComplete((value, error) -> {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    launcher.startAndGet();
+                }
+                catch (InterruptedException e) {
+                    Throwables.throwsThrowable(e);
+                }
+            }).whenComplete((value, error) -> {
                 Assert.assertTrue(error.getMessage().contains(f));
                 error.printStackTrace();
                 synchronized (lock) {
@@ -270,14 +326,20 @@ public class JVMLaunchersTest
         Condition condition = lock.newCondition();
         lock.lock();
 
-        CompletableFuture.supplyAsync(launcher::startAndGet)
-                .whenComplete((value, error) -> {
-                    Assert.assertEquals(2019, value.intValue());
-                    System.out.println(value);
-                    lock.lock();
-                    condition.signal();  //唤醒睡眠的主线程
-                    lock.unlock();
-                });
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return launcher.startAndGet();
+            }
+            catch (InterruptedException e) {
+                throw Throwables.throwsThrowable(e);
+            }
+        }).whenComplete((value, error) -> {
+            Assert.assertEquals(2019, value.intValue());
+            System.out.println(value);
+            lock.lock();
+            condition.signal();  //唤醒睡眠的主线程
+            lock.unlock();
+        });
 
         // LockSupport.class
         condition.await(600, TimeUnit.SECONDS); //睡眠进入等待池并让出锁
@@ -286,7 +348,7 @@ public class JVMLaunchersTest
 
     @Test
     public void workDirTest()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         File dir = new File("/tmp");
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
