@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.compiler;
 
-import com.github.harbby.gadtry.base.MoreObjects;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import org.junit.Test;

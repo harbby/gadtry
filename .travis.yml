@@ -16,7 +16,7 @@ matrix:
     - jdk: openjdk17
       dist: focal
       env:
-        - jdk=java16
+        - jdk=java17
         - JAVA_OPTS='--add-opens java.prefs/java.util.prefs=ALL-UNNAMED'
 
 sudo: required
