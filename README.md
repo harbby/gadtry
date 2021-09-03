@@ -1,4 +1,4 @@
-# Gadtry [![Build Status](https://api.travis-ci.com/harbby/gadtry.svg?branch=master)](https://travis-ci.com/harbby/gadtry) [![codecov](https://codecov.io/gh/harbby/gadtry/branch/master/graph/badge.svg)](https://codecov.io/gh/harbby/gadtry) [![license](https://img.shields.io/badge/license-apache_v2-groon.svg)]() [![language](https://img.shields.io/badge/language-java_8_11_17-green.svg)]()
+# Gadtry [![Build Status](https://api.travis-ci.com/harbby/gadtry.svg?branch=master)](https://travis-ci.com/harbby/gadtry) [![codecov](https://codecov.io/gh/harbby/gadtry/branch/master/graph/badge.svg)](https://codecov.io/gh/harbby/gadtry) [![license](https://img.shields.io/badge/license-apache_v2-groon.svg)]() [![language](https://img.shields.io/badge/language-java_8_11_17-green.svg)]() [![os](https://img.shields.io/badge/os-Linux_Windows_macOS-blue.svg)]()
 
 
 Welcome to gadtry !
@@ -12,7 +12,7 @@ Contains: ioc. aop. mock. exec. graph ...
 <dependency>
     <groupId>com.github.harbby</groupId>
     <artifactId>gadtry</artifactId>
-    <version>1.9.2</version>
+    <version>1.9.6</version>
 </dependency>
 ```
 
