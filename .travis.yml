@@ -13,7 +13,7 @@ matrix:
     - jdk: openjdk11
       env: jdk=java11
       dist: focal
-    - jdk: openjdk16
+    - jdk: openjdk17
       dist: focal
       env:
         - jdk=java16

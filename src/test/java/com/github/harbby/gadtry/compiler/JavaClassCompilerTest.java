@@ -43,10 +43,6 @@ public class JavaClassCompilerTest
                 "        @Override\n" +
                 "        public void free(sun.nio.ch.DirectBuffer buffer)\n" +
                 "        {\n" +
-                "            " + MoreObjects.class.getName() + ".checkState(buffer.cleaner() != null, \"LEAK: directBuffer was not set Cleaner\");\n" +
-                "            if (" + Platform.class.getName() + ".getJavaVersion() > 8) {\n" +
-                "                " + Platform.class.getName() + ".openJavaModuleToUnnamedModule(buffer.cleaner().getClass(), this.getClass());\n" +
-                "            }\n" +
                 "            buffer.cleaner().clean();\n" +
                 "        }\n" +
                 "    }";
