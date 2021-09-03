@@ -18,10 +18,6 @@ package com.github.harbby.gadtry.base;
 import sun.nio.ch.DirectBuffer;
 
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 class PlatformBaseImpl
         implements Platform.PlatformBase
@@ -42,47 +38,6 @@ class PlatformBaseImpl
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodHandles.Lookup prvlookup = MethodHandles.privateLookupIn(buddyClass, lookup);
         return prvlookup.defineClass(classBytes);
-    }
-
-    /**
-     * 绕开jdk9模块化引入的访问限制:
-     * 1. 非法反射访问警告消除
-     * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过这个方法我们可以访问任何jdk限制的内部代码
-     * 注: java16开始，你需要提供额外的java运行时参数: --add-opens=java.base/java.lang=ALL-UNNAMED 来使用该方法提供的功能
-     * <p>
-     * This method is available in Java 9 or later
-     *
-     * @param hostClass          action将获取hostClass的内部实现反射访问权限
-     * @param unnamedModuleClass 期望获取host访问权限的类
-     * @throws java.lang.NoClassDefFoundError user dep class
-     * @since jdk9+
-     */
-    @Override
-    public void openJavaModuleToUnnamedModule(Class<?> hostClass, Class<?> unnamedModuleClass)
-            throws PlatFormUnsupportedOperation
-    {
-        boolean isUnnamedModule = !unnamedModuleClass.getModule().isNamed();
-        checkState(isUnnamedModule, "targetClass " + unnamedModuleClass + " not is UNNAMED module");
-        //----------------------
-        Module hostModule = hostClass.getModule();
-        String hostPackageName = hostClass.getPackageName();
-        Module unnamedModule = unnamedModuleClass.getModule();
-
-        if (hostModule.isOpen(hostPackageName, unnamedModule)) {
-            hostModule.addOpens(hostPackageName, unnamedModule);
-        }
-        else {
-            try {
-                Module.class.getModule().addOpens(Module.class.getPackageName(), Platform.class.getModule());
-                Method method = Module.class.getDeclaredMethod("implAddExportsOrOpens", String.class, Module.class, boolean.class, boolean.class);
-                method.setAccessible(true);
-                //--add-opens=java.base/$hostPackageName=ALL-UNNAMED
-                method.invoke(hostModule, hostPackageName, unnamedModule, /*open*/true, /*syncVM*/true);
-            }
-            catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                throw new PlatFormUnsupportedOperation(e);
-            }
-        }
     }
 
     @Override
@@ -114,5 +69,12 @@ class PlatformBaseImpl
     public long getProcessPid(Process process)
     {
         return process.pid();
+    }
+
+    @Override
+    public long getCurrentProcessId()
+    {
+        java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
+        return runtime.getPid();
     }
 }

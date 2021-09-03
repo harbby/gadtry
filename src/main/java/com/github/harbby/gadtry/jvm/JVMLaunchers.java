@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.Platform;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -46,13 +48,24 @@ public class JVMLaunchers
         private ClassLoader classLoader;
         private File workDir;
         private String taskProcessName;
-        private File javaCmd = new File(System.getProperty("java.home"), "bin/java");
+        private File javaCmd = getJavaCmd(System.getProperty("java.home"));
+
+        private static File getJavaCmd(String javaHome)
+        {
+            File file;
+            if (Platform.isWin()) {
+                file = new File(javaHome, "bin/java.exe");
+            }
+            else {
+                file = new File(javaHome, "bin/java");
+            }
+            return file;
+        }
 
         public VmBuilder<T> javaHome(String javaHome)
         {
-            File file = new File(javaHome, "bin/java");
-            checkState(file.exists() && file.isFile(), "not found java cmd");
-            this.javaCmd = file;
+            this.javaCmd = getJavaCmd(javaHome);
+            checkState(javaCmd.exists() && javaCmd.isFile(), "not found java cmd " + javaCmd);
             return this;
         }
 

@@ -22,6 +22,7 @@ import sun.reflect.ReflectionFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -89,9 +90,6 @@ public final class Platform
         Class<?> defineClass(Class<?> buddyClass, byte[] classBytes)
                 throws IllegalAccessException;
 
-        void openJavaModuleToUnnamedModule(Class<?> hostClass, Class<?> unnamedModuleClass)
-                throws PlatFormUnsupportedOperation;
-
         void freeDirectBuffer(DirectBuffer buffer);
 
         Object createCleaner(Object ob, Runnable thunk);
@@ -101,6 +99,8 @@ public final class Platform
         ClassLoader getBootstrapClassLoader();
 
         long getProcessPid(Process process);
+
+        long getCurrentProcessId();
     }
 
     public static byte[] readClassByteCode(Class<?> aClass)
@@ -164,7 +164,7 @@ public final class Platform
 
     public static void registerForClean(AutoCloseable closeable)
     {
-        createCleaner(closeable, (Runnable) () -> {
+        createCleaner(closeable, () -> {
             try {
                 closeable.close();
             }
@@ -306,12 +306,25 @@ public final class Platform
         }
     }
 
+    public static long getCurrentProcessId()
+    {
+        if (Platform.getJavaVersion() > 8) { //>= java9
+            return platformBase.get().getCurrentProcessId();
+        }
+        if (Platform.isWin() || Platform.isLinux() || Platform.isMac()) {
+            return Long.parseLong(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+        }
+        else {
+            throw new PlatFormUnsupportedOperation("java" + getJavaVersion() + " get pid does not support current system " + osName());
+        }
+    }
+
     public static long getProcessPid(Process process)
     {
         if (Platform.getJavaVersion() > 8) { //>= java9
             return platformBase.get().getProcessPid(process);
         }
-        if (Platform.isLinux()) {
+        if (Platform.isLinux() || Platform.isMac()) {
             try {
                 Field field = process.getClass().getDeclaredField("pid");
                 field.setAccessible(true);
@@ -321,7 +334,22 @@ public final class Platform
                 throw new PlatFormUnsupportedOperation(e);
             }
         }
-        throw new UnsupportedOperationException("only support for UNIX and Linux systems pid");
+        else if (Platform.isWin()) {
+            try {
+                Field field = process.getClass().getDeclaredField("handle");
+                field.setAccessible(true);
+
+                com.sun.jna.platform.win32.WinNT.HANDLE handle = new com.sun.jna.platform.win32.WinNT.HANDLE();
+                handle.setPointer(com.sun.jna.Pointer.createConstant((long) field.get(process)));
+                return com.sun.jna.platform.win32.Kernel32.INSTANCE.GetProcessId(handle);
+            }
+            catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new PlatFormUnsupportedOperation(e);
+            }
+        }
+        else {
+            throw new UnsupportedOperationException("get pid when java.version < 9 only support UNIX Linux windows macOS");
+        }
     }
 
     /**
@@ -375,26 +403,6 @@ public final class Platform
     {
         checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
         return platformBase.get().defineClass(buddyClass, classBytes);
-    }
-
-    /**
-     * 绕开jdk9模块化引入的访问限制:
-     * 1. 非法反射访问警告消除
-     * 2. --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED 型访问限制消除， 现在通过这个方法我们可以访问任何jdk限制的内部代码
-     * 注: java16开始，你需要提供额外的java运行时参数: --add-opens=java.base/java.lang=ALL-UNNAMED 来使用该方法提供的功能
-     * <p>
-     * This method is available in Java 9 or later
-     *
-     * @param hostClass   action将获取hostClass的内部实现反射访问权限
-     * @param targetClass 希望获取权限的类
-     * @throws java.lang.NoClassDefFoundError user dep class
-     * @since jdk9+
-     */
-    public static void openJavaModuleToUnnamedModule(Class<?> hostClass, Class<?> targetClass)
-            throws PlatFormUnsupportedOperation
-    {
-        checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
-        platformBase.get().openJavaModuleToUnnamedModule(hostClass, targetClass);
     }
 
     public static long reallocateMemory(long address, long oldSize, long newSize)

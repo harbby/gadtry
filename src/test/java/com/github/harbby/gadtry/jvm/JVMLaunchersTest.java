@@ -89,11 +89,11 @@ public class JVMLaunchersTest
     public void getForkJvmPidTest()
             throws InterruptedException
     {
-        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+        JVMLauncher<Long> launcher = JVMLaunchers.<Long>newJvm()
                 .task(() -> {
                     //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
-                    return 1;
+                    return Platform.getCurrentProcessId();
                 })
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
@@ -101,9 +101,9 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .build();
 
-        VmPromise<Integer> out = launcher.start();
+        VmPromise<Long> out = launcher.start();
         System.out.println("pid is " + out.pid());
-        Assert.assertEquals(out.call().intValue(), 1);
+        Assert.assertEquals(out.call().longValue(), out.pid());
     }
 
     @Test
@@ -350,7 +350,7 @@ public class JVMLaunchersTest
     public void workDirTest()
             throws JVMException, InterruptedException
     {
-        File dir = new File("/tmp");
+        File dir = new File(System.getProperty("java.io.tmpdir"));
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
@@ -363,6 +363,6 @@ public class JVMLaunchersTest
             return System.getProperty("user.dir");
         });
 
-        Assert.assertArrayEquals(dir.list(), new File(jvmWorkDir).list());
+        Assert.assertEquals(dir, new File(jvmWorkDir));
     }
 }
