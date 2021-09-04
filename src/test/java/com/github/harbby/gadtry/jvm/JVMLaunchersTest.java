@@ -86,6 +86,33 @@ public class JVMLaunchersTest
     }
 
     @Test
+    public void hookTest()
+            throws InterruptedException
+    {
+        List<String> logs = new ArrayList<>();
+        String hookLog = "child jvm shutdownHook test";
+        JVMLauncher<Long> launcher = JVMLaunchers.<Long>newJvm()
+                .task(() -> {
+                    //TimeUnit.SECONDS.sleep(1000000);
+                    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                        System.out.println(hookLog);
+                    }));
+                    return 1L;
+                })
+                .addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(line -> {
+                    logs.add(line);
+                    System.out.println(line);
+                }).build();
+
+        long out = launcher.startAndGet();
+        Assert.assertEquals(out, 1L);
+        Assert.assertEquals(logs, Collections.singletonList(hookLog));
+    }
+
+    @Test
     public void getForkJvmPidTest()
             throws InterruptedException
     {

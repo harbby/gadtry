@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.jvm;
 
 import java.io.PrintStream;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.jvm.JVMLauncherImpl.VM_HEADER;
 
 public class ChildVMSystemOutputStream
@@ -40,10 +41,10 @@ public class ChildVMSystemOutputStream
     @Override
     public synchronized void write(int b)
     {
-        if (tryClose) {
-            return;
+        if (!tryClose) {
+            //write hook msg
+            this.writeInt(1);
         }
-        this.writeInt(1);
         out.write(b);
     }
 
@@ -56,10 +57,10 @@ public class ChildVMSystemOutputStream
     @Override
     public synchronized void write(byte[] buf, int off, int len)
     {
-        if (tryClose) {
-            return;
+        if (!tryClose) {
+            //write hook msg
+            this.writeInt(len - off);
         }
-        this.writeInt(len - off);
         out.write(buf, off, len);
         out.flush();
     }
@@ -72,8 +73,9 @@ public class ChildVMSystemOutputStream
         out.write((v) & 0xFF);
     }
 
-    public synchronized void release(boolean failed, byte[] resultBytes)
+    synchronized void release(boolean failed, byte[] resultBytes)
     {
+        checkState(!tryClose, "channel is closed?");
         tryClose = true;
 
         this.writeInt(failed ? -2 : -1);

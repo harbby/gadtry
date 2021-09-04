@@ -68,7 +68,7 @@ public class ChildVMChannelInputStream
             throws IOException
     {
         if (isDone) {
-            return -1;
+            return in.read();
         }
         if (index < length) {
             index++;
@@ -85,13 +85,13 @@ public class ChildVMChannelInputStream
             this.isSuccess = true;
             int len = this.readInt();
             this.result = IOUtils.readLengthBytes(in, len);
-            return -1;
+            return in.read();
         }
         else if (this.length == -2) {
             int len = this.readInt();
             this.result = IOUtils.readLengthBytes(in, len);
             this.isSuccess = false;
-            return -1;
+            return in.read();
         }
         else {
             throw new UnsupportedEncodingException("Protocol error " + this.length);

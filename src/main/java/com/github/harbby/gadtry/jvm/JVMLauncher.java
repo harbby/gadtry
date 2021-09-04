@@ -85,5 +85,8 @@ public interface JVMLauncher<R>
             byte[] err = Throwables.getStackTraceAsString(e).getBytes(StandardCharsets.UTF_8);
             outputStream.release(true, err);
         }
+        finally {
+            System.exit(0);
+        }
     }
 }
