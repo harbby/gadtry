@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.base.Closeables;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -27,7 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 public class VmFutureTest
@@ -157,59 +155,5 @@ public class VmFutureTest
         finally {
             promise.cancel();
         }
-    }
-
-    @Test
-    public void getTestGiveDone()
-    {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        AtomicReference<Process> processAtomic = new AtomicReference<>();
-        try {
-            new VmFuture<>(executor, processAtomic, () -> "done");
-            Assert.fail();
-        }
-        catch (Exception e) {
-            Assert.assertEquals(e.getMessage(), "Async failed! future.isDone() result:done");
-        }
-        finally {
-            executor.shutdown();
-        }
-    }
-
-    @Test
-    public void getTestGiveRuntimeException()
-            throws InterruptedException
-    {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        AtomicReference<Process> processAtomic = new AtomicReference<>();
-        try {
-            new VmFuture<>(executor, processAtomic, () -> {
-                throw new RuntimeException("Async failed! future.isDone() result:done");
-            });
-            Assert.fail();
-        }
-        catch (JVMException e) {
-            Assert.assertEquals(e.getMessage(), "java.lang.RuntimeException: Async failed! future.isDone() result:done");
-        }
-        finally {
-            executor.shutdown();
-        }
-    }
-
-    @Test
-    public void getTest()
-            throws InterruptedException, IOException, TimeoutException, ExecutionException
-    {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
-        Process process = Runtime.getRuntime().exec(java.toString() + " --version");
-        AtomicReference<Process> processAtomic = new AtomicReference<>(process);
-
-        VmFuture<String> vmFuture = new VmFuture<>(executor, processAtomic, () -> "done");
-        String result = vmFuture.get(100, TimeUnit.MILLISECONDS);
-        executor.shutdown();
-
-        Assert.assertEquals(result, "done");
-        Assert.assertFalse(vmFuture.isRunning());
     }
 }
