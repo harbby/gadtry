@@ -15,11 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.exception.Runnable;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.concurrent.Callable;
 
 public class Throwables
 {
@@ -75,16 +72,6 @@ public class Throwables
             advanceSlowPointer = !advanceSlowPointer; // only advance every other iteration
         }
         return throwable;
-    }
-
-    public static void noCatch(Runnable<Exception> runnable)
-    {
-        Try.noCatch(runnable);
-    }
-
-    public static <T> T noCatch(Callable<T> callable)
-    {
-        return Try.noCatch(callable);
     }
 
     @SuppressWarnings("unchecked")

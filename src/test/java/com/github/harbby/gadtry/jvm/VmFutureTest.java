@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.Closeables;
+import com.github.harbby.gadtry.function.AutoClose;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -85,7 +85,7 @@ public class VmFutureTest
                 .build();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         VmPromise<String> vmPromise = launcher.start();
-        try (Closeables<VmPromise<String>> ignored = Closeables.autoClose(vmPromise, VmPromise::cancel)) {
+        try (AutoClose ignored = vmPromise::cancel) {
             executor.submit(vmPromise::call).get(100, TimeUnit.MILLISECONDS);
             Assert.fail();
         }
