@@ -46,6 +46,13 @@ public class JavaTypesTest
     }
 
     @Test
+    public void getClassSignatureTest()
+    {
+        String str = PRIMITIVE_TYPES.stream().map(JavaTypes::getClassSignature).collect(Collectors.joining());
+        Assert.assertEquals(str, "ISJFDZBCV");
+    }
+
+    @Test
     public void make()
             throws IOException
     {
@@ -84,12 +91,21 @@ public class JavaTypesTest
     }
 
     @Test
-    public void makeArrayType()
+    public void makeArrayTypeTest()
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
         type = JavaTypes.makeArrayType(type);
         Assert.assertEquals(type.getTypeName(), "java.util.List<java.lang.String>[]");
         Assert.assertEquals(JavaTypes.typeToClass(type), List[].class);
+
+        Assert.assertEquals(JavaTypes.makeArrayType(String.class).getTypeName(), "java.lang.String[]");
+
+        try {
+            JavaTypes.makeArrayType(int.class);
+            Assert.fail();
+        }
+        catch (IllegalStateException ignored) {
+        }
     }
 
     @Test
@@ -144,6 +160,24 @@ public class JavaTypesTest
     }
 
     @Test
+    public void getPrimitiveClassTest()
+    {
+        List<Class<?>> wrappers = PRIMITIVE_TYPES.stream()
+                .map(JavaTypes::getWrapperClass)
+                .collect(Collectors.toList());
+        List<Class<?>> primitiveTypes = wrappers.stream().map(JavaTypes::getPrimitiveClass)
+                .collect(Collectors.toList());
+        Assert.assertEquals(primitiveTypes, PRIMITIVE_TYPES);
+
+        try {
+            JavaTypes.getPrimitiveClass(Object.class);
+            Assert.fail();
+        }
+        catch (UnsupportedOperationException ignored) {
+        }
+    }
+
+    @Test
     public void getWrapperClass()
     {
         List<Class<?>> pack = PRIMITIVE_TYPES.stream()
@@ -180,6 +214,13 @@ public class JavaTypesTest
     {
         List<Type> types = JavaTypes.getClassGenericTypes(GenericClassTest.class);
         Assert.assertEquals(types.get(1), JavaTypes.make(Function1.class, new Type[] {JavaTypes.makeMapType(Map.class, String.class, Integer.class), String.class}, null));
+    }
+
+    @Test
+    public void makeMapTypeTest()
+    {
+        MapType mapType = JavaTypes.makeMapType(Map.class, String.class, Integer.class);
+        Assert.assertEquals(mapType.getTypeName(), "java.util.Map<java.lang.String, java.lang.Integer>");
     }
 
     @Test

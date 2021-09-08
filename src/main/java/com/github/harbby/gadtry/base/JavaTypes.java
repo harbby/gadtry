@@ -69,32 +69,30 @@ public class JavaTypes
             Type ownerType)
     {
         for (Type type : actualTypeArguments) {
-            if (type instanceof Class<?>) {
-                checkState(!((Class) type).isPrimitive(), "Java Generic Type not support PrimitiveType");
-            }
+            checkNotPrimitive(type, "Java Generic Type not support PrimitiveType");
         }
-        checkState(!rawType.isPrimitive(), "rawType %s must not PrimitiveType", rawType);
-
+        checkNotPrimitive(rawType, "rawType " + rawType + " must not PrimitiveType");
         return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
                 ownerType);
     }
 
     public static MapType makeMapType(Class<? extends Map> mapClass, Type keyType, Type valueType)
     {
-        if (keyType instanceof Class<?>) {
-            checkState(!((Class<?>) keyType).isPrimitive(), "MapType keyType not support PrimitiveType");
-        }
-        if (valueType instanceof Class) {
-            checkState(!((Class<?>) valueType).isPrimitive(), "MapType valueType not support PrimitiveType");
-        }
+        checkNotPrimitive(keyType, "MapType keyType not support PrimitiveType");
+        checkNotPrimitive(valueType, "MapType valueType not support PrimitiveType");
         return new MapType(mapClass, keyType, valueType);
+    }
+
+    private static void checkNotPrimitive(Type type, String msg)
+    {
+        if (type instanceof Class<?>) {
+            checkState(!((Class<?>) type).isPrimitive(), msg);
+        }
     }
 
     public static ArrayType makeArrayType(Type valueType)
     {
-        if (valueType instanceof Class<?>) {
-            checkState(!((Class<?>) valueType).isPrimitive(), "ArrayType valueType not support PrimitiveType");
-        }
+        checkNotPrimitive(valueType, "ArrayType valueType not support PrimitiveType");
         return new ArrayType(valueType);
     }
 
@@ -121,6 +119,7 @@ public class JavaTypes
 
     /**
      * Checks if a type can be converted to a Class. This is true for ParameterizedType and Class.
+     *
      * @param type java.lang.reflect.Type
      * @return is Class
      */
@@ -182,8 +181,7 @@ public class JavaTypes
             return Void.class;
         }
         else {
-            //checkState(aClass.isPrimitive(), "%s not is Primitive", aClass);
-            throw new UnsupportedOperationException("this " + aClass + " have't support!");
+            throw new UnsupportedOperationException("this " + aClass + " haven't support!");
         }
     }
 
@@ -217,7 +215,7 @@ public class JavaTypes
             return void.class;
         }
         else {
-            throw new UnsupportedOperationException("this " + aClass + " have't support!");
+            throw new UnsupportedOperationException("this " + aClass + " haven't support!");
         }
     }
 
@@ -269,24 +267,17 @@ public class JavaTypes
             return "[" + getClassSignature(type.getComponentType());
         }
         else {
-            checkState(!type.isPrimitive(), "not found primitive type %s", type);
+            checkNotPrimitive(type, "not found primitive type " + type);
             return "L" + type.getName().replaceAll("\\.", "/") + ";";
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <R> R getReflectMethod(Class<?> aClass, String name, Object ins, Object... value)
-            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException
-    {
-        Method method = aClass.getDeclaredMethod(name);
-        method.setAccessible(true);
-        return (R) method.invoke(ins, value);
     }
 
     public static String getClassGenericString(Class<?> javaClass)
     {
         try {
-            return getReflectMethod(Class.class, "getGenericSignature0", javaClass);
+            Method method = Class.class.getDeclaredMethod("getGenericSignature0");
+            method.setAccessible(true);
+            return (String) method.invoke(javaClass);
         }
         catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new UnsupportedOperationException("jdk not support Class.class.getGenericSignature0()");
@@ -307,7 +298,7 @@ public class JavaTypes
     @SuppressWarnings("unchecked")
     public static <T> Class<T> classTag(Class<?> runtimeClass)
     {
-        checkState(!runtimeClass.isPrimitive(), "%s is isPrimitive", runtimeClass);
+        checkNotPrimitive(runtimeClass, runtimeClass + " isPrimitive");
         return (Class<T>) runtimeClass;
     }
 

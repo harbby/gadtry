@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -62,6 +63,14 @@ public class MoreObjects
             catch (IllegalAccessException e) {
                 throw Throwables.throwsThrowable(e);
             }
+        }
+    }
+
+    public static <E extends Throwable> void checkState(boolean access, Function<String, E> consumer, String msg, Object... objs)
+            throws E
+    {
+        if (!access) {
+            throw consumer.apply(String.format(msg, objs));
         }
     }
 

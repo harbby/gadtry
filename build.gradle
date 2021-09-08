@@ -105,6 +105,15 @@ jacocoTestReport {
     xml.enabled true
     html.enabled true
   }
+  afterEvaluate {
+    classDirectories.setFrom(files(classDirectories.files.collect {
+      fileTree(dir: it,
+              exclude: [
+                      "com/github/harbby/gadtry/spi/ServiceLoad.class",
+                      "com/github/harbby.gadtry/base/JavaParameterizedTypeImpl.class"
+              ])
+    }))
+  }
 }
 check.dependsOn jacocoTestReport
 
