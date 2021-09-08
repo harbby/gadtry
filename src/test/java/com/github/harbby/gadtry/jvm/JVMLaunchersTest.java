@@ -378,7 +378,7 @@ public class JVMLaunchersTest
             throws JVMException, InterruptedException
     {
         File dir = new File(System.getProperty("java.io.tmpdir"));
-        JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
+        JVMLauncher<File> launcher = JVMLaunchers.<File>newJvm()
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
@@ -386,10 +386,14 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .build();
 
-        String jvmWorkDir = launcher.startAndGet(() -> {
-            return System.getProperty("user.dir");
+        File jvmWorkDir = launcher.startAndGet(() -> {
+            return new File(System.getProperty("user.dir"));
         });
-
-        Assert.assertEquals(dir, new File(jvmWorkDir));
+        if (Platform.isMac()) {
+            Assert.assertEquals(new File("/private", dir.getPath()), jvmWorkDir);
+        }
+        else {
+            Assert.assertEquals(dir, jvmWorkDir);
+        }
     }
 }

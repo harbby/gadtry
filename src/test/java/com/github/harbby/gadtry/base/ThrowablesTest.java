@@ -24,8 +24,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 
-import static com.github.harbby.gadtry.base.Throwables.noCatch;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
+import static com.github.harbby.gadtry.base.Try.noCatch;
 
 public class ThrowablesTest
 {

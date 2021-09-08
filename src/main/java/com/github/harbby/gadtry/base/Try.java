@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
+import com.github.harbby.gadtry.function.AutoClose;
 import com.github.harbby.gadtry.function.exception.Runnable;
 import com.github.harbby.gadtry.function.exception.Supplier;
 
@@ -60,6 +61,13 @@ public class Try
         catch (Exception e) {
             throw throwsThrowable(e);
         }
+    }
+
+    public static AutoClose openThreadContextClassLoader(ClassLoader newThreadContextClassLoader)
+    {
+        final ClassLoader originalThreadContextClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(newThreadContextClassLoader);
+        return () -> Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
     }
 
     public static class OfTryCatcher

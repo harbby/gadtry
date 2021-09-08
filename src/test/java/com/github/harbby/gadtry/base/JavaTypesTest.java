@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
 import static com.github.harbby.gadtry.base.JavaTypes.getMethodSignature;
-import static com.github.harbby.gadtry.base.Throwables.noCatch;
+import static com.github.harbby.gadtry.base.Try.noCatch;
 
 public class JavaTypesTest
 {

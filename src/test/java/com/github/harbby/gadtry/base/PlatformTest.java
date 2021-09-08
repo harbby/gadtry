@@ -52,8 +52,11 @@ public class PlatformTest
         long address = unsafe.allocateMemory(1024);
         long newAddress = Platform.reallocateMemory(address, 1024, 2048);
 
-        try (Closeables<Long> closeables = Closeables.autoClose(newAddress, Platform::freeMemory)) {
+        try {
             Assert.assertTrue(newAddress > 0);
+        }
+        finally {
+            Platform.freeMemory(newAddress);
         }
     }
 

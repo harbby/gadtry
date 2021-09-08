@@ -15,9 +15,10 @@
  */
 package com.github.harbby.gadtry.spi;
 
-import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.base.Files;
+import com.github.harbby.gadtry.base.Try;
 import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.function.AutoClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -122,7 +123,7 @@ public final class ModuleLoader<T>
     {
         long loadTime = moduleDir.lastModified();
         URLClassLoader moduleClassLoader = prepareClassLoaderFromDirectory(moduleDir);
-        try (Closeables<?> ignored = Closeables.openThreadContextClassLoader(moduleClassLoader)) {
+        try (AutoClose ignored = Try.openThreadContextClassLoader(moduleClassLoader)) {
             Iterable<T> serviceLoader = loader.apply(pluginClass, moduleClassLoader);
             List<T> plugins = ImmutableList.copy(serviceLoader);
             Module<T> module = new Module.ModuleImpl<>(moduleDir, loadTime, plugins, moduleClassLoader);

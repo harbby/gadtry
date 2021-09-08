@@ -18,6 +18,7 @@ package com.github.harbby.gadtry.aop.codegen;
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.base.Try;
 import com.github.harbby.gadtry.collection.MutableList;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -51,7 +52,6 @@ import static com.github.harbby.gadtry.aop.runtime.ProxyRuntime.METHOD_START;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.MoreObjects.copyWriteObjectState;
 import static com.github.harbby.gadtry.base.Platform.isJdkClass;
-import static com.github.harbby.gadtry.base.Throwables.noCatch;
 
 public class JavassistProxy
         implements Serializable
@@ -307,7 +307,7 @@ public class JavassistProxy
         catch (CannotCompileException e) {
             if (e.getCause() instanceof CompileError) {
                 Lex lex = ((CompileError) e.getCause()).getLex();
-                StringBuffer stringBuffer = noCatch(() -> {
+                StringBuffer stringBuffer = Try.noCatch(() -> {
                     Field field = Lex.class.getDeclaredField("textBuffer");
                     field.setAccessible(true);
                     return (StringBuffer) field.get(lex);
@@ -355,7 +355,7 @@ public class JavassistProxy
         catch (CannotCompileException e) {
             if (e.getCause() instanceof CompileError) {
                 Lex lex = ((CompileError) e.getCause()).getLex();
-                StringBuffer stringBuffer = noCatch(() -> {
+                StringBuffer stringBuffer = Try.noCatch(() -> {
                     Field field = Lex.class.getDeclaredField("textBuffer");
                     field.setAccessible(true);
                     return (StringBuffer) field.get(lex);
