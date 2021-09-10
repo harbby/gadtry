@@ -22,9 +22,11 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -43,7 +45,7 @@ public class IOUtilsTest
 
     @Test
     public void copyByTestGiveFalse()
-            throws IOException, InstantiationException
+            throws IOException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = AopGo.proxy(PrintStream.class)
@@ -67,7 +69,6 @@ public class IOUtilsTest
 
     @Test
     public void copyByTestReturnCheckError()
-            throws InstantiationException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = AopGo.proxy(PrintStream.class)
@@ -85,6 +86,28 @@ public class IOUtilsTest
         }
         catch (IOException e) {
             Assert.assertEquals(e.getMessage(), "Unable to write to output stream.");
+        }
+    }
+
+    @Test
+    public void readAllLinesTest()
+            throws IOException
+    {
+        String line = "hello" + System.lineSeparator();
+        List<String> lines = IOUtils.readAllLines(new ByteArrayInputStream(line.getBytes(UTF_8)));
+        Assert.assertEquals(Arrays.asList(line.trim()), lines);
+    }
+
+    @Test
+    public void readLengthBytesTest()
+            throws IOException
+    {
+        String line = "hello";
+        try {
+            IOUtils.readLengthBytes(new ByteArrayInputStream(line.getBytes(UTF_8)), 10);
+        }
+        catch (EOFException e) {
+            Assert.assertEquals(e.getMessage(), "should be read 10 bytes, but read 5");
         }
     }
 }

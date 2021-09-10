@@ -110,7 +110,8 @@ jacocoTestReport {
       fileTree(dir: it,
               exclude: [
                       "com/github/harbby/gadtry/spi/ServiceLoad.class",
-                      "com/github/harbby.gadtry/base/JavaParameterizedTypeImpl.class"
+                      "com/github/harbby.gadtry/base/JavaParameterizedTypeImpl.class",
+                      "com/github/harbby/gadtry/collection/IntArrayBuffer.class"
               ])
     }))
   }

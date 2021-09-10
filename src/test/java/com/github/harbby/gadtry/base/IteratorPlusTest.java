@@ -15,6 +15,37 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.collection.IteratorPlus;
+import org.junit.Assert;
+import org.junit.Test;
+
 public class IteratorPlusTest
 {
+    @Test
+    public void emptyTest()
+    {
+        Assert.assertTrue(IteratorPlus.empty().isEmpty());
+        Assert.assertFalse(IteratorPlus.empty().toStream().iterator().hasNext());
+    }
+
+    @Test
+    public void allTest()
+    {
+        IteratorPlus<String> source = Iterators.of("1,2,3,4,5");
+        Assert.assertFalse(source.isEmpty());
+        int rs = source.flatMap(x -> Iterators.of(x.split(",")))
+                .map(Integer::parseInt)
+                .filter(x -> x < 5)
+                .limit(3)
+                .autoClose(() -> {})
+                .reduce(Integer::sum)
+                .get();
+        Assert.assertEquals(rs, 6);
+    }
+
+    @Test
+    public void sizeTest()
+    {
+        Assert.assertEquals(Iterators.of(1, 2, 3).size(), 3);
+    }
 }

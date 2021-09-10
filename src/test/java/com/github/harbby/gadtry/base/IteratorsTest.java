@@ -47,7 +47,7 @@ public class IteratorsTest
     {
         String[] number = new String[] {"1", "2", "3"};
 
-        MarkIterator<String> iterator = Iterators.of(number);
+        MarkIterator<String> iterator = (MarkIterator<String>) Iterators.of(number);
         iterator.mark();
         Assert.assertArrayEquals(number, ImmutableList.copy(() -> iterator).toArray(new String[0]));
         checkNoSuchElement(iterator);

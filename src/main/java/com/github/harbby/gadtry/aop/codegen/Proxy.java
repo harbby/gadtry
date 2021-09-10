@@ -70,7 +70,7 @@ public class Proxy
                 field.setAccessible(true);
                 MethodSignature method = null;
                 try {
-                    method = MethodSignature.ofByGadtryAop((Method) field.get(null));
+                    method = MethodSignature.of((Method) field.get(null));
                 }
                 catch (IllegalAccessException e) {
                     throw Throwables.throwsThrowable(e);

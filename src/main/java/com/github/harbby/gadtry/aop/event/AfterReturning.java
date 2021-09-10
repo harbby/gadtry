@@ -17,8 +17,6 @@ package com.github.harbby.gadtry.aop.event;
 
 import com.github.harbby.gadtry.aop.MethodSignature;
 
-import java.lang.reflect.Method;
-
 public interface AfterReturning
         extends Before
 {
@@ -51,10 +49,5 @@ public interface AfterReturning
                 return value;
             }
         };
-    }
-
-    public static AfterReturning of(Method method, Object[] args, Object value)
-    {
-        return of(MethodSignature.ofByGadtryAop(method), args, value);
     }
 }

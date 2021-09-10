@@ -77,4 +77,10 @@ class PlatformBaseImpl
         java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
         return runtime.getPid();
     }
+
+    @Override
+    public boolean isOpen(Class<?> source, Class<?> target)
+    {
+        return source.getModule().isOpen(source.getPackageName(), target.getModule());
+    }
 }

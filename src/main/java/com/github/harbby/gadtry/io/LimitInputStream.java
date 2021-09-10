@@ -38,7 +38,7 @@ public final class LimitInputStream
     public int available()
             throws IOException
     {
-        return (int) Math.min((long) this.in.available(), this.left);
+        return (int) Math.min(this.in.available(), this.left);
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class LimitInputStream
         else {
             int result = this.in.read();
             if (result != -1) {
-                --this.left;
+                this.left--;
             }
 
             return result;
@@ -79,10 +79,10 @@ public final class LimitInputStream
             return -1;
         }
         else {
-            len = (int) Math.min((long) len, this.left);
+            len = (int) Math.min(len, this.left);
             int result = this.in.read(b, off, len);
             if (result != -1) {
-                this.left -= (long) result;
+                this.left -= result;
             }
 
             return result;

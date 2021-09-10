@@ -17,8 +17,6 @@ package com.github.harbby.gadtry.aop.event;
 
 import com.github.harbby.gadtry.aop.MethodSignature;
 
-import java.lang.reflect.Method;
-
 public interface Before
 {
     /**
@@ -54,10 +52,5 @@ public interface Before
                 return args;
             }
         };
-    }
-
-    public static Before of(Method method, Object[] args)
-    {
-        return of(MethodSignature.ofByGadtryAop(method), args);
     }
 }

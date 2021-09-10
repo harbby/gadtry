@@ -16,10 +16,13 @@
 package com.github.harbby.gadtry.collection.tuple;
 
 import com.github.harbby.gadtry.base.Streams;
+import com.github.harbby.gadtry.base.Try;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public class TupleTest
@@ -48,6 +51,7 @@ public class TupleTest
             Tuple copy = tuple.copy();
             Assert.assertEquals(tuple, copy);
             Assert.assertTrue(aClass.isInstance(copy));
+            Assert.assertEquals(tuple.hashCode(), copy.hashCode());
             //---------------------------------------
             Assert.assertEquals(tuple, tuple);
             Assert.assertFalse(tuple.equals(null));
@@ -72,6 +76,31 @@ public class TupleTest
                 Tuple tuple2 = (Tuple) constructors[0].newInstance(newArray);
                 Assert.assertNotEquals(tuple, tuple2);
             }
+        }
+    }
+
+    @Test
+    public void getFieldTest()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
+        for (Class aClass : tupleClass) {
+            Constructor[] constructors = aClass.getConstructors();
+            Assert.assertEquals(1, constructors.length);
+            int columnCnt = constructors[0].getParameterCount();
+            Method of = aClass.getMethod("of", Streams.range(0, columnCnt).mapToObj(x -> Object.class).toArray(Class[]::new));
+            String[] args = Streams.range(0, columnCnt).mapToObj(x -> "str" + (x + 1)).toArray(String[]::new);
+            Tuple tuple = (Tuple) of.invoke(null, args);
+            Method getField = aClass.getMethod("getField", int.class);
+            for (int i = 1; i <= columnCnt; i++) {
+                Assert.assertEquals("str" + i, getField.invoke(tuple, i));
+                Assert.assertEquals("str" + i, aClass.getMethod("f" + i).invoke(tuple));
+            }
+            Try.of(() -> getField.invoke(tuple, columnCnt + 1))
+                    .onSuccess(Assert::fail)
+                    .matchException(InvocationTargetException.class, e -> {
+                        IndexOutOfBoundsException e1 = (IndexOutOfBoundsException) e.getTargetException();
+                        Assert.assertEquals(e1.getMessage(), String.valueOf(columnCnt + 1));
+                    }).doTry();
         }
     }
 }

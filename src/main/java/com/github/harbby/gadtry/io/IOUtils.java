@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.io;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,8 +25,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class IOUtils
 {
@@ -126,7 +125,9 @@ public class IOUtils
             }
             offset += len;
         }
-        checkState(offset == length, "should be read " + length + " bytes, but read " + offset);
+        if (offset != length) {
+            throw new EOFException("should be read " + length + " bytes, but read " + offset);
+        }
         return bytes;
     }
 

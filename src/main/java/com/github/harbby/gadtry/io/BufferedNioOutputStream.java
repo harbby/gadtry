@@ -85,9 +85,7 @@ public final class BufferedNioOutputStream
             left -= remaining;
             remaining = buffer.remaining();
         }
-        if (left > 0) {
-            buffer.put(b, off + len - left, left);
-        }
+        buffer.put(b, off + len - left, left);
     }
 
     @Override

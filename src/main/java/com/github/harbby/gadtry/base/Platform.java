@@ -101,6 +101,8 @@ public final class Platform
         long getProcessPid(Process process);
 
         long getCurrentProcessId();
+
+        boolean isOpen(Class<?> source, Class<?> target);
     }
 
     public static byte[] readClassByteCode(Class<?> aClass)
@@ -247,10 +249,18 @@ public final class Platform
 
     public static boolean isJdkClass(Class<?> aClass)
     {
-        if (aClass.getName().startsWith("java.") || aClass.getName().startsWith("jdk.")) {
+        if (getJavaVersion() > 8 && !platformBase.get().isOpen(aClass, Platform.class)) {
             return true;
         }
-        return false;
+
+        ClassLoader classLoader = aClass.getClassLoader();
+        while (classLoader != null) {
+            if (classLoader == Platform.class.getClassLoader()) {
+                return false;
+            }
+            classLoader = classLoader.getParent();
+        }
+        return true;
     }
 
     /**

@@ -83,7 +83,7 @@ public class JavaTypes
         return new MapType(mapClass, keyType, valueType);
     }
 
-    private static void checkNotPrimitive(Type type, String msg)
+    public static void checkNotPrimitive(Type type, String msg)
     {
         if (type instanceof Class<?>) {
             checkState(!((Class<?>) type).isPrimitive(), msg);

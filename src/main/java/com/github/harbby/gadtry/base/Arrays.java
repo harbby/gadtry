@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.base;
 
 import java.lang.reflect.Array;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -32,7 +33,7 @@ public class Arrays
     /**
      * @param arrayType String.class Integer.class ...
      * @param length    array length
-     * @param <T> type
+     * @param <T>       type
      * @return T array
      */
     @SuppressWarnings("unchecked")
@@ -50,7 +51,7 @@ public class Arrays
     /**
      * @param arrayType String.class Integer.class ...
      * @param length    array length
-     * @param <T> type
+     * @param <T>       type
      * @return T
      */
     @SuppressWarnings("unchecked")
@@ -62,7 +63,7 @@ public class Arrays
     /**
      * @param arrayClass String[].class
      * @param length     array length
-     * @param <T> type
+     * @param <T>        type
      * @return T[]
      */
     @SuppressWarnings("unchecked")
@@ -101,7 +102,7 @@ public class Arrays
      *
      * @param list       java list
      * @param arrayClass demo: Integer[].class  String[].class
-     * @param <T> type
+     * @param <T>        type
      * @return T[]
      * @see Arrays#createArray(Class, int)
      */
@@ -118,7 +119,7 @@ public class Arrays
      *
      * @param list       java list
      * @param arrayClass demo: Integer[].class  String[].class
-     * @param <T> type
+     * @param <T>        type
      * @return T[]
      * @see Arrays#createArray(Class, int)
      */
@@ -230,8 +231,8 @@ public class Arrays
     /**
      * @param first firstValue
      * @param rest  array
-     * @param type array type
-     * @param <T> type
+     * @param type  array type
+     * @param <T>   type
      * @return merge array
      */
     public static <T> T[] asArray(T first, T[] rest, Class<T> type)
@@ -292,5 +293,36 @@ public class Arrays
             index += Array.getLength(arr);
         }
         return mergeArr;
+    }
+
+    public static <T> boolean equals(T arr1, T arr2)
+    {
+        if (arr1 == null && arr2 == null) {
+            return true;
+        }
+        else if (arr1 != null && arr2 != null) {
+            checkArray(arr1);
+            checkArray(arr2);
+            int len = Array.getLength(arr1);
+            if (len != Array.getLength(arr2)) {
+                return false;
+            }
+            for (int i = 0; i < len; i++) {
+                if (!Objects.equals(Array.get(arr1, i), Array.get(arr2, i))) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    private static void checkArray(Object arr)
+    {
+        requireNonNull(arr, "arr is null");
+        checkState(arr.getClass().isArray(), "not is array");
     }
 }

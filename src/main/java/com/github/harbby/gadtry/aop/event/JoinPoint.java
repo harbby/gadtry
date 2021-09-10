@@ -43,7 +43,7 @@ public interface JoinPoint
     public static JoinPoint of(Object mock, Method method, Object[] args, Object instance)
     {
         requireNonNull(instance, "instance is null");
-        MethodSignature methodSignature = MethodSignature.ofByGadtryAop(method);
+        MethodSignature methodSignature = MethodSignature.of(method);
         return new JoinPoint()
         {
             @Override
@@ -65,6 +65,7 @@ public interface JoinPoint
                 if (mock instanceof ProxyAccess) {
                     return ((ProxyAccess) mock).callRealMethod(method, instance, args);
                 }
+                //jdk proxy
                 return method.invoke(instance, args);
             }
 
@@ -78,7 +79,7 @@ public interface JoinPoint
 
     public static JoinPoint of(Object mock, Method method, Object[] args)
     {
-        MethodSignature methodSignature = MethodSignature.ofByGadtryAop(method);
+        MethodSignature methodSignature = MethodSignature.of(method);
         return new JoinPoint()
         {
             @Override
@@ -97,7 +98,6 @@ public interface JoinPoint
             public Object proceed(Object[] args)
                     throws Exception
             {
-                //@Mock
                 return getClassInitValue(method.getReturnType());
             }
 

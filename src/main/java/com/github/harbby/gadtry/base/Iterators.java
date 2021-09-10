@@ -76,12 +76,12 @@ public class Iterators
             implements MarkIterator<E>, LengthIterator<E> {}
 
     @SafeVarargs
-    public static <E> MarkFixLenIterator<E> of(E... values)
+    public static <E> IteratorPlus<E> of(E... values)
     {
         return of(values, 0, values.length);
     }
 
-    public static <E> MarkFixLenIterator<E> of(final E[] values, final int offset, final int length)
+    public static <E> IteratorPlus<E> of(final E[] values, final int offset, final int length)
     {
         requireNonNull(values, "values is null");
         checkArgument(offset >= 0, "offset >= 0");
@@ -128,7 +128,7 @@ public class Iterators
     }
 
     @SafeVarargs
-    public static <E> MarkFixLenIterator<E> wrap(E... values)
+    public static <E> IteratorPlus<E> wrap(E... values)
     {
         return of(values);
     }

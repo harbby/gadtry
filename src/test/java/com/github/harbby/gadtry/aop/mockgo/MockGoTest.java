@@ -122,17 +122,17 @@ public class MockGoTest
         List<String> proxy = Mockito.spy(MutableList.of("1", "2", "3"));
         Mockito.when(proxy.size()).thenReturn(7);
         Mockito.when(proxy.toString()).thenAnswer(proxyContext -> "123");
-        //Mockito.when(proxy.get(0)).thenThrow(new RuntimeException("mockDoThrow"));
+        Mockito.when(proxy.get(0)).thenThrow(new RuntimeException("mockDoThrow"));
 
         Assert.assertEquals(proxy.size(), 7);
         Assert.assertEquals("123", proxy.toString()); //check disableSuperMethod()
-//        try {
-//            proxy.get(0);
-//            Assert.fail();
-//        }
-//        catch (RuntimeException e) {
-//            Assert.assertEquals(e.getMessage(), "mockDoThrow");
-//        }
+        try {
+            proxy.get(0);
+            Assert.fail();
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals(e.getMessage(), "mockDoThrow");
+        }
     }
 
     @Test(expected = MockGoException.class)

@@ -45,7 +45,7 @@ public class JavaClassCompiler
 
     public JavaClassCompiler()
     {
-        this(ToolProvider.getSystemJavaCompiler(), null, false);
+        this(null);
     }
 
     public JavaClassCompiler(ClassLoader classLoader)
@@ -64,6 +64,7 @@ public class JavaClassCompiler
             final String className,
             final String sourceCode,
             List<String> javacOps)
+            throws CompileException
     {
         JavaSourceObject javaSource = new JavaSourceObject(className, sourceCode);
         Set<String> ops = new HashSet<>(javacOps);

@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
+import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
@@ -162,9 +163,9 @@ public class AopGoTest
         List<String> list = AopGo.proxy(JavaTypes.<List<String>>classTag(List.class))
                 .byInstance(new ArrayList<>())
                 .aop(binder -> {
-                    binder.doAround(cut ->
-                                    (int) cut.proceed() + 1)
-                            .whereMethod(method -> method.getName().startsWith("size"));
+                    binder.doAround(cut -> {
+                        return (int) cut.proceed() + 1;
+                    }).whereMethod(method -> method.getName().startsWith("size"));
                     binder.doBefore(before -> {
                         actions.add(before.getName());
                     }).when().isEmpty();
@@ -182,8 +183,10 @@ public class AopGoTest
         Set<String> actions = new HashSet<>();
         List<String> list = AopGo.proxy(new ArrayList<String>())
                 .aop(binder -> {
-                    binder.doAround(cut -> (int) cut.proceed() + 1)
-                            .whereMethod(method -> method.getName().startsWith("size"));
+                    binder.doAround(cut -> {
+                        Assert.assertTrue(cut.mock().getClass().getName().startsWith(ProxyAccess.class.getPackage().getName()));
+                        return (int) cut.proceed() + 1;
+                    }).whereMethod(method -> method.getName().startsWith("size"));
                     binder.doBefore(before -> {
                         actions.add(before.getName());
                     }).when().isEmpty();
