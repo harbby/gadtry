@@ -84,11 +84,13 @@ public class LazysTest
     public void goLazyArgsTest()
             throws IOException
     {
-        final Function<String, List<String>> lazy = Lazys.goLazy(init -> Arrays.asList(init));
+        final Function1<String, List<String>> lazy = Lazys.goLazy(init -> Arrays.asList(init));
 
         Assert.assertEquals(Arrays.asList("init"), lazy.apply("init"));
         Assert.assertTrue(lazy.apply("a1") == lazy.apply("a2"));
         Assert.assertTrue(Serializables.serialize((Serializable) lazy).length > 0);
+        Assert.assertTrue(Lazys.goLazy(lazy).apply("a3") == lazy.apply("a5"));
+        Assert.assertTrue(lazy.toString().contains("goLazy"));
     }
 
     @Test

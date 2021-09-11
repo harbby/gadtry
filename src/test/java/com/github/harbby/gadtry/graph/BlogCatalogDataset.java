@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import org.junit.Assert;
@@ -34,8 +35,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
-
 /**
  * @author : http://socialcomputing.asu.edu/datasets/BlogCatalog
  */
@@ -54,7 +53,7 @@ public class BlogCatalogDataset
             }
         }
         catch (IOException e) {
-            throwsThrowable(e);
+            Throwables.throwThrowable(e);
         }
 
         try (CloseableIterator<String> iterator = new FileCloseableIterator(new File(dataDir, "edges.csv"), 4096)) {
@@ -65,7 +64,7 @@ public class BlogCatalogDataset
             }
         }
         catch (IOException e) {
-            throwsThrowable(e);
+            Throwables.throwThrowable(e);
         }
 
         graph = graphBuilder.create();
@@ -241,7 +240,7 @@ public class BlogCatalogDataset
                 return old;
             }
             catch (IOException e) {
-                throw throwsThrowable(e);
+                throw Throwables.throwThrowable(e);
             }
         }
 

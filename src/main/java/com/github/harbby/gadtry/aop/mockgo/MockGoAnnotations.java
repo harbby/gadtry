@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.MockGo;
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 
@@ -24,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.harbby.gadtry.aop.MockGo.mock;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class MockGoAnnotations
 {
@@ -36,7 +36,7 @@ public class MockGoAnnotations
             injectField(testObject);
         }
         catch (Exception e) {
-            throwsThrowable(e);
+            Throwables.throwThrowable(e);
         }
     }
 

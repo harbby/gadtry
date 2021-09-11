@@ -247,20 +247,10 @@ public final class Platform
         return System.getProperty("os.name", "");
     }
 
-    public static boolean isJdkClass(Class<?> aClass)
+    public static boolean isOpen(Class<?> source, Class<?> target)
     {
-        if (getJavaVersion() > 8 && !platformBase.get().isOpen(aClass, Platform.class)) {
-            return true;
-        }
-
-        ClassLoader classLoader = aClass.getClassLoader();
-        while (classLoader != null) {
-            if (classLoader == Platform.class.getClassLoader()) {
-                return false;
-            }
-            classLoader = classLoader.getParent();
-        }
-        return true;
+        checkState(getJavaVersion() > 8, "java version > 8");
+        return platformBase.get().isOpen(source, target);
     }
 
     /**

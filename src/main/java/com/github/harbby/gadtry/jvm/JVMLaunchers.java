@@ -19,11 +19,9 @@ import com.github.harbby.gadtry.base.Platform;
 
 import java.io.File;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,17 +96,6 @@ public class JVMLaunchers
         public VmBuilder<T> notDependParentJvmClassPath()
         {
             depThisJvm = false;
-            return this;
-        }
-
-        @Deprecated
-        public VmBuilder<T> addUserURLClassLoader(URLClassLoader vmClassLoader)
-        {
-            ClassLoader classLoader = requireNonNull(vmClassLoader, "classLoader is null");
-            while (classLoader instanceof URLClassLoader) {
-                Collections.addAll(tmpJars, ((URLClassLoader) classLoader).getURLs());
-                classLoader = classLoader.getParent();
-            }
             return this;
         }
 

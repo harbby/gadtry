@@ -24,7 +24,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static com.github.harbby.gadtry.base.Try.noCatch;
 
 public class ThrowablesTest
@@ -41,7 +40,7 @@ public class ThrowablesTest
                 }
             });
             Assert.fail();
-            Throwables.throwsThrowable(MalformedURLException.class);
+            Throwables.throwThrowable(MalformedURLException.class);
         }
         catch (MalformedURLException ignored) {
         }
@@ -51,7 +50,7 @@ public class ThrowablesTest
                 throw new MalformedURLException();
             });
             Assert.fail();
-            Throwables.throwsThrowable(MalformedURLException.class);
+            Throwables.throwThrowable(MalformedURLException.class);
         }
         catch (MalformedURLException ignored) {
         }
@@ -61,7 +60,20 @@ public class ThrowablesTest
     public void testThrowsException1()
     {
         try {
-            Throwables.throwsThrowable(new IOException("IO_test"));
+            Throwables.throwThrowable(new IOException("IO_test"));
+            Assert.fail();
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e instanceof IOException);
+            Assert.assertEquals("IO_test", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testThrowValueException1()
+    {
+        try {
+            Throwables.throwValueThrowable(new IOException("IO_test"));
             Assert.fail();
         }
         catch (Exception e) {
@@ -74,7 +86,7 @@ public class ThrowablesTest
     public void testThrowsException2()
     {
         try {
-            throwsThrowable(new IOException("IO_test"));
+            Throwables.throwThrowable(new IOException("IO_test"));
             Assert.fail();
         }
         catch (Exception e) {
@@ -87,18 +99,12 @@ public class ThrowablesTest
     public void testThrowsException()
     {
         try {
-            URL url = new URL("file:");
-        }
-        catch (IOException e) {
-            Throwables.throwsThrowable(e);
-        }
-
-        try {
             try {
                 URL url = new URL("/harbby");
+                Assert.fail();
             }
             catch (IOException e) {
-                Throwables.throwsThrowable(e);
+                Throwables.throwThrowable(e);
             }
             Assert.fail();
         }
@@ -111,8 +117,7 @@ public class ThrowablesTest
     public void testThrowsExceptionClass()
             throws IOException
     {
-        //强制 抛出IOException个异常
-        Throwables.throwsThrowable(IOException.class);
+        Throwables.throwThrowable(IOException.class);
     }
 
     @Test

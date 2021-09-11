@@ -51,7 +51,6 @@ import java.util.stream.Stream;
 import static com.github.harbby.gadtry.aop.runtime.ProxyRuntime.METHOD_START;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.MoreObjects.copyWriteObjectState;
-import static com.github.harbby.gadtry.base.Platform.isJdkClass;
 
 public class JavassistProxy
         implements Serializable
@@ -168,11 +167,11 @@ public class JavassistProxy
         }
     }
 
-    private static String createProxyClassName(Class<?> superclass)
+    private static String createProxyClassName(ProxyRequest<?> request)
     {
-        String beginName = superclass.getName();
-        if (isJdkClass(superclass)) {
-            beginName = JavassistProxy.class.getPackage().getName() + "." + superclass.getSimpleName();
+        String beginName = request.getSuperclass().getName();
+        if (request.isJdkClass()) {
+            beginName = JavassistProxy.class.getPackage().getName() + "." + request.getSuperclass().getSimpleName();
         }
         return beginName + "$GadtryAop" + number.getAndIncrement();
     }
@@ -186,7 +185,7 @@ public class JavassistProxy
         classPool.appendClassPath(new LoaderClassPath(request.getClassLoader()));
 
         // New Create Proxy Class
-        String name = createProxyClassName(superclass);
+        String name = createProxyClassName(request);
         CtClass proxyClass = classPool.makeClass(name);
         CtClass parentClass = classPool.get(superclass.getName());
 
@@ -240,19 +239,10 @@ public class JavassistProxy
         // 持久化class到硬盘, 可以直接反编译查看
         //proxyClass.writeFile("out/.");
         if (Platform.getJavaVersion() > 8) {
-            return Platform.defineClass(getBuddyClass(superclass), proxyClass.toBytecode());
+            Class<?> buddyClass = request.isJdkClass() ? JavassistProxy.class : superclass;
+            return Platform.defineClass(buddyClass, proxyClass.toBytecode());
         }
         return proxyClass.toClass(request.getClassLoader(), superclass.getProtectionDomain());
-    }
-
-    private static Class<?> getBuddyClass(Class<?> superclass)
-    {
-        if (isJdkClass(superclass)) {
-            return JavassistProxy.class;
-        }
-        else {
-            return superclass;
-        }
     }
 
     private static void installFieldAndMethod(CtClass proxyClass, List<CtClass> ctInterfaces, ProxyRequest<?> request)
@@ -276,21 +266,25 @@ public class JavassistProxy
         int methodIndex = 0;
         for (CtMethod ctMethod : methods.keySet()) {
             final String methodFieldName = "_method" + methodIndex++;
-            if (request.getSuperclass().isInterface() ||
-                    ctMethod.getDeclaringClass().isInterface() ||   //接口的方法或default方法无法super.()调用
-                    Modifier.isAbstract(ctMethod.getModifiers()) ||  //Abstract方法也无法被super.()调用
-                    !request.isEnableV2() ||
-                    (Modifier.isPackage(ctMethod.getModifiers()) &&  //包内级别的无法super.()调用
-                            !ctMethod.getDeclaringClass().getPackageName().equals(proxyClass.getPackageName())) ||
-                    isJdkClass(request.getSuperclass())
-            ) {
+            if (isV1Mode(proxyClass, ctMethod, request)) {
                 addSupperMethod(proxyClass, ctMethod, methodFieldName);
             }
             else {
-                //todo: 实验性特性
+                //beta branch
                 addSupperMethod2(proxyClass, ctMethod, methodFieldName); //这里全是可以被super.()调用的方法
             }
         }
+    }
+
+    private static boolean isV1Mode(CtClass proxyClass, CtMethod method, ProxyRequest<?> request)
+    {
+        return request.getSuperclass().isInterface()
+                || method.getDeclaringClass().isInterface()    //接口的方法或default方法无法super.()调用
+                || Modifier.isAbstract(method.getModifiers())   //Abstract方法也无法被super.()调用
+                || !request.isEnableV2()
+                || (Modifier.isPackage(method.getModifiers()) &&  //包内级别的无法super.()调用
+                !method.getDeclaringClass().getPackageName().equals(proxyClass.getPackageName()))
+                || request.isJdkClass();
     }
 
     private static void addSupperMethod(CtClass proxyClass, CtMethod ctMethod, String methodNewName)

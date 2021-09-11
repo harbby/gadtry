@@ -19,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -38,7 +39,7 @@ public class DynamicClassLoaderTest
 
     @Test
     public void addJarFile()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, MalformedURLException
     {
         DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0], this.getClass().getClassLoader());
         classLoader.addJarFile(new File(url.getFile()));
@@ -47,7 +48,7 @@ public class DynamicClassLoaderTest
 
     @Test
     public void addJarFiles()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, MalformedURLException
     {
         DynamicClassLoader classLoader = new DynamicClassLoader(this.getClass().getClassLoader());
         classLoader.addJarFiles(Arrays.asList(new File(url.getFile())));
@@ -56,7 +57,7 @@ public class DynamicClassLoaderTest
 
     @Test
     public void addDir()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, MalformedURLException
     {
         DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
 

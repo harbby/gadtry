@@ -23,7 +23,6 @@ import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -89,10 +88,10 @@ public class PackageProxyTests
     public void mockitoGoNotAccessMethod()
     {
         PackageTestName instance = PackageTestUtil.getInstance();
-        PackageTestName mock = (PackageTestName) Mockito.mock(instance.getClass().getInterfaces()[0]);
-        Mockito.doAnswer(joinPoint -> {
+        PackageTestName mock = (PackageTestName) MockGo.mock(instance.getClass().getInterfaces()[0]);
+        MockGo.doAnswer(joinPoint -> {
             Assert.assertEquals(joinPoint.getMethod().getName(), "getName");
-            Object value = joinPoint.getMethod().invoke(instance, joinPoint.getArguments());
+            Object value = joinPoint.getMethod().invoke(instance, joinPoint.getArgs());
             return value + "#123";
         }).when(mock).getName();
         Assert.assertEquals(mock.getName(), "harbby1#123");

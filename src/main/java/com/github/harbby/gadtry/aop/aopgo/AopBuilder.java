@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.codegen.Proxy;
 import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.function.exception.Consumer;
 
 import java.lang.reflect.Method;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public final class AopBuilder<T>
 {
@@ -71,7 +71,7 @@ public final class AopBuilder<T>
                 it.apply(mockBinder);
             }
             catch (Throwable throwable) {
-                throwsThrowable(throwable);
+                Throwables.throwThrowable(throwable);
             }
         }
         Map<AroundHandler, PointcutBuilder<T>> aspects = mockBinder.build();

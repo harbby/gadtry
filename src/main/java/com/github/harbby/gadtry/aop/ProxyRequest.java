@@ -15,6 +15,9 @@
  */
 package com.github.harbby.gadtry.aop;
 
+import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
+import com.github.harbby.gadtry.base.Platform;
+
 import java.lang.reflect.InvocationHandler;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +67,22 @@ public class ProxyRequest<T>
     public boolean isEnableV2()
     {
         return enableV2;
+    }
+
+    public boolean isJdkClass()
+    {
+        if (Platform.getJavaVersion() > 8 && !Platform.isOpen(superclass, JavassistProxy.class)) {
+            return true;
+        }
+
+        ClassLoader classLoader = superclass.getClassLoader();
+        while (classLoader != null) {
+            if (classLoader == JavassistProxy.class.getClassLoader()) {
+                return false;
+            }
+            classLoader = classLoader.getParent();
+        }
+        return true;
     }
 
     public static <T> Builder<T> builder(Class<T> superclass)

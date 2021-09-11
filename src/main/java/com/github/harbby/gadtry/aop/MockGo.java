@@ -22,6 +22,7 @@ import com.github.harbby.gadtry.aop.mockgo.MockGoAnnotations;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
@@ -29,7 +30,6 @@ import java.lang.reflect.Method;
 
 import static com.github.harbby.gadtry.aop.codegen.Proxy.getInvocationHandler;
 import static com.github.harbby.gadtry.base.Strings.lowerFirst;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 /**
  * MockGo
@@ -52,7 +52,7 @@ public class MockGo
             return spy(superclass, target);
         }
         catch (Exception e) {
-            throw throwsThrowable(e);
+            return Throwables.throwValueThrowable(e);
         }
     }
 

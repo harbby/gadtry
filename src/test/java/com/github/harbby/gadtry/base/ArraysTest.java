@@ -236,4 +236,13 @@ public class ArraysTest
             Assert.assertEquals(e.getMessage(), "must arrays length > 0");
         }
     }
+
+    @Test
+    public void eqTest()
+    {
+        Assert.assertFalse(Arrays.equals(null, new String[0]));
+        Assert.assertFalse(Arrays.equals(new String[0], null));
+        Assert.assertFalse(Arrays.equals(new String[0], new String[1]));
+        Assert.assertFalse(Arrays.equals(new String[] {"a1"}, new String[] {"a2"}));
+    }
 }

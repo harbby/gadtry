@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.function.exception.Function;
 
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 class InternalContext
 {
@@ -82,10 +82,10 @@ class InternalContext
             return userValue == null ? newInstance(driver) : userValue;
         }
         catch (InvocationTargetException e) {
-            throw throwsThrowable(e.getTargetException());
+            throw Throwables.throwThrowable(e.getTargetException());
         }
         catch (Exception e) {
-            throw throwsThrowable(e);
+            throw Throwables.throwThrowable(e);
         }
     }
 

@@ -48,7 +48,6 @@ dependencies {
   implementation group: 'net.java.dev.jna', name: 'jna-platform-jpms', version: '5.9.0'
 
   testImplementation group: 'junit', name: 'junit', version: '4.12'
-  testImplementation 'org.mockito:mockito-core:3.11.2'
   testImplementation group: "org.openjdk.jmh", name: "jmh-core", version: "1.32"
   //testAnnotationProcessor group: "org.openjdk.jmh", name: "jmh-generator-annprocess", version: "1.32"
 }
@@ -109,9 +108,9 @@ jacocoTestReport {
     classDirectories.setFrom(files(classDirectories.files.collect {
       fileTree(dir: it,
               exclude: [
-                      "com/github/harbby/gadtry/spi/ServiceLoad.class",
-                      "com/github/harbby.gadtry/base/JavaParameterizedTypeImpl.class",
-                      "com/github/harbby/gadtry/collection/IntArrayBuffer.class"
+                      "**/com/github/harbby/gadtry/spi/ServiceLoad.class",
+                      "**/com/github/harbby/gadtry/collection/IntArrayBuffer**",
+                      "**/com/github/harbby.gadtry/base/JavaParameterizedTypeImpl.class"
               ])
     }))
   }

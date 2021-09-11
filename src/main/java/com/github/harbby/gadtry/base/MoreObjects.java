@@ -61,7 +61,7 @@ public class MoreObjects
                 field.set(target, value);
             }
             catch (IllegalAccessException e) {
-                throw Throwables.throwsThrowable(e);
+                throw Throwables.throwThrowable(e);
             }
         }
     }

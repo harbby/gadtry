@@ -22,7 +22,6 @@ import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,17 +68,6 @@ public class MockGoTest
     }
 
     @Test
-    public void mockSpyWhenMockito()
-            throws Exception
-    {
-        List<String> a1 = Mockito.spy(ImmutableList.of("1", "2", "3"));
-
-        Assert.assertEquals(3, a1.size());
-        Mockito.doReturn(99).when(a1).size();
-        Assert.assertEquals(99, a1.size());
-    }
-
-    @Test
     public void mockSpyWhenMockGo()
     {
         List<String> a1 = MockGo.spy(ImmutableList.of("1", "2", "3"));
@@ -109,28 +97,9 @@ public class MockGoTest
         try {
             proxy.get(0);
             Assert.fail();
-            Throwables.throwsThrowable(IOException.class);
+            Throwables.throwThrowable(IOException.class);
         }
         catch (IOException e) {
-            Assert.assertEquals(e.getMessage(), "mockDoThrow");
-        }
-    }
-
-    @Test
-    public void mockitSpyTest()
-    {
-        List<String> proxy = Mockito.spy(MutableList.of("1", "2", "3"));
-        Mockito.when(proxy.size()).thenReturn(7);
-        Mockito.when(proxy.toString()).thenAnswer(proxyContext -> "123");
-        Mockito.when(proxy.get(0)).thenThrow(new RuntimeException("mockDoThrow"));
-
-        Assert.assertEquals(proxy.size(), 7);
-        Assert.assertEquals("123", proxy.toString()); //check disableSuperMethod()
-        try {
-            proxy.get(0);
-            Assert.fail();
-        }
-        catch (RuntimeException e) {
             Assert.assertEquals(e.getMessage(), "mockDoThrow");
         }
     }

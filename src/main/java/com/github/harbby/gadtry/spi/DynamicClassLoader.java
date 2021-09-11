@@ -22,7 +22,6 @@ import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
 
 import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class DynamicClassLoader
         extends URLClassLoader
@@ -60,6 +59,7 @@ public class DynamicClassLoader
     }
 
     public void addJarFiles(Iterable<File> jarFiles)
+            throws MalformedURLException
     {
         for (File jar : jarFiles) {
             this.addJarFile(jar);
@@ -67,16 +67,13 @@ public class DynamicClassLoader
     }
 
     public void addJarFile(File jarfile)
+            throws MalformedURLException
     {
-        try {
-            this.addURL(jarfile.toURI().toURL());
-        }
-        catch (MalformedURLException e) {
-            throwsThrowable(e);
-        }
+        this.addURL(jarfile.toURI().toURL());
     }
 
     public void addDir(File path)
+            throws MalformedURLException
     {
         if (!path.exists()) {
             return;

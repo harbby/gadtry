@@ -26,7 +26,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class Try
@@ -49,7 +48,7 @@ public class Try
             runnable.apply();
         }
         catch (Exception e) {
-            throwsThrowable(e);
+            Throwables.throwThrowable(e);
         }
     }
 
@@ -59,7 +58,7 @@ public class Try
             return callable.call();
         }
         catch (Exception e) {
-            throw throwsThrowable(e);
+            throw Throwables.throwThrowable(e);
         }
     }
 
@@ -72,10 +71,10 @@ public class Try
 
     public static class OfTryCatcher
     {
-        private final List<Tuple2<Class<? extends Exception>, Consumer<?>>> matchErrors = new ArrayList<>();
+        private final List<Tuple2<Class<? extends Throwable>, Consumer<? extends Throwable>>> matchErrors = new ArrayList<>();
         private final Runnable<Throwable> runnable;
         private java.lang.Runnable onSuccess;
-        private Consumer<Throwable> onError = Throwables::throwsThrowable;
+        private Consumer<Throwable> onError = Throwables::throwThrowable;
         private java.lang.Runnable onFinally;
 
         public OfTryCatcher(Runnable<Throwable> runnable)
@@ -101,7 +100,7 @@ public class Try
             return this;
         }
 
-        public <E extends Exception> OfTryCatcher matchException(Class<E> exceptionClass, Consumer<E> caseHandler)
+        public <E extends Throwable> OfTryCatcher matchException(Class<E> exceptionClass, Consumer<E> caseHandler)
         {
             requireNonNull(onError, "exceptionClass is null");
             requireNonNull(onError, "caseHandler is null");
@@ -118,7 +117,7 @@ public class Try
                 }
             }
             catch (Throwable e) {
-                for (Tuple2<Class<? extends Exception>, Consumer<?>> tuple2 : matchErrors) {
+                for (Tuple2<Class<? extends Throwable>, Consumer<? extends Throwable>> tuple2 : matchErrors) {
                     if (tuple2.key().isInstance(e)) {
                         @SuppressWarnings("unchecked")
                         Consumer<Throwable> handler = (Consumer<Throwable>) tuple2.value();
@@ -138,14 +137,11 @@ public class Try
 
     public static class ValueOfTryCatcher<T>
     {
-        private final List<Tuple2<Class<? extends Exception>, Function<?, T>>> matchErrors = new ArrayList<>();
+        private final List<Tuple2<Class<? extends Throwable>, Function<? extends Throwable, T>>> matchErrors = new ArrayList<>();
         private final Supplier<T, java.lang.Throwable> runnable;
         private Consumer<T> onSuccess;
         private java.lang.Runnable onFinally;
-        private Function<Throwable, T> onError = e -> {
-            throwsThrowable(e);
-            return null;
-        };
+        private Function<Throwable, T> onError = Throwables::throwValueThrowable;
 
         public ValueOfTryCatcher(Supplier<T, Throwable> runnable)
         {
@@ -170,7 +166,7 @@ public class Try
             return this;
         }
 
-        public <E extends Exception> ValueOfTryCatcher<T> matchException(Class<E> exceptionClass, Function<E, T> caseHandler)
+        public <E extends Throwable> ValueOfTryCatcher<T> matchException(Class<E> exceptionClass, Function<E, T> caseHandler)
         {
             requireNonNull(onError, "exceptionClass is null");
             requireNonNull(onError, "caseHandler is null");
@@ -188,7 +184,7 @@ public class Try
                 return value;
             }
             catch (Throwable e) {
-                for (Tuple2<Class<? extends Exception>, Function<?, T>> tuple2 : matchErrors) {
+                for (Tuple2<Class<? extends Throwable>, Function<? extends Throwable, T>> tuple2 : matchErrors) {
                     if (tuple2.key().isInstance(e)) {
                         @SuppressWarnings("unchecked")
                         Function<Throwable, T> handler = (Function<Throwable, T>) tuple2.value();

@@ -55,9 +55,10 @@ public class GadTryTest
         }).setConfigurationProperties(MutableMap.of())
                 .initialize();
 
-        Map set = iocFactory.getInstance(Map.class);
-        Assert.assertEquals(set.size(), 1);
+        Map<?, ?> map = iocFactory.getInstance(Map.class);
+        Assert.assertEquals(map.size(), 1);
         Assert.assertEquals(Arrays.asList("before1", "before2", "before4", "before3"), actions);
+        Assert.assertSame(iocFactory.getInstance(HashSet.class), iocFactory.getInstance(HashSet.class));
     }
 
     @Test

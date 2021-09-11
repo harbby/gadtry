@@ -18,8 +18,6 @@ package com.github.harbby.gadtry.base;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-
 public final class Threads
 {
     private Threads() {}
@@ -32,14 +30,14 @@ public final class Threads
             return (Thread[]) method.invoke(null);
         }
         catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw Throwables.throwsThrowable(e);
+            throw new PlatFormUnsupportedOperation(e);
         }
     }
 
     public static StackTraceElement getThreadMainFunc(Thread thread)
     {
         StackTraceElement[] stackTraceElements = thread.getStackTrace();
-        checkState(stackTraceElements.length > 0, thread + " not exists Stack Trace");
+        Arrays.checkNotEmpty(stackTraceElements, thread + " not exists Stack Trace");
         return stackTraceElements[stackTraceElements.length - 1];
     }
 
@@ -57,6 +55,6 @@ public final class Threads
                 return thread;
             }
         }
-        throw new IllegalStateException("not support this jvm");
+        throw new PlatFormUnsupportedOperation("not support this platform jvm");
     }
 }

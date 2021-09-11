@@ -266,8 +266,7 @@ public class Arrays
     @SafeVarargs
     public static <T> T[] merge(T[]... arrays)
     {
-        requireNonNull(arrays, "arrays is null");
-        checkState(arrays.length > 0, "must arrays length > 0");
+        checkNotEmpty(arrays, "must arrays length > 0");
         int length = Stream.of(arrays).mapToInt(x -> x.length).sum();
         T[] mergeArr = createArrayByArrayClass((Class<T[]>) arrays.getClass().getComponentType(), length);
 
@@ -282,8 +281,7 @@ public class Arrays
     @SafeVarargs
     public static <T> T mergeByPrimitiveArray(T... arrays)
     {
-        requireNonNull(arrays, "arrays is null");
-        checkState(arrays.length > 0, "must arrays length > 0");
+        checkNotEmpty(arrays, "must arrays length > 0");
         int length = Stream.of(arrays).mapToInt(Array::getLength).sum();
         T mergeArr = createPrimitiveByArrayClass(arrays.getClass().getComponentType(), length);
 
@@ -324,5 +322,13 @@ public class Arrays
     {
         requireNonNull(arr, "arr is null");
         checkState(arr.getClass().isArray(), "not is array");
+    }
+
+    public static <T> void checkNotEmpty(T[] array, String format, Object... objects)
+    {
+        requireNonNull(array, "array is null");
+        if (array.length == 0) {
+            throw new IllegalStateException(String.format(format, objects));
+        }
     }
 }

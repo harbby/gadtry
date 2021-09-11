@@ -73,7 +73,7 @@ public class Proxy
                     method = MethodSignature.of((Method) field.get(null));
                 }
                 catch (IllegalAccessException e) {
-                    throw Throwables.throwsThrowable(e);
+                    throw Throwables.throwThrowable(e);
                 }
                 boolean access = true;
                 for (Function1<MethodSignature, Boolean> filter : filters) {

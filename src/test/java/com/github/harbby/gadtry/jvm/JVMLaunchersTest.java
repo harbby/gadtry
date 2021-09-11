@@ -320,7 +320,7 @@ public class JVMLaunchersTest
                     launcher.startAndGet();
                 }
                 catch (InterruptedException e) {
-                    Throwables.throwsThrowable(e);
+                    Throwables.throwThrowable(e);
                 }
             }).whenComplete((value, error) -> {
                 Assert.assertTrue(error.getMessage().contains(f));
@@ -358,7 +358,7 @@ public class JVMLaunchersTest
                 return launcher.startAndGet();
             }
             catch (InterruptedException e) {
-                throw Throwables.throwsThrowable(e);
+                throw Throwables.throwThrowable(e);
             }
         }).whenComplete((value, error) -> {
             Assert.assertEquals(2019, value.intValue());

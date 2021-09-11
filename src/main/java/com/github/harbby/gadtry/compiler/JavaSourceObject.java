@@ -94,7 +94,7 @@ public class JavaSourceObject
             return new URI(simpleClassName + Kind.SOURCE.extension);
         }
         catch (URISyntaxException e) {
-            throw Throwables.throwsThrowable(e);
+            throw Throwables.throwThrowable(e);
         }
     }
 }

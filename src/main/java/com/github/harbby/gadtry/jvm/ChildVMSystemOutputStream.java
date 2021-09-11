@@ -75,7 +75,7 @@ public class ChildVMSystemOutputStream
 
     synchronized void release(boolean failed, byte[] resultBytes)
     {
-        checkState(!tryClose, "channel is closed?");
+        checkState(!tryClose, "channel closed");
         tryClose = true;
 
         this.writeInt(failed ? -2 : -1);

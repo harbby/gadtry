@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.spi;
 
 import com.github.harbby.gadtry.base.Files;
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.MutableSet;
 
 import java.io.File;
@@ -35,7 +36,6 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class ClassScanner
@@ -87,7 +87,7 @@ public class ClassScanner
         private ClassLoader classLoader;
         private Class<?>[] subclasses = new Class[0];
         private Class<? extends Annotation>[] annotations = new Class[0];
-        private BiConsumer<String, Throwable> errorHandler = (classString, error) -> throwsThrowable(error);
+        private BiConsumer<String, Throwable> errorHandler = (classString, error) -> Throwables.throwThrowable(error);
 
         private Function<Class<?>, Boolean> classFilter;
 
@@ -156,7 +156,7 @@ public class ClassScanner
     public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader)
             throws IOException, URISyntaxException
     {
-        return scanClasses(basePackage, classLoader, (classString, error) -> throwsThrowable(error));
+        return scanClasses(basePackage, classLoader, (classString, error) -> Throwables.throwThrowable(error));
     }
 
     public static Set<Class<?>> scanClasses(String basePackage, ClassLoader classLoader, BiConsumer<String, Throwable> loadErrorHandler)
