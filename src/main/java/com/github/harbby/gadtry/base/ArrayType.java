@@ -15,125 +15,75 @@
  */
 package com.github.harbby.gadtry.base;
 
+import java.io.Serializable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
+/**
+ * copy jdk GenericArrayTypeImpl
+ */
 public class ArrayType
-        implements GenericArrayType
+        implements GenericArrayType, Serializable
 {
-    private final GenericArrayType genericArrayType;
+    private final Type genericComponentType;
 
-    public ArrayType(Type valueType)
+    // private constructor enforces use of static factory
+    public ArrayType(Type ct)
     {
-        this.genericArrayType = GenericArrayTypeImpl.make(valueType);
+        genericComponentType = ct;
     }
 
+    public Type getValueType()
+    {
+        return genericComponentType;
+    }
+
+    /**
+     * Factory method.
+     *
+     * @param ct - the desired component type of the generic array type
+     *           being created
+     * @return a generic array type with the desired component type
+     */
     public static ArrayType make(Type ct)
     {
         return new ArrayType(ct);
     }
 
-    @Override
+    /**
+     * Returns a {@code Type} object representing the component type
+     * of this array.
+     *
+     * @return a {@code Type} object representing the component type
+     * of this array
+     * @since 1.5
+     */
     public Type getGenericComponentType()
     {
-        return genericArrayType.getGenericComponentType();
+        return getValueType(); // return cached component type
     }
 
-    public Type getValueType()
+    public String toString()
     {
-        return getGenericComponentType();
+        return getGenericComponentType().getTypeName() + "[]";
     }
 
     @Override
-    public String getTypeName()
+    public boolean equals(Object o)
     {
-        return genericArrayType.getTypeName();
+        if (o instanceof GenericArrayType) {
+            GenericArrayType that = (GenericArrayType) o;
+            return Objects.equals(genericComponentType, that.getGenericComponentType());
+        }
+        else {
+            return false;
+        }
     }
 
     @Override
     public int hashCode()
     {
-        return genericArrayType.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        Object eq = obj;
-        if (obj instanceof ArrayType) {
-            eq = ((ArrayType) obj).genericArrayType;
-        }
-        return genericArrayType.equals(eq);
-    }
-
-    @Override
-    public String toString()
-    {
-        return genericArrayType.toString();
-    }
-
-    /**
-     * copy jdk
-     */
-    private static class GenericArrayTypeImpl
-            implements GenericArrayType
-    {
-        private final Type genericComponentType;
-
-        // private constructor enforces use of static factory
-        private GenericArrayTypeImpl(Type ct)
-        {
-            genericComponentType = ct;
-        }
-
-        /**
-         * Factory method.
-         *
-         * @param ct - the desired component type of the generic array type
-         *           being created
-         * @return a generic array type with the desired component type
-         */
-        public static GenericArrayTypeImpl make(Type ct)
-        {
-            return new GenericArrayTypeImpl(ct);
-        }
-
-        /**
-         * Returns a {@code Type} object representing the component type
-         * of this array.
-         *
-         * @return a {@code Type} object representing the component type
-         * of this array
-         * @since 1.5
-         */
-        public Type getGenericComponentType()
-        {
-            return genericComponentType; // return cached component type
-        }
-
-        public String toString()
-        {
-            return getGenericComponentType().getTypeName() + "[]";
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (o instanceof GenericArrayType) {
-                GenericArrayType that = (GenericArrayType) o;
-
-                return Objects.equals(genericComponentType, that.getGenericComponentType());
-            }
-            else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hashCode(genericComponentType);
-        }
+        return Objects.hashCode(genericComponentType);
     }
 }

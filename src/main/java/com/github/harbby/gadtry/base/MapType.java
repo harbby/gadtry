@@ -33,8 +33,7 @@ public class MapType
         this.mapClass = mapClass;
         this.keyType = keyType;
         this.valueType = valueType;
-        this.parameterizedType = new JavaParameterizedTypeImpl(mapClass, new Type[] {keyType, valueType},
-                null);
+        this.parameterizedType = new JavaParameterizedTypeImpl(mapClass, new Type[] {keyType, valueType}, null);
     }
 
     public static MapType make(Class<? extends Map> mapClass, Type keyType, Type valueType)

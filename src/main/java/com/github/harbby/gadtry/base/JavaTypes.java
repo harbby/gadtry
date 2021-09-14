@@ -72,8 +72,7 @@ public class JavaTypes
             checkNotPrimitive(type, "Java Generic Type not support PrimitiveType");
         }
         checkNotPrimitive(rawType, "rawType " + rawType + " must not PrimitiveType");
-        return new JavaParameterizedTypeImpl(rawType, actualTypeArguments,
-                ownerType);
+        return new JavaParameterizedTypeImpl(rawType, actualTypeArguments, ownerType);
     }
 
     public static MapType makeMapType(Class<? extends Map> mapClass, Type keyType, Type valueType)

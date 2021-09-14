@@ -37,14 +37,14 @@ import java.util.Objects;
  * demo : Type type = JavaType.make(Map.class, new Type[]{String.class, String.class}, null)
  */
 
-final class JavaParameterizedTypeImpl
+public class JavaParameterizedTypeImpl
         implements ParameterizedType, Serializable
 {
     private final Type[] actualTypeArguments;
     private final Class<?> rawType;
     private final Type ownerType;
 
-    JavaParameterizedTypeImpl(Class<?> rawType,
+    public JavaParameterizedTypeImpl(Class<?> rawType,
             Type[] actualTypeArguments,
             Type ownerType)
     {
