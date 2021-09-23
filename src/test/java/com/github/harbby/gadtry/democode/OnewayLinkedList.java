@@ -15,20 +15,57 @@
  */
 package com.github.harbby.gadtry.democode;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.AbstractList;
 
-public class OnewayLinkedListTest
+public class OnewayLinkedList<V>
+        extends AbstractList<V>
 {
-    private static class Node<V>
+    private Node<V> headNode;
+    private Node<V> lastNode;
+    private int size;
+
+    @Override
+    public V get(int index)
+    {
+        if (index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        Node<V> node = headNode;
+        for (int i = 0; i < index; i++) {
+            node = node.next;
+        }
+        return node.v;
+    }
+
+    @Override
+    public int size()
+    {
+        return size;
+    }
+
+    @Override
+    public boolean add(V v)
+    {
+        Node<V> next = new Node<>(v);
+        if (size == 0) {
+            this.lastNode = next;
+            this.headNode = next;
+        }
+        else {
+            this.lastNode.next = next;
+            this.lastNode = next;
+        }
+
+        size++;
+        return true;
+    }
+
+    static class Node<V>
     {
         private final V v;
         private Node<V> next;
 
-        public Node(V v)
-        {
-            this.v = v;
-        }
+        public Node(V v) {this.v = v;}
 
         public Node<V> addNext(V next)
         {
@@ -44,44 +81,10 @@ public class OnewayLinkedListTest
         }
     }
 
-    @Test
-    public void revertLinks()
+    public void reverse()
     {
-        Node<String> a = new Node<>("a");
-        Node<String> b = new Node<>("b");
-        Node<String> c = new Node<>("c");
-        Node<String> d = new Node<>("d");
-        a.next = b;
-        b.next = c;
-        c.next = d;
-        //or  a.addNext("b").addNext("c").addNext("d");
-        Node<String> node = reverse(a);
-        Assert.assertEquals(node.v, "d");
-
-        StringBuilder builder = new StringBuilder();
-        while (node != null) {
-            builder.append(node.v);
-            node = node.next;
-        }
-        Assert.assertEquals(builder.toString(), "dcba");
-    }
-
-    @Test
-    public void listTest()
-    {
-        OnewayLinkedList<String> list = new OnewayLinkedList<>();
-        list.add("a");
-        list.add("b");
-        list.add("c");
-        list.add("d");
-        for (int i = 0; i < list.size(); i++) {
-            Assert.assertEquals(String.valueOf((char) ('a' + i)), list.get(i));
-        }
-
-        list.reverse();
-        for (int i = 0; i < list.size(); i++) {
-            Assert.assertEquals(String.valueOf((char) ('d' - i)), list.get(i));
-        }
+        this.lastNode = headNode;
+        this.headNode = reverse(headNode);
     }
 
     static <V> Node<V> reverse(Node<V> headNode)
