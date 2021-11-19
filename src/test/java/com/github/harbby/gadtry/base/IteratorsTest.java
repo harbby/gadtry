@@ -353,10 +353,8 @@ public class IteratorsTest
     @Test
     public void innerMergeJoin3()
     {
-        Iterator<Tuple2<Integer, String>> left = Iterators.of(
-                Tuple2.of(2, "v1_2"));
-        Iterator<Tuple2<Integer, String>> right = Iterators.of(
-                Tuple2.of(2, "v2_2"));
+        Iterator<Tuple2<Integer, String>> left = Iterators.of(Tuple2.of(2, "v1_2"));
+        Iterator<Tuple2<Integer, String>> right = Iterators.of(Tuple2.of(2, "v2_2"));
         Iterator<Tuple2<Integer, Tuple2<String, String>>> rs = Iterators.mergeJoin(Integer::compare, left, right);
         List<Tuple2<Integer, Tuple2<String, String>>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(

@@ -29,6 +29,7 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -75,11 +76,16 @@ public class JavaTypes
         return new JavaParameterizedTypeImpl(rawType, actualTypeArguments, ownerType);
     }
 
+    public static Type make(TypeReference<?> typeReference)
+    {
+        return typeReference.getType();
+    }
+
     public static MapType makeMapType(Class<? extends Map> mapClass, Type keyType, Type valueType)
     {
         checkNotPrimitive(keyType, "MapType keyType not support PrimitiveType");
         checkNotPrimitive(valueType, "MapType valueType not support PrimitiveType");
-        return new MapType(mapClass, keyType, valueType);
+        return MapType.make(mapClass, keyType, valueType);
     }
 
     public static void checkNotPrimitive(Type type, String msg)
@@ -306,5 +312,91 @@ public class JavaTypes
         ProtectionDomain pd = aClass.getProtectionDomain();
         CodeSource cs = pd.getCodeSource();
         return cs.getLocation();
+    }
+
+    abstract static class ParameterizedType0
+            implements ParameterizedType
+    {
+        public abstract Class<?> getRawType();
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hashCode(getRawType()) ^
+                    Objects.hashCode(getOwnerType()) ^
+                    java.util.Arrays.hashCode(getActualTypeArguments());
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj) {
+                return true;
+            }
+
+            if (!(obj instanceof ParameterizedType)) {
+                return false;
+            }
+
+            ParameterizedType other = (ParameterizedType) obj;
+
+            return Objects.equals(this.getRawType(), other.getRawType()) &&
+                    Objects.equals(this.getOwnerType(), other.getOwnerType()) &&
+                    java.util.Arrays.equals(this.getActualTypeArguments(), other.getActualTypeArguments());
+        }
+
+        @Override
+        public String toString()
+        {
+            return toString(this);
+        }
+
+        private static String toString(JavaTypes.ParameterizedType0 parameterizedType)
+        {
+            StringBuilder sb = new StringBuilder();
+            Type ownerType = parameterizedType.getOwnerType();
+            Class<?> rawType = parameterizedType.getRawType();
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+
+            if (ownerType != null) {
+                if (ownerType instanceof Class) {
+                    sb.append(((Class<?>) ownerType).getName());
+                }
+                else {
+                    sb.append(ownerType);
+                }
+
+                sb.append(".");
+
+                if (ownerType instanceof JavaParameterizedTypeImpl) {
+                    // Find simple name of nested type by removing the
+                    // shared prefix with owner.
+                    sb.append(rawType.getName().replace(((JavaTypes.ParameterizedType0) ownerType).getRawType().getName() + "$",
+                            ""));
+                }
+                else {
+                    sb.append(rawType.getName());
+                }
+            }
+            else {
+                sb.append(rawType.getName());
+            }
+
+            if (actualTypeArguments != null &&
+                    actualTypeArguments.length > 0) {
+                sb.append("<");
+                boolean first = true;
+                for (Type t : actualTypeArguments) {
+                    if (!first) {
+                        sb.append(", ");
+                    }
+                    sb.append(t.getTypeName());
+                    first = false;
+                }
+                sb.append(">");
+            }
+
+            return sb.toString();
+        }
     }
 }

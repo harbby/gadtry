@@ -31,7 +31,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
-import java.util.List;
 import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
@@ -529,64 +528,5 @@ public final class Platform
     public static void throwException(Throwable t)
     {
         unsafe.throwException(t);
-    }
-
-    /**
-     * get system classLoader ucp jars
-     *
-     * @return system classLoader ucp jars
-     */
-    public static List<URL> getSystemClassLoaderJars()
-            throws PlatFormUnsupportedOperation
-    {
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        if (classLoader instanceof URLClassLoader) {
-            return java.util.Arrays.asList(((URLClassLoader) classLoader).getURLs());
-        }
-        //java11+
-        try {
-            Field field = classLoader.getClass().getDeclaredField("ucp");
-            field.setAccessible(true);
-            Object ucp = field.get(classLoader);
-            Method getURLs = ucp.getClass().getMethod("getURLs");
-            URL[] urls = (URL[]) getURLs.invoke(ucp);
-            return java.util.Arrays.asList(urls);
-        }
-        catch (NoSuchMethodException | NoSuchFieldException | InvocationTargetException | IllegalAccessException e) {
-            throw new PlatFormUnsupportedOperation(e);
-        }
-    }
-
-    /**
-     * load other jar to system classLoader
-     *
-     * @param urls jars
-     */
-    public static void loadExtJarToSystemClassLoader(List<URL> urls)
-            throws PlatFormUnsupportedOperation
-    {
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        try {
-            if (classLoader instanceof URLClassLoader) {
-                Method addURLMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-                addURLMethod.setAccessible(true);
-                for (URL uri : urls) {
-                    addURLMethod.invoke(classLoader, uri);
-                }
-                return;
-            }
-            checkState(getJavaVersion() > 8, "check java version > 8 failed");
-            //java11+
-            Field field = classLoader.getClass().getDeclaredField("ucp");
-            field.setAccessible(true);
-            Object ucp = field.get(classLoader);
-            Method addURLMethod = ucp.getClass().getMethod("addURL", URL.class);
-            for (URL url : urls) {
-                addURLMethod.invoke(ucp, url);
-            }
-        }
-        catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new PlatFormUnsupportedOperation(e);
-        }
     }
 }

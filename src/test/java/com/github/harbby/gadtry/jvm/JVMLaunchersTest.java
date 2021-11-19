@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
-import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -258,7 +256,7 @@ public class JVMLaunchersTest
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
-                .notDependParentJvmClassPath()
+                .filterThisJVMClass()
                 .build();
         try {
             launcher.start().call();
@@ -303,7 +301,7 @@ public class JVMLaunchersTest
         String f = "testForkJvmThrowRuntimeException123";
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .task(() -> {
-                    System.out.println("************ job start ***************");
+                    System.out.println("child vm stared");
                     throw new RuntimeException(f);
                 })
                 .addUserJars(Collections.emptyList())
@@ -312,24 +310,14 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .build();
 
-        // 使用如下方式 对actor模型 进行测试
         final Object lock = new Object();
+        CompletableFuture.supplyAsync(launcher::startAndGet).whenComplete((code, error) -> {
+            synchronized (lock) {
+                lock.notify();
+            }
+        });
         synchronized (lock) {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    launcher.startAndGet();
-                }
-                catch (InterruptedException e) {
-                    Throwables.throwThrowable(e);
-                }
-            }).whenComplete((value, error) -> {
-                Assert.assertTrue(error.getMessage().contains(f));
-                error.printStackTrace();
-                synchronized (lock) {
-                    lock.notify();   //唤醒主线程
-                }
-            });
-            lock.wait(500_000); //开始睡眠并让出锁
+            lock.wait();
         }
     }
 
@@ -339,7 +327,7 @@ public class JVMLaunchersTest
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .task(() -> {
-                    System.out.println("************ job start ***************");
+                    System.out.println("child vm stared");
                     return 2019;
                 })
                 .addUserJars(Collections.emptyList())
@@ -348,28 +336,18 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .build();
 
-        // 使用如下方式 对actor模型 进行测试
         Lock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
         lock.lock();
-
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                return launcher.startAndGet();
-            }
-            catch (InterruptedException e) {
-                throw Throwables.throwThrowable(e);
-            }
-        }).whenComplete((value, error) -> {
+        CompletableFuture.supplyAsync(launcher::startAndGet).whenComplete((value, error) -> {
             Assert.assertEquals(2019, value.intValue());
             System.out.println(value);
             lock.lock();
             condition.signal();  //唤醒睡眠的主线程
             lock.unlock();
         });
-
         // LockSupport.class
-        condition.await(600, TimeUnit.SECONDS); //睡眠进入等待池并让出锁
+        condition.await(); //睡眠进入等待池并让出锁
         lock.unlock();
     }
 

@@ -38,12 +38,45 @@ public final class Maths
     /**
      * mod/remainder
      *
-     * @param value number
+     * @param value      number
      * @param powerOfTwo 2^?
      * @return mod
      */
     public static int remainder(int value, int powerOfTwo)
     {
         return value & (powerOfTwo - 1);
+    }
+
+    public static int lastPowerOfTwo(int value)
+    {
+        return Integer.highestOneBit(value);
+    }
+
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
+
+    public static int nextPowerOfTwo(int value)
+    {
+        if (value == 0) {
+            return 1;
+        }
+        value--;
+        value |= value >> 1;
+        value |= value >> 2;
+        value |= value >> 4;
+        value |= value >> 8;
+        value |= value >> 16;
+        //return value + 1;
+        return (value < 0) ? 1 : (value >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : value + 1;
+    }
+
+    private static final long C1 = 0xcc9e2d51;
+    private static final long C2 = 0x1b873593;
+
+    /**
+     * see: google guava Hashing.smear(int)
+     */
+    public static int smearHashCode(int code)
+    {
+        return (int) (C2 * Integer.rotateLeft((int) (code * C1), 15));
     }
 }

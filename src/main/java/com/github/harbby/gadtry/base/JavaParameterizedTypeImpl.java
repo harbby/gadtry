@@ -17,11 +17,8 @@ package com.github.harbby.gadtry.base;
 
 import java.io.Serializable;
 import java.lang.reflect.MalformedParameterizedTypeException;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * The following sources and the parameterizedTypeImpl.java source code in jdk8
@@ -38,7 +35,8 @@ import java.util.Objects;
  */
 
 public class JavaParameterizedTypeImpl
-        implements ParameterizedType, Serializable
+        extends JavaTypes.ParameterizedType0
+        implements Serializable
 {
     private final Type[] actualTypeArguments;
     private final Class<?> rawType;
@@ -119,108 +117,5 @@ public class JavaParameterizedTypeImpl
     public Type getOwnerType()
     {
         return ownerType;
-    }
-
-    /*
-     * From the JavaDoc for java.lang.reflect.ParameterizedType
-     * "Instances of classes that implement this interface must
-     * implement an equals() method that equates any two instances
-     * that share the same generic type declaration and have equal
-     * type parameters."
-     */
-    @Override
-    public boolean equals(Object o)
-    {
-        if (o instanceof ParameterizedType) {
-            // Check that information is equivalent
-            ParameterizedType that = (ParameterizedType) o;
-
-            if (this == that) {
-                return true;
-            }
-
-            Type thatOwner = that.getOwnerType();
-            Type thatRawType = that.getRawType();
-
-            if (false) { // Debugging
-                boolean ownerEquality = (ownerType == null ?
-                        thatOwner == null :
-                        ownerType.equals(thatOwner));
-                boolean rawEquality = (rawType == null ?
-                        thatRawType == null :
-                        rawType.equals(thatRawType));
-
-                boolean typeArgEquality = Arrays.equals(actualTypeArguments, // avoid clone
-                        that.getActualTypeArguments());
-                for (Type t : actualTypeArguments) {
-                    System.out.printf("\t\t%s%s%n", t, t.getClass());
-                }
-
-                System.out.printf("\towner %s\traw %s\ttypeArg %s%n",
-                        ownerEquality, rawEquality, typeArgEquality);
-                return ownerEquality && rawEquality && typeArgEquality;
-            }
-
-            return Objects.equals(ownerType, thatOwner) &&
-                    Objects.equals(rawType, thatRawType) &&
-                    Arrays.equals(actualTypeArguments, // avoid clone
-                            that.getActualTypeArguments());
-        }
-        else {
-            return false;
-        }
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(actualTypeArguments) ^
-                Objects.hashCode(ownerType) ^
-                Objects.hashCode(rawType);
-    }
-
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-
-        if (ownerType != null) {
-            if (ownerType instanceof Class) {
-                sb.append(((Class) ownerType).getName());
-            }
-            else {
-                sb.append(ownerType.toString());
-            }
-
-            sb.append(".");
-
-            if (ownerType instanceof JavaParameterizedTypeImpl) {
-                // Find simple name of nested type by removing the
-                // shared prefix with owner.
-                sb.append(rawType.getName().replace(((JavaParameterizedTypeImpl) ownerType).rawType.getName() + "$",
-                        ""));
-            }
-            else {
-                sb.append(rawType.getName());
-            }
-        }
-        else {
-            sb.append(rawType.getName());
-        }
-
-        if (actualTypeArguments != null &&
-                actualTypeArguments.length > 0) {
-            sb.append("<");
-            boolean first = true;
-            for (Type t : actualTypeArguments) {
-                if (!first) {
-                    sb.append(", ");
-                }
-                sb.append(t.getTypeName());
-                first = false;
-            }
-            sb.append(">");
-        }
-
-        return sb.toString();
     }
 }

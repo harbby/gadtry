@@ -17,11 +17,11 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.function.Promise;
-import com.github.harbby.gadtry.function.exception.Function;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -30,7 +30,7 @@ public interface VmPromise<R>
         extends Promise<R>
 {
     R call()
-            throws InterruptedException, JVMException;
+            throws JVMException;
 
     long pid();
 
@@ -38,7 +38,7 @@ public interface VmPromise<R>
 
     void cancel();
 
-    default <E> VmPromise<E> map(Function<R, E, InterruptedException> map)
+    default <E> VmPromise<E> map(Function<R, E> map)
     {
         requireNonNull(map, "func is null");
         return new VmPromise<E>()
@@ -57,7 +57,6 @@ public interface VmPromise<R>
 
             @Override
             public E call()
-                    throws InterruptedException
             {
                 return map.apply(VmPromise.this.call());
             }
@@ -86,7 +85,6 @@ public interface VmPromise<R>
 
         @Override
         public byte[] call()
-                throws InterruptedException
         {
             try (ChildVMChannelInputStream reader = childVmReader) {
                 String line;
@@ -105,9 +103,14 @@ public interface VmPromise<R>
             catch (EOFException e) {
                 if (process.isAlive()) {
                     process.destroy();
-                    process.waitFor();
+                    try {
+                        process.waitFor();
+                    }
+                    catch (InterruptedException ignored) {
+                        throw new JVMException("interrupted while waiting for child jvm to exit");
+                    }
                 }
-                throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue());
+                throw new JVMException("child process abnormal exit, exit code " + process.exitValue());
             }
             catch (IOException e) {
                 throw new JVMException("child jvm exec failed", e);

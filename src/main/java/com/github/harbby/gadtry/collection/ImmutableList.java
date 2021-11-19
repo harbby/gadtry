@@ -30,7 +30,7 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public abstract class ImmutableList<E>
         extends AbstractList<E>
-        implements List<E>
+        implements List<E>, RandomAccess
 {
     @SuppressWarnings("unchecked")
     public static <T> List<T> copy(Iterable<? extends T> iterable)

@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.function;
+package com.github.harbby.gadtry.cache;
 
-import java.util.function.Function;
+import com.github.harbby.gadtry.function.exception.Supplier;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Map;
 
-public interface Promise<R>
+public interface Cache<K, V>
 {
-    R call()
-            throws InterruptedException;
+    V getIfPresent(K key);
 
-    default <E> Promise<E> map(Function<R, E> map)
-    {
-        requireNonNull(map, "func is null");
-        return () -> map.apply(Promise.this.call());
-    }
+    <E extends Exception> V get(K key, Supplier<V, E> caller) throws E;
+
+    public V remove(K k);
+
+    public V put(K key, V value);
+
+    void clear();
+
+    int size();
+
+    Map<K, V> asMap();
+
+    Map<K, V> getAllPresent();
 }

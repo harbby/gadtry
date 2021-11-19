@@ -68,7 +68,7 @@ public class VmFutureTest
             Assert.fail();
         }
         catch (JVMException e) {
-            Assert.assertEquals(e.getMessage(), "Jvm child process abnormal exit, exit code " + exitCode);
+            Assert.assertEquals(e.getMessage(), "child process abnormal exit, exit code " + exitCode);
         }
     }
 

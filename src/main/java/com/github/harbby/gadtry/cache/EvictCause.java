@@ -13,20 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.function;
+package com.github.harbby.gadtry.cache;
 
-import java.util.function.Function;
-
-import static java.util.Objects.requireNonNull;
-
-public interface Promise<R>
+public enum EvictCause
 {
-    R call()
-            throws InterruptedException;
-
-    default <E> Promise<E> map(Function<R, E> map)
-    {
-        requireNonNull(map, "func is null");
-        return () -> map.apply(Promise.this.call());
-    }
+    OVERFLOW,
+    TIME_OUT;
 }

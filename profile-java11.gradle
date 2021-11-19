@@ -28,6 +28,7 @@ if (targetVersion > 8) {
 tasks.withType(Test) {
   jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
   jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
 }
 
 tasks.withType(JavaExec) {

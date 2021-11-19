@@ -72,8 +72,63 @@ public class Iterators
         }
     };
 
-    private abstract static class MarkFixLenIterator<E>
-            implements MarkIterator<E>, LengthIterator<E> {}
+    public static <E> IteratorPlus<E> of(E value)
+    {
+        return new SingleIterator<>(value);
+    }
+
+    private static class SingleIterator<V>
+            implements IteratorPlus<V>, MarkIterator<V>, LengthIterator<V>
+    {
+        private boolean hasNext = true;
+        private final V value;
+        private boolean mark = hasNext;
+
+        private SingleIterator(V value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public int length()
+        {
+            return 1;
+        }
+
+        @Override
+        public void mark()
+        {
+            this.mark = hasNext;
+        }
+
+        @Override
+        public void reset()
+        {
+            this.hasNext = mark;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return hasNext;
+        }
+
+        @Override
+        public V next()
+        {
+            if (!hasNext) {
+                throw new NoSuchElementException();
+            }
+            hasNext = false;
+            return value;
+        }
+
+        @Override
+        public long size()
+        {
+            return hasNext ? 1 : 0;
+        }
+    }
 
     @SafeVarargs
     public static <E> IteratorPlus<E> of(E... values)
@@ -87,44 +142,67 @@ public class Iterators
         checkArgument(offset >= 0, "offset >= 0");
         checkArgument(length >= 0, "length >= 0");
         checkArgument(offset + length <= values.length, "offset + length <= values.length");
-        return new MarkFixLenIterator<E>()
+        return new ImmutableArrayIterator<>(values, offset, length);
+    }
+
+    private static class ImmutableArrayIterator<V>
+            implements IteratorPlus<V>, MarkIterator<V>, LengthIterator<V>
+    {
+        private final int length;
+        private final V[] values;
+        private final int endIndex;
+
+        private int index;
+        private int mark;
+
+        private ImmutableArrayIterator(V[] values, int offset, int length)
         {
-            private int index = offset;
-            private int mark = offset;
+            this.length = length;
+            this.values = values;
+            this.endIndex = offset + length;
 
-            @Override
-            public int length()
-            {
-                return length;
-            }
+            this.index = offset;
+            this.mark = offset;
+        }
 
-            @Override
-            public boolean hasNext()
-            {
-                return index < offset + length;
-            }
+        @Override
+        public int length()
+        {
+            return length;
+        }
 
-            @Override
-            public E next()
-            {
-                if (!this.hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return values[index++];
-            }
+        @Override
+        public boolean hasNext()
+        {
+            return index < endIndex;
+        }
 
-            @Override
-            public void mark()
-            {
-                this.mark = index;
+        @Override
+        public V next()
+        {
+            if (!this.hasNext()) {
+                throw new NoSuchElementException();
             }
+            return values[index++];
+        }
 
-            @Override
-            public void reset()
-            {
-                this.index = this.mark;
-            }
-        };
+        @Override
+        public void mark()
+        {
+            this.mark = index;
+        }
+
+        @Override
+        public void reset()
+        {
+            this.index = this.mark;
+        }
+
+        @Override
+        public long size()
+        {
+            return endIndex - index;
+        }
     }
 
     @SafeVarargs

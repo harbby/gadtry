@@ -18,7 +18,6 @@ package com.github.harbby.gadtry.collection;
 import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.function.Function1;
 
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
@@ -26,7 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public interface IteratorPlus<E>
-        extends Iterator<E>, Serializable
+        extends Iterator<E>
 {
     static <E> IteratorPlus<E> empty()
     {

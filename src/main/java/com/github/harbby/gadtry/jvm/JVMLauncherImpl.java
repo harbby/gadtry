@@ -73,7 +73,7 @@ public class JVMLauncherImpl<R>
 
     @Override
     public R startAndGet()
-            throws JVMException, InterruptedException
+            throws JVMException
     {
         return startAndGet(this.task);
     }
@@ -102,7 +102,7 @@ public class JVMLauncherImpl<R>
 
     @Override
     public R startAndGet(VmCallable<R> task)
-            throws JVMException, InterruptedException
+            throws JVMException
     {
         return this.start(task).call();
     }

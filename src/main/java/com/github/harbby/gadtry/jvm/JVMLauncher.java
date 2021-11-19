@@ -29,10 +29,10 @@ import java.nio.charset.StandardCharsets;
 public interface JVMLauncher<R>
 {
     public R startAndGet()
-            throws JVMException, InterruptedException;
+            throws JVMException;
 
     public R startAndGet(VmCallable<R> task)
-            throws JVMException, InterruptedException;
+            throws JVMException;
 
     public VmPromise<R> start(VmCallable<R> task)
             throws JVMException;

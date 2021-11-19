@@ -65,7 +65,10 @@ public class OnewayLinkedList<V>
         private final V v;
         private Node<V> next;
 
-        public Node(V v) {this.v = v;}
+        public Node(V v)
+        {
+            this.v = v;
+        }
 
         public Node<V> addNext(V next)
         {

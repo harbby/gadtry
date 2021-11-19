@@ -16,14 +16,13 @@
 package com.github.harbby.gadtry.base;
 
 import java.io.Serializable;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
 public class MapType
-        implements ParameterizedType, Serializable
+        extends JavaTypes.ParameterizedType0
+        implements Serializable
 {
-    private final ParameterizedType parameterizedType;
     private final Class<? extends Map> mapClass;
     private final Type keyType;
     private final Type valueType;
@@ -33,7 +32,6 @@ public class MapType
         this.mapClass = mapClass;
         this.keyType = keyType;
         this.valueType = valueType;
-        this.parameterizedType = new JavaParameterizedTypeImpl(mapClass, new Type[] {keyType, valueType}, null);
     }
 
     public static MapType make(Class<? extends Map> mapClass, Type keyType, Type valueType)
@@ -44,19 +42,19 @@ public class MapType
     @Override
     public Type[] getActualTypeArguments()
     {
-        return parameterizedType.getActualTypeArguments();
+        return new Type[] {keyType, valueType};
     }
 
     @Override
-    public Type getRawType()
+    public Class<?> getRawType()
     {
-        return parameterizedType.getRawType();
+        return mapClass;
     }
 
     @Override
     public Type getOwnerType()
     {
-        return parameterizedType.getOwnerType();
+        return null;
     }
 
     public Class<? extends Map> getBaseClass()
@@ -72,33 +70,5 @@ public class MapType
     public Type getValueType()
     {
         return valueType;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return parameterizedType.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        Object eq = obj;
-        if (obj instanceof MapType) {
-            eq = ((MapType) obj).parameterizedType;
-        }
-        return parameterizedType.equals(eq);
-    }
-
-    @Override
-    public String toString()
-    {
-        return parameterizedType.toString();
-    }
-
-    @Override
-    public String getTypeName()
-    {
-        return parameterizedType.getTypeName();
     }
 }

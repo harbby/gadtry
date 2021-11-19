@@ -15,12 +15,17 @@
  */
 package com.github.harbby.gadtry.base;
 
+import com.github.harbby.gadtry.democode.PlatFormOther;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.ByteBuffer;
+import java.sql.Driver;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * ./gradlew clean test -Pjdk=java11 --tests *PlatformTest --info
@@ -79,5 +84,34 @@ public class PlatformTest
             Assert.assertTrue(e instanceof IOException);
             Assert.assertEquals("IO_test", e.getMessage());
         }
+    }
+
+    @Test
+    public void getSystemClassLoaderJarsTest()
+    {
+        if (Platform.getJavaVersion() < 16) {
+            List<URL> urlList = PlatFormOther.getSystemClassLoaderJars();
+            Assert.assertTrue(urlList.stream().anyMatch(x -> x.getPath().contains("junit")));
+        }
+    }
+
+    @Test
+    public void loadExtJarToSystemClassLoaderTest()
+            throws ClassNotFoundException
+    {
+        if (Platform.getJavaVersion() >= 16) {
+            return;
+        }
+        Assert.assertFalse(PlatFormOther.getSystemClassLoaderJars().stream().anyMatch(x -> x.getPath().contains("h2-1.4.191.jar")));
+        Try.of(() -> ClassLoader.getSystemClassLoader().loadClass("org.h2.Driver"))
+                .onSuccess(Assert::fail)
+                .matchException(ClassNotFoundException.class, e -> {})
+                .doTry();
+
+        URL url = this.getClass().getClassLoader().getResource("version1/h2-1.4.191.jar");
+        PlatFormOther.loadExtJarToSystemClassLoader(Arrays.asList(url));
+
+        Assert.assertTrue(PlatFormOther.getSystemClassLoaderJars().stream().anyMatch(x -> x.getPath().contains("h2-1.4.191.jar")));
+        Assert.assertTrue(Driver.class.isAssignableFrom(ClassLoader.getSystemClassLoader().loadClass("org.h2.Driver")));
     }
 }

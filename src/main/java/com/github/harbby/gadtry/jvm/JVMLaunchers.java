@@ -93,7 +93,7 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> notDependParentJvmClassPath()
+        public VmBuilder<T> filterThisJVMClass()
         {
             depThisJvm = false;
             return this;
@@ -133,6 +133,17 @@ public class JVMLaunchers
         {
             otherVmOps.add(ops);
             return this;
+        }
+
+        public VmBuilder<T> addVmOps(List<String> ops)
+        {
+            otherVmOps.addAll(ops);
+            return this;
+        }
+
+        public VmBuilder<T> addVmOps(String... ops)
+        {
+            return addVmOps(Arrays.asList(ops));
         }
 
         public VmBuilder<T> setEnvironment(Map<String, String> env)

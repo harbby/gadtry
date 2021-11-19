@@ -53,7 +53,7 @@ public class JavaTypesTest
     }
 
     @Test
-    public void make()
+    public void makeTest()
             throws IOException
     {
         Type listType = JavaTypes.make(List.class, new Type[] {String.class}, null);
@@ -61,6 +61,14 @@ public class JavaTypesTest
 
         Assert.assertTrue(Serializables.serialize((Serializable) maType).length > 0);
         Assert.assertTrue(maType.toString().length() > 0);
+    }
+
+    @Test
+    public void makeByTypeReferenceTest()
+    {
+        Type mapType = JavaTypes.make(new TypeReference<Map<String, Object>>() {});
+        Type type2 = JavaTypes.makeMapType(Map.class, String.class, Object.class);
+        Assert.assertEquals(type2, mapType);
     }
 
     @Test
