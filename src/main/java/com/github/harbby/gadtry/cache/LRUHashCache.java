@@ -157,13 +157,12 @@ class LRUHashCache<K, V>
     public V remove(Object key)
     {
         Node<K, V> old = map.remove(key);
-        V returnValue = null;
         if (old != null) {
             deleteNodeOnList(old);
-            returnValue = old.value;
+            return old.value;
         }
 
-        return returnValue;
+        return null;
     }
 
     @Override
