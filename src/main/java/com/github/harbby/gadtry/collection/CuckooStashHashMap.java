@@ -146,8 +146,7 @@ public class CuckooStashHashMap<K, V>
         V popValue = value;
         int hash1, hash2, hash3;
 
-        int pushNumber = 0;
-        do {
+        for (int i = 0; i < cuckooRetriesNumber; i++) {
             switch (random.nextInt(3)) {
                 case 0: {
                     K key0 = keys[index1];
@@ -182,10 +181,10 @@ public class CuckooStashHashMap<K, V>
             }
 
             hash1 = popKey.hashCode();
-            index1 = hash1 & mask;
             hash2 = smearHashCode(hash1);
-            index2 = hash2 & mask;
             hash3 = smearHashCode(hash2);
+            index1 = hash1 & mask;
+            index2 = hash2 & mask;
             index3 = hash3 & mask;
             if (keys[index1] == null) {
                 keys[index1] = popKey;
@@ -202,13 +201,25 @@ public class CuckooStashHashMap<K, V>
                 values[index3] = popValue;
                 return;
             }
-
-            pushNumber++;
         }
-        while (pushNumber < cuckooRetriesNumber);
 
         //push to Stash
         this.pushToStash(popKey, popValue);
+    }
+
+    private void pushToStash(K key, V value)
+    {
+        for (int i = capacity + stashSize; i < keys.length; i++) {
+            if (keys[i] == null) {
+                keys[i] = key;
+                values[i] = value;
+                stashSize++;
+                return;
+            }
+        }
+        //stash is full
+        resize();
+        this.put0(key, value);
     }
 
     @SuppressWarnings("unchecked")
@@ -400,23 +411,6 @@ public class CuckooStashHashMap<K, V>
     public int size()
     {
         return size;
-    }
-
-    private void pushToStash(K key, V value)
-    {
-        if (stashSize >= capacity + stashCapacity) {
-            resize();
-            this.put0(key, value);
-            return;
-        }
-        for (int i = capacity; i < capacity + stashCapacity; i++) {
-            if (keys[i] == null) {
-                keys[i] = key;
-                values[i] = value;
-                stashSize++;
-                return;
-            }
-        }
     }
 
     @Override
