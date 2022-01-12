@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -55,6 +56,22 @@ public class ImmutableMapTest
                 .putAll(Collections.singletonMap("e", 9))
                 .build();
         Assert.assertEquals(immutableMap, dist);
+    }
+
+    @Test
+    public void redBlackTreeTest()
+    {
+        int size = 12;
+        ImmutableMap.Builder<Integer, String> builder = ImmutableMap.builder();
+        List<Integer> keys1 = IntStream.range(0, 9).mapToObj(i -> i * 16 + 4).collect(Collectors.toList());
+        List<Integer> keys2 = ImmutableList.of(1, 2, 3);
+
+        keys1.forEach(i -> builder.put(i, "value" + i));
+        keys2.forEach(i -> builder.put(i, "value" + i));
+        Map<Integer, String> map = builder.build();
+        Assert.assertEquals(map.size(), size);
+        keys1.forEach(i -> Assert.assertEquals(map.get(i), "value" + i));
+        keys2.forEach(i -> Assert.assertEquals(map.get(i), "value" + i));
     }
 
     private static final String temple = "public static <K, V> ImmutableMap<K, V> of(%s)\n" +

@@ -127,6 +127,26 @@ public abstract class ImmutableList<E>
     }
 
     @SafeVarargs
+    public static <T> List<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8, T... others)
+    {
+        if (others.length > 0) {
+            @SuppressWarnings("unchecked")
+            T[] array = (T[]) new Object[8 + others.length];
+            array[0] = t1;
+            array[1] = t2;
+            array[2] = t3;
+            array[3] = t4;
+            array[4] = t5;
+            array[5] = t6;
+            array[6] = t7;
+            array[7] = t8;
+            System.arraycopy(others, 0, array, 8, others.length);
+            return wrap(array);
+        }
+        return checkedArr(t1, t2, t3, t4, t5, t6, t7, t8);
+    }
+
+    @SafeVarargs
     private static <T> List<T> checkedArr(T... array)
     {
         return wrap(array);
