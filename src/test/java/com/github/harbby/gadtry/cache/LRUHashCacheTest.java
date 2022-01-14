@@ -29,7 +29,8 @@ import static org.junit.Assert.assertNull;
 
 public class LRUHashCacheTest
 {
-    public static void main(String[] args)
+    @Test
+    public void baseTest()
             throws InterruptedException
     {
         Cache<String, String> cache = new LRUHashCache<>(
@@ -45,7 +46,7 @@ public class LRUHashCacheTest
                         default:
                     }
                 },
-                TimeUnit.SECONDS.toMillis(5));
+                TimeUnit.MILLISECONDS.toMillis(100));
 
         //show OVERFLOW
         for (int i = 1; i <= 15; i++) {
@@ -53,7 +54,7 @@ public class LRUHashCacheTest
         }
 
         //show TIME_OUT
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.MILLISECONDS.sleep(101);
         cache.put("key16", "value16");
         for (int i = 1; i <= 15; i++) {
             assertNull(cache.getIfPresent("key" + i));

@@ -24,15 +24,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Strings.isNotBlank;
-import static com.github.harbby.gadtry.graph.Edge.createEdge;
 import static java.util.Objects.requireNonNull;
 
-public interface Graph<E, R>
+public interface Graph<N, E>
         extends Serializable
 {
-    String getName();
+    public void addNode(N node);
+
+    public void addEdge(N n1, N n2);
 
     List<String> printShow();
 
@@ -42,7 +41,7 @@ public interface Graph<E, R>
      * @param id 已指定id为起点
      * @return graph text
      */
-    Iterable<String> printShow(String id);
+    Iterable<String> printShow(N id);
 
     /**
      * 搜索出in到out符合规则的所有路径
@@ -52,85 +51,69 @@ public interface Graph<E, R>
      * @param rule 规则
      * @return 搜索到的路径
      */
-    default List<Route<E, R>> searchRuleRoute(String in, String out, Function<Route<E, R>, Boolean> rule)
+    default List<Route<N, E>> searchRuleRoute(N in, N out, Function<Route<N, E>, Boolean> rule)
     {
         return searchRuleRoute(in, rule).stream()
                 .filter(x -> out.equals(x.getLastNodeId()))
                 .collect(Collectors.toList());
     }
 
-    public List<Node<E, R>> findNode(Function<Node<E, R>, Boolean> rule);
+    public List<GraphNode<N, E>> findNode(Function<GraphNode<N, E>, Boolean> rule);
 
-    public SearchBuilder<E, R> search();
+    public SearchBuilder<N, E> search();
 
-    List<Route<E, R>> searchRuleRoute(String in, Function<Route<E, R>, Boolean> rule);
+    List<Route<N, E>> searchRuleRoute(N in, Function<Route<N, E>, Boolean> rule);
 
-    List<Route<E, R>> searchRuleRoute(Function<Route<E, R>, Boolean> rule);
+    List<Route<N, E>> searchRuleRoute(Function<Route<N, E>, Boolean> rule);
 
-    Route<E, R> getRoute(String... ids);
+    Route<N, E> getRoute(N... ids);
 
-    public Node<E, R> getNode(String id);
+    public GraphNode<N, E> getNode(N id);
 
-    static <E, R> GraphBuilder<E, R> builder()
+    static <N, E> GraphBuilder<N, E> builder()
     {
         return new GraphBuilder<>();
     }
 
-    public static class GraphBuilder<E, R>
+    public static class GraphBuilder<N, E>
     {
-        private final Map<String, Node.Builder<E, R>> rootNodes = new HashMap<>();
-        private final Map<String, Node.Builder<E, R>> nodes = new HashMap<>();
-        private String name;
+        private final Map<N, GraphNode<N, E>> rootNodes = new HashMap<>();
+        private final Map<N, GraphNode<N, E>> nodes = new HashMap<>();
 
-        public GraphBuilder<E, R> name(String name)
+        public GraphBuilder<N, E> addNode(N nodeData)
         {
-            this.name = name;
-            return this;
-        }
-
-        public GraphBuilder<E, R> addNode(String nodeId)
-        {
-            return addNode(nodeId, null);
-        }
-
-        public GraphBuilder<E, R> addNode(String nodeId, E nodeData)
-        {
-            checkState(isNotBlank(nodeId), "nodeId is null or empty");
-            nodes.computeIfAbsent(nodeId, key -> {
-                Node.Builder<E, R> node = Node.builder(nodeId, nodeData);
-                rootNodes.put(nodeId, node);
+            nodes.computeIfAbsent(nodeData, key -> {
+                GraphNode<N, E> node = GraphNode.of(nodeData);
+                rootNodes.put(nodeData, node);
                 return node;
             });
             return this;
         }
 
-        public GraphBuilder<E, R> addEdge(String node1, String node2, R edgeData)
+        public GraphBuilder<N, E> addEdge(N node1, N node2, E edgeData)
         {
-            Node.Builder<E, R> inNode = requireNonNull(nodes.get(node1), "Unable to create edge because " + node1 + " does not exist");
-            Node.Builder<E, R> outNode = requireNonNull(nodes.get(node2), "Unable to create edge because " + node2 + " does not exist");
-            Edge<E, R> eEdge = createEdge(inNode.build(), outNode.build(), edgeData);
-            inNode.addNextNode(eEdge);
-            //todo: 环
+            GraphNode<N, E> inNode = requireNonNull(nodes.get(node1), "Unable to create edge because " + node1 + " does not exist");
+            GraphNode<N, E> outNode = requireNonNull(nodes.get(node2), "Unable to create edge because " + node2 + " does not exist");
+            inNode.addNextNode(outNode, edgeData);
             rootNodes.remove(node2);  //从根节点列表中删除
             return this;
         }
 
-        public GraphBuilder<E, R> addEdge(String node1, String node2)
+        public GraphBuilder<N, E> addEdge(N node1, N node2)
         {
             return addEdge(node1, node2, null);
         }
 
-        public Graph<E, R> create()
+        public Graph<N, E> create()
         {
-            final Node.Builder<E, R> root = Node.builder("/", null);
-            for (Node.Builder<E, R> node : rootNodes.values()) {
-                Edge<E, R> edge = createEdge(root.build(), node.build(), null);
-                root.addNextNode(edge);
+            final GraphNode<N, E> root = new GraphNode.RootNode<>();
+            for (GraphNode<N, E> node : rootNodes.values()) {
+                root.addNextNode(node, null);
             }
 
-            Map<String, Node<E, R>> nodeMap = nodes.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().build()));
-            return new DefaultGraph<>(name, root.build(), nodeMap);
+            Map<N, GraphNode<N, E>> nodeMap = nodes.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            return new DefaultGraph<>(root, nodeMap);
         }
     }
 }

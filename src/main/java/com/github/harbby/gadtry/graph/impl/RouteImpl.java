@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.graph.Edge;
-import com.github.harbby.gadtry.graph.Node;
+import com.github.harbby.gadtry.graph.GraphEdge;
+import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.Route;
 
 import java.util.ArrayList;
@@ -28,62 +28,71 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
-public class RouteImpl<E, R>
-        implements Route<E, R>
+public class RouteImpl<N, E>
+        implements Route<N, E>
 {
-    private final Node<E, R> begin;
-    private final Deque<Edge<E, R>> edges;
-    private final Supplier<Boolean> findDeadLoop;   //如果出现两次则说明发现循环
-    private final Supplier<List<String>> nodeIds;
+    private final GraphNode<N, E> begin;
+    private final Deque<GraphEdge<N, E>> edges;
+    private final Supplier<Boolean> containsLoop;
+    private final Supplier<List<N>> nodeIds;
 
-    public RouteImpl(Node<E, R> begin, Deque<Edge<E, R>> edges)
+    public RouteImpl(GraphNode<N, E> begin, Deque<GraphEdge<N, E>> edges)
     {
         this.begin = begin;
         this.edges = edges;
-        this.findDeadLoop = Lazys.goLazy(() -> {
-            Edge<E, R> lastEdge = getLastEdge();
-            return begin.getId().equals(lastEdge.getOutNode().getId()) ||
-                    edges.stream().anyMatch(erEdge -> erEdge != lastEdge && erEdge.getOutNode().getId()
-                            .equals(getLastNode().getId())); //如果出现两次则无须继续递归查找
-        });
-        this.nodeIds = Lazys.goLazy(() -> {
-            List<String> list = new ArrayList<>(this.size() + 1);
-            list.add(begin.getId());
-            this.edges.forEach(erEdge -> {
-                list.add(erEdge.getOutNode().getId());
-            });
+        this.containsLoop = Lazys.of(() -> findLoop(begin, edges));
+        this.nodeIds = Lazys.of(() -> {
+            List<N> list = new ArrayList<>(this.size() + 1);
+            list.add(begin.getValue());
+            this.edges.forEach(erEdge -> list.add(erEdge.getOutNode().getValue()));
             return list;
         });
     }
 
     @Override
-    public Route.Builder<E, R> copy()
+    public Route.Builder<N, E> copy()
     {
         return Route.builder(begin).addAll(this.edges);
     }
 
     @Override
-    public List<String> getIds()
+    public List<N> getIds()
     {
         return nodeIds.get();
     }
 
-    /**
-     * 检测死递归
-     *
-     * @return true不存在死递归
-     */
-    @Override
-    public boolean findDeadLoop()
+    private static <N, E> boolean findLoop(GraphNode<N, E> begin, Deque<GraphEdge<N, E>> edges)
     {
-        return findDeadLoop.get();
+        if (edges.isEmpty()) {
+            return false;
+        }
+        GraphNode<N, E> lastNode = edges.getLast().getOutNode();
+        N lastNodeValue = lastNode.getValue();
+        if (!(begin instanceof GraphNode.RootNode) && Objects.equals(begin.getValue(), lastNodeValue)) {
+            return true;
+        }
+        Iterator<GraphEdge<N, E>> iterator = edges.descendingIterator();
+        iterator.next();
+        while (iterator.hasNext()) {
+            if (Objects.equals(lastNodeValue, iterator.next().getOutNode().getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
-    public Deque<Edge<E, R>> getEdges()
+    public boolean containsLoop()
+    {
+        return containsLoop.get();
+    }
+
+    @Override
+    public Deque<GraphEdge<N, E>> getEdges()
     {
         return edges;
     }
@@ -98,14 +107,13 @@ public class RouteImpl<E, R>
      * 上一个
      */
     @Override
-    public Node<E, R> getLastNode(int index)
+    public GraphNode<N, E> getLastNode(int index)
     {
-        Iterator<Edge<E, R>> iterator = this.edges.descendingIterator();
-
         if (this.size() == index) {
             return begin;
         }
         else if (this.size() > index) {
+            Iterator<GraphEdge<N, E>> iterator = this.edges.descendingIterator();
             return Iterators.getFirst(iterator, index).getOutNode();
         }
         else {
@@ -114,7 +122,7 @@ public class RouteImpl<E, R>
     }
 
     @Override
-    public Edge<E, R> getLastEdge()
+    public GraphEdge<N, E> getLastEdge()
     {
         if (edges.isEmpty()) {
             throw new IllegalStateException("this Route only begin node");
@@ -139,7 +147,7 @@ public class RouteImpl<E, R>
             return false;
         }
 
-        RouteImpl other = (RouteImpl) obj;
+        RouteImpl<?, ?> other = (RouteImpl<?, ?>) obj;
         return Objects.equals(this.begin, other.begin) && Objects.equals(this.edges, other.edges);
     }
 
@@ -148,7 +156,7 @@ public class RouteImpl<E, R>
     {
         return toStringHelper(this)
                 .add("begin", begin)
-                .add("route", String.join("-", getIds()))
+                .add("route", getIds().stream().map(String::valueOf).collect(Collectors.joining("-")))
                 .toString();
     }
 }

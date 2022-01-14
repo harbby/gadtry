@@ -15,81 +15,80 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import com.github.harbby.gadtry.collection.MutableList;
-
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class SearchBuilder<E, R>
+public class SearchBuilder<N, E>
 {
-    public enum Optimizer
+    public enum Mode
     {
         RECURSIVE_DEPTH_FIRST, //递归 深度优先 recursive_depth_first
         BREADTH_FIRST,   //广度优先 breadth_first
         DEPTH_FIRST   //深度优先 depth_first
     }
 
-    private final Graph<E, R> graph;
+    private final Graph<N, E> graph;
 
-    private Optimizer optimizer = Optimizer.DEPTH_FIRST;
-    private Node<E, R> beginNode;
-    private Node<E, R> endNode;
-    private Function<Route<E, R>, Boolean> nextRule;
-    private Function<SearchContext<E, R>, Boolean> globalRule = erSearchContext -> true;
+    private Mode mode = Mode.DEPTH_FIRST;
+    private GraphNode<N, E> beginNode;
+    private GraphNode<N, E> endNode;
+    private Function<Route<N, E>, Boolean> nextRule;
+    private Function<SearchContext<N, E>, Boolean> globalRule = erSearchContext -> true;
 
-    public SearchBuilder(Graph<E, R> graph, Node<E, R> root)
+    public SearchBuilder(Graph<N, E> graph, GraphNode<N, E> root)
     {
         this.graph = requireNonNull(graph, "graph is null");
         this.beginNode = root;
     }
 
-    public SearchBuilder<E, R> optimizer(Optimizer optimizer)
+    public SearchBuilder<N, E> mode(Mode mode)
     {
-        this.optimizer = requireNonNull(optimizer, "optimizer is null");
+        this.mode = requireNonNull(mode, "mode is null");
         return this;
     }
 
-    public SearchBuilder<E, R> beginNode(String beginNodeId)
+    public SearchBuilder<N, E> beginNode(N beginNodeId)
     {
         requireNonNull(beginNodeId, "beginNodeId is null");
         this.beginNode = graph.getNode(beginNodeId);
         return this;
     }
 
-    public SearchBuilder<E, R> endNode(String endNodeId)
+    public SearchBuilder<N, E> endNode(N endNodeId)
     {
         requireNonNull(endNodeId, "endNodeId is null");
         this.endNode = graph.getNode(endNodeId);
         return this;
     }
 
-    public SearchBuilder<E, R> nextRule(Function<Route<E, R>, Boolean> nextRule)
+    public SearchBuilder<N, E> nextRule(Function<Route<N, E>, Boolean> nextRule)
     {
         this.nextRule = requireNonNull(nextRule, "nextRule is null");
         return this;
     }
 
-    public SearchBuilder<E, R> globalRule(Function<SearchContext<E, R>, Boolean> globalRule)
+    public SearchBuilder<N, E> globalRule(Function<SearchContext<N, E>, Boolean> globalRule)
     {
         this.globalRule = requireNonNull(globalRule, "globalRule is null");
         return this;
     }
 
-    public SearchResult<E, R> search()
+    public SearchResult<N, E> search()
     {
         requireNonNull(nextRule, "nextRule is null");
 
-        SearchContext<E, R> searchContext = new SearchContext<>(nextRule, globalRule);
-        Route<E, R> begin = Route.builder(beginNode).create();
-        final Deque<Route<E, R>> routes = new LinkedList<>();
+        SearchContext<N, E> searchContext = new SearchContext<>(nextRule, globalRule);
+        Route<N, E> begin = Route.builder(beginNode).create();
+        final LinkedList<Route<N, E>> routes = new LinkedList<>();
 
-        switch (optimizer) {
+        switch (mode) {
             case DEPTH_FIRST:
                 searchByDepthFirst(routes, searchContext, begin);
                 break;
@@ -105,18 +104,18 @@ public class SearchBuilder<E, R>
                 }
         }
 
-        return new SearchResult<E, R>()
+        return new SearchResult<N, E>()
         {
             @Override
-            public List<Route<E, R>> getRoutes()
+            public List<Route<N, E>> getRoutes()
             {
                 if (endNode != null) {
                     return routes.stream()
-                            .filter(x -> endNode.getId().equals(x.getLastNodeId()))
+                            .filter(x -> Objects.equals(endNode.getValue(), x.getLastNodeId()))
                             .collect(Collectors.toList());
                 }
                 else {
-                    return MutableList.copy(routes);
+                    return routes;
                 }
             }
 
@@ -138,13 +137,13 @@ public class SearchBuilder<E, R>
      *  递归 深度优先
      * 如果深度过高可能 throws StackOverflowError
      * */
-    private static <E, R> void searchByRecursiveDepthFirst(
-            Deque<Route<E, R>> routes,
-            SearchContext<E, R> context,
-            Route<E, R> route)
+    private static <N, E> void searchByRecursiveDepthFirst(
+            Deque<Route<N, E>> routes,
+            SearchContext<N, E> context,
+            Route<N, E> route)
     {
-        for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
-            Route<E, R> newRoute = route.copy().add(edge).create();
+        for (GraphEdge<N, E> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
+            Route<N, E> newRoute = route.copy().add(edge).create();
             context.setLastRoute(newRoute);
             boolean next = context.getNextRule().apply(newRoute);
             if (next) {
@@ -168,18 +167,18 @@ public class SearchBuilder<E, R>
     /**
      * 广度优先 Breadth first
      */
-    private static <E, R> void searchByBreadthFirst(
-            Deque<Route<E, R>> routes,
-            SearchContext<E, R> context,
-            Route<E, R> beginNode)
+    private static <N, E> void searchByBreadthFirst(
+            Deque<Route<N, E>> routes,
+            SearchContext<N, E> context,
+            Route<N, E> beginNode)
     {
-        final Queue<Route<E, R>> nextNodes = new LinkedList<>();
+        final Queue<Route<N, E>> nextNodes = new LinkedList<>();
         nextNodes.add(beginNode);
 
-        Route<E, R> route;
+        Route<N, E> route;
         while ((route = nextNodes.poll()) != null) {
-            for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
-                Route<E, R> newRoute = route.copy().add(edge).create();
+            for (GraphEdge<N, E> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
+                Route<N, E> newRoute = route.copy().add(edge).create();
                 context.setLastRoute(newRoute);
 
                 if (context.getNextRule().apply(newRoute)) {
@@ -196,20 +195,20 @@ public class SearchBuilder<E, R>
     }
 
     /**
-     * 深度优先 Depth first
+     * Depth first
      */
-    private static <E, R> void searchByDepthFirst(
-            Deque<Route<E, R>> routes,
-            SearchContext<E, R> context,
-            Route<E, R> beginNode)
+    private static <N, E> void searchByDepthFirst(
+            Deque<Route<N, E>> routes,
+            SearchContext<N, E> context,
+            Route<N, E> beginNode)
     {
-        final Deque<Route<E, R>> nextNodes = new LinkedList<>();  //Stack
+        final Deque<Route<N, E>> nextNodes = new LinkedList<>();  //Stack
         nextNodes.add(beginNode);
 
-        Route<E, R> route;
+        Route<N, E> route;
         while ((route = nextNodes.pollLast()) != null) {
-            for (Edge<E, R> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
-                Route<E, R> newRoute = route.copy().add(edge).create();
+            for (GraphEdge<N, E> edge : route.getLastNode().nextNodes()) {   //use stream.parallel();
+                Route<N, E> newRoute = route.copy().add(edge).create();
                 context.setLastRoute(newRoute);
 
                 if (context.getNextRule().apply(newRoute)) {

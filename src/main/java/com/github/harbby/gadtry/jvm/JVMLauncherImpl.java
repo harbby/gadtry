@@ -127,8 +127,6 @@ public class JVMLauncherImpl<R>
         catch (IOException ignored) { //child not running
         }
         ChildVMChannelInputStream reader = new ChildVMChannelInputStream(process.getInputStream());
-        reader.checkVMHeader();
-
         VmPromise<byte[]> promise = new VmPromise.VmPromiseImpl(process, reader, consoleHandler);
         return promise.map(bytes -> {
             try {

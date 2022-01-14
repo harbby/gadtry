@@ -57,9 +57,9 @@ public class IocFactoryImpl
     }
 
     @Override
-    public Graph<Void, Void> analyze()
+    public Graph<String, Void> analyze()
     {
-        Graph.GraphBuilder<Void, Void> builder = Graph.builder();
+        Graph.GraphBuilder<String, Void> builder = Graph.builder();
         final Set<Class> parserClass = new HashSet<>();
         Binder binder = new Binder()
         {
@@ -108,11 +108,11 @@ public class IocFactoryImpl
                 };
             }
 
-            private void parserDep(Class key, Class aClass)
+            private void parserDep(Class<?> key, Class<?> aClass)
             {
                 for (Constructor<?> constructor : aClass.getConstructors()) {
                     if (constructor.getAnnotation(Autowired.class) != null) {
-                        for (Class type : constructor.getParameterTypes()) {
+                        for (Class<?> type : constructor.getParameterTypes()) {
                             if (type != key) {
                                 builder.addNode(key.toString());
                                 builder.addNode(type.toString());
@@ -139,13 +139,13 @@ public class IocFactoryImpl
         for (Bean bean : beans) {
             bean.configure(binder);
         }
-        Graph<Void, Void> graph = builder.create();
+        Graph<String, Void> graph = builder.create();
         if (parserClass.isEmpty()) {
             return graph;
         }
         String begin = parserClass.iterator().next().toString();
         graph.searchRuleRoute(begin, route -> {
-            if (route.findDeadLoop()) {
+            if (route.containsLoop()) {
                 throw new IllegalArgumentException("Find Circular dependency" + route.getIds());
             }
             return true;

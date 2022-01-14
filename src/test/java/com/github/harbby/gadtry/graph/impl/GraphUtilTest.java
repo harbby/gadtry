@@ -29,10 +29,10 @@ public class GraphUtilTest
         Graph.GraphBuilder<Integer, Void> graphBuilder = Graph.builder();
         Random random = new Random();
         for (int i = 0; i < 4000; i++) {
-            graphBuilder.addNode(i + "", i);
+            graphBuilder.addNode(i);
         }
         for (int i = 0; i < 3999; i++) {
-            graphBuilder.addEdge(i + "", i + 1 + "");
+            graphBuilder.addEdge(i, i + 1);
         }
 
         Assert.assertEquals(graphBuilder.create().printShow().size(), 4001);

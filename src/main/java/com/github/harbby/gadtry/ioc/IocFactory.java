@@ -48,13 +48,7 @@ public interface IocFactory
 
     public <T> BindMapping getAllBeans();
 
-    @Deprecated
-    default Graph<Void, Void> analysis()
-    {
-        return analyze();
-    }
-
-    Graph<Void, Void> analyze();
+    Graph<String, Void> analyze();
 
     public static IocFactory create(Bean... beans)
     {

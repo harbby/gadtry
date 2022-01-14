@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.graph.Edge;
-import com.github.harbby.gadtry.graph.Node;
+import com.github.harbby.gadtry.graph.GraphEdge;
+import com.github.harbby.gadtry.graph.GraphNode;
 
 import java.util.Deque;
 import java.util.HashSet;
@@ -30,29 +30,29 @@ public class GraphUtil
 {
     private GraphUtil() {}
 
-    public static List<String> printShow(List<Node<?, ?>> firstNodes)
+    public static List<String> printShow(List<GraphNode<?, ?>> firstNodes)
     {
         return printBuilder(firstNodes);
     }
 
-    public static List<String> printShow(Node<?, ?>... firstNodes)
+    public static List<String> printShow(GraphNode<?, ?>... firstNodes)
     {
         return printShow(ImmutableList.copy(firstNodes));
     }
 
     private static class NextStep
     {
-        private final Node<?, ?> node;
+        private final GraphNode<?, ?> node;
         private final String header;
 
-        public NextStep(Node<?, ?> node, String header)
+        public NextStep(GraphNode<?, ?> node, String header)
         {
             this.node = node;
 
             this.header = header;
         }
 
-        public Node<?, ?> getNode()
+        public GraphNode<?, ?> getNode()
         {
             return node;
         }
@@ -63,7 +63,7 @@ public class GraphUtil
         }
     }
 
-    private static List<String> printBuilder(List<Node<?, ?>> beginNodes)
+    private static List<String> printBuilder(List<GraphNode<?, ?>> beginNodes)
     {
         Deque<NextStep> queue = new LinkedList<>();
         List<String> builder = new LinkedList<>();
@@ -73,22 +73,22 @@ public class GraphUtil
 
         NextStep nextStep;
         while ((nextStep = queue.pollFirst()) != null) {
-            Node<?, ?> node = nextStep.getNode();
-            String line = nextStep.getHeader() + "────" + node.getId();
+            GraphNode<?, ?> node = nextStep.getNode();
+            String line = nextStep.getHeader() + "────" + node.toString();
             builder.add(line);
 
-            String nextHeader = getNextLineHeader(line, node.getId());
+            String nextHeader = getNextLineHeader(line, node.toString());
             //push next nodes...
-            List<Node<?, ?>> nexts = node.nextNodes().stream().filter(edge -> {
-                String path = node.getId() + "->" + edge.getOutNode().getId();
+            List<GraphNode<?, ?>> nexts = node.nextNodes().stream().filter(edge -> {
+                String path = node.toString() + "->" + edge.getOutNode();
                 return looped.add(path);
-            }).map(Edge::getOutNode).collect(Collectors.toList());
+            }).map(GraphEdge::getOutNode).collect(Collectors.toList());
             pushNext(queue, nexts, nextHeader);
         }
         return builder;
     }
 
-    private static void pushNext(Deque<NextStep> queue, List<Node<?, ?>> nexts, String nextHeader)
+    private static void pushNext(Deque<NextStep> queue, List<GraphNode<?, ?>> nexts, String nextHeader)
     {
         for (int i = nexts.size() - 1; i >= 0; i--) {
             if (i == nexts.size() - 1) {  //end

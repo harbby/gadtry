@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.graph.impl.NodeOperator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,8 +26,7 @@ import java.util.stream.Collectors;
 
 public class GraphxTest
 {
-    private final Graph<?, ?> graph = Graph.builder()
-            .name("test1")
+    private final Graph<String, Void> graph = Graph.<String, Void>builder()
             .addNode("a1")
             .addNode("a2")
             .addNode("a3")
@@ -48,7 +46,6 @@ public class GraphxTest
     @Test
     public void testCreateGraph1()
     {
-        Assert.assertEquals("test1", graph.getName());
         List<? extends Route<?, ?>> list = graph.searchRuleRoute(route -> true);
         Assert.assertEquals(list.size(), 6);
         graph.printShow().forEach(System.out::println);
@@ -68,7 +65,7 @@ public class GraphxTest
     public void getLastEdge()
     {
         Route<?, ?> route = graph.getRoute("a1", "a2", "a5");
-        Assert.assertEquals(route.getLastEdge().getOutNode().getId(), "a5");
+        Assert.assertEquals(route.getLastEdge().getOutNode().getValue(), "a5");
         try {
             Route.builder(route.getLastNode()).create().getLastEdge();
             Assert.fail();
@@ -82,9 +79,9 @@ public class GraphxTest
     public void getLastNode()
     {
         Route<?, ?> route = graph.getRoute("a1", "a2", "a5");
-        Assert.assertEquals(route.getLastNode(2).getId(), "a1");
+        Assert.assertEquals(route.getLastNode(2).getValue(), "a1");
         try {
-            route.getLastNode(3).getId();
+            route.getLastNode(3).getValue();
             Assert.fail();
         }
         catch (NoSuchElementException ignored) {
@@ -109,7 +106,7 @@ public class GraphxTest
     @Test
     public void testRoute()
     {
-        Graph<?, ?> graph = Graph.builder()
+        Graph<String, Void> graph = Graph.<String, Void>builder()
                 .addNode("Throwable")
                 .addNode("Exception")
                 .addNode("IOException")
@@ -139,16 +136,16 @@ public class GraphxTest
         graph.printShow().forEach(System.out::println);
 
         List<? extends Route<?, ?>> routes = graph.searchRuleRoute("Throwable", route -> {
-            return !route.getLastNode(1).getId().equals("NoClassDefFoundError");
+            return !route.getLastNode(1).getValue().equals("NoClassDefFoundError");
         });
 
         routes = routes.stream().filter(route1 -> {
-            return route1.getLastNode().getId().equals("NoClassDefFoundError");
+            return route1.getLastNode().getValue().equals("NoClassDefFoundError");
         }).collect(Collectors.toList());
 
         Route<?, ?> route = routes.get(0);
-        Node node = route.getLastNode(1);
-        Assert.assertEquals(node.getId(), "Error");
+        GraphNode node = route.getLastNode(1);
+        Assert.assertEquals(node.getValue(), "Error");
     }
 
     @Test
@@ -189,26 +186,31 @@ public class GraphxTest
 
     @Test
     public void testAddOperatorReturn6()
-            throws Exception
     {
-        AtomicInteger db = new AtomicInteger();  //模拟数据库
+        AtomicInteger db = new AtomicInteger();  //mock db
+
+        NodeOperator<Integer> source = new NodeOperator<>("source", v -> {   //模拟PipeLine管道soruce
+            return 1;
+        });
+        NodeOperator<Integer> a2 = new NodeOperator<>("a2", v -> {   //模拟PipeLine管道TransForm
+            return v + 2;
+        });
+        NodeOperator<Integer> a3 = new NodeOperator<>("a3", v -> {   //模拟PipeLine管道TransForm
+            return v + 3;
+        });
+        NodeOperator<Integer> sink = new NodeOperator<>("sink", v -> {   //模拟PipeLine管道Sink
+            db.set(v);
+            return null;
+        });
+
         Graph<NodeOperator<Integer>, Void> graph = Graph.<NodeOperator<Integer>, Void>builder()
-                .addNode("source", new NodeOperator<>(v -> {   //模拟PipeLine管道soruce
-                    return 1;
-                }))
-                .addNode("a2", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
-                    return v + 2;
-                }))
-                .addNode("a3", new NodeOperator<>(v -> {      //模拟PipeLine管道TransForm
-                    return v + 3;
-                }))
-                .addNode("sink", new NodeOperator<>(v -> {    //模拟PipeLine管道Sink
-                    db.set(v);
-                    return null;
-                }))
-                .addEdge("source", "a2")
-                .addEdge("a2", "a3")
-                .addEdge("a3", "sink")
+                .addNode(source)
+                .addNode(a2)
+                .addNode(a3)
+                .addNode(sink)
+                .addEdge(source, a2)
+                .addEdge(a2, a3)
+                .addEdge(a3, sink)
                 .create();
 
         NodeOperator.runGraph(graph);

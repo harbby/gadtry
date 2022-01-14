@@ -26,15 +26,16 @@ public class RedBlackTree<K, V>
 {
     private TreeNode<K, V> root;
 
-    public void putNode(TreeNode<K, V> node)
+    public V putNode(TreeNode<K, V> node)
     {
         node.isRed = true; //新插入节点为红色
         if (root == null) {
             root = node;
             root.isRed = false;
+            return null;
         }
         else {
-            root.add(node, this);
+            return root.add(node, this);
         }
     }
 
@@ -239,41 +240,29 @@ public class RedBlackTree<K, V>
 
         public V get(Object key, int hash)
         {
-            int hash0 = this.getHash();
-            if (hash0 == hash && this.getKey().equals(key)) {
-                return this.getValue();
-            }
-            if (hash > hash0) {
-                if (right != null) {
-                    return right.get(key, hash);
+            TreeNode<K, V> next = this;
+            do {
+                int hash0 = next.getHash();
+                if (hash0 == hash && key.equals(next.getKey())) {
+                    return next.getValue();
                 }
+                next = hash > hash0 ? next.right : next.left;
             }
-            else {
-                if (left != null) {
-                    return left.get(key, hash);
-                }
-            }
-
+            while (next != null);
             return null;
         }
 
         public boolean containsKey(Object key, int hash)
         {
-            int hash0 = this.getHash();
-            if (hash0 == hash && this.getKey().equals(key)) {
-                return true;
-            }
-            if (hash > hash0) {
-                if (right != null) {
-                    return right.containsKey(key, hash);
+            TreeNode<K, V> next = this;
+            do {
+                int hash0 = next.getHash();
+                if (hash0 == hash && key.equals(next.getKey())) {
+                    return true;
                 }
+                next = hash > hash0 ? next.right : next.left;
             }
-            else {
-                if (left != null) {
-                    return left.containsKey(key, hash);
-                }
-            }
-
+            while (next != null);
             return false;
         }
 
@@ -288,34 +277,39 @@ public class RedBlackTree<K, V>
             return parent.isLeftNode() ? grandParent.right : grandParent.left;
         }
 
-        public void add(TreeNode<K, V> node, RedBlackTree<K, V> tree)
+        public V add(TreeNode<K, V> node, RedBlackTree<K, V> tree)
         {
-            int hash0 = this.getHash();
-            if (hash0 == node.getHash() && this.getKey().equals(node.getKey())) {
-                this.setValue(node.getValue());
-            }
-            else if (node.getHash() > hash0) {
-                if (right == null) {
-                    right = node;
-                    node.parent = this;
-                    if (this.isRed) {
-                        tree.balanceInsert(node, false);
+            TreeNode<K, V> next = this;
+            while (true) {
+                int hash0 = next.getHash();
+                if (hash0 == node.getHash() && next.getKey().equals(node.getKey())) {
+                    return this.setValue(node.getValue());
+                }
+                else if (node.getHash() > hash0) {
+                    if (next.right == null) {
+                        next.right = node;
+                        node.parent = next;
+                        if (next.isRed) {
+                            tree.balanceInsert(node, false);
+                        }
+                        return null;
+                    }
+                    else {
+                        next = next.right;
                     }
                 }
                 else {
-                    right.add(node, tree);
-                }
-            }
-            else {
-                if (left == null) {
-                    left = node;
-                    node.parent = this;
-                    if (this.isRed) {
-                        tree.balanceInsert(node, true);
+                    if (next.left == null) {
+                        next.left = node;
+                        node.parent = next;
+                        if (next.isRed) {
+                            tree.balanceInsert(node, true);
+                        }
+                        return null;
                     }
-                }
-                else {
-                    left.add(node, tree);
+                    else {
+                        next = next.left;
+                    }
                 }
             }
         }

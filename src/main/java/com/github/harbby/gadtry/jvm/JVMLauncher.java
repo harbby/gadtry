@@ -40,18 +40,19 @@ public interface JVMLauncher<R>
     public VmPromise<R> start()
             throws JVMException;
 
-    /**
-     * 备选方法1:
-     * System.err.close();
-     * System.setErr(System.out);
-     * 备选方法2:
-     * if (Platform.getClassVersion() > 52) {
-     * ops.add("--add-opens=java.base/java.io=ALL-UNNAMED");
-     * }
-     */
     public static ChildVMSystemOutputStream initSystemOutErrChannel()
             throws NoSuchFieldException
     {
+        /*
+         * plan1:
+         * System.err.close();
+         * System.setErr(System.out);
+         *
+         * plan2:
+         * if (Platform.getClassVersion() > 52) {
+         *      ops.add("--add-opens=java.base/java.io=ALL-UNNAMED");
+         * }
+         */
         ChildVMSystemOutputStream mock = new ChildVMSystemOutputStream(System.out);
         System.setOut(mock);
         if (Platform.getJavaVersion() > 8) {

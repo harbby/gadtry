@@ -15,10 +15,10 @@
  */
 package com.github.harbby.gadtry.graph;
 
-public interface ImmutableGraph<E, R>
-        extends Graph<E, R>
+public interface ImmutableGraph<N, E>
+        extends Graph<N, E>
 {
-    static <E, R> Graph.GraphBuilder<E, R> builder()
+    static <N, E> Graph.GraphBuilder<N, E> builder()
     {
         return new Graph.GraphBuilder<>();
     }

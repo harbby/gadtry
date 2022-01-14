@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.graph.Graph;
+import org.fusesource.jansi.Ansi;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -71,11 +72,10 @@ public class RedBlackTreeTest
     @Test
     public void baseTest()
     {
+        //see: https://www.cs.usfca.edu/~galles/visualization/RedBlack.html
         RedBlackTree<Integer, String> tree = new RedBlackTree<>();
         List<Integer> data = MutableList.of(12, 23, 45, 34, 40, 67, 78, 89, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180);
-        data.forEach(i -> {
-            tree.putNode(new EntryNode<>(i, "value" + i, i));
-        });
+        data.forEach(i -> tree.putNode(new EntryNode<>(i, "value" + i, i)));
         //
         //check
         data.forEach(i -> {
@@ -83,20 +83,61 @@ public class RedBlackTreeTest
             Assert.assertEquals(value, "value" + i);
         });
         //show
-        Graph.GraphBuilder<String, Void> graph = Graph.builder();
+        Graph.GraphBuilder<GNode<Integer>, Void> graph = Graph.builder();
         Iterator<RedBlackTree.TreeNode<Integer, String>> iterator = tree.iterator();
-
         List<Integer> numbers = new ArrayList<>();
         while (iterator.hasNext()) {
-            RedBlackTree.TreeNode<Integer, String> node = iterator.next();
-            graph.addNode(node.getKey() + "", node.isRed() ? "red" : "black");
-            RedBlackTree.TreeNode<Integer, String> parent = node.getParent();
+            RedBlackTree.TreeNode<Integer, String> treeNode = iterator.next();
+            GNode<Integer> gNode = GNode.of(treeNode);
+            graph.addNode(gNode);
+            RedBlackTree.TreeNode<Integer, String> parent = treeNode.getParent();
             if (parent != null) {
-                graph.addEdge(parent.getKey() + "", node.getKey() + "");
+                graph.addEdge(GNode.of(parent), gNode);
             }
-            numbers.add(node.getKey());
+            numbers.add(treeNode.getKey());
         }
         graph.create().printShow().forEach(x -> System.out.println(x));
         Assert.assertEquals(numbers, ImmutableList.of(89, 40, 23, 12, 34, 67, 45, 78, 120, 100, 90, 110, 140, 130, 160, 150, 170, 180));
+    }
+
+    private static class GNode<K>
+    {
+        private final K key;
+        private final Ansi.Color color;
+
+        private GNode(RedBlackTree.TreeNode<K, ?> treeNode)
+        {
+            this.key = treeNode.getKey();
+            this.color = treeNode.isRed() ? Ansi.Color.RED : Ansi.Color.BLACK;
+        }
+
+        public static <K> GNode<K> of(RedBlackTree.TreeNode<K, ?> treeNode)
+        {
+            return new GNode<>(treeNode);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return key.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj == this) {
+                return true;
+            }
+            if (obj instanceof GNode) {
+                return key.equals(((GNode<?>) obj).key);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return new Ansi().fg(color).a(key).reset().toString();
+        }
     }
 }

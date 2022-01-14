@@ -22,68 +22,60 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
-public interface Route<E, R>
+public interface Route<N, E>
 {
-    public List<String> getIds();
+    public List<N> getIds();
 
-    public Route.Builder<E, R> copy();
+    public Route.Builder<N, E> copy();
 
-    /**
-     * 检测死递归
-     *
-     * @return true表示不存在死递归
-     */
-    public boolean findDeadLoop();
+    public boolean containsLoop();
 
-    public Deque<Edge<E, R>> getEdges();
+    public Deque<GraphEdge<N, E>> getEdges();
 
     public int size();
 
-    /**
-     * @return return最后一个Node
-     */
-    public default Node<E, R> getLastNode()
+    public default GraphNode<N, E> getLastNode()
     {
         return getLastNode(0);
     }
 
-    public Node<E, R> getLastNode(int index);
+    public GraphNode<N, E> getLastNode(int index);
 
-    public Edge<E, R> getLastEdge();
+    public GraphEdge<N, E> getLastEdge();
 
-    public default String getLastNodeId()
+    public default N getLastNodeId()
     {
-        return getLastNode().getId();
+        return getLastNode().getValue();
     }
 
-    public static <E, R> Builder<E, R> builder(Node<E, R> begin)
+    public static <N, E> Builder<N, E> builder(GraphNode<N, E> begin)
     {
         return new Builder<>(begin);
     }
 
-    public static class Builder<E, R>
+    public static class Builder<N, E>
     {
-        private final Node<E, R> begin;
-        private final Deque<Edge<E, R>> edges = new LinkedList<>();
+        private final GraphNode<N, E> begin;
+        private final Deque<GraphEdge<N, E>> edges = new LinkedList<>();
 
-        public Builder(Node<E, R> begin)
+        public Builder(GraphNode<N, E> begin)
         {
             this.begin = begin;
         }
 
-        public Builder<E, R> add(Edge<E, R> edge)
+        public Builder<N, E> add(GraphEdge<N, E> edge)
         {
             this.edges.add(edge);
             return this;
         }
 
-        public Builder<E, R> addAll(Collection<Edge<E, R>> edges)
+        public Builder<N, E> addAll(Collection<GraphEdge<N, E>> edges)
         {
             this.edges.addAll(edges);
             return this;
         }
 
-        public Route<E, R> create()
+        public Route<N, E> create()
         {
             return new RouteImpl<>(begin, edges);
         }

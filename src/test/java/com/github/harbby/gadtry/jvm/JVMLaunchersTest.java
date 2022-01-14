@@ -19,9 +19,17 @@ import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
 import com.github.harbby.gadtry.collection.MutableMap;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.URL;
@@ -30,12 +38,85 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class JVMLaunchersTest
 {
+    @Test
+    public void baseIOTest()
+            throws IOException
+    {
+        PipedOutputStream outStream = new PipedOutputStream();
+        PrintStream out = new PrintStream(outStream);
+        InputStream in = new PipedInputStream(outStream);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
+        new Thread(() -> {
+            out.println("line: " + 1);
+            out.println("line: " + 2);
+            out.println("line: " + 3);
+            out.close();
+        }).start();
+
+        List<String> rs = new ArrayList<>();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            rs.add(line);
+        }
+        Assert.assertEquals(rs, Arrays.asList("line: 1", "line: 2", "line: 3"));
+    }
+
+    @Test
+    public void ioEncoderTest()
+            throws IOException
+    {
+        PipedOutputStream outStream = new PipedOutputStream();
+        PipedInputStream pipeIn = new PipedInputStream(outStream);
+        ChildVMSystemOutputStream out = new ChildVMSystemOutputStream(new PrintStream(outStream));
+        new Thread(() -> {
+            //mock child vm
+            out.writeVmHeader();
+            out.println("line: " + 1);
+            out.println("line: " + 2);
+            out.println("line: " + 3);
+            out.release(true, new byte[0]);
+            out.close();
+        }).start();
+        InputStream in = new ChildVMChannelInputStream(pipeIn);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
+        List<String> rs = new ArrayList<>();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            rs.add(line);
+        }
+        Assert.assertEquals(rs, Arrays.asList("line: 1", "line: 2", "line: 3"));
+    }
+
+    @Ignore
+    @Test
+    public void realtimeTest()
+    {
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .task(() -> {
+                    for (int i = 0; i < 30; i++) {
+                        TimeUnit.SECONDS.sleep(1);
+                        System.out.println("time: " + System.currentTimeMillis());
+                    }
+                    return 0;
+                })
+                .addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .build();
+        int exitCode = launcher.startAndGet();
+        Assert.assertEquals(exitCode, 0);
+    }
+
     @Test
     public void returnValueTest()
             throws InterruptedException

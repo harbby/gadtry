@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static com.github.harbby.gadtry.jvm.JVMLauncherImpl.VM_HEADER;
@@ -43,12 +44,14 @@ public class ChildVMChannelInputStream
     private boolean isDone = false;
 
     public ChildVMChannelInputStream(InputStream inputStream)
+            throws IOException
     {
         this.in = requireNonNull(inputStream, "inputStream is null");
         this.reader = new BufferedReader(new InputStreamReader(this));
+        this.checkVMHeader();
     }
 
-    public void checkVMHeader()
+    private void checkVMHeader()
             throws IOException
     {
         //check child state
@@ -62,6 +65,8 @@ public class ChildVMChannelInputStream
             throw new JVMException(new String(errorMsg, UTF_8));
         }
     }
+
+    private final ByteBuffer builder = ByteBuffer.allocate(10_0000);
 
     @Override
     public int read()
@@ -96,6 +101,37 @@ public class ChildVMChannelInputStream
         else {
             throw new UnsupportedEncodingException("Protocol error " + this.length);
         }
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len)
+            throws IOException
+    {
+        if (b == null) {
+            throw new NullPointerException();
+        }
+        else if (off < 0 || len < 0 || len > b.length - off) {
+            throw new IndexOutOfBoundsException();
+        }
+        else if (len == 0) {
+            return 0;
+        }
+
+        int c = this.read();
+        if (c == -1) {
+            return -1;
+        }
+        b[off] = (byte) c;
+
+        int i = 1;
+        for (; i < len && c != '\n' && c != '\r'; i++) {
+            c = this.read();
+            if (c == -1) {
+                break;
+            }
+            b[off + i] = (byte) c;
+        }
+        return i;
     }
 
     private int readInt()

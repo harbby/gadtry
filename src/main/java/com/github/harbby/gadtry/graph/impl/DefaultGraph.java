@@ -15,13 +15,12 @@
  */
 package com.github.harbby.gadtry.graph.impl;
 
-import com.github.harbby.gadtry.graph.Edge;
 import com.github.harbby.gadtry.graph.Graph;
-import com.github.harbby.gadtry.graph.Node;
+import com.github.harbby.gadtry.graph.GraphEdge;
+import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.Route;
 import com.github.harbby.gadtry.graph.SearchBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -34,58 +33,62 @@ import static java.util.Objects.requireNonNull;
  * 采用普通左二叉树遍历法
  * default 采用普通串行遍历(非并行)
  */
-public class DefaultGraph<E, R>
-        implements Graph<E, R>
+public class DefaultGraph<N, E>
+        implements Graph<N, E>
 {
-    private final Node<E, R> root;
-    private final String name;
-    private final Map<String, Node<E, R>> nodes;
+    private final GraphNode<N, E> root;
+    private final Map<N, GraphNode<N, E>> nodes;
 
     public DefaultGraph(
-            final String name,
-            Node<E, R> root,
-            Map<String, Node<E, R>> nodes)
+            GraphNode<N, E> root,
+            Map<N, GraphNode<N, E>> nodes)
     {
-        this.name = name;
         this.root = root;
         this.nodes = nodes;
     }
 
     @Override
-    public String getName()
+    public void addNode(N node)
     {
-        return name;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<Route<E, R>> searchRuleRoute(String in, Function<Route<E, R>, Boolean> rule)
+    public void addEdge(N n1, N n2)
     {
-        Node<E, R> begin = requireNonNull(nodes.get(in), "NO SUCH Node " + in);
+        throw new UnsupportedOperationException();
+    }
 
-        return new ArrayList<>(new SearchBuilder<>(this, begin)
-                .optimizer(SearchBuilder.Optimizer.DEPTH_FIRST)
+    @Override
+    public List<Route<N, E>> searchRuleRoute(N in, Function<Route<N, E>, Boolean> rule)
+    {
+        GraphNode<N, E> begin = requireNonNull(nodes.get(in), "NO SUCH Node " + in);
+
+        return new SearchBuilder<>(this, begin)
+                .mode(SearchBuilder.Mode.DEPTH_FIRST)
                 .nextRule(rule)
                 .search()
-                .getRoutes());
+                .getRoutes();
     }
 
     @Override
-    public List<Route<E, R>> searchRuleRoute(Function<Route<E, R>, Boolean> rule)
+    public List<Route<N, E>> searchRuleRoute(Function<Route<N, E>, Boolean> rule)
     {
-        return new ArrayList<>(new SearchBuilder<>(this, root)
-                .optimizer(SearchBuilder.Optimizer.DEPTH_FIRST)
+        return new SearchBuilder<>(this, root)
+                .mode(SearchBuilder.Mode.DEPTH_FIRST)
                 .nextRule(rule)
                 .search()
-                .getRoutes());
+                .getRoutes();
     }
 
+    @SafeVarargs
     @Override
-    public Route<E, R> getRoute(String... nodeIds)
+    public final Route<N, E> getRoute(N... nodeIds)
     {
-        Node<E, R> begin = requireNonNull(nodes.get(nodeIds[0]), "NO SUCH Node " + nodeIds[0]);
-        Route.Builder<E, R> route = Route.builder(begin);
+        GraphNode<N, E> begin = requireNonNull(nodes.get(nodeIds[0]), "NO SUCH Node " + nodeIds[0]);
+        Route.Builder<N, E> route = Route.builder(begin);
         for (int i = 1; i < nodeIds.length; i++) {
-            Edge<E, R> edge = begin.getNextNode(nodeIds[i]).orElseThrow(() -> new IllegalArgumentException("NO SUCH ROUTE"));
+            GraphEdge<N, E> edge = begin.getNextNode(nodeIds[i]).orElseThrow(() -> new IllegalArgumentException("NO SUCH ROUTE"));
             route.add(edge);
             begin = edge.getOutNode();
         }
@@ -93,7 +96,7 @@ public class DefaultGraph<E, R>
     }
 
     @Override
-    public Node<E, R> getNode(String id)
+    public GraphNode<N, E> getNode(N id)
     {
         return requireNonNull(nodes.get(id), "NO SUCH Node " + id);
     }
@@ -101,28 +104,27 @@ public class DefaultGraph<E, R>
     @Override
     public List<String> printShow()
     {
-        List<Node<?, ?>> nodes = root.nextNodes().stream().map(Edge::getOutNode).collect(Collectors.toList());
+        List<GraphNode<?, ?>> nodes = root.nextNodes().stream().map(GraphEdge::getOutNode).collect(Collectors.toList());
         return GraphUtil.printShow(nodes);
-        //builder.forEach(System.out::println);
     }
 
     @Override
-    public Iterable<String> printShow(String id)
+    public Iterable<String> printShow(N id)
     {
-        Node<E, R> firstNode = requireNonNull(nodes.get(id), "NO SUCH Node " + id);
+        GraphNode<N, E> firstNode = requireNonNull(nodes.get(id), "NO SUCH Node " + id);
         List<String> builder = GraphUtil.printShow(firstNode);
         builder.forEach(System.out::println);
         return builder;
     }
 
     @Override
-    public List<Node<E, R>> findNode(Function<Node<E, R>, Boolean> rule)
+    public List<GraphNode<N, E>> findNode(Function<GraphNode<N, E>, Boolean> rule)
     {
         return nodes.values().stream().filter(rule::apply).collect(Collectors.toList());
     }
 
     @Override
-    public SearchBuilder<E, R> search()
+    public SearchBuilder<N, E> search()
     {
         return new SearchBuilder<>(this, root);
     }

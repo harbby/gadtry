@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.graph;
 
-public interface ConcurrentGraph<E, R>
-        extends Graph<E, R>
+public interface ConcurrentGraph<N, E>
+        extends Graph<N, E>
 {
 }

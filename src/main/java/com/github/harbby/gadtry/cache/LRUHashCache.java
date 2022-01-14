@@ -19,10 +19,12 @@ import com.github.harbby.gadtry.function.exception.Supplier;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -34,7 +36,9 @@ class LRUHashCache<K, V>
         extends AbstractMap<K, V>
         implements Cache<K, V>
 {
-    private final Node<K, V> headNode = new Node<K, V>(null, null)
+    static final float DEFAULT_LOAD_FACTOR = 0.83f;
+
+    private final Node<K, V> headNode = new Node<K, V>(null, null, Integer.MIN_VALUE)
     {
         @Override
         public String toString()
@@ -42,7 +46,7 @@ class LRUHashCache<K, V>
             return "headNode";
         }
     };
-    private final Node<K, V> endNode = new Node<K, V>(null, null)
+    private final Node<K, V> endNode = new Node<K, V>(null, null, Integer.MIN_VALUE)
     {
         @Override
         public String toString()
@@ -56,16 +60,19 @@ class LRUHashCache<K, V>
     private final long maxWriteDuration;
     private final long maxReadDuration;
 
-    private final Map<K, Node<K, V>> map;
+    private final Node<K, V>[] buckets;
+    private final int mask;
 
     LRUHashCache(int maxCapacity, Callback<K, V> callback, long maxDuration)
     {
         if (maxCapacity < 0) {
             throw new IllegalArgumentException("maxCapacity < 0");
         }
+        int bucketsSize = (int) (maxCapacity / DEFAULT_LOAD_FACTOR);
+        this.mask = bucketsSize - 1;
+        this.buckets = (Node<K, V>[]) new Node[bucketsSize];
         this.maxCapacity = maxCapacity;
         this.callback = requireNonNull(callback, "callback is null");
-        this.map = new HashMap<>(maxCapacity);
         this.maxReadDuration = maxDuration;
         this.maxWriteDuration = maxDuration;
         this.clear();
@@ -86,53 +93,57 @@ class LRUHashCache<K, V>
         //node.next = null;
     }
 
+    private Node<K, V> remove0(Object key, int hash)
+    {
+        int index = hash & mask;
+        Node<K, V> node = buckets[index];
+        Node<K, V> last = null;
+        while (node != null) {
+            if (hash == node.hash && Objects.equals(key, node.key)) {
+                if (last == null) {
+                    buckets[index] = null;
+                }
+                else {
+                    last.hashNext = node.hashNext;
+                }
+                deleteNodeOnList(node);
+                size--;
+                return node;
+            }
+            last = node;
+            node = node.hashNext;
+        }
+
+        return this.headNode; //return value is null node
+    }
+
+    private int size = 0;
+
     @Override
     public V put(K key, V value)
     {
-        Node<K, V> old = map.get(key);
-        if (old != null) {
-            V returnValue = old.value;
-            old.updateValue(value);
-            moveToHead(old);
-            return returnValue;
+        int hash = Objects.hashCode(key.hashCode());
+        int index = hash & mask;
+        Node<K, V> first = buckets[index];
+        Node<K, V> node = first;
+        while (node != null) {
+            if (hash == node.hash && Objects.equals(key, node.key)) {
+                V returnValue = node.value;
+                node.updateValue(value);
+                moveToHead(node);
+                return returnValue;
+            }
+            node = node.hashNext;
         }
-
-        Node<K, V> newNode = new Node<>(key, value);
-        if (map.put(key, newNode) != null) {
-            throw new ConcurrentModificationException();
-        }
+        Node<K, V> newNode = new Node<>(key, value, hash);
+        newNode.hashNext = first;
+        buckets[index] = newNode;
+        size++;
 
         //添加newNode到队头
         addHeadNode(newNode);
-
-        //达到容量上限。开始移除endNode节点
-        if (map.size() == maxCapacity + 1) {
-            Node<K, V> endDataNode = endNode.last;
-            map.remove(endDataNode.key);
-            deleteNodeOnList(endDataNode);
-            doCallBack(endDataNode, EvictCause.OVERFLOW);
-        }
-
+        checkCapacity();
         return null;
-    }
-
-    /**
-     * lazy clear timeout
-     */
-    private void clearTimeoutNodes(Node<K, V> timeoutNode)
-    {
-        Node<K, V> maxTimeoutNode = timeoutNode;
-        if (timeoutNode == headNode.next) {
-            this.clear();
-        }
-        this.endNode.last = timeoutNode.last;
-        timeoutNode.last.next = this.endNode;
-        //移除该节点后面的所有节点
-        while (maxTimeoutNode != endNode) {
-            map.remove(maxTimeoutNode.key);
-            doCallBack(maxTimeoutNode, EvictCause.TIME_OUT);
-            maxTimeoutNode = maxTimeoutNode.next;
-        }
     }
 
     private void doCallBack(Node<K, V> node, EvictCause cause)
@@ -156,19 +167,16 @@ class LRUHashCache<K, V>
     @Override
     public V remove(Object key)
     {
-        Node<K, V> old = map.remove(key);
-        if (old != null) {
-            deleteNodeOnList(old);
-            return old.value;
-        }
-
-        return null;
+        int hash = Objects.hashCode(key.hashCode());
+        return remove0(key, hash).value;
     }
 
     @Override
     public void clear()
     {
-        map.clear();
+        Arrays.fill(buckets, null);
+        this.size = 0;
+
         headNode.next = endNode;
         endNode.last = headNode;
     }
@@ -176,32 +184,31 @@ class LRUHashCache<K, V>
     @Override
     public int size()
     {
-        return map.size();
+        return size;
     }
 
     @Override
-    public Set<Map.Entry<K, V>> entrySet()
+    public Set<Entry<K, V>> entrySet()
     {
-        int size = map.size();
-        return new AbstractSet<Map.Entry<K, V>>()
+        return new AbstractSet<Entry<K, V>>()
         {
             @Override
-            public Iterator<Map.Entry<K, V>> iterator()
+            public Iterator<Entry<K, V>> iterator()
             {
-                return new Iterator<Map.Entry<K, V>>()
+                return new Iterator<Entry<K, V>>()
                 {
                     private Node<K, V> next = headNode.next;
 
                     @Override
                     public boolean hasNext()
                     {
-                        return next != endNode && !isTimeout(next);
+                        return next != endNode;
                     }
 
                     @Override
-                    public Map.Entry<K, V> next()
+                    public Node<K, V> next()
                     {
-                        Map.Entry<K, V> old = next;
+                        Node<K, V> old = next;
                         next = next.next;
                         return old;
                     }
@@ -219,40 +226,65 @@ class LRUHashCache<K, V>
     @Override
     public V getIfPresent(K key)
     {
-        Node<K, V> node = map.get(key);
-        if (node == null) {
-            return null;
+        int hash = Objects.hashCode(key.hashCode());
+        int index = hash & mask;
+        Node<K, V> node = buckets[hash & mask];
+        Node<K, V> last = null;
+        while (node != null) {
+            if (hash == node.hash && Objects.equals(key, node.key)) {
+                if (isTimeout(node)) {
+                    //hash remove
+                    if (last == null) {
+                        buckets[index] = null;
+                    }
+                    else {
+                        last.hashNext = node.hashNext;
+                    }
+                    size--;
+                    //liked remove
+                    deleteNodeOnList(node);
+                    doCallBack(node, EvictCause.TIME_OUT);
+                    return null;
+                }
+                else {
+                    node.updateReadTime();
+                    moveToHead(node);
+                    return node.value;
+                }
+            }
+            last = node;
+            node = node.next;
         }
-        else if (isTimeout(node)) {
-            //find timeout node, clear timeoutNode -> endNode
-            clearTimeoutNodes(node);
-            return null;
-        }
-        else {
-            moveToHead(node);
-            return node.value;
-        }
+        return null;
     }
 
+    /**
+     * add to head
+     *
+     * @param node move
+     */
     private void addHeadNode(Node<K, V> node)
     {
         Node<K, V> next = this.headNode.next;
-        //移动到头部
+        //add to head
         node.next = next;
         node.last = this.headNode;
         next.last = node;
         this.headNode.next = node;
     }
 
+    /***
+     * move to head
+     * @param node node
+     */
     private void moveToHead(Node<K, V> node)
     {
-        node.updateReadTime();
         if (node == headNode.next) {
             return;
         }
-        //将当前节点从原始位置移除
+        //remove this pos
         deleteNodeOnList(node);
-        //添加到头部
+        //add to head
         this.addHeadNode(node);
     }
 
@@ -260,23 +292,47 @@ class LRUHashCache<K, V>
     public <E extends Exception> V get(K key, Supplier<V, E> caller)
             throws E
     {
-        Node<K, V> node = map.get(key);
-        if (node == null) {
-            V value = caller.apply();
-            this.put(key, value);
-            return value;
-        }
-
-        if (isTimeout(node)) {
-            //clear timeoutNode -> endNode
-            if (node.next != endNode) {
-                clearTimeoutNodes(node.next);
+        int hash = Objects.hashCode(key.hashCode());
+        int index = hash & mask;
+        Node<K, V> first = buckets[index];
+        Node<K, V> node = first;
+        while (node != null) {
+            if (hash == node.hash && Objects.equals(key, node.key)) {
+                if (isTimeout(node)) {
+                    node.updateValue(caller.apply());
+                }
+                else {
+                    node.updateReadTime();
+                }
+                moveToHead(node);
+                return node.value;
             }
-            node.updateValue(caller.apply());
+            node = node.hashNext;
         }
+        //not find key
+        //add new key node
+        V returnValue = caller.apply();
+        Node<K, V> newNode = new Node<>(key, returnValue, hash);
+        newNode.hashNext = first;
+        buckets[index] = newNode;
+        size++;
 
-        moveToHead(node);
-        return node.value;
+        //添加newNode到队头
+        addHeadNode(newNode);
+        checkCapacity();
+        return returnValue;
+    }
+
+    private void checkCapacity()
+    {
+        if (size == maxCapacity + 1) {
+            //达到容量上限。开始移除endNode节点
+            Node<K, V> endDataNode = endNode.last;
+            if (remove0(endDataNode.key, endDataNode.hash) != endDataNode) {
+                throw new ConcurrentModificationException();
+            }
+            doCallBack(endDataNode, EvictCause.OVERFLOW);
+        }
     }
 
     @Override
@@ -288,22 +344,34 @@ class LRUHashCache<K, V>
     @Override
     public Map<K, V> getAllPresent()
     {
-        return new HashMap<>(this);
+        Map<K, V> map = new HashMap<>();
+        for (Entry<K, V> entry : this.entrySet()) {
+            Node<K, V> node = (Node<K, V>) entry;
+            if (!isTimeout(node)) {
+                map.put(node.key, node.value);
+            }
+        }
+        return map;
     }
 
     private static class Node<K, V>
             implements Entry<K, V>
     {
         private final K key;
+        private final int hash;
         private V value;
         private long writeTime;
         private long readTime;
+
+        private Node<K, V> hashNext;
+
         private Node<K, V> last;
         private Node<K, V> next;
 
-        private Node(K key, V value)
+        private Node(K key, V value, int hash)
         {
             this.key = key;
+            this.hash = hash;
             this.value = value;
             this.writeTime = System.currentTimeMillis();
             this.readTime = writeTime;

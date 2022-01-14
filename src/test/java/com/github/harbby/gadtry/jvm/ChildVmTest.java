@@ -60,12 +60,10 @@ public class ChildVmTest
         outputStream.write((" hook" + System.lineSeparator()).getBytes(StandardCharsets.UTF_8));
         //------------------------
         ChildVMChannelInputStream childVMChannelInputStream = new ChildVMChannelInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
-        childVMChannelInputStream.checkVMHeader();
         Assert.assertEquals(childVMChannelInputStream.readLine(), "a hello");
+        Assert.assertEquals(childVMChannelInputStream.readLine(), "a hook");
         Assert.assertTrue(childVMChannelInputStream.isSuccess());
         Assert.assertEquals(new String(childVMChannelInputStream.readResult(), StandardCharsets.UTF_8), "success");
-
-        Assert.assertEquals(childVMChannelInputStream.readLine(), "a hook");
         Assert.assertNull(childVMChannelInputStream.readLine());
     }
 
@@ -81,7 +79,6 @@ public class ChildVmTest
         outputStream.release(true, errorMsg.getBytes(StandardCharsets.UTF_8));
         //---------------
         ChildVMChannelInputStream childVMChannelInputStream = new ChildVMChannelInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
-        childVMChannelInputStream.checkVMHeader();
         Assert.assertNull(childVMChannelInputStream.readLine());
         Assert.assertFalse(childVMChannelInputStream.isSuccess());
         Assert.assertEquals(new String(childVMChannelInputStream.readResult(), StandardCharsets.UTF_8), errorMsg);
@@ -98,7 +95,6 @@ public class ChildVmTest
         new DataOutputStream(byteArrayOutputStream).writeInt(-3);
         //---------------
         ChildVMChannelInputStream childVMChannelInputStream = new ChildVMChannelInputStream(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
-        childVMChannelInputStream.checkVMHeader();
         try {
             childVMChannelInputStream.readLine();
         }
