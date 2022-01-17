@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
-import com.github.harbby.gadtry.function.exception.Function;
 import com.github.harbby.gadtry.graph.Graph;
 
 /**
@@ -30,23 +29,11 @@ public interface IocFactory
      * @return Driver instance object
      * @throws InjectorException Injector error
      */
-    default <T> T getInstance(Class<T> driver)
-    {
-        return getInstance(driver, (driverClass) -> null);
-    }
-
-    /**
-     * @param driver      Class waiting to be acquired
-     * @param userCreator User-provided implementation
-     * @param <T>         is driver type
-     * @return T Driver instance object
-     * @throws InjectorException Injector error
-     */
-    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?, Exception> userCreator);
+    public <T> T getInstance(Class<T> driver);
 
     public <T> Creator<T> getCreator(Class<T> driver);
 
-    public <T> BindMapping getAllBeans();
+    public BindMapping getAllBeans();
 
     Graph<String, Void> analyze();
 

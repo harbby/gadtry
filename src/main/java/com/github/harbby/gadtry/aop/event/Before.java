@@ -29,9 +29,10 @@ public interface Before
 
     MethodSignature getMethod();
 
-    default Object getArgument(int index)
+    @SuppressWarnings("unchecked")
+    default <V> V getArgument(int index)
     {
-        return this.getArgs()[index];
+        return (V) this.getArgs()[index];
     }
 
     Object[] getArgs();

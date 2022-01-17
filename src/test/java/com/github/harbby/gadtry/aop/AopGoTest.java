@@ -62,7 +62,7 @@ public class AopGoTest
                     }).when().f4();
                     binder.doAfterThrowing(throwing -> {
                         Assert.assertArrayEquals(throwing.getArgs(), new Object[] {0});
-                        Assert.assertEquals(throwing.getArgument(0), 0);
+                        Assert.assertEquals(throwing.<Integer>getArgument(0).intValue(), 0);
                         action.set("afterThrowing_" + throwing.getName() + "_" + throwing.getThrowable().getMessage());
                     }).when().getField(anyInt());
                 })
@@ -113,7 +113,7 @@ public class AopGoTest
         }).when(proxy).f4();
         AopGo.doAfterThrowing(throwing -> {
             Assert.assertArrayEquals(throwing.getArgs(), new Object[] {0});
-            Assert.assertEquals(throwing.getArgument(0), 0);
+            Assert.assertEquals(throwing.<Integer>getArgument(0).intValue(), 0);
             action.set("afterThrowing_" + throwing.getName() + "_" + throwing.getThrowable().getMessage());
         }).when(proxy).getField(anyInt());
 

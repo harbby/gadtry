@@ -15,8 +15,6 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import com.github.harbby.gadtry.base.Iterators;
-
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -27,14 +25,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
+
 public abstract class ImmutableMap<K, V>
         extends AbstractMap<K, V>
 {
+    static final float DEFAULT_LOAD_FACTOR = 0.83f;
+
     public static <K, V> ImmutableMap<K, V> of(K k, V v)
     {
         return new SingleImmutableMap<>(k, v);
@@ -48,91 +51,94 @@ public abstract class ImmutableMap<K, V>
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2), new EntryNode<>(k3, v3)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2), new EntryNode<>(k3, v3), new EntryNode<>(k4, v4)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3), EntryNode.checkOf(k4, v4)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2), new EntryNode<>(k3, v3), new EntryNode<>(k4, v4), new EntryNode<>(k5, v5)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3), EntryNode.checkOf(k4, v4),
+                EntryNode.checkOf(k5, v5)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2), new EntryNode<>(k3, v3),
-                new EntryNode<>(k4, v4), new EntryNode<>(k5, v5), new EntryNode<>(k6, v6)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3),
+                EntryNode.checkOf(k4, v4), EntryNode.checkOf(k5, v5), EntryNode.checkOf(k6, v6)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2), new EntryNode<>(k3, v3),
-                new EntryNode<>(k4, v4), new EntryNode<>(k5, v5), new EntryNode<>(k6, v6), new EntryNode<>(k7, v7)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3),
+                EntryNode.checkOf(k4, v4), EntryNode.checkOf(k5, v5), EntryNode.checkOf(k6, v6), EntryNode.checkOf(k7, v7)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {new EntryNode<>(k1, v1), new EntryNode<>(k2, v2), new EntryNode<>(k3, v3), new EntryNode<>(k4, v4),
-                new EntryNode<>(k5, v5), new EntryNode<>(k6, v6), new EntryNode<>(k7, v7), new EntryNode<>(k8, v8)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3), EntryNode.checkOf(k4, v4),
+                EntryNode.checkOf(k5, v5), EntryNode.checkOf(k6, v6), EntryNode.checkOf(k7, v7), EntryNode.checkOf(k8, v8)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> copy(Map<K, V> map)
     {
-        @SuppressWarnings("unchecked")
-        Entry<K, V>[] nodes = map.entrySet().toArray(new Entry[0]);
-        int size = nodes.length;
+        int size = map.size();
         int capacity = Integer.highestOneBit(size);
-        if (capacity * 0.83D < size) {
+        if (capacity * DEFAULT_LOAD_FACTOR < size) {
             capacity = capacity << 1;
         }
         int mask = capacity - 1;
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] buckets = (EntryNode<K, V>[]) new EntryNode[capacity];
-        for (Entry<K, V> entry : nodes) {
-            EntryNode<K, V> node = new EntryNode<>(entry.getKey(), entry.getValue());
-            int index = node.hash & mask;
-            EntryNode<K, V> first = buckets[index];
-            if (first instanceof ImmutableMap.TreeBin) {
-                ((TreeBin<K, V>) first).putVal(node);
+        HashEntry<K, V>[] buckets = (HashEntry<K, V>[]) new HashEntry[capacity];
+        TreeView<K, V> treeView = new TreeView<>(buckets);
+        for (Entry<K, V> entry : map.entrySet()) {
+            K key = entry.getKey();
+            V value = entry.getValue();
+            int hash = hash(key);
+            int index = hash & mask;
+            HashEntry<K, V> hashEntry = buckets[index];
+            if (hashEntry instanceof ImmutableMap.TreeNode) {
+                treeView.put(index, key, value, hash);
             }
             else {
-                node.next = buckets[index];
+                EntryNode<K, V> node = new EntryNode<>(key, value, hash);
+                node.next = (EntryNode<K, V>) hashEntry;
                 int count = checkNotDuplicateKey(node);
                 if (count >= 8) {
-                    buckets[index] = convertToTree(node);
+                    buckets[index] = convertToTree(node, treeView, index);
                 }
                 else {
                     buckets[index] = node;
                 }
             }
         }
-        return new HashImmutableMap<>(buckets, mask, nodes);
+        return new HashImmutableMap<>(buckets, size, mask, treeView);
     }
 
     private static class TreeNode<K, V>
             extends RedBlackTree.TreeNode<K, V>
-            implements Map.Entry<K, V>
+            implements HashEntry<K, V>
     {
         private final K key;
         private final int hash;
@@ -160,7 +166,7 @@ public abstract class ImmutableMap<K, V>
         @Override
         public V setValue(V value)
         {
-            throw new UnsupportedOperationException();
+            throw new IllegalStateException("duplicate key " + key);
         }
 
         @Override
@@ -170,34 +176,32 @@ public abstract class ImmutableMap<K, V>
         }
     }
 
-    private static class TreeBin<K, V>
-            extends EntryNode<K, V>
+    private static class TreeView<K, V>
+            extends RedBlackTree<K, V>
     {
-        private final RedBlackTree<K, V> tree = new RedBlackTree<>();
+        private final HashEntry<K, V>[] buckets;
 
-        private TreeBin()
+        private TreeView(HashEntry<K, V>[] buckets)
         {
-            super(null, null);
+            this.buckets = buckets;
         }
 
-        public void putVal(EntryNode<K, V> node)
+        @Override
+        public TreeNode<K, V> getRoot(int treeId)
         {
-            tree.putNode(new TreeNode<>(node.key, node.value, node.hash));
+            return (TreeNode<K, V>) buckets[treeId];
         }
 
-        public V get(Object key, int hash)
+        @Override
+        public void setRoot(int treeId, TreeNode<K, V> root)
         {
-            return tree.find(key, hash);
+            buckets[treeId] = root;
         }
 
-        public boolean containsKey(Object key, int hash)
+        @Override
+        public TreeNode<K, V> createNode(K key, V value, int hash)
         {
-            return tree.containsKey(key, hash);
-        }
-
-        public Iterator<RedBlackTree.TreeNode<K, V>> iterator()
-        {
-            return tree.iterator();
+            return new ImmutableMap.TreeNode<>(key, value, hash);
         }
     }
 
@@ -205,41 +209,42 @@ public abstract class ImmutableMap<K, V>
     {
         int size = nodes.length;
         int capacity = Integer.highestOneBit(size);
-        if (capacity * 0.83D < size) {
+        if (capacity * DEFAULT_LOAD_FACTOR < size) {
             capacity = capacity << 1;
         }
         int mask = capacity - 1;
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] buckets = (EntryNode<K, V>[]) new EntryNode[capacity];
+        HashEntry<K, V>[] buckets = (HashEntry<K, V>[]) new HashEntry[capacity];
+        TreeView<K, V> treeView = new TreeView<>(buckets);
         for (EntryNode<K, V> node : nodes) {
             int index = node.hash & mask;
-            EntryNode<K, V> first = buckets[index];
-            if (first instanceof ImmutableMap.TreeBin) {
-                ((TreeBin<K, V>) first).putVal(node);
+            HashEntry<K, V> hashEntry = buckets[index];
+            if (hashEntry instanceof ImmutableMap.TreeNode) {
+                treeView.put(index, node.key, node.value, node.hash);
             }
             else {
-                node.next = buckets[index];
+                node.next = (EntryNode<K, V>) hashEntry;
                 int count = checkNotDuplicateKey(node);
                 if (count >= 8) { //jdk redBlack tree default length is 8
-                    buckets[index] = convertToTree(node);
+                    buckets[index] = convertToTree(node, treeView, index);
                 }
                 else {
                     buckets[index] = node;
                 }
             }
         }
-        return new HashImmutableMap<>(buckets, mask, nodes);
+        return new HashImmutableMap<>(buckets, size, mask, treeView);
     }
 
-    private static <K, V> TreeBin<K, V> convertToTree(EntryNode<K, V> first)
+    private static <K, V> TreeNode<K, V> convertToTree(EntryNode<K, V> first, TreeView<K, V> treeView, int index)
     {
-        TreeBin<K, V> tree = new TreeBin<>();
+        treeView.buckets[index] = null;
         EntryNode<K, V> next = first;
         while (next != null) {
-            tree.putVal(next);
+            treeView.put(index, next.key, next.value, next.hash);
             next = next.next;
         }
-        return tree;
+        return (TreeNode<K, V>) treeView.getRoot(index);
     }
 
     private static <K, V> int checkNotDuplicateKey(EntryNode<K, V> node)
@@ -249,7 +254,7 @@ public abstract class ImmutableMap<K, V>
         EntryNode<K, V> next = node.next;
         int c = 1;
         while (next != null) {
-            if (hash == next.hash && Objects.equals(next.key, key)) {
+            if (hash == next.hash && key.equals(next.key)) {
                 throw new IllegalStateException("duplicate key " + key);
             }
             c++;
@@ -262,17 +267,18 @@ public abstract class ImmutableMap<K, V>
             extends ImmutableMap<K, V>
             implements Externalizable
     {
-        private EntryNode<K, V>[] buckets;
+        private HashEntry<K, V>[] buckets;
         private int size;
         private int mask;
-        private transient Entry<K, V>[] nodes; //foreach
+        //        private transient Entry<K, V>[] nodes; //foreach
+        private transient TreeView<K, V> treeView;
 
-        private HashImmutableMap(EntryNode<K, V>[] buckets, int mask, Entry<K, V>[] nodes)
+        private HashImmutableMap(HashEntry<K, V>[] buckets, int size, int mask, TreeView<K, V> treeView)
         {
             this.buckets = buckets;
-            this.size = nodes.length;
+            this.size = size;
             this.mask = mask;
-            this.nodes = nodes;
+            this.treeView = treeView;
         }
 
         public HashImmutableMap() {}
@@ -280,14 +286,15 @@ public abstract class ImmutableMap<K, V>
         @Override
         public V get(Object key)
         {
-            int hash = Objects.hashCode(key);
+            int hash = hash(key);
             int index = hash & mask;
-            EntryNode<K, V> node = buckets[index];
-            if (node instanceof TreeBin) {
-                return ((TreeBin<K, V>) node).get(key, hash);
+            HashEntry<K, V> hashEntry = buckets[index];
+            if (hashEntry instanceof TreeNode) {
+                return treeView.get((TreeNode<K, V>) hashEntry, key, hash);
             }
+            EntryNode<K, V> node = (EntryNode<K, V>) hashEntry;
             while (node != null) {
-                if (hash == node.hash && Objects.equals(node.key, key)) {
+                if (hash == node.hash && key.equals(node.key)) {
                     return node.value;
                 }
                 node = node.next;
@@ -296,16 +303,24 @@ public abstract class ImmutableMap<K, V>
         }
 
         @Override
+        public V getOrDefault(Object key, V defaultValue)
+        {
+            V value = this.get(key);
+            return value == null ? defaultValue : value;
+        }
+
+        @Override
         public boolean containsKey(Object key)
         {
-            int hash = Objects.hashCode(key);
+            int hash = hash(key);
             int index = hash & mask;
-            EntryNode<K, V> node = buckets[index];
-            if (node instanceof TreeBin) {
-                return ((TreeBin<K, V>) node).containsKey(key, hash);
+            HashEntry<K, V> hashEntry = buckets[index];
+            if (hashEntry instanceof TreeNode) {
+                return treeView.containsKey((TreeNode<K, V>) hashEntry, key, hash);
             }
+            EntryNode<K, V> node = (EntryNode<K, V>) hashEntry;
             while (node != null) {
-                if (hash == node.hash && Objects.equals(node.key, key)) {
+                if (hash == node.hash && key.equals(node.key)) {
                     return true;
                 }
                 node = node.next;
@@ -327,7 +342,47 @@ public abstract class ImmutableMap<K, V>
                 @Override
                 public Iterator<Entry<K, V>> iterator()
                 {
-                    return Iterators.of(nodes);
+                    return new Iterator<Entry<K, V>>()
+                    {
+                        private int index = 0;
+                        private Iterator<? extends Entry<K, V>> bucketIterator = nextBucketIterator();
+
+                        @Override
+                        public boolean hasNext()
+                        {
+                            return bucketIterator != null;
+                        }
+
+                        @Override
+                        public Entry<K, V> next()
+                        {
+                            if (!hasNext()) {
+                                throw new NoSuchElementException();
+                            }
+                            Entry<K, V> entry = bucketIterator.next();
+                            if (!bucketIterator.hasNext()) {
+                                bucketIterator = nextBucketIterator();
+                            }
+                            return entry;
+                        }
+
+                        private Iterator<? extends HashEntry<K, V>> nextBucketIterator()
+                        {
+                            while (index < buckets.length) {
+                                HashEntry<K, V> entry = buckets[index++];
+                                if (entry != null) {
+                                    if (entry instanceof TreeNode) {
+                                        return treeView.iterator((TreeNode<K, V>) entry);
+                                    }
+                                    else {
+                                        EntryNode<K, V> entryNode = (EntryNode<K, V>) entry;
+                                        return entryNode.iterator();
+                                    }
+                                }
+                            }
+                            return null;
+                        }
+                    };
                 }
 
                 @Override
@@ -343,11 +398,11 @@ public abstract class ImmutableMap<K, V>
                         return false;
                     }
                     Object key = ((Entry<?, ?>) o).getKey();
-                    if (!HashImmutableMap.this.containsKey(key)) {
+                    V value = HashImmutableMap.this.get(key);
+                    if (value == null) {
                         return false;
                     }
-                    V value = HashImmutableMap.this.get(key);
-                    return Objects.equals(value, ((Entry<?, ?>) o).getValue());
+                    return value.equals(((Entry<?, ?>) o).getValue());
                 }
             };
         }
@@ -358,11 +413,11 @@ public abstract class ImmutableMap<K, V>
         {
             out.writeInt(size);
             out.writeInt(buckets.length); //capacity
-            EntryNode<K, V>[] tab = buckets;
+            HashEntry<K, V>[] tab = buckets;
             if (size > 0 && tab != null) {
-                for (EntryNode<K, V> node : tab) {
-                    if (node instanceof TreeBin) {
-                        Iterator<RedBlackTree.TreeNode<K, V>> iterator = ((TreeBin<K, V>) node).iterator();
+                for (HashEntry<K, V> hashEntry : tab) {
+                    if (hashEntry instanceof TreeNode) {
+                        Iterator<RedBlackTree.TreeNode<K, V>> iterator = treeView.iterator((TreeNode<K, V>) hashEntry);
                         while (iterator.hasNext()) {
                             RedBlackTree.TreeNode<K, V> treeNode = iterator.next();
                             out.writeObject(treeNode.getKey());
@@ -370,6 +425,7 @@ public abstract class ImmutableMap<K, V>
                         }
                     }
                     else {
+                        EntryNode<K, V> node = (EntryNode<K, V>) hashEntry;
                         for (EntryNode<K, V> e = node; e != null; e = e.next) {
                             out.writeObject(e.key);
                             out.writeObject(e.value);
@@ -385,29 +441,39 @@ public abstract class ImmutableMap<K, V>
         {
             int size = in.readInt();
             @SuppressWarnings("unchecked")
-            EntryNode<K, V>[] nodes = new EntryNode[size];
-            @SuppressWarnings("unchecked")
-            EntryNode<K, V>[] buckets = new EntryNode[in.readInt()];
+            HashEntry<K, V>[] buckets = new HashEntry[in.readInt()];
+            TreeView<K, V> treeView = new TreeView<>(buckets);
             int mask = buckets.length - 1;
 
             for (int i = 0; i < size; i++) {
                 @SuppressWarnings("unchecked")
-                EntryNode<K, V> node = new EntryNode<>((K) in.readObject(), (V) in.readObject());
-                nodes[i] = node;
-                int index = node.hash & mask;
-                node.next = buckets[index];
-                int count = checkNotDuplicateKey(node);
-                if (count >= 8) {
-                    buckets[index] = convertToTree(node);
+                K key = (K) in.readObject();
+                @SuppressWarnings("unchecked")
+                V value = (V) in.readObject();
+                int hash = hash(key);
+                int index = hash & mask;
+
+                HashEntry<K, V> hashEntry = buckets[index];
+                if (hashEntry instanceof TreeNode) {
+                    TreeNode<K, V> treeNode = new TreeNode<>(key, value, hash);
+                    treeView.put(index, treeNode);
                 }
                 else {
-                    buckets[index] = node;
+                    EntryNode<K, V> node = new EntryNode<>(key, value, hash);
+                    node.next = (EntryNode<K, V>) hashEntry;
+                    int count = checkNotDuplicateKey(node);
+                    if (count >= 8) {
+                        buckets[index] = convertToTree(node, treeView, index);
+                    }
+                    else {
+                        buckets[index] = node;
+                    }
                 }
             }
             this.buckets = buckets;
-            this.nodes = nodes;
             this.size = size;
             this.mask = mask;
+            this.treeView = treeView;
         }
     }
 
@@ -420,8 +486,8 @@ public abstract class ImmutableMap<K, V>
 
         private SingleImmutableMap(K key, V value)
         {
-            this.key = key;
-            this.value = value;
+            this.key = requireNonNull(key, "key is null");
+            this.value = requireNonNull(value, "value is null");
         }
 
         @Override
@@ -433,7 +499,7 @@ public abstract class ImmutableMap<K, V>
         @Override
         public boolean containsKey(Object key)
         {
-            return Objects.equals(this.key, key);
+            return this.key.equals(key);
         }
 
         @Override
@@ -446,6 +512,12 @@ public abstract class ImmutableMap<K, V>
         }
 
         @Override
+        public V getOrDefault(Object key, V defaultValue)
+        {
+            return this.key.equals(key) ? value : defaultValue;
+        }
+
+        @Override
         public Collection<V> values()
         {
             return ImmutableList.of(value);
@@ -454,12 +526,17 @@ public abstract class ImmutableMap<K, V>
         @Override
         public Set<Entry<K, V>> entrySet()
         {
-            return ImmutableSet.of(new EntryNode<>(key, value));
+            return ImmutableSet.of(EntryNode.checkOf(key, value));
         }
     }
 
     @Override
     public abstract boolean containsKey(Object key);
+
+    public abstract V getOrDefault(Object key, V defaultValue);
+
+    @Override
+    public abstract int size();
 
     @Override
     public abstract V get(Object key);
@@ -542,19 +619,32 @@ public abstract class ImmutableMap<K, V>
         throw new UnsupportedOperationException();
     }
 
+    private static int hash(Object key)
+    {
+        return Objects.hashCode(key);
+    }
+
     private static class EntryNode<K, V>
-            implements Entry<K, V>
+            implements HashEntry<K, V>
     {
         private final K key;
         private final int hash;
         private final V value;
         private EntryNode<K, V> next;
 
-        private EntryNode(K key, V value)
+        private static <K, V> EntryNode<K, V> checkOf(K key, V value)
+        {
+            return new EntryNode<>(
+                    requireNonNull(key, "key is null"),
+                    requireNonNull(value, "value is null"),
+                    hash(key));
+        }
+
+        private EntryNode(K key, V value, int hash)
         {
             this.key = key;
             this.value = value;
-            this.hash = Objects.hashCode(key);
+            this.hash = hash;
         }
 
         @Override
@@ -574,6 +664,37 @@ public abstract class ImmutableMap<K, V>
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public int getHash()
+        {
+            return hash;
+        }
+
+        private Iterator<EntryNode<K, V>> iterator()
+        {
+            return new Iterator<EntryNode<K, V>>()
+            {
+                private EntryNode<K, V> next = EntryNode.this;
+
+                @Override
+                public boolean hasNext()
+                {
+                    return next != null;
+                }
+
+                @Override
+                public EntryNode<K, V> next()
+                {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                    EntryNode<K, V> old = next;
+                    next = next.next;
+                    return old;
+                }
+            };
+        }
     }
 
     public static class Builder<K, V>
@@ -582,7 +703,7 @@ public abstract class ImmutableMap<K, V>
 
         public Builder<K, V> put(K k, V v)
         {
-            nodes.add(new EntryNode<>(k, v));
+            nodes.add(EntryNode.checkOf(k, v));
             return this;
         }
 
@@ -590,7 +711,7 @@ public abstract class ImmutableMap<K, V>
         {
             nodes.ensureCapacity(map.size());
             for (Entry<K, V> entry : map.entrySet()) {
-                nodes.add(new EntryNode<>(entry.getKey(), entry.getValue()));
+                nodes.add(EntryNode.checkOf(entry.getKey(), entry.getValue()));
             }
             return this;
         }

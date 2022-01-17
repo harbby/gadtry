@@ -17,14 +17,15 @@ package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.function.Creator;
-import com.github.harbby.gadtry.function.exception.Function;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -33,18 +34,16 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 class InternalContext
 {
     private final ThreadLocal<Set<Class<?>>> deps = ThreadLocal.withInitial(HashSet::new);
-    private final Function<Class<?>, ?, Exception> userCreator;
     private final BindMapping binds;
 
-    private InternalContext(BindMapping binds, Function<Class<?>, ?, Exception> userCreator)
+    InternalContext(BindMapping binds)
     {
         this.binds = binds;
-        this.userCreator = userCreator;
     }
 
-    public static InternalContext of(BindMapping binds, Function<Class<?>, ?, Exception> userCreator)
+    public static InternalContext of(BindMapping binds)
     {
-        return new InternalContext(binds, userCreator);
+        return new InternalContext(binds);
     }
 
     public <T> T get(Class<T> driver)
@@ -69,17 +68,23 @@ class InternalContext
         return t;
     }
 
-    private <T> T getInstance(Class<T> driver)
-    {
-        Creator<T> creator = binds.getOrDefault(driver, null);
-        return creator == null ? getNewInstance(driver) : creator.get();
-    }
-
     private <T> T getNewInstance(Class<T> driver)
     {
         try {
-            T userValue = (T) userCreator.apply(driver);
-            return userValue == null ? newInstance(driver) : userValue;
+            final Constructor<T> constructor = selectConstructor(driver);
+            constructor.setAccessible(true);
+
+            List<Object> builder = new ArrayList<>();
+            for (Class<?> argType : constructor.getParameterTypes()) {
+                checkState(argType != driver && check(argType), "Found a circular dependency involving " + driver + ", and circular dependencies are disabled.");
+
+                Object value = getInstance(argType);
+                checkState(value != null, String.format("Could not find a suitable constructor in [%s]. Classes must have either one (and only one) constructor annotated with @Autowired or a constructor that is not private(and only one).", argType));
+                builder.add(value);
+            }
+
+            T instance = constructor.newInstance(builder.toArray());
+            return (T) buildAnnotationFields(driver, instance);
         }
         catch (InvocationTargetException e) {
             throw Throwables.throwThrowable(e.getTargetException());
@@ -89,42 +94,107 @@ class InternalContext
         }
     }
 
+    private static class StackSnapshot
+    {
+        private final Class<?> aClass;
+        private Object value;
+        private Constructor<?> constructor;
+        private StackSnapshot[] childArr;
+
+        private StackSnapshot(Class<?> aClass)
+        {
+            this.aClass = aClass;
+        }
+    }
+
+    private <T> T getInstance(Class<T> driver)
+    {
+        StackSnapshot root = new StackSnapshot(driver);
+        Deque<StackSnapshot> deque = new LinkedList<>();
+        deque.add(root);
+
+        StackSnapshot snapshot;
+        while ((snapshot = deque.pollFirst()) != null) {
+            Class<?> aClass = snapshot.aClass;
+            Creator<?> creator0 = binds.getOrDefault(aClass, null);
+            if (creator0 != null) {
+                snapshot.value = creator0.get();
+                continue;
+            }
+            if (snapshot.childArr == null) {
+                Constructor<?> constructor = selectConstructor(aClass);
+                constructor.setAccessible(true);
+                int parameterCount = constructor.getParameterCount();
+                if (parameterCount == 0) {
+                    try {
+                        snapshot.value = constructor.newInstance();
+                    }
+                    catch (IllegalAccessException | InstantiationException e) {
+                        throw new InjectorException("newInstance class " + constructor.getName() + "failed", e);
+                    }
+                    catch (InvocationTargetException e) {
+                        throw new InjectorException("newInstance class " + constructor.getName() + "failed", e.getTargetException());
+                    }
+                    continue;
+                }
+
+                deque.addFirst(snapshot);
+                StackSnapshot[] childs = new StackSnapshot[parameterCount];
+                int i = 0;
+                for (Class<?> argType : constructor.getParameterTypes()) {
+                    checkState(argType != aClass && check(argType), "Found a circular dependency involving %s, and circular dependencies are disabled.", aClass);
+                    StackSnapshot child = new StackSnapshot(argType);
+                    deque.addFirst(child);
+                    childs[i++] = child;
+                }
+                snapshot.constructor = constructor;
+                snapshot.childArr = childs;
+            }
+            else {
+                Constructor<?> constructor = snapshot.constructor;
+                Object[] values = new Object[constructor.getParameterCount()];
+                for (int i = 0; i < values.length; i++) {
+                    Object value = snapshot.childArr[i].value;
+                    checkState(value != null, String.format("Could not find a suitable constructor in [%s]. " +
+                            "Classes must have either one (and only one) constructor annotated " +
+                            "with @Autowired or a constructor that is not private(and only one).", aClass));
+                    values[i] = value;
+                }
+                Object instance;
+                try {
+                    instance = constructor.newInstance(values);
+                }
+                catch (IllegalAccessException | InstantiationException e) {
+                    throw new InjectorException("newInstance class " + constructor.getName() + "failed", e);
+                }
+                catch (InvocationTargetException e) {
+                    throw new InjectorException("newInstance class " + constructor.getName() + "failed", e.getTargetException());
+                }
+                snapshot.value = buildAnnotationFields(snapshot.aClass, instance);
+            }
+        }
+        @SuppressWarnings("unchecked")
+        T typeValue = (T) root.value;
+        return typeValue;
+    }
+
     private boolean check(Class<?> type)
     {
         return !deps.get().contains(type);
     }
 
-    private <T> T newInstance(Class<T> driver)
-            throws Exception
-    {
-        final Constructor<T> constructor = selectConstructor(driver);
-        constructor.setAccessible(true);
-
-        List<Object> builder = new ArrayList<>();
-        for (Class<?> argType : constructor.getParameterTypes()) {
-            checkState(argType != driver && check(argType), "Found a circular dependency involving " + driver + ", and circular dependencies are disabled.");
-
-            Object value = getInstance(argType);
-            checkState(value != null, String.format("Could not find a suitable constructor in [%s]. Classes must have either one (and only one) constructor annotated with @Autowired or a constructor that is not private(and only one).", argType));
-            builder.add(value);
-        }
-
-        T instance = constructor.newInstance(builder.toArray());
-        return buildAnnotationFields(driver, instance);
-    }
-
-    private <T> T buildAnnotationFields(Class<T> driver, T instance)
-            throws IllegalAccessException
+    private Object buildAnnotationFields(Class<?> driver, Object instance)
     {
         for (Field field : driver.getDeclaredFields()) {
             Autowired autowired = field.getAnnotation(Autowired.class);
             if (autowired != null) {
                 field.setAccessible(true);
-                if (field.getType() == driver) {
-                    field.set(instance, instance);
+                Object value = field.getType() == driver ? instance : getInstance(field.getType());
+                try {
+                    field.set(instance, value);
                 }
-                else {
-                    field.set(instance, getInstance(field.getType()));
+                catch (IllegalAccessException e) {
+                    throw new InjectorException("injector @Autowired field " + field.getName() + "failed", e);
                 }
             }
         }

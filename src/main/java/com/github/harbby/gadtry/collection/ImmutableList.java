@@ -15,25 +15,35 @@
  */
 package com.github.harbby.gadtry.collection;
 
+import com.github.harbby.gadtry.base.Iterators;
+
 import java.io.Serializable;
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.util.Objects.requireNonNull;
 
 public abstract class ImmutableList<E>
         extends AbstractList<E>
         implements List<E>, RandomAccess
 {
+    private static final ImmutableList<?> EMPTY = new EmptyImmutableList<>();
+    static final Object[] EMPTY_ARRAY = new Object[0];
+
     @SuppressWarnings("unchecked")
-    public static <T> List<T> copy(Iterable<? extends T> iterable)
+    public static <T> ImmutableList<T> copy(Iterable<? extends T> iterable)
     {
         if (iterable instanceof Collection) {
             return new ImmutableArrayList<>((T[]) ((Collection<? extends T>) iterable).toArray());
@@ -49,85 +59,83 @@ public abstract class ImmutableList<E>
         return new ImmutableArrayList<>((T[]) MutableList.copy(iterator).toArray());
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> copy(T[] elements)
+    public static <T> ImmutableList<T> copy(T[] elements)
     {
         switch (elements.length) {
             case 0:
-                return (List<T>) ImmutableArrayList.EMPTY;
+                return empty();
             case 1:
-                return Collections.singletonList(elements[0]);
+                return new SingleImmutableList<>(elements[0]);
             default:
                 return new ImmutableArrayList<>(elements.clone());
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> wrap(T[] array)
+    public static <T> ImmutableList<T> wrap(T[] array)
     {
         switch (array.length) {
             case 0:
-                return (List<T>) ImmutableArrayList.EMPTY;
+                return empty();
             case 1:
-                return Collections.singletonList(array[0]);
+                return ImmutableList.of(array[0]);
             default:
                 return new ImmutableArrayList<>(array);
         }
     }
 
-    public static <T> List<T> of()
+    public static <T> ImmutableList<T> of()
     {
         return empty();
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> empty()
+    public static <T> ImmutableList<T> empty()
     {
-        return (List<T>) ImmutableArrayList.EMPTY;
+        return (ImmutableList<T>) EMPTY;
     }
 
-    public static <T> List<T> of(T t1)
+    public static <T> ImmutableList<T> of(T t1)
     {
-        return Collections.singletonList(t1);
+        return new SingleImmutableList<>(t1);
     }
 
-    public static <T> List<T> of(T t1, T t2)
+    public static <T> ImmutableList<T> of(T t1, T t2)
     {
         return checkedArr(t1, t2);
     }
 
-    public static <T> List<T> of(T t1, T t2, T t3)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3)
     {
         return checkedArr(t1, t2, t3);
     }
 
-    public static <T> List<T> of(T t1, T t2, T t3, T t4)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3, T t4)
     {
         return checkedArr(t1, t2, t3, t4);
     }
 
-    public static <T> List<T> of(T t1, T t2, T t3, T t4, T t5)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3, T t4, T t5)
     {
         return checkedArr(t1, t2, t3, t4, t5);
     }
 
-    public static <T> List<T> of(T t1, T t2, T t3, T t4, T t5, T t6)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3, T t4, T t5, T t6)
     {
         return checkedArr(t1, t2, t3, t4, t5, t6);
     }
 
-    public static <T> List<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7)
     {
         return checkedArr(t1, t2, t3, t4, t5, t6, t7);
     }
 
-    public static <T> List<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8)
     {
         return checkedArr(t1, t2, t3, t4, t5, t6, t7, t8);
     }
 
     @SafeVarargs
-    public static <T> List<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8, T... others)
+    public static <T> ImmutableList<T> of(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8, T... others)
     {
         if (others.length > 0) {
             @SuppressWarnings("unchecked")
@@ -141,26 +149,25 @@ public abstract class ImmutableList<E>
             array[6] = t7;
             array[7] = t8;
             System.arraycopy(others, 0, array, 8, others.length);
-            return wrap(array);
+            return new ImmutableArrayList<>(array);
         }
         return checkedArr(t1, t2, t3, t4, t5, t6, t7, t8);
     }
 
     @SafeVarargs
-    private static <T> List<T> checkedArr(T... array)
+    private static <T> ImmutableList<T> checkedArr(T... array)
     {
-        return wrap(array);
+        return new ImmutableArrayList<>(array);
     }
 
     private static class ImmutableArrayList<E>
             extends ImmutableList<E>
             implements RandomAccess, Serializable
     {
-        private static final ImmutableArrayList<Object> EMPTY = new ImmutableArrayList<>(new Object[0]);
-
         private final E[] array;
         private final int fromIndex;
         private final int toIndex;
+        private final int size;
 
         private ImmutableArrayList(E[] array)
         {
@@ -172,6 +179,10 @@ public abstract class ImmutableList<E>
             this.array = array;
             this.fromIndex = fromIndex;
             this.toIndex = toIndex;
+            this.size = (toIndex - fromIndex);
+            for (int i = fromIndex; i < toIndex; i++) {
+                requireNonNull(array[i], "value is null");
+            }
         }
 
         @Override
@@ -181,9 +192,75 @@ public abstract class ImmutableList<E>
         }
 
         @Override
+        public boolean contains(Object o)
+        {
+            for (int i = fromIndex; i < toIndex; i++) {
+                if (array[i].equals(o)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action)
+        {
+            for (int i = fromIndex; i < toIndex; i++) {
+                action.accept(array[i]);
+            }
+        }
+
+        @Override
+        public int indexOf(Object o)
+        {
+            for (int i = fromIndex; i < toIndex; i++) {
+                if (array[i].equals(o)) {
+                    return i - fromIndex;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o)
+        {
+            for (int i = toIndex - 1; i >= fromIndex; i--) {
+                if (array[i].equals(o)) {
+                    return i - fromIndex;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public Object[] toArray()
+        {
+            Object[] objects = new Object[size];
+            System.arraycopy(array, fromIndex, objects, 0, size);
+            return objects;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T[] toArray(T[] a)
+        {
+            T[] objects = a.length >= size ? a :
+                    (T[]) java.lang.reflect.Array
+                            .newInstance(a.getClass().getComponentType(), size);
+            System.arraycopy(array, fromIndex, objects, 0, size);
+            return objects;
+        }
+
+        @Override
+        public final void sort(Comparator<? super E> c)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public int size()
         {
-            return toIndex - fromIndex;
+            return size;
         }
 
         @Override
@@ -201,13 +278,7 @@ public abstract class ImmutableList<E>
             if (index > this.size()) {
                 throw new IndexOutOfBoundsException("index = " + toIndex);
             }
-            return new ImmutableListIterator<>(array, fromIndex + index, toIndex);
-        }
-
-        @Override
-        public void sort(Comparator<? super E> c)
-        {
-            throw new UnsupportedOperationException();
+            return new ImmutableListIterator<>(array, fromIndex, toIndex, index + fromIndex);
         }
 
         @Override
@@ -219,7 +290,10 @@ public abstract class ImmutableList<E>
             if (toIndex > this.size()) {
                 throw new IndexOutOfBoundsException("toIndex = " + toIndex);
             }
-            checkState(fromIndex <= toIndex, "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+            if (fromIndex > toIndex) {
+                throw new IllegalArgumentException("fromIndex(" + fromIndex +
+                        ") > toIndex(" + toIndex + ")");
+            }
             return new ImmutableArrayList<>(array, this.fromIndex + fromIndex, this.fromIndex + toIndex);
         }
 
@@ -230,6 +304,290 @@ public abstract class ImmutableList<E>
         }
     }
 
+    private static class SingleImmutableList<E>
+            extends ImmutableList<E>
+            implements RandomAccess, Serializable
+    {
+        private final E value;
+
+        private SingleImmutableList(E value)
+        {
+            this.value = requireNonNull(value, "value is null");
+        }
+
+        @Override
+        public Iterator<E> iterator()
+        {
+            return Iterators.of(value);
+        }
+
+        @Override
+        public E get(int index)
+        {
+            if (index == 0) {
+                return value;
+            }
+            else {
+                throw new IndexOutOfBoundsException("Index: " + index + ", Size: 1");
+            }
+        }
+
+        @Override
+        public int size()
+        {
+            return 1;
+        }
+
+        @Override
+        public boolean contains(Object o)
+        {
+            return value.equals(o);
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c)
+        {
+            return c.contains(value);
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action)
+        {
+            action.accept(value);
+        }
+
+        @Override
+        public int indexOf(Object o)
+        {
+            if (this.contains(0)) {
+                return 0;
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o)
+        {
+            return this.indexOf(o);
+        }
+
+        @Override
+        public Object[] toArray()
+        {
+            return new Object[] {value};
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T[] toArray(T[] a)
+        {
+            T[] objects = a.length >= 1 ? a :
+                    (T[]) java.lang.reflect.Array
+                            .newInstance(a.getClass().getComponentType(), 1);
+            objects[0] = (T) value;
+            return objects;
+        }
+
+        @Override
+        public final void sort(Comparator<? super E> c)
+        {
+        }
+
+        @Override
+        public ImmutableList<E> subList(int fromIndex, int toIndex)
+        {
+            if (fromIndex < 0) {
+                throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            }
+            if (toIndex > this.size()) {
+                throw new IndexOutOfBoundsException("toIndex = " + toIndex);
+            }
+            if (fromIndex > toIndex) {
+                throw new IllegalArgumentException("fromIndex(" + fromIndex +
+                        ") > toIndex(" + toIndex + ")");
+            }
+            int size = toIndex - fromIndex;
+            if (size == 1) {
+                return this;
+            }
+            else {
+                return ImmutableList.empty();
+            }
+        }
+    }
+
+    private static class EmptyImmutableList<E>
+            extends ImmutableList<E>
+            implements RandomAccess, Serializable
+    {
+        @Override
+        public E get(int index)
+        {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: 0");
+        }
+
+        @Override
+        public Iterator<E> iterator()
+        {
+            return Iterators.empty();
+        }
+
+        @Override
+        public int size()
+        {
+            return 0;
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action)
+        {
+            requireNonNull(action, "action is null");
+        }
+
+        @Override
+        public boolean contains(Object o)
+        {
+            return false;
+        }
+
+        @Override
+        public Object[] toArray()
+        {
+            return EMPTY_ARRAY;
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a)
+        {
+            return a;
+        }
+
+        @Override
+        public void sort(Comparator<? super E> c)
+        {
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator)
+        {
+            requireNonNull(operator);
+        }
+
+        @Override
+        public boolean removeIf(Predicate<? super E> filter)
+        {
+            requireNonNull(filter);
+            return false;
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c)
+        {
+            return c.isEmpty();
+        }
+
+        @Override
+        public Spliterator<E> spliterator()
+        {
+            return Spliterators.emptySpliterator();
+        }
+
+        @Override
+        public ImmutableList<E> subList(int fromIndex, int toIndex)
+        {
+            if (fromIndex < 0) {
+                throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            }
+            if (toIndex > this.size()) {
+                throw new IndexOutOfBoundsException("toIndex = " + toIndex);
+            }
+            if (fromIndex > toIndex) {
+                throw new IllegalArgumentException("fromIndex(" + fromIndex +
+                        ") > toIndex(" + toIndex + ")");
+            }
+            return this;
+        }
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter)
+    {
+        requireNonNull(filter);
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator<E> operator)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final boolean remove(Object o)
+    {
+        return super.remove(o);
+    }
+
+    @Override
+    public final boolean addAll(Collection<? extends E> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final boolean removeAll(Collection<?> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final boolean retainAll(Collection<?> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final boolean add(E e)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final E set(int index, E element)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final void add(int index, E element)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final E remove(int index)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final void clear()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final boolean addAll(int index, Collection<? extends E> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected final void removeRange(int fromIndex, int toIndex)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     private static class ImmutableListIterator<E>
             implements ListIterator<E>
     {
@@ -238,10 +596,10 @@ public abstract class ImmutableList<E>
         private final int fromIndex;
         private final int toIndex;
 
-        private ImmutableListIterator(E[] array, int fromIndex, int toIndex)
+        private ImmutableListIterator(E[] array, int fromIndex, int toIndex, int position)
         {
             this.array = array;
-            this.position = fromIndex;
+            this.position = position;
             this.fromIndex = fromIndex;
             this.toIndex = toIndex;
         }
@@ -310,6 +668,28 @@ public abstract class ImmutableList<E>
         public void add(E e)
         {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    public static class Builder<E>
+    {
+        private final List<E> list = new ArrayList<>();
+
+        public Builder<E> add(E value)
+        {
+            list.add(value);
+            return this;
+        }
+
+        public Builder<E> addAll(Collection<E> collection)
+        {
+            list.addAll(collection);
+            return this;
+        }
+
+        public ImmutableList<E> build()
+        {
+            return ImmutableList.copy(list);
         }
     }
 }

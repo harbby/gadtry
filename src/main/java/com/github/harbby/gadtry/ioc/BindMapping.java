@@ -95,7 +95,7 @@ public class BindMapping
     {
         requireNonNull(iocHandler, "iocHandler is null");
         final BindMapping.Builder builder = BindMapping.builder();
-        final InternalContext context = InternalContext.of(builder.build(), (x) -> null);
+        final InternalContext context = new InternalContext(builder.build());
         final Binder binder = new Binder()
         {
             @Override

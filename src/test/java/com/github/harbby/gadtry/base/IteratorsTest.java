@@ -288,21 +288,21 @@ public class IteratorsTest
     public void filterTest()
     {
         List<Integer> list1 = Arrays.asList(1, 2, 3, null, 5);
-        Iterator<Integer> iterator = Iterators.filter(list1.iterator(), x -> x == null || x > 2);
+        Iterator<Integer> iterator = Iterators.filter(list1.iterator(), x -> x != null && x > 2);
         List<Integer> out = ImmutableList.copy(iterator);
         System.out.println(out);
-        Assert.assertEquals(out, Arrays.asList(3, null, 5));
+        Assert.assertEquals(out, Arrays.asList(3, 5));
         checkNoSuchElement(iterator);
     }
 
     @Test
     public void sampleTest()
     {
-        List<Integer> list1 = Arrays.asList(1, 2, 3, null, 5, 6);
+        List<Integer> list1 = Arrays.asList(1, 2, 3, 5, 6);
         Iterator<Integer> iterator = Iterators.sample(list1.iterator(), 3, 6, 12345);
         List<Integer> out = ImmutableList.copy(iterator);
         System.out.println(out);
-        Assert.assertEquals(out, Arrays.asList(1, null, 5));
+        Assert.assertEquals(out, Arrays.asList(1, 5, 6));
         checkNoSuchElement(iterator);
     }
 

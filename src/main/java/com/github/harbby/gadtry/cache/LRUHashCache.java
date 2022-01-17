@@ -24,7 +24,6 @@ import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -99,7 +98,7 @@ class LRUHashCache<K, V>
         Node<K, V> node = buckets[index];
         Node<K, V> last = null;
         while (node != null) {
-            if (hash == node.hash && Objects.equals(key, node.key)) {
+            if (hash == node.hash && key.equals(node.key)) {
                 if (last == null) {
                     buckets[index] = null;
                 }
@@ -122,12 +121,12 @@ class LRUHashCache<K, V>
     @Override
     public V put(K key, V value)
     {
-        int hash = Objects.hashCode(key.hashCode());
+        int hash = key.hashCode();
         int index = hash & mask;
         Node<K, V> first = buckets[index];
         Node<K, V> node = first;
         while (node != null) {
-            if (hash == node.hash && Objects.equals(key, node.key)) {
+            if (hash == node.hash && key.equals(node.key)) {
                 V returnValue = node.value;
                 node.updateValue(value);
                 moveToHead(node);
@@ -167,7 +166,7 @@ class LRUHashCache<K, V>
     @Override
     public V remove(Object key)
     {
-        int hash = Objects.hashCode(key.hashCode());
+        int hash = key.hashCode();
         return remove0(key, hash).value;
     }
 
@@ -226,12 +225,12 @@ class LRUHashCache<K, V>
     @Override
     public V getIfPresent(K key)
     {
-        int hash = Objects.hashCode(key.hashCode());
+        int hash = key.hashCode();
         int index = hash & mask;
         Node<K, V> node = buckets[hash & mask];
         Node<K, V> last = null;
         while (node != null) {
-            if (hash == node.hash && Objects.equals(key, node.key)) {
+            if (hash == node.hash && key.equals(node.key)) {
                 if (isTimeout(node)) {
                     //hash remove
                     if (last == null) {
@@ -292,12 +291,12 @@ class LRUHashCache<K, V>
     public <E extends Exception> V get(K key, Supplier<V, E> caller)
             throws E
     {
-        int hash = Objects.hashCode(key.hashCode());
+        int hash = key.hashCode();
         int index = hash & mask;
         Node<K, V> first = buckets[index];
         Node<K, V> node = first;
         while (node != null) {
-            if (hash == node.hash && Objects.equals(key, node.key)) {
+            if (hash == node.hash && key.equals(node.key)) {
                 if (isTimeout(node)) {
                     node.updateValue(caller.apply());
                 }

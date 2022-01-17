@@ -17,37 +17,15 @@ package com.github.harbby.gadtry.ioc;
 
 import org.junit.Test;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 
 public class InternalContextTest
 {
-    @Test(expected = Exception.class)
-    public void getInstance()
-    {
-        BindMapping bindMapping = BindMapping.create(binder -> {});
-        InternalContext context = InternalContext.of(bindMapping, aClass -> {
-            throw new InvocationTargetException(new IOException());
-        });
-        context.get(HashSet.class);
-    }
-
-    @Test(expected = Exception.class)
-    public void getInstance2()
-    {
-        BindMapping bindMapping = BindMapping.create(binder -> {});
-        InternalContext context = InternalContext.of(bindMapping, aClass -> {
-            throw new IOException();
-        });
-        context.get(HashSet.class);
-    }
-
     @Test(expected = IllegalStateException.class)
     public void getInstance3()
     {
         BindMapping bindMapping = BindMapping.create();
-        InternalContext context = InternalContext.of(bindMapping, aClass -> null);
+        InternalContext context = InternalContext.of(bindMapping);
         context.get(DeadDependency1.class);
     }
 
@@ -55,7 +33,7 @@ public class InternalContextTest
     public void getInstance4()
     {
         BindMapping bindMapping = BindMapping.create(binder -> binder.bind(HashSet.class).byCreator(() -> null));
-        InternalContext context = InternalContext.of(bindMapping, aClass -> null);
+        InternalContext context = InternalContext.of(bindMapping);
         context.get(DeadDependency1.class);
     }
 
@@ -63,7 +41,7 @@ public class InternalContextTest
     public void getInstance5()
     {
         BindMapping bindMapping = BindMapping.create(binder -> {});
-        InternalContext context = InternalContext.of(bindMapping, aClass -> null);
+        InternalContext context = InternalContext.of(bindMapping);
         context.get(DeadDependency3.class);
     }
 

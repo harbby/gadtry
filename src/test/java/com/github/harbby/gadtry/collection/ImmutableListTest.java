@@ -66,7 +66,12 @@ public class ImmutableListTest
     @Test
     public void subListTest()
     {
+        List<Integer> list1 = ImmutableList.of(1, 2, 3);
+        Assert.assertEquals(Arrays.asList(1, 2, 3).listIterator(3).previous().intValue(), 3);
+        Assert.assertEquals(list1.listIterator(3).previous().intValue(), 3);
+
         List<Integer> list = ImmutableList.of(1, 2, 3, 4, 5);
+        Assert.assertEquals(Arrays.asList(1, 2, 3, 4, 5).subList(1, 4), Arrays.asList(2, 3, 4));
         Assert.assertEquals(list.subList(1, 4), Arrays.asList(2, 3, 4));
 
         try {
@@ -109,7 +114,7 @@ public class ImmutableListTest
             list.subList(3, 1);
             Assert.fail();
         }
-        catch (IllegalStateException ignored) {
+        catch (IllegalArgumentException ignored) {
         }
     }
 
@@ -140,8 +145,8 @@ public class ImmutableListTest
         Try.of(iterator::previous).onSuccess(Assert::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
         //---error check
 
-        Try.of(()-> iterator.add(-1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
-        Try.of(()-> iterator.set(-1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Try.of(() -> iterator.add(-1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Try.of(() -> iterator.set(-1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
         Try.of(iterator::remove).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
     }
 }

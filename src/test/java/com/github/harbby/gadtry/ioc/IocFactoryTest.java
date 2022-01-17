@@ -21,8 +21,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -197,7 +195,7 @@ public class IocFactoryTest
             implements Creator<StringBuilder>
     {
         @Autowired
-        private Set set;
+        private Set<?> set;
 
         @Autowired
         public StringBuilderCreator(ArrayList<String> arrayList)
@@ -231,29 +229,5 @@ public class IocFactoryTest
         catch (IllegalStateException ignored) {
         }
         iocFactory.getInstance(MemoryBlock.class);
-    }
-
-    @Test
-    public void UserCreatorReturnError()
-    {
-        IocFactory iocFactory = IocFactory.create();
-
-        iocFactory.getInstance(MemoryBlock.class, aClass -> {
-            if (aClass == byte[].class) {
-                return "done".getBytes();
-            }
-            return null;
-            //throw new InvocationTargetException(new RuntimeException());
-        });
-    }
-
-    @Test(expected = SQLException.class)
-    public void UserCreatorReturnInvocationTargetException()
-    {
-        IocFactory iocFactory = IocFactory.create();
-
-        iocFactory.getInstance(MemoryBlock.class, aClass -> {
-            throw new InvocationTargetException(new SQLException());
-        });
     }
 }

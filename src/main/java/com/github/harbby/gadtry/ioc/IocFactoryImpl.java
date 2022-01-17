@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.function.Creator;
-import com.github.harbby.gadtry.function.exception.Function;
 import com.github.harbby.gadtry.graph.Graph;
 
 import java.lang.reflect.Constructor;
@@ -29,29 +28,29 @@ public class IocFactoryImpl
 {
     private final BindMapping binds;
     private final Bean[] beans;
+    private final InternalContext context;
 
     public IocFactoryImpl(BindMapping binds, Bean[] beans)
     {
         this.binds = binds;
         this.beans = beans;
+        this.context = new InternalContext(binds);
     }
 
-    /**
-     * @throws InjectorException Injector error
-     */
-    public <T> T getInstance(Class<T> driver, Function<Class<?>, ?, Exception> userCreator)
+    @Override
+    public <T> T getInstance(Class<T> driver)
     {
-        return InternalContext.of(binds, userCreator).get(driver);
+        return context.get(driver);
     }
 
     @Override
     public <T> Creator<T> getCreator(Class<T> driver)
     {
-        return () -> getInstance(driver, driverClass -> null);
+        return () -> getInstance(driver);
     }
 
     @Override
-    public <T> BindMapping getAllBeans()
+    public BindMapping getAllBeans()
     {
         return binds;
     }
@@ -60,7 +59,7 @@ public class IocFactoryImpl
     public Graph<String, Void> analyze()
     {
         Graph.GraphBuilder<String, Void> builder = Graph.builder();
-        final Set<Class> parserClass = new HashSet<>();
+        final Set<Class<?>> parserClass = new HashSet<>();
         Binder binder = new Binder()
         {
             @Override

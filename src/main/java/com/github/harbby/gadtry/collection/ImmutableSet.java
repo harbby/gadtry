@@ -23,11 +23,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -39,6 +39,7 @@ import static java.util.Objects.requireNonNull;
 public abstract class ImmutableSet<V>
         extends AbstractSet<V>
 {
+    static final float DEFAULT_LOAD_FACTOR = 0.83f;
     private static final ImmutableSet<?> EMPTY = new EmptyImmutableSet<>();
 
     public static <V> ImmutableSet<V> copy(Set<V> set)
@@ -53,8 +54,8 @@ public abstract class ImmutableSet<V>
                 return new TwoValueImmutableSet<>(iterator.next(), iterator.next());
             default:
                 @SuppressWarnings("unchecked")
-                V[] arrays = (V[]) new Object[set.size()];
-                return new HashImmutableSet<>(set.toArray(arrays));
+                V[] arrays = (V[]) set.toArray();
+                return new HashImmutableSet<>(arrays);
         }
     }
 
@@ -71,7 +72,8 @@ public abstract class ImmutableSet<V>
 
     public static <V> ImmutableSet<V> of(V v1, V v2)
     {
-        if (Objects.equals(v1, v2)) {
+        requireNonNull(v1, "value is null");
+        if (v1.equals(v2)) {
             return new SingleImmutableSet<>(v1);
         }
         else {
@@ -119,9 +121,7 @@ public abstract class ImmutableSet<V>
         set.add(v4);
         set.add(v5);
         set.add(v6);
-        for (V v : others) {
-            set.add(v);
-        }
+        set.addAll(Arrays.asList(others));
         return ImmutableSet.copy(set);
     }
 
@@ -142,6 +142,19 @@ public abstract class ImmutableSet<V>
         }
 
         @Override
+        public boolean containsAll(Collection<?> c)
+        {
+            return c.isEmpty();
+        }
+
+        @Override
+        public boolean removeIf(Predicate<? super V> filter)
+        {
+            requireNonNull(filter);
+            return false;
+        }
+
+        @Override
         public int size()
         {
             return 0;
@@ -154,12 +167,6 @@ public abstract class ImmutableSet<V>
         }
 
         @Override
-        public boolean containsAll(Collection<?> c)
-        {
-            return c.isEmpty();
-        }
-
-        @Override
         public Spliterator<V> spliterator()
         {
             return Spliterators.emptySpliterator();
@@ -167,14 +174,11 @@ public abstract class ImmutableSet<V>
 
         public Object[] toArray()
         {
-            return new Object[0];
+            return ImmutableList.EMPTY_ARRAY;
         }
 
         public <T> T[] toArray(T[] a)
         {
-            if (a.length > 0) {
-                a[0] = null;
-            }
             return a;
         }
     }
@@ -187,7 +191,7 @@ public abstract class ImmutableSet<V>
 
         private SingleImmutableSet(V value)
         {
-            this.value = value;
+            this.value = requireNonNull(value, "value is null");
         }
 
         @Override
@@ -199,7 +203,13 @@ public abstract class ImmutableSet<V>
         @Override
         public boolean contains(Object o)
         {
-            return Objects.equals(o, value);
+            return value.equals(o);
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c)
+        {
+            return c.contains(value);
         }
 
         @Override
@@ -213,6 +223,23 @@ public abstract class ImmutableSet<V>
         {
             action.accept(value);
         }
+
+        @Override
+        public Object[] toArray()
+        {
+            return new Object[] {value};
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T[] toArray(T[] a)
+        {
+            T[] objects = a.length >= 2 ? a :
+                    (T[]) java.lang.reflect.Array
+                            .newInstance(a.getClass().getComponentType(), 2);
+            objects[0] = (T) value;
+            return objects;
+        }
     }
 
     private static class TwoValueImmutableSet<V>
@@ -224,8 +251,8 @@ public abstract class ImmutableSet<V>
 
         private TwoValueImmutableSet(V value1, V value2)
         {
-            this.value1 = value1;
-            this.value2 = value2;
+            this.value1 = requireNonNull(value1);
+            this.value2 = requireNonNull(value2);
         }
 
         @Override
@@ -243,7 +270,7 @@ public abstract class ImmutableSet<V>
         @Override
         public boolean contains(Object o)
         {
-            return Objects.equals(o, value1) || Objects.equals(o, value2);
+            return value1.equals(o) || value2.equals(o);
         }
 
         @Override
@@ -259,6 +286,19 @@ public abstract class ImmutableSet<V>
         {
             return new Object[] {value1, value2};
         }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T[] toArray(T[] a)
+        {
+            T[] objects = a.length >= 2 ? a :
+                    (T[]) java.lang.reflect.Array
+                            .newInstance(a.getClass().getComponentType(), 2);
+
+            objects[0] = (T) value1;
+            objects[1] = (T) value2;
+            return objects;
+        }
     }
 
     private static class HashImmutableSet<V>
@@ -273,20 +313,19 @@ public abstract class ImmutableSet<V>
         {
             int size = nodes.length;
             int capacity = Integer.highestOneBit(size);
-            if (capacity * 0.83D < size) {
+            if (capacity * DEFAULT_LOAD_FACTOR < size) {
                 capacity = capacity << 1;
             }
             int mask = capacity - 1;
             @SuppressWarnings("unchecked")
             Node<V>[] buckets = new Node[capacity];
-
             for (V value : nodes) {
-                int hash = Objects.hashCode(value);
+                requireNonNull(value, "value is null");
+                int hash = value.hashCode();
                 int index = hash & mask;
                 Node<V> node = new Node<>(value);
                 node.next = buckets[index];
                 buckets[index] = node;
-                //checkNotDuplicateKey(node);
             }
             this.buckets = buckets;
             this.size = size;
@@ -344,25 +383,17 @@ public abstract class ImmutableSet<V>
         @Override
         public boolean contains(Object o)
         {
-            int hash = Objects.hashCode(o);
+            if (o == null) {
+                return false;
+            }
+            int hash = o.hashCode();
             int index = hash & mask;
             Node<V> node = buckets[index];
-
-            if (o == null) {
-                while (node != null) {
-                    if (node.value == null) {
-                        return true;
-                    }
-                    node = node.next;
+            while (node != null) {
+                if (o.equals(node.value)) {
+                    return true;
                 }
-            }
-            else {
-                while (node != null) {
-                    if (o.equals(node.value)) {
-                        return true;
-                    }
-                    node = node.next;
-                }
+                node = node.next;
             }
             return false;
         }
@@ -401,7 +432,7 @@ public abstract class ImmutableSet<V>
             for (int i = 0; i < size; i++) {
                 @SuppressWarnings("unchecked")
                 Node<V> node = new Node<>((V) in.readObject());
-                int hash = Objects.hashCode(node.value);
+                int hash = node.value.hashCode();
                 int index = hash & mask;
                 node.next = buckets[index];
                 buckets[index] = node;
@@ -426,8 +457,9 @@ public abstract class ImmutableSet<V>
     }
 
     @Override
-    public final boolean removeIf(Predicate<? super V> filter)
+    public boolean removeIf(Predicate<? super V> filter)
     {
+        requireNonNull(filter);
         throw new UnsupportedOperationException();
     }
 
