@@ -72,7 +72,7 @@ tasks.withType(Javadoc) {
 }
 
 checkstyle {
-  toolVersion '8.12'
+  toolVersion '9.2.1'
   showViolations true
   configFile = rootProject.file('src/checkstyle/facebook_checks.xml')
   //configFile = file("${rootDir}/src/checkstyle/facebook_checks.xml")
