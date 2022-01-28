@@ -26,8 +26,8 @@ public class ByteBufferInputStream
         extends InputStream
 {
     private final ByteBuffer[] buffers;
-    private int index = 0;
-    private int mark = 0;
+    private int index;
+    private int mark;
     private int markIndex;
 
     public ByteBufferInputStream(ByteBuffer... buffers)

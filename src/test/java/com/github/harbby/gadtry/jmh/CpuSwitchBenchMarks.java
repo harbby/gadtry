@@ -61,9 +61,9 @@ public class CpuSwitchBenchMarks
     @State(Scope.Benchmark)
     public static class ExecutionPlan
     {
-        @Param({"1000000"})
+        @Param("1000000")
         public int size;
-        public ChannelState[] states = null;
+        public ChannelState[] states;
 
         @Setup
         public void setUp()

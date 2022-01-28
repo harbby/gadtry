@@ -344,7 +344,7 @@ public abstract class ImmutableMap<K, V>
                 {
                     return new Iterator<Entry<K, V>>()
                     {
-                        private int index = 0;
+                        private int index;
                         private Iterator<? extends Entry<K, V>> bucketIterator = nextBucketIterator();
 
                         @Override

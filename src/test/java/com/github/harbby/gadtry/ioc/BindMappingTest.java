@@ -61,7 +61,7 @@ public class BindMappingTest
             @Override
             public <T> T onCreate(Class<T> key, T instance)
             {
-                return AopGo.proxy(key).byInstance(instance).aop(biner-> biner.doBefore(a-> {})).build();
+                return AopGo.proxy(key).byInstance(instance).aop(biner -> biner.doBefore(a -> {})).build();
             }
         }, binder -> binder.bind(Map.class, new HashMap()));
         Assert.assertEquals(bindMapping.getAllBeans().size(), 1);
@@ -76,7 +76,7 @@ public class BindMappingTest
             @Override
             public <T> T onCreate(Class<T> key, T instance)
             {
-                return AopGo.proxy(key).byInstance(instance).aop(biner-> biner.doBefore(a-> {})).build();
+                return AopGo.proxy(key).byInstance(instance).aop(biner -> biner.doBefore(a -> {})).build();
             }
         }, binder -> binder.bind(Map.class).byInstance(new HashMap()));
         Assert.assertEquals(bindMapping.get(Map.class).get(), new HashMap());

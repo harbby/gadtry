@@ -20,12 +20,12 @@ import sun.misc.Unsafe;
 
 public class RevisedObjectInHeap
 {
-    private long address = 0;
+    private long address;
 
     private Unsafe unsafe = Platform.getUnsafe();
 
     // 让对象占用堆内存,触发[Full GC
-    private byte[] bytes = null;
+    private byte[] bytes;
 
     public RevisedObjectInHeap()
     {

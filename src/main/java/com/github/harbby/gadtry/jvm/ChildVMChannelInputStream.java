@@ -37,11 +37,11 @@ public class ChildVMChannelInputStream
 {
     private final InputStream in;
     private final BufferedReader reader;
-    private int length = 0;
-    private int index = 0;
+    private int length;
+    private int index;
     private byte[] result = new byte[0];
     private boolean isSuccess;
-    private boolean isDone = false;
+    private boolean isDone;
 
     public ChildVMChannelInputStream(InputStream inputStream)
             throws IOException

@@ -24,7 +24,7 @@ public final class MemoryBlock
     private static final Unsafe unsafe = Platform.getUnsafe();
     private final long address;
     private final int maxOffset;
-    private volatile boolean isFree = false;
+    private volatile boolean isFree;
 
     public MemoryBlock(byte[] value)
     {

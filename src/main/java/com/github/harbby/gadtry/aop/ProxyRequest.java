@@ -32,7 +32,7 @@ public class ProxyRequest<T>
     private Class<?>[] interfaces;
     private Object target;
     private final Class<T> superclass;
-    private boolean enableV2 = false;
+    private boolean enableV2;  //default false
 
     public ProxyRequest(Class<T> superclass)
     {

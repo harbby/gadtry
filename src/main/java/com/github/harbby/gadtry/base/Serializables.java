@@ -33,8 +33,7 @@ public class Serializables
     {
         requireNonNull(serializable, "serializable obj is null");
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ObjectOutputStream os = new ObjectOutputStream(bos)
-        ) {
+                ObjectOutputStream os = new ObjectOutputStream(bos)) {
             os.writeObject(serializable);
             return bos.toByteArray();
         }
@@ -57,8 +56,7 @@ public class Serializables
             throws IOException, ClassNotFoundException
     {
         try (ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
-                ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi, classLoader)
-        ) {
+                ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi, classLoader)) {
             return (T) oi.readObject();
         }
     }
@@ -67,8 +65,7 @@ public class Serializables
     public static <T> T byteToObject(InputStream inputStream, ClassLoader classLoader)
             throws IOException, ClassNotFoundException
     {
-        try (ObjectInputStreamProxy oi = new ObjectInputStreamProxy(inputStream, classLoader)
-        ) {
+        try (ObjectInputStreamProxy oi = new ObjectInputStreamProxy(inputStream, classLoader)) {
             return (T) oi.readObject();
         }
     }

@@ -36,7 +36,7 @@ public class IntArrayBuffer
     private static final int[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-    private transient int modCount = 0;
+    private transient int modCount;
     private transient int[] elementData;
     private int size;
 
@@ -73,7 +73,7 @@ public class IntArrayBuffer
     {
         return new Iterator<Integer>()
         {
-            private int i = 0;
+            private int i;
 
             @Override
             public boolean hasNext()

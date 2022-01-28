@@ -47,7 +47,7 @@ public class CuckooStashHashMap<K, V>
     private int mask;
     private int stashCapacity;
     private int stashSize;
-    private int size = 0;
+    private int size;
     private int threshold;
 
     private int cuckooRetriesNumber;
@@ -485,8 +485,8 @@ public class CuckooStashHashMap<K, V>
             implements Iterator<E>
     {
         private int expectedMapCount = size;
-        private int count = 0;
-        private int index = 0;
+        private int count;
+        private int index;
         private final int maxIndex = capacity + stashSize;
         private final int hashSize = size - stashSize;
 

@@ -393,7 +393,7 @@ public class Iterators
         checkArgument(limit >= 0, "limit must >= 0");
         return new IteratorPlus<T>()
         {
-            private int number = 0;
+            private int number;
 
             @Override
             public boolean hasNext()
@@ -698,7 +698,7 @@ public class Iterators
         private final Iterator<Tuple2<K, V2>> rightIterator;
 
         private Tuple2<K, V1> leftNode;
-        private Tuple2<K, V2> rightNode = null;
+        private Tuple2<K, V2> rightNode;
 
         private MergeJoinIteratorByLeftPrimaryKey(Comparator<K> comparator, Iterator<Tuple2<K, V1>> leftIterator, Iterator<Tuple2<K, V2>> rightIterator)
         {
@@ -760,8 +760,8 @@ public class Iterators
 
         private final List<Tuple2<K, V1>> leftSameKeys = new ArrayList<>();
         private Tuple2<K, V1> leftNode;
-        private Tuple2<K, V2> rightNode = null;
-        private int index = 0;
+        private Tuple2<K, V2> rightNode;
+        private int index;
 
         private MergeJoinIterator(Comparator<K> comparator, Iterator<Tuple2<K, V1>> leftIterator, Iterator<Tuple2<K, V2>> rightIterator)
         {
@@ -850,7 +850,7 @@ public class Iterators
         requireNonNull(autoClose, "autoClose is null");
         return new IteratorPlus<V>()
         {
-            private boolean done = false;
+            private boolean done;
 
             @Override
             public boolean hasNext()
@@ -878,7 +878,7 @@ public class Iterators
         return new IteratorPlus<V>()
         {
             private final StateOption<V> option = StateOption.empty();
-            private boolean done = false;
+            private boolean done;
 
             @Override
             public boolean hasNext()

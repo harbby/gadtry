@@ -339,7 +339,7 @@ public abstract class ImmutableSet<V>
         {
             return new Iterator<V>()
             {
-                private int index = 0;
+                private int index;
                 private Node<V> node = nextBucket();
 
                 @Override

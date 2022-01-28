@@ -21,10 +21,9 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -67,7 +66,7 @@ public class JavaClassCompiler
             throws CompileException
     {
         JavaSourceObject javaSource = new JavaSourceObject(className, sourceCode);
-        Set<String> ops = new HashSet<>(javacOps);
+        List<String> ops = new ArrayList<>(javacOps);
         ops.addAll(compilerOptions);
         JavaCompiler.CompilationTask task = compiler.getTask(null,
                 fileManager,

@@ -32,8 +32,7 @@ public class OffHeapList<E>
 
     public OffHeapList(
             Function<E, byte[]> serialization,
-            Function<byte[], E> deserialization
-    )
+            Function<byte[], E> deserialization)
     {
         this(serialization, deserialization, ArrayList::new);
     }
@@ -42,8 +41,7 @@ public class OffHeapList<E>
     public OffHeapList(
             Function<E, byte[]> serialization,
             Function<byte[], E> deserialization,
-            Supplier<List<?>> listSupplier
-    )
+            Supplier<List<?>> listSupplier)
     {
         this.serialization = requireNonNull(serialization, "serialization is null");
         this.deserialization = requireNonNull(deserialization, "serialization is null");

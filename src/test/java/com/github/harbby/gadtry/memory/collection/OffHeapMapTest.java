@@ -41,8 +41,7 @@ public class OffHeapMapTest
         final Map<String, String> offHeapMap = new OffHeapMap<>(
                 (String str) -> str.getBytes(UTF_8),
                 (byte[] bytes) -> new String(bytes, UTF_8),
-                ConcurrentHashMap::new
-        );
+                ConcurrentHashMap::new);
         offHeapMap.put("a1", msg);
         Assert.assertEquals(offHeapMap.get("a1"), msg);
         Assert.assertNull(offHeapMap.get("????"));
@@ -56,8 +55,7 @@ public class OffHeapMapTest
         final Map<String, Integer> offHeapMap = new OffHeapMap<>(
                 (Integer str) -> String.valueOf(str).getBytes(UTF_8),
                 (byte[] bytes) -> Integer.valueOf(new String(bytes, UTF_8)),
-                IdentityHashMap::new
-        );
+                IdentityHashMap::new);
         Map<String, Integer> integerMap = MutableMap.of("a1", 123);
         offHeapMap.putAll(integerMap);
 
@@ -100,8 +98,7 @@ public class OffHeapMapTest
     {
         final Map<String, Integer> offHeapMap = new OffHeapMap<>(
                 (Integer str) -> String.valueOf(str).getBytes(UTF_8),
-                (byte[] bytes) -> Integer.valueOf(new String(bytes, UTF_8))
-        );
+                (byte[] bytes) -> Integer.valueOf(new String(bytes, UTF_8)));
         offHeapMap.put("a1", 123);
         offHeapMap.put("a1", 456);
         Assert.assertEquals(offHeapMap.values(), Arrays.asList(456));

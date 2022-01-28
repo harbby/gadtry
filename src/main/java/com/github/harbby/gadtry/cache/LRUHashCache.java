@@ -116,7 +116,7 @@ class LRUHashCache<K, V>
         return this.headNode; //return value is null node
     }
 
-    private int size = 0;
+    private int size;
 
     @Override
     public V put(K key, V value)

@@ -20,7 +20,7 @@ import java.io.Serializable;
 public class StateOption<V>
         implements Serializable
 {
-    private boolean defined = false;
+    private boolean defined;
     private V value;
 
     public static <V> StateOption<V> of(V value)

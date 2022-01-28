@@ -56,11 +56,13 @@ public class JavaClassCompilerTest
         byte[] bytes;
         if (Platform.getJavaVersion() > 8) {
             List<String> ops = ImmutableList.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED",
-                    "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED");
+                    "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED",
+                    "-source", "11", "-target", "11");
             bytes = javaClassCompiler.doCompile(className, classCode, ops).getClassByteCodes().get(className);
         }
         else {
-            bytes = javaClassCompiler.doCompile(className, classCode).getClassByteCodes().get(className);
+            List<String> ops = ImmutableList.of("-source", "1.7", "-target", "1.7");
+            bytes = javaClassCompiler.doCompile(className, classCode, ops).getClassByteCodes().get(className);
         }
         ByteClassLoader byteClassLoader = new ByteClassLoader(Platform.class.getClassLoader());
         Class<DirectBufferCloseable> directBufferCloseableClass = (Class<DirectBufferCloseable>) byteClassLoader.loadClass(className, bytes);

@@ -48,7 +48,7 @@ public class Streams
         PrimitiveIterator.OfInt ofInt = new PrimitiveIterator.OfInt()
         {
             private int next = start;
-            private int cnt = 0;
+            private int cnt;
 
             @Override
             public boolean hasNext()

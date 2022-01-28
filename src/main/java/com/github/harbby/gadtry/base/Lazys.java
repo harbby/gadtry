@@ -54,7 +54,7 @@ public class Lazys
             implements Serializable, Function1<F1, R>
     {
         private final Function1<F1, R> delegate;
-        private transient volatile boolean initialized = false;
+        private transient volatile boolean initialized;
         private transient R value;
         private static final long serialVersionUID = 0L;
 
@@ -91,7 +91,7 @@ public class Lazys
             implements Serializable, Creator<T>
     {
         private final Creator<T> delegate;
-        private transient volatile boolean initialized = false;
+        private transient volatile boolean initialized;
         private transient T value;
         private static final long serialVersionUID = 0L;
 

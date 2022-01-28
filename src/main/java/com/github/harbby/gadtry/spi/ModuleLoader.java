@@ -138,7 +138,7 @@ public final class ModuleLoader<T>
 
     public static class Builder<T>
     {
-        private List<String> spiPackages = null;
+        private List<String> spiPackages;
         private Supplier<Collection<File>> scanner;
         private Class<T> pluginClass;
         private java.util.function.Function<File, List<File>> filter = moduleDir -> Files.listFiles(moduleDir, true);

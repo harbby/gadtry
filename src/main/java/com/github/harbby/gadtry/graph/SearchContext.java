@@ -24,7 +24,7 @@ public class SearchContext<N, E>
     private final long searchStartTime = System.currentTimeMillis();
 
     private Route<N, E> lastRoute;
-    private int number = 0;
+    private int number;
 
     public SearchContext(
             Function<Route<N, E>, Boolean> nextRule,
