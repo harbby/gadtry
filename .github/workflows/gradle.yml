@@ -30,5 +30,8 @@ jobs:
         distribution: 'temurin'
     - name: Build with Gradle
       uses: gradle/gradle-build-action@0d13054264b0bb894ded474f08ebb30921341cee
+      env:
+        - jdk=java17
+        - JAVA_OPTS='--add-opens java.prefs/java.util.prefs=ALL-UNNAMED'
       with:
         arguments: clean licenseMain build --no-daemon -Pjdk=java17
