@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.collection.iterator.MarkIterator;
+import com.github.harbby.gadtry.collection.iterator.PeekIterator;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
@@ -434,5 +435,13 @@ public class IteratorsTest
                 Tuple2.of(2, "2->2"),
                 Tuple2.of(8, "8->1")
         ), data);
+    }
+
+    @Test
+    public void anyMatch()
+    {
+        PeekIterator<Integer> iterator = Iterators.of(1, 2, 3, 4, 5);
+        Iterator<Integer> out = Iterators.anyMatchStop(iterator, o -> o == 3);
+        Assert.assertEquals(ImmutableList.copy(out), Arrays.asList(1, 2));
     }
 }

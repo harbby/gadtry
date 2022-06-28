@@ -44,7 +44,7 @@ public class ImmutableSetTest
                         }
                         else {
                             Integer[] intArr = IntStream.range(0, c).mapToObj(x -> x).toArray(Integer[]::new);
-                            set = (ImmutableSet<Integer>) method.invoke(null, intArr);
+                            set = (ImmutableSet<Integer>) method.invoke(null, (Object[]) intArr);
                         }
                         Assert.assertEquals(set.size(), c);
                         Assert.assertEquals(set, new HashSet<>(Arrays.asList(IntStream.range(0, c).mapToObj(x -> x).toArray(Integer[]::new))));

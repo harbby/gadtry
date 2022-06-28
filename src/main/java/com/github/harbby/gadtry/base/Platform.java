@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.io.IOUtils;
 import sun.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
 import sun.reflect.ReflectionFactory;
 
 import java.io.IOException;
@@ -28,10 +27,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
-import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -47,28 +45,18 @@ public final class Platform
      */
     private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
 
-    private static final Unsafe unsafe = getUnsafe0();
+    private static final Unsafe unsafe;
     private static final int classVersion = getClassVersion0();
     private static final String JAVA_FULL_VERSION = System.getProperty("java.version");
     private static final int javaVersion = getJavaVersion0();
-    private static final Supplier<PlatformBase> platformBase = Lazys.of(() -> {
-        checkState(getJavaVersion() > 8);
-        try {
-            return (PlatformBase) Class.forName("com.github.harbby.gadtry.base.PlatformBaseImpl").newInstance();
-        }
-        catch (Exception e) {
-            throw new PlatFormUnsupportedOperation(e);
-        }
-    });
 
     public static Unsafe getUnsafe()
     {
         return unsafe;
     }
 
-    private static Unsafe getUnsafe0()
-    {
-        sun.misc.Unsafe obj = null;
+    static {
+        Unsafe obj = null;
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
@@ -77,23 +65,21 @@ public final class Platform
         catch (Exception cause) {
             throwException(cause);
         }
-        return requireNonNull(obj);
+        unsafe = obj;
     }
 
     /**
      * Java9引入模块化后，一些内部api具有破坏性兼容性。
      * 这里的方法多数为Java9以上平台所添加的新方法
      */
-    interface PlatformBase
+    interface ExtPlatform
     {
         Class<?> defineClass(Class<?> buddyClass, byte[] classBytes)
                 throws IllegalAccessException;
 
-        void freeDirectBuffer(DirectBuffer buffer);
+        void freeDirectBuffer(ByteBuffer buffer);
 
         Object createCleaner(Object ob, Runnable thunk);
-
-        ClassLoader latestUserDefinedLoader();
 
         ClassLoader getBootstrapClassLoader();
 
@@ -102,6 +88,29 @@ public final class Platform
         long getCurrentProcessId();
 
         boolean isOpen(Class<?> source, Class<?> target);
+    }
+
+    private static class ExtPlatformHolder
+    {
+        private static final ExtPlatform extPlatform;
+
+        static {
+            ExtPlatform obj;
+            ClassLoader classLoader = Platform.class.getClassLoader();
+            try {
+                Class<?> aClass = classLoader.loadClass("com.github.harbby.gadtry.base.JavaModuleExtPlatformImpl");
+                obj = (ExtPlatform) aClass.newInstance();
+            }
+            catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            extPlatform = obj;
+        }
+
+        public static ExtPlatform getExtPlatform()
+        {
+            return extPlatform;
+        }
     }
 
     public static byte[] readClassByteCode(Class<?> aClass)
@@ -249,7 +258,7 @@ public final class Platform
     public static boolean isOpen(Class<?> source, Class<?> target)
     {
         checkState(getJavaVersion() > 8, "java version > 8");
-        return platformBase.get().isOpen(source, target);
+        return ExtPlatformHolder.getExtPlatform().isOpen(source, target);
     }
 
     /**
@@ -260,19 +269,8 @@ public final class Platform
      */
     public static ClassLoader latestUserDefinedLoader()
     {
-        if (Platform.getJavaVersion() > 8) {
-            return platformBase.get().latestUserDefinedLoader();
-        }
-        else {
-            try {
-                return (ClassLoader) Class.forName("sun.misc.VM")
-                        .getMethod("latestUserDefinedLoader")
-                        .invoke(null);
-            }
-            catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-                throw new PlatFormUnsupportedOperation(e);
-            }
-        }
+        throw new UnsupportedOperationException("jdk8:  sun.misc.VM.latestUserDefinedLoader(). " +
+                "or jdk9+: jdk.internal.misc.VM.latestUserDefinedLoader()");
     }
 
     /**
@@ -293,22 +291,16 @@ public final class Platform
     public static ClassLoader getBootstrapClassLoader()
     {
         if (Platform.getJavaVersion() > 8) {
-            return platformBase.get().getBootstrapClassLoader();
+            return ExtPlatformHolder.getExtPlatform().getBootstrapClassLoader();
         }
-        try {
-            Object upath = Class.forName("sun.misc.Launcher").getMethod("getBootstrapClassPath").invoke(null);
-            URL[] urls = (URL[]) Class.forName("sun.misc.URLClassPath").getMethod("getURLs").invoke(upath);
-            return new URLClassLoader(urls, null);
-        }
-        catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-            throw new PlatFormUnsupportedOperation(e);
-        }
+        // jars: Class.forName("sun.misc.Launcher").getMethod("getBootstrapClassPath")
+        return ClassLoader.getSystemClassLoader().getParent();
     }
 
     public static long getCurrentProcessId()
     {
-        if (Platform.getJavaVersion() > 8) { //>= java9
-            return platformBase.get().getCurrentProcessId();
+        if (Platform.getJavaVersion() > 8) {
+            return ExtPlatformHolder.getExtPlatform().getCurrentProcessId();
         }
         if (Platform.isWin() || Platform.isLinux() || Platform.isMac()) {
             return Long.parseLong(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
@@ -321,7 +313,7 @@ public final class Platform
     public static long getProcessPid(Process process)
     {
         if (Platform.getJavaVersion() > 8) { //>= java9
-            return platformBase.get().getProcessPid(process);
+            return ExtPlatformHolder.getExtPlatform().getProcessPid(process);
         }
         if (Platform.isLinux() || Platform.isMac()) {
             try {
@@ -352,31 +344,6 @@ public final class Platform
     }
 
     /**
-     * Creates a new cleaner.
-     *
-     * @param ob    the referent object to be cleaned
-     * @param thunk The cleanup code to be run when the cleaner is invoked.  The
-     *              cleanup code is run directly from the reference-handler thread,
-     *              so it should be as simple and straightforward as possible.
-     * @return The new cleaner
-     */
-    public static Object createCleaner(Object ob, Runnable thunk)
-    {
-        if (getJavaVersion() > 8) { //jdk9+
-            //jdk9+: --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
-            return platformBase.get().createCleaner(ob, thunk);
-        }
-        try {
-            Method createMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("create", Object.class, Runnable.class);
-            createMethod.setAccessible(true);
-            return createMethod.invoke(null, ob, thunk);
-        }
-        catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException("unchecked", e);
-        }
-    }
-
-    /**
      * java16 need: --add-opens=java.base/java.lang=ALL-UNNAMED
      * If java version> 16 it is recommended to use {@link Platform#defineClass(Class, byte[])}
      */
@@ -401,7 +368,7 @@ public final class Platform
             throws IllegalAccessException
     {
         checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
-        return platformBase.get().defineClass(buddyClass, classBytes);
+        return ExtPlatformHolder.getExtPlatform().defineClass(buddyClass, classBytes);
     }
 
     public static long reallocateMemory(long address, long oldSize, long newSize)
@@ -412,34 +379,82 @@ public final class Platform
         return newMemory;
     }
 
+    private static final Class<?> DIRECT_BYTE_BUFFER_CLASS;
+    private static final Field DBB_CLEANER_FIELD;
+    private static final Field DBB_ADDRESS_FIELD;
+    private static final Field DBB_CAPACITY_FIELD;
+    private static final Method DBB_CLEANER_CREATE_METHOD;
+    private static final Method DBB_CLEANER_CLEAN_METHOD;
+    private static final Method DBB_BYTE_BUFFER_CLEAR_METHOD;
+
+    static {
+        try {
+            Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
+            DBB_CLEANER_FIELD = cls.getDeclaredField("cleaner");
+            DBB_ADDRESS_FIELD = Buffer.class.getDeclaredField("address");
+            DBB_CAPACITY_FIELD = Buffer.class.getDeclaredField("capacity");
+            DBB_CLEANER_CREATE_METHOD = DBB_CLEANER_FIELD.getType().getMethod("create", Object.class, Runnable.class);
+            DIRECT_BYTE_BUFFER_CLASS = cls;
+            DBB_CLEANER_CLEAN_METHOD = DBB_CLEANER_FIELD.getType().getMethod("clean");
+            DBB_BYTE_BUFFER_CLEAR_METHOD = Buffer.class.getMethod("clear");
+        }
+        catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
+    }
+
     /**
      * Uses internal JDK APIs to allocate a DirectByteBuffer while ignoring the JVM's
      * MaxDirectMemorySize limit (the default limit is too low and we do not want to require users
      * to increase it).
      * <p>
-     * jdk9+ need: --add-opens=java.base/java.nio=ALL-UNNAMED
+     * jdk9+ need:
+     * --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+     * --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
      *
-     * @param size allocate mem size
+     * @param capacity allocate mem size
      * @return ByteBuffer
      */
-    public static ByteBuffer allocateDirectBuffer(int size)
+    public static ByteBuffer allocateDirectBuffer(int capacity)
             throws PlatFormUnsupportedOperation
     {
+        long address = unsafe.allocateMemory(capacity);
         try {
-            Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
-            Constructor<?> constructor = cls.getDeclaredConstructor(Long.TYPE, Integer.TYPE);
-            constructor.setAccessible(true);
-            Field cleanerField = cls.getDeclaredField("cleaner");
-            cleanerField.setAccessible(true);
-            long memory = unsafe.allocateMemory(size);
-            ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
-            Object cleaner = createCleaner(buffer, (Runnable) () -> unsafe.freeMemory(memory));
-            //Cleaner cleaner = Cleaner.create(buffer, () -> _UNSAFE.freeMemory(memory));
-            cleanerField.set(buffer, cleaner);
+            //Constructor<?> constructor = DIRECT_BYTE_BUFFER_CLASS.getDeclaredConstructor(Long.TYPE, Integer.TYPE);
+            //ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
+            ByteBuffer buffer = (ByteBuffer) unsafe.allocateInstance(DIRECT_BYTE_BUFFER_CLASS);
+            unsafe.putLong(buffer, unsafe.objectFieldOffset(DBB_ADDRESS_FIELD), address);
+            unsafe.putInt(buffer, unsafe.objectFieldOffset(DBB_CAPACITY_FIELD), capacity);
+            Object cleaner = createCleaner(buffer, (Runnable) () -> unsafe.freeMemory(address));
+            unsafe.putObject(buffer, unsafe.objectFieldOffset(DBB_CLEANER_FIELD), cleaner);
+            DBB_BYTE_BUFFER_CLEAR_METHOD.invoke(buffer);
             return buffer;
         }
-        catch (NoSuchFieldException | ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+        catch (Exception e) {
+            unsafe.freeMemory(address);
             throw new PlatFormUnsupportedOperation(e);
+        }
+    }
+
+    /**
+     * Creates a new cleaner.
+     *
+     * @param ob    the referent object to be cleaned
+     * @param thunk The cleanup code to be run when the cleaner is invoked.  The
+     *              cleanup code is run directly from the reference-handler thread,
+     *              so it should be as simple and straightforward as possible.
+     * @return The new cleaner
+     */
+    public static Object createCleaner(Object ob, Runnable thunk)
+    {
+        if (getJavaVersion() > 8) {
+            return ExtPlatformHolder.getExtPlatform().createCleaner(ob, thunk);
+        }
+        try {
+            return DBB_CLEANER_CREATE_METHOD.invoke(null, ob, thunk);
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+            throw new PlatFormUnsupportedOperation("unchecked", e);
         }
     }
 
@@ -451,19 +466,16 @@ public final class Platform
     public static void freeDirectBuffer(ByteBuffer buffer)
     {
         checkState(buffer.isDirect(), "buffer not direct");
-        sun.nio.ch.DirectBuffer directBuffer = (DirectBuffer) buffer;
         if (getJavaVersion() > 8) {
-            platformBase.get().freeDirectBuffer(directBuffer);
+            ExtPlatformHolder.getExtPlatform().freeDirectBuffer(buffer);
+            return;
         }
-        else {
-            try {
-                Object cleaner = sun.nio.ch.DirectBuffer.class.getMethod("cleaner")
-                        .invoke(directBuffer);
-                Class.forName("sun.misc.Cleaner").getMethod("clean").invoke(cleaner);
-            }
-            catch (IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
-                throw new IllegalStateException("unchecked", e);
-            }
+        try {
+            Object cleaner = unsafe.getObject(buffer, unsafe.objectFieldOffset(DBB_CLEANER_FIELD));
+            DBB_CLEANER_CLEAN_METHOD.invoke(cleaner);
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalStateException("unchecked", e);
         }
     }
 

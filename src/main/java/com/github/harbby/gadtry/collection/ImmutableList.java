@@ -671,6 +671,11 @@ public abstract class ImmutableList<E>
         }
     }
 
+    public static <E> Builder<E> builder()
+    {
+        return new Builder<>();
+    }
+
     public static class Builder<E>
     {
         private final List<E> list = new ArrayList<>();

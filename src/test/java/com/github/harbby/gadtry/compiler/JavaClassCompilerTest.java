@@ -20,7 +20,6 @@ import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.nio.ch.DirectBuffer;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
@@ -35,7 +34,7 @@ public class JavaClassCompilerTest
 {
     public static interface DirectBufferCloseable
     {
-        void free(sun.nio.ch.DirectBuffer buffer);
+        void free(ByteBuffer buffer);
     }
 
     @Test
@@ -48,9 +47,9 @@ public class JavaClassCompilerTest
                 "            implements com.github.harbby.gadtry.compiler.JavaClassCompilerTest.DirectBufferCloseable \n" +
                 "    {\n" +
                 "        @Override\n" +
-                "        public void free(sun.nio.ch.DirectBuffer buffer)\n" +
+                "        public void free(java.nio.ByteBuffer buffer)\n" +
                 "        {\n" +
-                "            buffer.cleaner().clean();\n" +
+                "            com.github.harbby.gadtry.base.Platform.freeDirectBuffer(buffer);\n" +
                 "        }\n" +
                 "    }";
         byte[] bytes;
@@ -67,7 +66,7 @@ public class JavaClassCompilerTest
         ByteClassLoader byteClassLoader = new ByteClassLoader(Platform.class.getClassLoader());
         Class<DirectBufferCloseable> directBufferCloseableClass = (Class<DirectBufferCloseable>) byteClassLoader.loadClass(className, bytes);
         DirectBufferCloseable cleaner = directBufferCloseableClass.newInstance();
-        cleaner.free((DirectBuffer) ByteBuffer.allocateDirect(12));
+        cleaner.free(ByteBuffer.allocateDirect(12));
     }
 
     @Test

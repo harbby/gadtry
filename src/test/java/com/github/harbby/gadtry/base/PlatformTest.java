@@ -69,8 +69,15 @@ public class PlatformTest
     public void allocateDirectBuffer()
     {
         ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
-        Assert.assertNotNull(byteBuffer);
-        Platform.freeDirectBuffer(byteBuffer);
+        try {
+            Assert.assertNotNull(byteBuffer);
+            byteBuffer.putLong(314);
+            byteBuffer.flip();
+            Assert.assertEquals(byteBuffer.getLong(), 314);
+        }
+        finally {
+            Platform.freeDirectBuffer(byteBuffer);
+        }
     }
 
     @Test

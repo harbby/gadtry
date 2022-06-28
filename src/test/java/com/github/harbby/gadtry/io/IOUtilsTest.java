@@ -36,11 +36,12 @@ public class IOUtilsTest
     public void copyByTestCloseGiveTrue()
             throws IOException
     {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8));
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        IOUtils.copyBytes(inputStream, outputStream, 1024, true);
-
-        Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+        try (
+                ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8));
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            IOUtils.copyBytes(inputStream, outputStream, 1024);
+            Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+        }
     }
 
     @Test
@@ -62,7 +63,7 @@ public class IOUtilsTest
                 .build();
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
-            IOUtils.copyBytes(inputStream, printStream, 1024, false);
+            IOUtils.copyBytes(inputStream, printStream, 1024);
             Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
         }
     }
@@ -80,7 +81,7 @@ public class IOUtilsTest
                 .build();
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
-            IOUtils.copyBytes(inputStream, printStream, 1024, false);
+            IOUtils.copyBytes(inputStream, printStream, 1024);
             Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
             Assert.fail();
         }
@@ -104,7 +105,7 @@ public class IOUtilsTest
     {
         String line = "hello";
         try {
-            IOUtils.readLengthBytes(new ByteArrayInputStream(line.getBytes(UTF_8)), 10);
+            IOUtils.readFully(new ByteArrayInputStream(line.getBytes(UTF_8)), new byte[10]);
         }
         catch (EOFException e) {
             Assert.assertEquals(e.getMessage(), "should be read 10 bytes, but read 5");

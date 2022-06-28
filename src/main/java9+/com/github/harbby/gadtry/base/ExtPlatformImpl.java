@@ -15,13 +15,27 @@
  */
 package com.github.harbby.gadtry.base;
 
-import sun.nio.ch.DirectBuffer;
-
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 
-class PlatformBaseImpl
-        implements Platform.PlatformBase
+class JavaModuleExtPlatformImpl
+        implements Platform.ExtPlatform
 {
+    static {
+        try {
+            addExportsOrOpensJavaModules(Class.forName("jdk.internal.ref.Cleaner"), Platform.class, false);
+        }
+        catch (Exception ignored) {
+        }
+        try {
+            addExportsOrOpensJavaModules(Class.forName("sun.nio.ch.DirectBuffer"), Platform.class, false);
+        }
+        catch (Exception ignored) {
+        }
+    }
+
     /**
      * Converts the class byte code to a java.lang.Class object
      * This method is available in Java 9 or later
@@ -41,22 +55,20 @@ class PlatformBaseImpl
     }
 
     @Override
-    public void freeDirectBuffer(DirectBuffer buffer)
+    public void freeDirectBuffer(ByteBuffer buffer)
     {
-        jdk.internal.ref.Cleaner cleaner = buffer.cleaner();
+        // --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+        // --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+        sun.nio.ch.DirectBuffer directBuffer = (sun.nio.ch.DirectBuffer) buffer;
+        jdk.internal.ref.Cleaner cleaner = directBuffer.cleaner();
         cleaner.clean();
     }
 
     @Override
     public Object createCleaner(Object ob, Runnable thunk)
     {
+        // --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
         return jdk.internal.ref.Cleaner.create(ob, thunk);
-    }
-
-    @Override
-    public ClassLoader latestUserDefinedLoader()
-    {
-        return jdk.internal.misc.VM.latestUserDefinedLoader();
     }
 
     @Override
@@ -82,5 +94,32 @@ class PlatformBaseImpl
     public boolean isOpen(Class<?> source, Class<?> target)
     {
         return source.getModule().isOpen(source.getPackageName(), target.getModule());
+    }
+
+    public static void addExportsOrOpensJavaModules(Class<?> hostClass, Class<?> targetClass, boolean tryOpen)
+    {
+        Module hostModule = hostClass.getModule();
+        Module targetModule = targetClass.getModule();
+        String hostPackageName = hostClass.getPackageName();
+        // check isOpen or isExported
+        if (tryOpen) {
+            if (hostModule.isOpen(hostPackageName, targetModule)) {
+                return;
+            }
+        }
+        else {
+            if (hostModule.isExported(hostPackageName, targetModule)) {
+                return;
+            }
+        }
+        try {
+            Module.class.getModule().addOpens(Module.class.getPackageName(), Platform.class.getModule());
+            Method method = Module.class.getDeclaredMethod("implAddExportsOrOpens", String.class, Module.class, boolean.class, boolean.class);
+            method.setAccessible(true);
+            method.invoke(hostModule, hostPackageName, targetModule, /*open*/tryOpen, /*syncVM*/true);
+        }
+        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
     }
 }

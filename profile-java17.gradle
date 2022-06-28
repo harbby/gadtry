@@ -1,7 +1,7 @@
 //java 17
 //deploy to maven repo: ./gradlew clean assemble -Pjdk=java17 -Ptarget=8
 
-def targetVersion = project.hasProperty("target") ? project.target as Integer : 17
+def targetVersion = project.hasProperty("target") ? project.target as int : 17
 sourceCompatibility = targetVersion
 targetCompatibility = targetVersion
 
@@ -27,19 +27,15 @@ if (targetVersion > 8) {
     options.encoding = 'UTF-8'
     options.compilerArgs << "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
     options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
-    options.compilerArgs << "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
   }
 }
 
 tasks.withType(Test) {
-  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/java.nio=ALL-UNNAMED"
-  jvmArgs += "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+  jvmArgs += "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+  jvmArgs += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
 }
 
 tasks.withType(JavaExec) {
-//  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
-//  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
-//  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+//  jvmArgs += "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+//  jvmArgs += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
 }

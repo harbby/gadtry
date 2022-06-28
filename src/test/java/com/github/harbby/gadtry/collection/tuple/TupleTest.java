@@ -89,7 +89,7 @@ public class TupleTest
             int columnCnt = constructors[0].getParameterCount();
             Method of = aClass.getMethod("of", Streams.range(0, columnCnt).mapToObj(x -> Object.class).toArray(Class[]::new));
             String[] args = Streams.range(0, columnCnt).mapToObj(x -> "str" + (x + 1)).toArray(String[]::new);
-            Tuple tuple = (Tuple) of.invoke(null, args);
+            Tuple tuple = (Tuple) of.invoke(null, (Object[]) args);
             Method getField = aClass.getMethod("getField", int.class);
             for (int i = 1; i <= columnCnt; i++) {
                 Assert.assertEquals("str" + i, getField.invoke(tuple, i));

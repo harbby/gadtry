@@ -17,11 +17,9 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.IteratorPlus;
-import com.github.harbby.gadtry.collection.StateOption;
 import com.github.harbby.gadtry.collection.iterator.LengthIterator;
 import com.github.harbby.gadtry.collection.iterator.MarkIterator;
 import com.github.harbby.gadtry.collection.iterator.PeekIterator;
-import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.Function1;
 import com.github.harbby.gadtry.function.Function2;
@@ -78,7 +76,7 @@ public class Iterators
     }
 
     private static class SingleIterator<V>
-            implements IteratorPlus<V>, MarkIterator<V>, LengthIterator<V>
+            implements PeekIterator<V>, MarkIterator<V>, LengthIterator<V>
     {
         private boolean hasNext = true;
         private final V value;
@@ -124,6 +122,15 @@ public class Iterators
         }
 
         @Override
+        public V peek()
+        {
+            if (!hasNext) {
+                throw new NoSuchElementException();
+            }
+            return value;
+        }
+
+        @Override
         public long size()
         {
             return hasNext ? 1 : 0;
@@ -131,12 +138,12 @@ public class Iterators
     }
 
     @SafeVarargs
-    public static <E> IteratorPlus<E> of(E... values)
+    public static <E> PeekIterator<E> of(E... values)
     {
         return of(values, 0, values.length);
     }
 
-    public static <E> IteratorPlus<E> of(final E[] values, final int offset, final int length)
+    public static <E> PeekIterator<E> of(final E[] values, final int offset, final int length)
     {
         requireNonNull(values, "values is null");
         checkArgument(offset >= 0, "offset >= 0");
@@ -146,7 +153,7 @@ public class Iterators
     }
 
     private static class ImmutableArrayIterator<V>
-            implements IteratorPlus<V>, MarkIterator<V>, LengthIterator<V>
+            implements PeekIterator<V>, MarkIterator<V>, LengthIterator<V>
     {
         private final int length;
         private final V[] values;
@@ -184,6 +191,15 @@ public class Iterators
                 throw new NoSuchElementException();
             }
             return values[index++];
+        }
+
+        @Override
+        public V peek()
+        {
+            if (!this.hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return values[index];
         }
 
         @Override
@@ -249,8 +265,7 @@ public class Iterators
     public static <T> Stream<T> toStream(Iterator<T> iterator)
     {
         requireNonNull(iterator, "iterator is null");
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-                iterator, Spliterator.ORDERED | Spliterator.NONNULL), false);
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED | Spliterator.NONNULL), false);
     }
 
     public static <T> T getFirst(Iterator<T> iterator, int index, T defaultValue)
@@ -419,8 +434,7 @@ public class Iterators
         iterator.forEachRemaining(function);
     }
 
-    public static <E1, E2> IteratorPlus<E2> flatMap(Iterator<E1> iterator,
-            Function<E1, Iterator<E2>> flatMap)
+    public static <E1, E2> IteratorPlus<E2> flatMap(Iterator<E1> iterator, Function<E1, Iterator<E2>> flatMap)
     {
         requireNonNull(iterator, "iterator is null");
         requireNonNull(flatMap, "flatMap is null");
@@ -499,47 +513,72 @@ public class Iterators
 
     public static <E> IteratorPlus<E> filter(Iterator<E> iterator, Function1<E, Boolean> filter)
     {
-        requireNonNull(iterator, "iterator is null");
-        requireNonNull(filter, "filter is null");
-        return new IteratorPlus<E>()
+        return new FilterIterator<>(iterator, filter);
+    }
+
+    private static class FilterIterator<V>
+            implements IteratorPlus<V>, PeekIterator<V>
+    {
+        private final Iterator<V> iterator;
+        private final Function1<V, Boolean> filter;
+        private boolean hasNextValue;
+        private V value;
+
+        private FilterIterator(Iterator<V> iterator, Function1<V, Boolean> filter)
         {
-            private final StateOption<E> option = StateOption.empty();
+            this.iterator = requireNonNull(iterator, "iterator is null");
+            this.filter = requireNonNull(filter, "filter is null");
+            this.hasNextValue = true;
+            nextValue();
+        }
 
-            @Override
-            public boolean hasNext()
-            {
-                if (option.isDefined()) {
-                    return true;
+        private void nextValue()
+        {
+            while (iterator.hasNext()) {
+                V v = iterator.next();
+                if (filter.apply(v)) {
+                    this.value = v;
+                    return;
                 }
-                while (iterator.hasNext()) {
-                    E e = iterator.next();
-                    if (filter.apply(e)) {
-                        option.update(e);
-                        return true;
-                    }
-                }
-                return false;
             }
+            this.hasNextValue = false;
+        }
 
-            @Override
-            public E next()
-            {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return option.remove();
+        @Override
+        public boolean hasNext()
+        {
+            return hasNextValue;
+        }
+
+        @Override
+        public V next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
             }
-        };
+            V v = this.value;
+            this.nextValue();
+            return v;
+        }
+
+        @Override
+        public V peek()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return this.value;
+        }
     }
 
     /**
      * double fraction = setp / max
      *
      * @param iterator 待抽样的Iterator
-     * @param setp     setp
-     * @param max      max
-     * @param seed     随机因子
-     * @param <E>      type
+     * @param setp setp
+     * @param max max
+     * @param seed 随机因子
+     * @param <E> type
      * @return 抽样后的Iterator
      */
     public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, long seed)
@@ -549,37 +588,58 @@ public class Iterators
 
     public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, Random random)
     {
-        requireNonNull(iterator, "iterators is null");
-        requireNonNull(random, "random is null");
-        return new IteratorPlus<E>()
+        return new SampleIterator<>(iterator, random, max, setp);
+    }
+
+    private static final class SampleIterator<V>
+            implements IteratorPlus<V>
+    {
+        private final Iterator<V> iterator;
+        private final Random random;
+        private final int max;
+        private final int setp;
+        private V value;
+        private boolean hasNextValue;
+
+        private SampleIterator(Iterator<V> iterator, Random random, int max, int setp)
         {
-            private final StateOption<E> option = StateOption.empty();
+            this.iterator = requireNonNull(iterator, "iterators is null");
+            this.random = requireNonNull(random, "random is null");
+            this.max = max;
+            this.setp = setp;
 
-            @Override
-            public boolean hasNext()
-            {
-                if (option.isDefined()) {
-                    return true;
-                }
-                while (iterator.hasNext()) {
-                    E e = iterator.next();
-                    if (random.nextInt(max) < setp) {
-                        option.update(e);
-                        return true;
-                    }
-                }
-                return false;
-            }
+            this.hasNextValue = true;
+            this.nextValue();
+        }
 
-            @Override
-            public E next()
-            {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
+        private void nextValue()
+        {
+            while (iterator.hasNext()) {
+                V e = iterator.next();
+                if (random.nextInt(max) < setp) {
+                    this.value = e;
+                    return;
                 }
-                return option.remove();
             }
-        };
+            this.hasNextValue = false;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return hasNextValue;
+        }
+
+        @Override
+        public V next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            V v = this.value;
+            this.nextValue();
+            return v;
+        }
     }
 
     public static <E> IteratorPlus<Tuple2<E, Long>> zipIndex(Iterator<E> iterator, long startIndex)
@@ -620,7 +680,7 @@ public class Iterators
             }
         }
 
-        return new Iterator<T>()
+        return new IteratorPlus<T>()
         {
             @Override
             public boolean hasNext()
@@ -688,67 +748,6 @@ public class Iterators
                 return result;
             }
         };
-    }
-
-    private static class MergeJoinIteratorByLeftPrimaryKey<K, V1, V2>
-            implements IteratorPlus<Tuple2<K, Tuple2<V1, V2>>>
-    {
-        private final Comparator<K> comparator;
-        private final Iterator<Tuple2<K, V1>> leftIterator;
-        private final Iterator<Tuple2<K, V2>> rightIterator;
-
-        private Tuple2<K, V1> leftNode;
-        private Tuple2<K, V2> rightNode;
-
-        private MergeJoinIteratorByLeftPrimaryKey(Comparator<K> comparator, Iterator<Tuple2<K, V1>> leftIterator, Iterator<Tuple2<K, V2>> rightIterator)
-        {
-            this.comparator = comparator;
-            this.leftIterator = leftIterator;
-            this.rightIterator = rightIterator;
-            checkArgument(leftIterator.hasNext());
-            leftNode = leftIterator.next();
-        }
-
-        @Override
-        public boolean hasNext()
-        {
-            if (rightNode != null) {
-                return true;
-            }
-            if (!rightIterator.hasNext()) {
-                return false;
-            }
-            this.rightNode = rightIterator.next();
-            while (true) {
-                int than = comparator.compare(leftNode.f1, rightNode.f1);
-                if (than == 0) {
-                    return true;
-                }
-                else if (than > 0) {
-                    if (!rightIterator.hasNext()) {
-                        return false;
-                    }
-                    this.rightNode = rightIterator.next();
-                }
-                else {
-                    if (!leftIterator.hasNext()) {
-                        return false;
-                    }
-                    this.leftNode = leftIterator.next();
-                }
-            }
-        }
-
-        @Override
-        public Tuple2<K, Tuple2<V1, V2>> next()
-        {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            Tuple2<K, Tuple2<V1, V2>> out = Tuple2.of(leftNode.f1, Tuple2.of(leftNode.f2, rightNode.f2));
-            rightNode = null;
-            return out;
-        }
     }
 
     private static class MergeJoinIterator<K, V1, V2>
@@ -830,10 +829,7 @@ public class Iterators
         }
     }
 
-    public static <K, V1, V2> IteratorPlus<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(
-            Comparator<K> comparator,
-            Iterator<Tuple2<K, V1>> leftIterator,
-            Iterator<Tuple2<K, V2>> rightIterator)
+    public static <K, V1, V2> IteratorPlus<Tuple2<K, Tuple2<V1, V2>>> mergeJoin(Comparator<K> comparator, Iterator<Tuple2<K, V1>> leftIterator, Iterator<Tuple2<K, V2>> rightIterator)
     {
         requireNonNull(comparator, "comparator is null");
         requireNonNull(leftIterator, "leftIterator is null");
@@ -846,69 +842,115 @@ public class Iterators
 
     public static <V> IteratorPlus<V> autoClose(Iterator<V> iterator, Runnable autoClose)
     {
-        requireNonNull(iterator, "iterator is null");
-        requireNonNull(autoClose, "autoClose is null");
-        return new IteratorPlus<V>()
-        {
-            private boolean done;
-
-            @Override
-            public boolean hasNext()
-            {
-                boolean hasNext = iterator.hasNext();
-                if (!hasNext && !done) {
-                    done = true;
-                    autoClose.run();
-                }
-                return hasNext;
-            }
-
-            @Override
-            public V next()
-            {
-                return iterator.next();
-            }
-        };
+        return new AutoCloseIterator<>(iterator, autoClose);
     }
 
-    public static <V> IteratorPlus<V> anyMatchStop(PeekIterator<V> iterator, Function1<V, Boolean> stopMatcher)
+    private static class AutoCloseIterator<V>
+            implements IteratorPlus<V>
     {
-        requireNonNull(iterator, "iterator is null");
-        requireNonNull(stopMatcher, "stopMatcher is null");
-        return new IteratorPlus<V>()
+        private final Iterator<V> iterator;
+        private final Runnable autoClose;
+        private boolean hasNextValue;
+        private V value;
+
+        private AutoCloseIterator(Iterator<V> iterator, Runnable autoClose)
         {
-            private final StateOption<V> option = StateOption.empty();
-            private boolean done;
+            this.iterator = requireNonNull(iterator, "iterator is null");
+            this.autoClose = requireNonNull(autoClose, "autoClose is null");
+            this.hasNextValue = true;
+            this.nextValue();
+        }
 
-            @Override
-            public boolean hasNext()
-            {
-                if (done) {
-                    return false;
-                }
-                if (option.isDefined()) {
-                    return true;
-                }
-                if (!iterator.hasNext()) {
-                    return false;
-                }
-                if (stopMatcher.apply(iterator.peek())) {
-                    done = true;
-                    return false;
-                }
-                option.update(iterator.next());
-                return true;
+        private void nextValue()
+        {
+            if (iterator.hasNext()) {
+                this.value = iterator.next();
             }
+            else {
+                this.hasNextValue = false;
+                autoClose.run();
+            }
+        }
 
-            @Override
-            public V next()
-            {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return option.remove();
+        @Override
+        public boolean hasNext()
+        {
+            return hasNextValue;
+        }
+
+        @Override
+        public V next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
             }
-        };
+            V v = this.value;
+            this.nextValue();
+            return v;
+        }
+    }
+
+    public static <V> PeekIterator<V> anyMatchStop(PeekIterator<V> iterator, Function1<V, Boolean> stopMatcher)
+    {
+        return new AnyMatchIterator<>(iterator, stopMatcher);
+    }
+
+    private static class AnyMatchIterator<V>
+            implements PeekIterator<V>
+    {
+        private final PeekIterator<V> iterator;
+        private final Function1<V, Boolean> stopMatcher;
+
+        private V value;
+        private boolean hasNextValue;
+
+        private AnyMatchIterator(PeekIterator<V> iterator, Function1<V, Boolean> stopMatcher)
+        {
+            this.iterator = requireNonNull(iterator, "iterator is null");
+            this.stopMatcher = requireNonNull(stopMatcher, "stopMatcher is null");
+            this.hasNextValue = true;
+            this.nextValue();
+        }
+
+        private void nextValue()
+        {
+            if (iterator.hasNext()) {
+                V v0 = iterator.peek();
+                if (!stopMatcher.apply(v0)) {
+                    V v1 = iterator.next();
+                    checkState(v0 == v1, "bugs: iterator.peek() != iterator.next()");
+                    this.value = v1;
+                    return;
+                }
+            }
+            this.hasNextValue = false;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return hasNextValue;
+        }
+
+        @Override
+        public V next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            V v = this.value;
+            this.nextValue();
+            return v;
+        }
+
+        @Override
+        public V peek()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return this.value;
+        }
     }
 
     public static <V> PeekIterator<V> peekIterator(Iterator<V> iterator)
@@ -919,19 +961,28 @@ public class Iterators
         }
         return new PeekIterator<V>()
         {
-            private final StateOption<V> option = StateOption.empty();
+            private boolean hashNextValue;
+            private V value;
+
+            {
+                this.hashNextValue = true;
+                nextValue();
+            }
+
+            private void nextValue()
+            {
+                if (iterator.hasNext()) {
+                    this.value = iterator.next();
+                }
+                else {
+                    this.hashNextValue = false;
+                }
+            }
 
             @Override
             public boolean hasNext()
             {
-                if (option.isDefined()) {
-                    return true;
-                }
-                if (!iterator.hasNext()) {
-                    return false;
-                }
-                option.update(iterator.next());
-                return true;
+                return hashNextValue;
             }
 
             @Override
@@ -940,7 +991,9 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return option.remove();
+                V v = this.value;
+                this.nextValue();
+                return v;
             }
 
             @Override
@@ -949,7 +1002,7 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return option.getValue();
+                return this.value;
             }
         };
     }
@@ -964,8 +1017,6 @@ public class Iterators
         PeekIterator<Tuple2<K, V>> iterator = peekIterator(input);
         return new IteratorPlus<Tuple2<K, O>>()
         {
-            private final Tuple1<K> cKey = Tuple1.of(null);
-
             @Override
             public boolean hasNext()
             {
@@ -978,9 +1029,9 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                Iterator<V> child = Iterators.anyMatchStop(iterator, x -> !Objects.equals(x.f1, cKey.f1)).map(x -> x.f2);
-                cKey.f1 = iterator.peek().f1;
-                return Tuple2.of(cKey.f1, mapGroupFunc.apply(cKey.f1, child));
+                final K cKey = iterator.peek().f1;
+                Iterator<V> child = Iterators.anyMatchStop(iterator, x -> !Objects.equals(x.f1, cKey)).map(x -> x.f2);
+                return Tuple2.of(cKey, mapGroupFunc.apply(cKey, child));
             }
         };
     }

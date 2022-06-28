@@ -88,13 +88,15 @@ public class ChildVMChannelInputStream
         isDone = true;
         if (this.length == -1) {
             this.isSuccess = true;
-            int len = this.readInt();
-            this.result = IOUtils.readLengthBytes(in, len);
+            byte[] bytes = new byte[this.readInt()];
+            IOUtils.readFully(in, bytes);
+            this.result = bytes;
             return in.read();
         }
         else if (this.length == -2) {
-            int len = this.readInt();
-            this.result = IOUtils.readLengthBytes(in, len);
+            byte[] bytes = new byte[this.readInt()];
+            IOUtils.readFully(in, bytes);
+            this.result = bytes;
             this.isSuccess = false;
             return in.read();
         }

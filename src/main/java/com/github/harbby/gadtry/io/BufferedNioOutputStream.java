@@ -34,8 +34,7 @@ public final class BufferedNioOutputStream
     public BufferedNioOutputStream(SeekableByteChannel channel, int buffSize)
     {
         checkArgument(buffSize > 0, "Buffer size <= 0");
-        //ByteBuffer.allocateDirect(buffSize)
-        this.buffer = Platform.allocateDirectBuffer(buffSize);
+        this.buffer = ByteBuffer.allocateDirect(buffSize);  //Direct memory disk page aligned
         this.channel = channel;
     }
 

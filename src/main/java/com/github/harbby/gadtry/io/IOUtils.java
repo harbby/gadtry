@@ -40,27 +40,56 @@ public class IOUtils
      */
     private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
-    /**
-     * Copies from one stream to another.
-     *
-     * @param in       InputStrem to read from
-     * @param out      OutputStream to write to
-     * @param buffSize the size of the buffer
-     * @param close    whether or not close the InputStream and
-     *                 OutputStream at the end. The streams are closed in the finally clause.
-     * @throws IOException IOException
-     */
-    public static void copyBytes(InputStream in, OutputStream out, int buffSize, boolean close)
+    public static void readFully(InputStream in, byte[] b)
             throws IOException
     {
-        if (close) {
-            try (InputStream input = in; OutputStream output = out) {
-                copyBytes(in, out, buffSize);
+        readFully(in, b, 0, b.length);
+    }
+
+    public static void readFully(InputStream in, byte[] b, int off, int len)
+            throws IOException
+    {
+        if (len < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        int n = 0;
+        while (n < len) {
+            int count = in.read(b, off + n, len - n);
+            if (count < 0) {
+                throw new EOFException("should be read " + len + " bytes, but read " + n);
             }
+            n += count;
         }
-        else {
-            copyBytes(in, out, buffSize);
+    }
+
+    public static int tryReadFully(InputStream in, byte[] b, int off, int len)
+            throws IOException
+    {
+        if (len < 0) {
+            throw new IndexOutOfBoundsException();
         }
+        int n = 0;
+        while (n < len) {
+            int count = in.read(b, off + n, len - n);
+            if (count < 0) {
+                return n;
+            }
+            n += count;
+        }
+        return n;
+    }
+
+    public static int skipBytes(InputStream in, int n)
+            throws IOException
+    {
+        int total = 0;
+        int cur = 0;
+
+        while ((total < n) && ((cur = (int) in.skip(n - total)) > 0)) {
+            total += cur;
+        }
+
+        return total;
     }
 
     /**
@@ -110,25 +139,6 @@ public class IOUtils
             throws IOException
     {
         return readNBytes(inputStream, Integer.MAX_VALUE);
-    }
-
-    public static byte[] readLengthBytes(InputStream reader, int length)
-            throws IOException
-    {
-        byte[] bytes = new byte[length];
-        int offset = 0;
-        while (offset < length) {
-            int len = reader.read(bytes, offset, length - offset);
-            if (len == -1) {
-                //throw "should be read " + length + " bytes, but read " + offset
-                break;
-            }
-            offset += len;
-        }
-        if (offset != length) {
-            throw new EOFException("should be read " + length + " bytes, but read " + offset);
-        }
-        return bytes;
     }
 
     /**
