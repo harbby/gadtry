@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.aop.event;
 
-import com.github.harbby.gadtry.aop.MethodSignature;
-import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
+import com.github.harbby.gadtry.aop.proxy.JavassistProxyJoinPoint;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 
 import java.lang.reflect.Method;
 
@@ -43,49 +43,22 @@ public interface JoinPoint
     public static JoinPoint of(Object mock, Method method, Object[] args, Object instance)
     {
         requireNonNull(instance, "instance is null");
-        MethodSignature methodSignature = MethodSignature.of(method);
-        return new JoinPoint()
-        {
-            @Override
-            public MethodSignature getMethod()
-            {
-                return methodSignature;
-            }
-
-            @Override
-            public Object mock()
-            {
-                return mock;
-            }
-
-            @Override
-            public Object proceed(Object[] args)
-                    throws Exception
-            {
-                if (mock instanceof ProxyAccess) {
-                    return ((ProxyAccess) mock).callRealMethod(method, instance, args);
-                }
-                //jdk proxy
-                return method.invoke(instance, args);
-            }
-
-            @Override
-            public Object[] getArgs()
-            {
-                return args;
-            }
-        };
+        if (mock instanceof ProxyAccess) {
+            return new JavassistProxyJoinPoint((ProxyAccess) mock, method, args, instance);
+        }
+        else {
+            return new JdkProxyJoinPoint(mock, method, args, instance);
+        }
     }
 
     public static JoinPoint of(Object mock, Method method, Object[] args)
     {
-        MethodSignature methodSignature = MethodSignature.of(method);
         return new JoinPoint()
         {
             @Override
-            public MethodSignature getMethod()
+            public Method getMethod()
             {
-                return methodSignature;
+                return method;
             }
 
             @Override

@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
@@ -42,30 +43,31 @@ public class Serializables
     public static <T> T byteToObject(byte[] bytes)
             throws IOException, ClassNotFoundException
     {
-        return byteToObject(bytes, null);
-    }
-
-    public static <T> T byteToObject(InputStream inputStream)
-            throws IOException, ClassNotFoundException
-    {
-        return byteToObject(inputStream, null);
+        ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
+        return byteToObject(bi);
     }
 
     @SuppressWarnings("unchecked")
+    public static <T> T byteToObject(InputStream inputStream)
+            throws IOException, ClassNotFoundException
+    {
+        try (ObjectInputStream oi = new ObjectInputStream(inputStream)) {
+            return (T) oi.readObject();
+        }
+    }
+
     public static <T> T byteToObject(byte[] bytes, ClassLoader classLoader)
             throws IOException, ClassNotFoundException
     {
-        try (ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
-                ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi, classLoader)) {
-            return (T) oi.readObject();
-        }
+        ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
+        return byteToObject(bi, classLoader);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T byteToObject(InputStream inputStream, ClassLoader classLoader)
             throws IOException, ClassNotFoundException
     {
-        try (ObjectInputStreamProxy oi = new ObjectInputStreamProxy(inputStream, classLoader)) {
+        try (ObjectInputStream oi = new ClassLoaderObjectInputStream(inputStream, classLoader)) {
             return (T) oi.readObject();
         }
     }

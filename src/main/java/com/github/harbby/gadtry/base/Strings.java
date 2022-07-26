@@ -15,10 +15,34 @@
  */
 package com.github.harbby.gadtry.base;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 
 public class Strings
 {
+    public static final boolean ENABLE_STRING_COMPACT;
+    public static final long STRING_CODER_OFFSET;
+
+    static {
+        Unsafe unsafe = Platform.getUnsafe();
+        boolean enableStringCompact;
+        long offset;
+        try {
+            Field field = String.class.getDeclaredField("COMPACT_STRINGS");
+            enableStringCompact = unsafe.getBoolean(String.class, unsafe.staticFieldOffset(field));
+
+            field = String.class.getDeclaredField("coder");
+            offset = unsafe.objectFieldOffset(field);
+        }
+        catch (NoSuchFieldException e) {
+            enableStringCompact = false;
+            offset = -1;
+        }
+        ENABLE_STRING_COMPACT = enableStringCompact;
+        STRING_CODER_OFFSET = offset;
+    }
+
     private Strings() {}
 
     public static boolean isNotBlank(final CharSequence cs)
@@ -37,25 +61,30 @@ public class Strings
         }
 
         for (int i = 0; i < strLen; i++) {
-            if (Character.isWhitespace(cs.charAt(i)) == false) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
                 return false;
             }
         }
         return true;
     }
 
-    /**
-     * 将字符串的首字母小写
-     * @param oldStr old string
-     * @return string
-     */
-    public static String lowerFirst(String oldStr)
+    public static boolean isAscii(String s, int len)
     {
-        checkState(oldStr.length() > 0);
-        char[] chars = oldStr.toCharArray();
-        if (chars[0] >= 65 && chars[0] <= 90) {
-            chars[0] += 32;
+        if (ENABLE_STRING_COMPACT) {
+            return Platform.getUnsafe().getByte(s, STRING_CODER_OFFSET) == 0;
         }
-        return String.valueOf(chars);
+        // java8
+        for (int i = 0; i < len; i++) {
+            char c = s.charAt(i);
+            if (c > 0x7F) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isAscii(String s)
+    {
+        return isAscii(s, s.length());
     }
 }

@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creator;
+import java.util.function.Supplier;
 
 public interface Binder
 {
@@ -30,9 +30,9 @@ public interface Binder
 
         void byInstance(T instance);
 
-        Scope byCreator(Creator<? extends T> creator);
+        Scope byCreator(Supplier<? extends T> creator);
 
-        Scope byCreator(Class<? extends Creator<T>> creatorClass);
+        Scope byCreator(Class<? extends Supplier<T>> creatorClass);
     }
 
     public interface Scope

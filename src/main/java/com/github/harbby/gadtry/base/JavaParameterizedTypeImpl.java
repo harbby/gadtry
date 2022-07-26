@@ -49,18 +49,10 @@ public class JavaParameterizedTypeImpl
         this.actualTypeArguments = actualTypeArguments;
         this.rawType = rawType;
         this.ownerType = (ownerType != null) ? ownerType : rawType.getDeclaringClass();
-        validateConstructorArguments();
-    }
-
-    private void validateConstructorArguments()
-    {
         TypeVariable<?>[] formals = rawType.getTypeParameters();
         // check correct arity of actual type args
         if (formals.length != actualTypeArguments.length) {
             throw new MalformedParameterizedTypeException();
-        }
-        for (int i = 0; i < actualTypeArguments.length; i++) {
-            // check actuals against formals' bounds
         }
     }
 

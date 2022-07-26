@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.function.Creator;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -28,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
@@ -116,7 +116,7 @@ class InternalContext
         StackSnapshot snapshot;
         while ((snapshot = deque.pollFirst()) != null) {
             Class<?> aClass = snapshot.aClass;
-            Creator<?> creator0 = binds.getOrDefault(aClass, null);
+            Supplier<?> creator0 = binds.get(aClass);
             if (creator0 != null) {
                 snapshot.value = creator0.get();
                 continue;
@@ -205,7 +205,7 @@ class InternalContext
     private static <T> Constructor<T> selectConstructor(Class<T> driver)
     {
         Constructor<T>[] constructors;
-        if (Creator.class.isAssignableFrom(driver)) {
+        if (Supplier.class.isAssignableFrom(driver)) {
             constructors = (Constructor<T>[]) driver.getDeclaredConstructors();
         }
         else {

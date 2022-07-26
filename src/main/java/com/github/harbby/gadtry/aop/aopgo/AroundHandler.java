@@ -15,27 +15,27 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.MethodSignature;
 import com.github.harbby.gadtry.aop.event.After;
 import com.github.harbby.gadtry.aop.event.AfterReturning;
 import com.github.harbby.gadtry.aop.event.AfterThrowing;
 import com.github.harbby.gadtry.aop.event.Before;
 import com.github.harbby.gadtry.aop.event.JoinPoint;
-import com.github.harbby.gadtry.function.exception.Consumer;
-import com.github.harbby.gadtry.function.exception.Function;
+import com.github.harbby.gadtry.function.Consumer;
+import com.github.harbby.gadtry.function.Function;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public interface AroundHandler
         extends Function<JoinPoint, Object, Throwable>
 {
-    default AroundHandler merge(AroundHandler newAdvice)
+    default AroundHandler merge(AroundHandler handler)
     {
         return joinPoint -> {
             final JoinPoint mergeJoinPoint = new JoinPoint()
             {
                 @Override
-                public MethodSignature getMethod()
+                public Method getMethod()
                 {
                     return joinPoint.getMethod();
                 }
@@ -56,7 +56,7 @@ public interface AroundHandler
                 public Object proceed(Object[] args)
                         throws Throwable
                 {
-                    return newAdvice.apply(joinPoint);
+                    return handler.apply(joinPoint);
                 }
             };
             return this.apply(mergeJoinPoint);

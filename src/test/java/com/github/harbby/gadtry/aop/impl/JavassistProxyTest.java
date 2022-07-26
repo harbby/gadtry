@@ -15,10 +15,10 @@
  */
 package com.github.harbby.gadtry.aop.impl;
 
-import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
-import com.github.harbby.gadtry.aop.resource.Test1;
+import com.github.harbby.gadtry.aop.model.Test1;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
+import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Streams;
 import javassist.ClassPool;
@@ -40,12 +40,14 @@ import java.util.stream.Stream;
 
 public class JavassistProxyTest
 {
+    private final ProxyFactory factory = ProxyFactory.getJavassistProxy();
+
     @Test
     public void moreSuperclass()
             throws Exception
     {
         try {
-            JavassistProxy.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class,
+            factory.getProxyClass(getClass().getClassLoader(), ArrayList.class, Serializable.class,
                     ProxyAccess.class, HashMap.class);
             Assert.fail();
         }
@@ -59,7 +61,7 @@ public class JavassistProxyTest
             throws Exception
     {
         try {
-            JavassistProxy.getProxyClass(getClass().getClassLoader(), Boolean.class, Serializable.class, ProxyAccess.class);
+            factory.getProxyClass(getClass().getClassLoader(), Boolean.class, Serializable.class, ProxyAccess.class);
             Assert.fail();
         }
         catch (MockGoException e) {
@@ -78,10 +80,9 @@ public class JavassistProxyTest
             }
             return method.invoke(list, args);
         };
-
-        List<String> proxy = JavassistProxy.newProxyInstance(getClass().getClassLoader(), invocationHandler,
+        List<String> proxy = factory.newProxyInstance(getClass().getClassLoader(), invocationHandler,
                 ArrayList.class, Serializable.class, ProxyAccess.class);
-        Assert.assertTrue(invocationHandler == JavassistProxy.getInvocationHandler(proxy));
+        Assert.assertTrue(invocationHandler == factory.getInvocationHandler(proxy));
     }
 
     @Test
@@ -89,7 +90,7 @@ public class JavassistProxyTest
             throws Exception
     {
         File workDir = new File(System.getProperty("java.io.tmpdir"), "pluginLoaderTest_342634345");
-        Class<?> proxyClass = JavassistProxy.getProxyClass(this.getClass().getClassLoader(), List.class);
+        Class<?> proxyClass = factory.getProxyClass(this.getClass().getClassLoader(), List.class);
         ClassPool classPool = ClassPool.getDefault();
         CtClass ctClass = classPool.makeClass(proxyClass.getName());
 
@@ -101,15 +102,14 @@ public class JavassistProxyTest
     public void testConcurrent10()
     {
         Unsafe unsafe = Platform.getUnsafe();
-        //unsafe.allocateInstance(null); 会让jvm崩溃
         Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).parallel().forEach(x -> {
             Class<?> aClass = null;
             try {
                 if (x % 2 == 0) {
-                    aClass = JavassistProxy.getProxyClass(Runnable.class.getClassLoader(), Runnable.class);
+                    aClass = factory.getProxyClass(Runnable.class.getClassLoader(), Runnable.class);
                 }
                 else {
-                    aClass = JavassistProxy.getProxyClass(Runnable.class.getClassLoader(), Callable.class);
+                    aClass = factory.getProxyClass(Runnable.class.getClassLoader(), Callable.class);
                 }
                 Object obj = unsafe.allocateInstance(aClass);
                 Assert.assertNotNull(obj);
@@ -128,7 +128,7 @@ public class JavassistProxyTest
         Streams.range(10).parallel()
                 .forEach(x -> {
                     try {
-                        Class<?> aClass = JavassistProxy.getProxyClass(classLoader, HashSet.class);
+                        Class<?> aClass = factory.getProxyClass(classLoader, HashSet.class);
                         Assert.assertTrue(HashSet.class.isAssignableFrom(aClass));
                     }
                     catch (Exception e) {
@@ -142,7 +142,7 @@ public class JavassistProxyTest
             throws InstantiationException
     {
         Unsafe unsafe = Platform.getUnsafe();
-        Class<?> aClass = JavassistProxy.getProxyClass(null, HashMap.class);
+        Class<?> aClass = factory.getProxyClass(null, HashMap.class);
         Object obj = unsafe.allocateInstance(aClass);
 
         Assert.assertEquals(true, HashMap.class.isInstance(obj));
@@ -158,7 +158,7 @@ public class JavassistProxyTest
                 .parallel()
                 .forEach(x -> {
                     try {
-                        Class<?> aClass = JavassistProxy.getProxyClass(null, x);
+                        Class<?> aClass = factory.getProxyClass(null, x);
                         Object obj = unsafe.allocateInstance(aClass);
 
                         Assert.assertEquals(true, x.isInstance(obj));
@@ -180,7 +180,7 @@ public class JavassistProxyTest
             }
             return method.invoke(genericProxyClass, args);
         };
-        GenericProxyClass proxy = JavassistProxy.newProxyInstance(null, invocationHandler, GenericProxyClass.class);
+        GenericProxyClass proxy = factory.newProxyInstance(null, invocationHandler, GenericProxyClass.class);
         Assert.assertEquals(proxy.get(), "hello");
     }
 

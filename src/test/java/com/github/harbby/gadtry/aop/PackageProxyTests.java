@@ -15,9 +15,10 @@
  */
 package com.github.harbby.gadtry.aop;
 
+import com.github.harbby.gadtry.GadTry;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
-import com.github.harbby.gadtry.aop.resource.PackageTestName;
-import com.github.harbby.gadtry.aop.resource.impl.PackageTestUtil;
+import com.github.harbby.gadtry.aop.model.PackageTestName;
+import com.github.harbby.gadtry.aop.model.impl.PackageTestUtil;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.MutableList;
@@ -65,7 +66,7 @@ public class PackageProxyTests
                     }).when().size();
                 })
                 .build();
-        Assert.assertTrue(set.getClass().getName().startsWith(PackageProxyTests.class.getPackage().getName()));
+        Assert.assertTrue(set.getClass().getName().startsWith(GadTry.class.getPackage().getName()));
         set.size();
         Assert.assertEquals(Arrays.asList("before1"), actions);
     }
@@ -179,7 +180,7 @@ public class PackageProxyTests
     }
 
     /**
-     * 无权访问型
+     * can not access
      */
     @Test
     public void doAccessClassTest()

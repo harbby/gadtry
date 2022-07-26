@@ -81,13 +81,6 @@ public class Throwables
         throw (T) e;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <R, T extends Throwable> R throwValueThrowable(Throwable e)
-            throws T
-    {
-        throw (T) e;
-    }
-
     public static <T extends Throwable> void throwThrowable(Class<T> clazz)
             throws T
     {}

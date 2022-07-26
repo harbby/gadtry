@@ -15,12 +15,14 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 import com.github.harbby.gadtry.base.Platform;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
@@ -29,14 +31,29 @@ public class ProxyRequest<T>
 {
     private ClassLoader classLoader;
     private InvocationHandler handler;
-    private Class<?>[] interfaces;
-    private Object target;
+    private Set<Class<?>> interfaces;
     private final Class<T> superclass;
-    private boolean enableV2;  //default false
+    private final boolean isJdkClass;
 
     public ProxyRequest(Class<T> superclass)
     {
         this.superclass = superclass;
+        ClassLoader supperClassLoader = superclass.getClassLoader();
+        if (supperClassLoader == null) {
+            // java8 BootClassLoader is null
+            this.isJdkClass = true;
+            return;
+        }
+        else if (supperClassLoader == Platform.getBootstrapClassLoader()) {
+            // java9+ BootClassLoader
+            this.isJdkClass = true;
+            return;
+        }
+        if (Platform.getJavaVersion() > 8 && !Platform.isOpen(superclass, Platform.class)) {
+            this.isJdkClass = true;
+            return;
+        }
+        this.isJdkClass = false;
     }
 
     public ClassLoader getClassLoader()
@@ -54,35 +71,14 @@ public class ProxyRequest<T>
         return superclass;
     }
 
-    public Class<?>[] getInterfaces()
+    public Collection<Class<?>> getInterfaces()
     {
         return interfaces;
     }
 
-    public Object getTarget()
-    {
-        return target;
-    }
-
-    public boolean isEnableV2()
-    {
-        return enableV2;
-    }
-
     public boolean isJdkClass()
     {
-        if (Platform.getJavaVersion() > 8 && !Platform.isOpen(superclass, JavassistProxy.class)) {
-            return true;
-        }
-
-        ClassLoader classLoader = superclass.getClassLoader();
-        while (classLoader != null) {
-            if (classLoader == JavassistProxy.class.getClassLoader()) {
-                return false;
-            }
-            classLoader = classLoader.getParent();
-        }
-        return true;
+        return isJdkClass;
     }
 
     public static <T> Builder<T> builder(Class<T> superclass)
@@ -93,19 +89,21 @@ public class ProxyRequest<T>
     public static class Builder<T>
     {
         private final ProxyRequest<T> request;
-        private final List<Class<?>> superInterfaces = new ArrayList<>();
+        private final Set<Class<?>> superInterfaces = new HashSet<>();
 
         public Builder(Class<T> superclass)
         {
             this.request = new ProxyRequest<>(requireNonNull(superclass, "superclass is null"));
         }
 
-        public Builder<T> addInterface(Class<?> superInterface)
+        public Builder<T> addInterface(Class<?> it)
         {
-            requireNonNull(superInterface, "superInterface is null");
-            if (superInterface != request.superclass) {
-                checkState(superInterface.isInterface(), superInterface.getName() + " not is Interface");
-                superInterfaces.add(superInterface);
+            requireNonNull(it, "superInterface is null");
+            if (it != request.getSuperclass() && it != Serializable.class
+                    && it != ProxyAccess.class
+                    && !it.isAssignableFrom(request.getSuperclass())) {
+                checkState(it.isInterface(), it.getName() + " not is Interface");
+                superInterfaces.add(it);
             }
             return this;
         }
@@ -119,21 +117,9 @@ public class ProxyRequest<T>
             return this;
         }
 
-        public Builder<T> enableV2()
-        {
-            request.enableV2 = true;
-            return this;
-        }
-
         public Builder<T> setInvocationHandler(InvocationHandler handler)
         {
             request.handler = requireNonNull(handler, "handler is null");
-            return this;
-        }
-
-        public Builder<T> setTarget(Object target)
-        {
-            request.target = target;
             return this;
         }
 
@@ -145,7 +131,7 @@ public class ProxyRequest<T>
 
         public ProxyRequest<T> build()
         {
-            request.interfaces = superInterfaces.toArray(new Class[0]);
+            request.interfaces = superInterfaces;
             return request;
         }
     }

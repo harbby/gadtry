@@ -45,7 +45,7 @@ public final class Platform
      */
     private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
 
-    private static final Unsafe unsafe;
+    static final Unsafe unsafe;
     private static final int classVersion = getClassVersion0();
     private static final String JAVA_FULL_VERSION = System.getProperty("java.version");
     private static final int javaVersion = getJavaVersion0();
@@ -55,17 +55,41 @@ public final class Platform
         return unsafe;
     }
 
+    private static int pageSize = -1;
+    private static final Class<?> DIRECT_BYTE_BUFFER_CLASS;
+    private static final long DBB_CLEANER_FIELD_OFFSET;
+    private static final long DBB_ADDRESS_FIELD_OFFSET;
+    private static final long DBB_CAPACITY_FIELD_OFFSET;
+    private static final Method DBB_CLEANER_CREATE_METHOD;
+    private static final Method DBB_CLEANER_CLEAN_METHOD;
+    private static final Method DBB_BYTE_BUFFER_CLEAR_METHOD;
+
     static {
         Unsafe obj = null;
         try {
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
-            obj = (sun.misc.Unsafe) unsafeField.get(null);
+            obj = (sun.misc.Unsafe) requireNonNull(unsafeField.get(null));
         }
         catch (Exception cause) {
             throwException(cause);
         }
         unsafe = obj;
+
+        try {
+            Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
+            Field dbbCleanerField = cls.getDeclaredField("cleaner");
+            DBB_CLEANER_FIELD_OFFSET = getUnsafe().objectFieldOffset(dbbCleanerField);
+            DBB_ADDRESS_FIELD_OFFSET = getUnsafe().objectFieldOffset(Buffer.class.getDeclaredField("address"));
+            DBB_CAPACITY_FIELD_OFFSET = getUnsafe().objectFieldOffset(Buffer.class.getDeclaredField("capacity"));
+            DBB_CLEANER_CREATE_METHOD = dbbCleanerField.getType().getMethod("create", Object.class, Runnable.class);
+            DIRECT_BYTE_BUFFER_CLASS = cls;
+            DBB_CLEANER_CLEAN_METHOD = dbbCleanerField.getType().getMethod("clean");
+            DBB_BYTE_BUFFER_CLEAR_METHOD = Buffer.class.getMethod("clear");
+        }
+        catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
     }
 
     /**
@@ -88,6 +112,11 @@ public final class Platform
         long getCurrentProcessId();
 
         boolean isOpen(Class<?> source, Class<?> target);
+
+        boolean isDirectMemoryPageAligned();
+
+        public Class<?> defineHiddenClass(Class<?> buddyClass, byte[] classBytes, boolean initialize)
+                throws IllegalAccessException;
     }
 
     private static class ExtPlatformHolder
@@ -137,22 +166,24 @@ public final class Platform
      *
      * @param len       allocate direct mem size
      * @param alignByte default 16
-     * @return [base, dataOffset]
+     * @return base address
      */
-    public static long[] allocateAlignMemory(long len, long alignByte)
+    public static long allocateAlignMemory(long len, int alignByte)
     {
         checkArgument(Maths.isPowerOfTwo(alignByte), "Number %s power of two", alignByte);
+        if (len < 0) {
+            throw new IllegalArgumentException("capacity < 0: (" + len + " < 0)");
+        }
 
         long size = Math.max(1L, len + alignByte);
-        long base = 0;
-        try {
-            base = unsafe.allocateMemory(size);
-        }
-        catch (OutOfMemoryError x) {
-            throw x;
-        }
-        //unsafe.setMemory(base, size, (byte) 0);
+        long base = unsafe.allocateMemory(size);
+        unsafe.setMemory(base, size, (byte) 0);
+        // long dataOffset = getAlignedDataAddress(base, alignByte);
+        return base;
+    }
 
+    public static long getAlignedDataAddress(long base, int alignByte)
+    {
         long dataOffset;
         if (base % alignByte != 0) {
             // Round up to page boundary
@@ -161,27 +192,12 @@ public final class Platform
         else {
             dataOffset = base;
         }
-        long[] res = new long[2];
-        res[0] = base;
-        res[1] = dataOffset;
-        return res;
+        return dataOffset;
     }
 
     public static void freeMemory(long address)
     {
         unsafe.freeMemory(address);
-    }
-
-    public static void registerForClean(AutoCloseable closeable)
-    {
-        createCleaner(closeable, () -> {
-            try {
-                closeable.close();
-            }
-            catch (Exception e) {
-                throwException(e);
-            }
-        });
     }
 
     public static int getJavaVersion()
@@ -350,14 +366,25 @@ public final class Platform
     public static Class<?> defineClass(byte[] classBytes, ClassLoader classLoader)
             throws PlatFormUnsupportedOperation, IllegalAccessException
     {
+        requireNonNull(classLoader, "classLoader is null");
         try {
             Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
             defineClass.setAccessible(true);
             return (Class<?>) defineClass.invoke(classLoader, null, classBytes, 0, classBytes.length);
         }
-        catch (InvocationTargetException | NoSuchMethodException e) {
+        catch (NoSuchMethodException e) {
             throw new PlatFormUnsupportedOperation(e);
         }
+        catch (InvocationTargetException e) {
+            throw new PlatFormUnsupportedOperation(e.getTargetException());
+        }
+    }
+
+    public static Class<?> defineHiddenClass(Class<?> buddyClass, byte[] classBytes, boolean initialize)
+            throws IllegalAccessException
+    {
+        checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
+        return ExtPlatformHolder.getExtPlatform().defineHiddenClass(buddyClass, classBytes, initialize);
     }
 
     /**
@@ -379,30 +406,6 @@ public final class Platform
         return newMemory;
     }
 
-    private static final Class<?> DIRECT_BYTE_BUFFER_CLASS;
-    private static final Field DBB_CLEANER_FIELD;
-    private static final Field DBB_ADDRESS_FIELD;
-    private static final Field DBB_CAPACITY_FIELD;
-    private static final Method DBB_CLEANER_CREATE_METHOD;
-    private static final Method DBB_CLEANER_CLEAN_METHOD;
-    private static final Method DBB_BYTE_BUFFER_CLEAR_METHOD;
-
-    static {
-        try {
-            Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
-            DBB_CLEANER_FIELD = cls.getDeclaredField("cleaner");
-            DBB_ADDRESS_FIELD = Buffer.class.getDeclaredField("address");
-            DBB_CAPACITY_FIELD = Buffer.class.getDeclaredField("capacity");
-            DBB_CLEANER_CREATE_METHOD = DBB_CLEANER_FIELD.getType().getMethod("create", Object.class, Runnable.class);
-            DIRECT_BYTE_BUFFER_CLASS = cls;
-            DBB_CLEANER_CLEAN_METHOD = DBB_CLEANER_FIELD.getType().getMethod("clean");
-            DBB_BYTE_BUFFER_CLEAR_METHOD = Buffer.class.getMethod("clear");
-        }
-        catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException e) {
-            throw new PlatFormUnsupportedOperation(e);
-        }
-    }
-
     /**
      * Uses internal JDK APIs to allocate a DirectByteBuffer while ignoring the JVM's
      * MaxDirectMemorySize limit (the default limit is too low and we do not want to require users
@@ -418,20 +421,68 @@ public final class Platform
     public static ByteBuffer allocateDirectBuffer(int capacity)
             throws PlatFormUnsupportedOperation
     {
+        if (getJavaVersion() > 8) {
+            boolean isDirectMemoryPageAligned = ExtPlatformHolder.getExtPlatform().isDirectMemoryPageAligned();
+            if (!isDirectMemoryPageAligned) {
+                return ByteBuffer.allocateDirect(capacity);
+            }
+        }
         long address = unsafe.allocateMemory(capacity);
+        return warpByteBuff(capacity, address, address);
+    }
+
+    public static int pageSize()
+    {
+        if (pageSize == -1) {
+            pageSize = unsafe.pageSize();
+        }
+        return pageSize;
+    }
+
+    public static ByteBuffer allocateDirectBuffer(int capacity, int alignMemory)
+            throws PlatFormUnsupportedOperation
+    {
+        if (getJavaVersion() > 8) {
+            boolean isDirectMemoryPageAligned = ExtPlatformHolder.getExtPlatform().isDirectMemoryPageAligned();
+            if (!isDirectMemoryPageAligned) {
+                checkArgument(Maths.isPowerOfTwo(alignMemory), "Number %s power of two", alignMemory);
+                if (capacity < 0) {
+                    throw new IllegalArgumentException("capacity < 0: (" + capacity + " < 0)");
+                }
+
+                int size = Math.max(1, capacity + alignMemory);
+                ByteBuffer byteBuffer = ByteBuffer.allocateDirect(size);
+                long baseAddress = unsafe.getLong(byteBuffer, DBB_ADDRESS_FIELD_OFFSET);
+                long dataAddress = getAlignedDataAddress(baseAddress, alignMemory);
+                unsafe.putLong(byteBuffer, DBB_ADDRESS_FIELD_OFFSET, dataAddress);
+                return byteBuffer;
+            }
+            else {
+                if (alignMemory == pageSize()) {
+                    return ByteBuffer.allocateDirect(capacity);
+                }
+            }
+        }
+        long baseAddress = allocateAlignMemory(capacity, alignMemory);
+        long dataAddress = getAlignedDataAddress(baseAddress, alignMemory);
+        return warpByteBuff(capacity, baseAddress, dataAddress);
+    }
+
+    private static ByteBuffer warpByteBuff(int capacity, long baseAddress, long dataAddress)
+    {
         try {
             //Constructor<?> constructor = DIRECT_BYTE_BUFFER_CLASS.getDeclaredConstructor(Long.TYPE, Integer.TYPE);
             //ByteBuffer buffer = (ByteBuffer) constructor.newInstance(memory, size);
             ByteBuffer buffer = (ByteBuffer) unsafe.allocateInstance(DIRECT_BYTE_BUFFER_CLASS);
-            unsafe.putLong(buffer, unsafe.objectFieldOffset(DBB_ADDRESS_FIELD), address);
-            unsafe.putInt(buffer, unsafe.objectFieldOffset(DBB_CAPACITY_FIELD), capacity);
-            Object cleaner = createCleaner(buffer, (Runnable) () -> unsafe.freeMemory(address));
-            unsafe.putObject(buffer, unsafe.objectFieldOffset(DBB_CLEANER_FIELD), cleaner);
+            unsafe.putLong(buffer, DBB_ADDRESS_FIELD_OFFSET, dataAddress);
+            unsafe.putInt(buffer, DBB_CAPACITY_FIELD_OFFSET, capacity);
+            Object cleaner = createCleaner(buffer, (Runnable) () -> unsafe.freeMemory(baseAddress));
+            unsafe.putObject(buffer, DBB_CLEANER_FIELD_OFFSET, cleaner);
             DBB_BYTE_BUFFER_CLEAR_METHOD.invoke(buffer);
             return buffer;
         }
         catch (Exception e) {
-            unsafe.freeMemory(address);
+            unsafe.freeMemory(baseAddress);
             throw new PlatFormUnsupportedOperation(e);
         }
     }
@@ -471,7 +522,7 @@ public final class Platform
             return;
         }
         try {
-            Object cleaner = unsafe.getObject(buffer, unsafe.objectFieldOffset(DBB_CLEANER_FIELD));
+            Object cleaner = unsafe.getObject(buffer, DBB_CLEANER_FIELD_OFFSET);
             DBB_CLEANER_CLEAN_METHOD.invoke(cleaner);
         }
         catch (IllegalAccessException | InvocationTargetException e) {
@@ -487,7 +538,7 @@ public final class Platform
             return (T) unsafe.allocateInstance(tClass);
         }
         catch (InstantiationException e) {
-            throw new PlatFormUnsupportedOperation(e);
+            throw Throwables.throwThrowable(e);
         }
     }
 

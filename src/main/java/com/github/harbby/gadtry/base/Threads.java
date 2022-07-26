@@ -37,7 +37,7 @@ public final class Threads
     public static StackTraceElement getThreadMainFunc(Thread thread)
     {
         StackTraceElement[] stackTraceElements = thread.getStackTrace();
-        Arrays.checkNotEmpty(stackTraceElements, thread + " not exists Stack Trace");
+        ArrayUtil.checkNotEmpty(stackTraceElements, thread + " not exists Stack Trace");
         return stackTraceElements[stackTraceElements.length - 1];
     }
 

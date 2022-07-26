@@ -15,8 +15,6 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.collection.offheap.MemoryBlock;
-import com.github.harbby.gadtry.function.Creator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -192,7 +190,7 @@ public class IocFactoryTest
     }
 
     private static class StringBuilderCreator
-            implements Creator<StringBuilder>
+            implements Supplier<StringBuilder>
     {
         @Autowired
         private Set<?> set;
@@ -218,7 +216,7 @@ public class IocFactoryTest
         iocFactory.getInstance(PrintStream.class);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getNotRegisteredReturnError()
     {
         IocFactory iocFactory = IocFactory.create();
@@ -228,6 +226,5 @@ public class IocFactoryTest
         }
         catch (IllegalStateException ignored) {
         }
-        iocFactory.getInstance(MemoryBlock.class);
     }
 }

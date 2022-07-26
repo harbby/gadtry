@@ -1,0 +1,39 @@
+//java 17
+//deploy to maven repo: ./gradlew clean assemble -Pjdk=java17 -Ptarget=8
+
+def targetVersion = project.hasProperty("target") ? project.target as int : 19
+sourceCompatibility = targetVersion
+targetCompatibility = targetVersion
+
+jacoco {
+  toolVersion = "0.8.7"
+}
+
+sourceSets {
+  main {
+    java {
+      srcDirs += ["src/main/java9+"]
+    }
+  }
+  test {
+    java {
+      srcDirs += ["src/test/java9+"]
+    }
+  }
+}
+
+if (targetVersion > 8) {
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+  }
+}
+
+tasks.withType(Test) {
+  jvmArgs += "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+}
+
+tasks.withType(JavaExec) {
+//  jvmArgs += "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+//  jvmArgs += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+}

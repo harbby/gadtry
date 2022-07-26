@@ -21,8 +21,6 @@ import com.github.harbby.gadtry.collection.iterator.LengthIterator;
 import com.github.harbby.gadtry.collection.iterator.MarkIterator;
 import com.github.harbby.gadtry.collection.iterator.PeekIterator;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
-import com.github.harbby.gadtry.function.Function1;
-import com.github.harbby.gadtry.function.Function2;
 import com.github.harbby.gadtry.function.Reducer;
 
 import java.util.ArrayList;
@@ -37,6 +35,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -511,7 +510,7 @@ public class Iterators
         return concat(Iterators.of(iterators));
     }
 
-    public static <E> IteratorPlus<E> filter(Iterator<E> iterator, Function1<E, Boolean> filter)
+    public static <E> IteratorPlus<E> filter(Iterator<E> iterator, Function<E, Boolean> filter)
     {
         return new FilterIterator<>(iterator, filter);
     }
@@ -520,11 +519,11 @@ public class Iterators
             implements IteratorPlus<V>, PeekIterator<V>
     {
         private final Iterator<V> iterator;
-        private final Function1<V, Boolean> filter;
+        private final Function<V, Boolean> filter;
         private boolean hasNextValue;
         private V value;
 
-        private FilterIterator(Iterator<V> iterator, Function1<V, Boolean> filter)
+        private FilterIterator(Iterator<V> iterator, Function<V, Boolean> filter)
         {
             this.iterator = requireNonNull(iterator, "iterator is null");
             this.filter = requireNonNull(filter, "filter is null");
@@ -575,10 +574,10 @@ public class Iterators
      * double fraction = setp / max
      *
      * @param iterator 待抽样的Iterator
-     * @param setp setp
-     * @param max max
-     * @param seed 随机因子
-     * @param <E> type
+     * @param setp     setp
+     * @param max      max
+     * @param seed     随机因子
+     * @param <E>      type
      * @return 抽样后的Iterator
      */
     public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, long seed)
@@ -658,7 +657,7 @@ public class Iterators
             @Override
             public Tuple2<E, Long> next()
             {
-                return new Tuple2<>(iterator.next(), i++);
+                return Tuple2.of(iterator.next(), i++);
             }
         };
     }
@@ -673,7 +672,7 @@ public class Iterators
         if (inputs.size() == 1) {
             return inputs.get(0);
         }
-        final PriorityQueue<Tuple2<T, Iterator<T>>> priorityQueue = new PriorityQueue<>(inputs.size(), (o1, o2) -> comparator.compare(o1.f1, o2.f1));
+        final PriorityQueue<Tuple2<T, Iterator<T>>> priorityQueue = new PriorityQueue<>(inputs.size(), (o1, o2) -> comparator.compare(o1.f1(), o2.f1()));
         for (Iterator<T> iterator : inputs) {
             if (iterator.hasNext()) {
                 priorityQueue.add(Tuple2.of(iterator.next(), iterator));
@@ -695,9 +694,9 @@ public class Iterators
                 if (node == null) {
                     throw new NoSuchElementException();
                 }
-                T value = node.f1;
-                if (node.f2.hasNext()) {
-                    node.f1 = node.f2.next();
+                T value = node.f1();
+                if (node.f2().hasNext()) {
+                    node.setF1(node.f2().next());
                     priorityQueue.add(node);
                 }
                 return value;
@@ -736,12 +735,12 @@ public class Iterators
                 }
                 while (input.hasNext()) {
                     Tuple2<K, V> tp = input.next();
-                    if (!Objects.equals(tp.f1, lastRow.f1)) {
+                    if (!Objects.equals(tp.f1(), lastRow.f1())) {
                         Tuple2<K, V> result = lastRow;
                         this.lastRow = tp;
                         return result;
                     }
-                    lastRow.f2 = reducer.reduce(lastRow.f2, tp.f2);
+                    lastRow.setF2(reducer.reduce(lastRow.f2(), tp.f2()));
                 }
                 Tuple2<K, V> result = lastRow;
                 lastRow = null;
@@ -782,12 +781,12 @@ public class Iterators
             }
             this.rightNode = rightIterator.next();
 
-            if (!leftSameKeys.isEmpty() && Objects.equals(leftSameKeys.get(0).f1, rightNode.f1)) {
+            if (!leftSameKeys.isEmpty() && Objects.equals(leftSameKeys.get(0).f1(), rightNode.f1())) {
                 index = 0;
                 return true;
             }
             while (true) {
-                int than = comparator.compare(leftNode.f1, rightNode.f1);
+                int than = comparator.compare(leftNode.f1(), rightNode.f1());
                 if (than == 0) {
                     leftSameKeys.clear();
                     do {
@@ -799,7 +798,7 @@ public class Iterators
                             break;
                         }
                     }
-                    while (Objects.equals(leftNode.f1, rightNode.f1));
+                    while (Objects.equals(leftNode.f1(), rightNode.f1()));
                     index = 0;
                     return true;
                 }
@@ -825,7 +824,7 @@ public class Iterators
                 throw new NoSuchElementException();
             }
             Tuple2<K, V1> x = leftSameKeys.get(index++);
-            return Tuple2.of(x.f1, Tuple2.of(x.f2, rightNode.f2));
+            return Tuple2.of(x.f1(), Tuple2.of(x.f2(), rightNode.f2()));
         }
     }
 
@@ -890,7 +889,7 @@ public class Iterators
         }
     }
 
-    public static <V> PeekIterator<V> anyMatchStop(PeekIterator<V> iterator, Function1<V, Boolean> stopMatcher)
+    public static <V> PeekIterator<V> anyMatchStop(PeekIterator<V> iterator, Function<V, Boolean> stopMatcher)
     {
         return new AnyMatchIterator<>(iterator, stopMatcher);
     }
@@ -899,12 +898,12 @@ public class Iterators
             implements PeekIterator<V>
     {
         private final PeekIterator<V> iterator;
-        private final Function1<V, Boolean> stopMatcher;
+        private final Function<V, Boolean> stopMatcher;
 
         private V value;
         private boolean hasNextValue;
 
-        private AnyMatchIterator(PeekIterator<V> iterator, Function1<V, Boolean> stopMatcher)
+        private AnyMatchIterator(PeekIterator<V> iterator, Function<V, Boolean> stopMatcher)
         {
             this.iterator = requireNonNull(iterator, "iterator is null");
             this.stopMatcher = requireNonNull(stopMatcher, "stopMatcher is null");
@@ -1007,7 +1006,7 @@ public class Iterators
         };
     }
 
-    public static <K, V, O> IteratorPlus<Tuple2<K, O>> mapGroupSorted(Iterator<Tuple2<K, V>> input, Function2<K, Iterator<V>, O> mapGroupFunc)
+    public static <K, V, O> IteratorPlus<Tuple2<K, O>> mapGroupSorted(Iterator<Tuple2<K, V>> input, BiFunction<K, Iterator<V>, O> mapGroupFunc)
     {
         requireNonNull(input, "input Iterator is null");
         requireNonNull(mapGroupFunc, "mapGroupFunc is null");
@@ -1029,8 +1028,8 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                final K cKey = iterator.peek().f1;
-                Iterator<V> child = Iterators.anyMatchStop(iterator, x -> !Objects.equals(x.f1, cKey)).map(x -> x.f2);
+                final K cKey = iterator.peek().f1();
+                Iterator<V> child = Iterators.anyMatchStop(iterator, x -> !Objects.equals(x.f1(), cKey)).map(Tuple2::f2);
                 return Tuple2.of(cKey, mapGroupFunc.apply(cKey, child));
             }
         };

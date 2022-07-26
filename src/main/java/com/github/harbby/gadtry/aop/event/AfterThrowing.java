@@ -15,19 +15,19 @@
  */
 package com.github.harbby.gadtry.aop.event;
 
-import com.github.harbby.gadtry.aop.MethodSignature;
+import java.lang.reflect.Method;
 
 public interface AfterThrowing
         extends Before
 {
     public Throwable getThrowable();
 
-    public static AfterThrowing of(MethodSignature method, Object[] args, Throwable e)
+    public static AfterThrowing of(Method method, Object[] args, Throwable e)
     {
         return new AfterThrowing()
         {
             @Override
-            public MethodSignature getMethod()
+            public Method getMethod()
             {
                 return method;
             }

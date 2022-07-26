@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
+import com.github.harbby.gadtry.GadTry;
+import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
@@ -184,7 +184,7 @@ public class AopGoTest
         List<String> list = AopGo.proxy(new ArrayList<String>())
                 .aop(binder -> {
                     binder.doAround(cut -> {
-                        Assert.assertTrue(cut.mock().getClass().getName().startsWith(ProxyAccess.class.getPackage().getName()));
+                        Assert.assertTrue(cut.mock().getClass().getName().startsWith(GadTry.class.getPackage().getName()));
                         return (int) cut.proceed() + 1;
                     }).whereMethod(method -> method.getName().startsWith("size"));
                     binder.doBefore(before -> {
@@ -192,7 +192,7 @@ public class AopGoTest
                     }).when().isEmpty();
                 })
                 .build();
-        Assert.assertTrue(JavassistProxy.isProxyClass(list.getClass()));
+        Assert.assertTrue(ProxyFactory.getAsmProxy().isProxyClass(list.getClass()));
         Assert.assertEquals(list.size(), 1);
         Assert.assertTrue(list.isEmpty());
         Assert.assertEquals(actions, MutableSet.of("isEmpty"));

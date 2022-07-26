@@ -43,7 +43,7 @@ public class JVMLaunchers
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
         private final Map<String, String> environment = new HashMap<>();
-        private ClassLoader classLoader;
+        private ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         private File workDir;
         private String taskProcessName;
         private File javaCmd = getJavaCmd(System.getProperty("java.home"));

@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.spi;
 
 import com.github.harbby.gadtry.base.Files;
+import com.github.harbby.gadtry.base.MoreObjects;
 import com.github.harbby.gadtry.base.Try;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.function.AutoClose;
@@ -37,7 +38,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 import static java.util.Objects.requireNonNull;
 
 public final class ModuleLoader<T>
@@ -210,8 +210,7 @@ public final class ModuleLoader<T>
         {
             checkState(scanner != null, "scanner is null,your must setScanDir()");
             checkState(pluginClass != null, "pluginClass is null,your must setPlugin()");
-            parentLoader = getOrDefault(parentLoader, pluginClass.getClassLoader());
-            parentLoader = getOrDefault(parentLoader, ClassLoader.getSystemClassLoader());
+            parentLoader = MoreObjects.getFirstNonNull(parentLoader, pluginClass.getClassLoader(), ClassLoader.getSystemClassLoader());
 
             return new ModuleLoader<>(pluginClass, filter, scanner, parentLoader, spiPackages, loadHandler, classLoaderFactory, loader);
         }

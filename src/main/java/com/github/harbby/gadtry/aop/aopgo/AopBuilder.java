@@ -16,11 +16,11 @@
 package com.github.harbby.gadtry.aop.aopgo;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.aop.codegen.Proxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
+import com.github.harbby.gadtry.aop.proxy.Proxy;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.function.Consumer;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -60,10 +60,8 @@ public final class AopBuilder<T>
         ProxyRequest<T> request = ProxyRequest.builder(superclass)
                 .setInvocationHandler(aopInvocationHandler)
                 .setClassLoader(loader)
-                .setTarget(target)
                 .build();
         T proxy = Proxy.proxy(request);
-        aopInvocationHandler.setProxyClass(proxy.getClass());
         //---------------------------
         final MockBinder<T> mockBinder = new MockBinder<>(proxy);
         for (Consumer<MockBinder<T>, Throwable> it : binders) {

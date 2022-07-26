@@ -15,13 +15,13 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.ObjectInputStreamProxy;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 
 import java.io.FilterOutputStream;
 import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -72,7 +72,7 @@ public interface JVMLauncher<R>
         //first write header
         outputStream.writeVmHeader();
 
-        try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
+        try (ObjectInputStream ois = new ObjectInputStream(System.in)) {
             VmCallable<?> task = (VmCallable<?>) ois.readObject();
             Object value = task.call();
             if (value != null && !(value instanceof Serializable)) {

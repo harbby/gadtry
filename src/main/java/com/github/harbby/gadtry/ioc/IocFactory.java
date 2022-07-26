@@ -15,8 +15,9 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.graph.Graph;
+
+import java.util.function.Supplier;
 
 /**
  * harbby ioc
@@ -31,7 +32,7 @@ public interface IocFactory
      */
     public <T> T getInstance(Class<T> driver);
 
-    public <T> Creator<T> getCreator(Class<T> driver);
+    public <T> Supplier<T> getCreator(Class<T> driver);
 
     public BindMapping getAllBeans();
 

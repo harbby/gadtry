@@ -21,7 +21,7 @@ import com.github.harbby.gadtry.aop.event.After;
 import com.github.harbby.gadtry.aop.event.AfterReturning;
 import com.github.harbby.gadtry.aop.event.AfterThrowing;
 import com.github.harbby.gadtry.aop.event.Before;
-import com.github.harbby.gadtry.function.exception.Consumer;
+import com.github.harbby.gadtry.function.Consumer;
 
 public class AopGo
 {

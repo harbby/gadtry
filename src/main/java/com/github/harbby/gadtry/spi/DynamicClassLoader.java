@@ -21,8 +21,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
 
-import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
-
 public class DynamicClassLoader
         extends URLClassLoader
 {
@@ -30,7 +28,7 @@ public class DynamicClassLoader
 
     public DynamicClassLoader(URL[] urls, ClassLoader parent)
     {
-        super(getOrDefault(urls, new URL[0]), parent);
+        super(urls, parent);
     }
 
     public DynamicClassLoader(ClassLoader parent)

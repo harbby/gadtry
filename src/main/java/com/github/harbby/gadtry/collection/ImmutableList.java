@@ -692,6 +692,14 @@ public abstract class ImmutableList<E>
             return this;
         }
 
+        public final Builder<E> addAll(E[] collection)
+        {
+            for (E e : collection) {
+                this.add(e);
+            }
+            return this;
+        }
+
         public ImmutableList<E> build()
         {
             return ImmutableList.copy(list);

@@ -39,10 +39,11 @@ public class StringsTest
     }
 
     @Test
-    public void lowerFirstTest()
+    public void isAsciiTest()
     {
-        Assert.assertEquals("info", Strings.lowerFirst("Info"));
-        Assert.assertEquals("info", Strings.lowerFirst("info"));
-        Assert.assertEquals("123info", Strings.lowerFirst("123info"));
+        Assert.assertTrue(Strings.isAscii("info"));
+        Assert.assertTrue(Strings.isAscii("Info"));
+        Assert.assertTrue(Strings.isAscii("123info.!#@&123Abc"));
+        Assert.assertFalse(Strings.isAscii("hello!,你好"));
     }
 }

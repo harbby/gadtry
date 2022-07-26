@@ -71,8 +71,7 @@ public class MutableList
             return this;
         }
 
-        @SafeVarargs
-        public final Builder<T> addAll(T... ts)
+        public final Builder<T> addAll(T[] ts)
         {
             for (T it : ts) {
                 builder.add(it);

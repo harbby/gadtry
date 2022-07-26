@@ -15,6 +15,7 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.ArrayUtil;
 import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.BufferedReader;
@@ -24,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static com.github.harbby.gadtry.jvm.JVMLauncherImpl.VM_HEADER;
@@ -61,12 +61,10 @@ public class ChildVMChannelInputStream
             byte[] failedByes = IOUtils.readAllBytes(in);
             this.isDone = true;
             this.isSuccess = false;
-            byte[] errorMsg = com.github.harbby.gadtry.base.Arrays.mergeByPrimitiveArray(bytes, failedByes);
+            byte[] errorMsg = ArrayUtil.merge(bytes, failedByes);
             throw new JVMException(new String(errorMsg, UTF_8));
         }
     }
-
-    private final ByteBuffer builder = ByteBuffer.allocate(10_0000);
 
     @Override
     public int read()

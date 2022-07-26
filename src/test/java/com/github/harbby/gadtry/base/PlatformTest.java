@@ -41,14 +41,38 @@ public class PlatformTest
     }
 
     @Test
+    public void allocateDirectBufferTest()
+    {
+        ByteBuffer byteBuffer = Platform.allocateDirectBuffer(24, 64);
+        try {
+            byteBuffer.putLong(123);
+            byteBuffer.flip();
+            Assert.assertEquals(byteBuffer.getLong(), 123);
+        }
+        finally {
+            Platform.freeDirectBuffer(byteBuffer);
+        }
+    }
+
+    @Test
+    public void getDiskPageSizeTest()
+    {
+        int pageSize = Platform.pageSize();
+        Assert.assertTrue(pageSize > 0);
+    }
+
+    @Test
     public void allocateAlignMemoryTest()
     {
-        long[] address = Platform.allocateAlignMemory(10, 32);
-        long base = address[0];
-        long dataAddress = address[1];
-
-        Assert.assertEquals(0, base % 16);
-        Assert.assertEquals(0, dataAddress % 32);
+        long base = Platform.allocateAlignMemory(10, 32);
+        try {
+            long dataAddress = Platform.getAlignedDataAddress(base, 32);
+            Assert.assertEquals(0, base % 16);
+            Assert.assertEquals(0, dataAddress % 32);
+        }
+        finally {
+            unsafe.freeMemory(base);
+        }
     }
 
     @Test
@@ -68,6 +92,7 @@ public class PlatformTest
     @Test
     public void allocateDirectBuffer()
     {
+        ByteBuffer b1 = ByteBuffer.allocateDirect(12);
         ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
         try {
             Assert.assertNotNull(byteBuffer);

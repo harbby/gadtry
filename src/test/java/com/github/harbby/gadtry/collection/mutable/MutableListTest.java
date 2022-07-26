@@ -53,7 +53,7 @@ public class MutableListTest
 
         List<Integer> create = MutableList.<Integer>builder()
                 .add(1)
-                .addAll(2, 3)
+                .addAll(new Integer[] {2, 3})
                 .addAll(Iterators.of(4))
                 .addAll(Arrays.asList(5))
                 .build();

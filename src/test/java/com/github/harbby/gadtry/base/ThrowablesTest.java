@@ -70,19 +70,6 @@ public class ThrowablesTest
     }
 
     @Test
-    public void testThrowValueException1()
-    {
-        try {
-            Throwables.throwValueThrowable(new IOException("IO_test"));
-            Assert.fail();
-        }
-        catch (Exception e) {
-            Assert.assertTrue(e instanceof IOException);
-            Assert.assertEquals("IO_test", e.getMessage());
-        }
-    }
-
-    @Test
     public void testThrowsException2()
     {
         try {

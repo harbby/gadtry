@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,6 +23,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 public class GenericTest
 {
@@ -33,7 +33,7 @@ public class GenericTest
     }
 
     public static class GenericInterfaceClass
-            implements Function1<Map<String, Integer>, String>, Callable<Double>
+            implements Function<Map<String, Integer>, String>, Callable<Double>
     {
         @Override
         public Double call()
@@ -49,7 +49,6 @@ public class GenericTest
         }
     }
 
-    //范型测试
     @Test
     public void giveGenericClassReturnStringClassBy1()
     {

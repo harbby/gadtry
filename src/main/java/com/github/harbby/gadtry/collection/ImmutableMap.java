@@ -51,53 +51,76 @@ public abstract class ImmutableMap<K, V>
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3), EntryNode.checkOf(k4, v4)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3), EntryNode.of(k4, v4)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3), EntryNode.checkOf(k4, v4),
-                EntryNode.checkOf(k5, v5)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3), EntryNode.of(k4, v4),
+                EntryNode.of(k5, v5)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3),
-                EntryNode.checkOf(k4, v4), EntryNode.checkOf(k5, v5), EntryNode.checkOf(k6, v6)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3),
+                EntryNode.of(k4, v4), EntryNode.of(k5, v5), EntryNode.of(k6, v6)};
         return copyOfNodes(nodes);
     }
 
     public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3),
-                EntryNode.checkOf(k4, v4), EntryNode.checkOf(k5, v5), EntryNode.checkOf(k6, v6), EntryNode.checkOf(k7, v7)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3),
+                EntryNode.of(k4, v4), EntryNode.of(k5, v5), EntryNode.of(k6, v6), EntryNode.of(k7, v7)};
         return copyOfNodes(nodes);
     }
 
-    public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8)
+    public static <K, V> ImmutableMap<K, V> of(K k1, V v1,
+            K k2, V v2,
+            K k3, V v3,
+            K k4, V v4,
+            K k5, V v5,
+            K k6, V v6,
+            K k7, V v7,
+            K k8, V v8)
     {
         @SuppressWarnings("unchecked")
-        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.checkOf(k1, v1), EntryNode.checkOf(k2, v2), EntryNode.checkOf(k3, v3), EntryNode.checkOf(k4, v4),
-                EntryNode.checkOf(k5, v5), EntryNode.checkOf(k6, v6), EntryNode.checkOf(k7, v7), EntryNode.checkOf(k8, v8)};
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3), EntryNode.of(k4, v4),
+                EntryNode.of(k5, v5), EntryNode.of(k6, v6), EntryNode.of(k7, v7), EntryNode.of(k8, v8)};
+        return copyOfNodes(nodes);
+    }
+
+    public static <K, V> ImmutableMap<K, V> of(K k1, V v1,
+            K k2, V v2,
+            K k3, V v3,
+            K k4, V v4,
+            K k5, V v5,
+            K k6, V v6,
+            K k7, V v7,
+            K k8, V v8,
+            K k9, V v9)
+    {
+        @SuppressWarnings("unchecked")
+        EntryNode<K, V>[] nodes = new EntryNode[] {EntryNode.of(k1, v1), EntryNode.of(k2, v2), EntryNode.of(k3, v3), EntryNode.of(k4, v4),
+                EntryNode.of(k5, v5), EntryNode.of(k6, v6), EntryNode.of(k7, v7), EntryNode.of(k8, v8), EntryNode.of(k9, v9)};
         return copyOfNodes(nodes);
     }
 
@@ -526,7 +549,7 @@ public abstract class ImmutableMap<K, V>
         @Override
         public Set<Entry<K, V>> entrySet()
         {
-            return ImmutableSet.of(EntryNode.checkOf(key, value));
+            return ImmutableSet.of(EntryNode.of(key, value));
         }
     }
 
@@ -632,7 +655,7 @@ public abstract class ImmutableMap<K, V>
         private final V value;
         private EntryNode<K, V> next;
 
-        private static <K, V> EntryNode<K, V> checkOf(K key, V value)
+        private static <K, V> EntryNode<K, V> of(K key, V value)
         {
             return new EntryNode<>(
                     requireNonNull(key, "key is null"),
@@ -703,7 +726,7 @@ public abstract class ImmutableMap<K, V>
 
         public Builder<K, V> put(K k, V v)
         {
-            nodes.add(EntryNode.checkOf(k, v));
+            nodes.add(EntryNode.of(k, v));
             return this;
         }
 
@@ -711,7 +734,7 @@ public abstract class ImmutableMap<K, V>
         {
             nodes.ensureCapacity(map.size());
             for (Entry<K, V> entry : map.entrySet()) {
-                nodes.add(EntryNode.checkOf(entry.getKey(), entry.getValue()));
+                nodes.add(EntryNode.of(entry.getKey(), entry.getValue()));
             }
             return this;
         }

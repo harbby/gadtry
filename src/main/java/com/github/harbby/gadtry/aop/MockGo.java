@@ -16,10 +16,10 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
-import com.github.harbby.gadtry.aop.codegen.Proxy;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.aop.mockgo.MockGoAnnotations;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
+import com.github.harbby.gadtry.aop.proxy.Proxy;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Throwables;
@@ -28,8 +28,7 @@ import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
 import java.lang.reflect.Method;
 
-import static com.github.harbby.gadtry.aop.codegen.Proxy.getInvocationHandler;
-import static com.github.harbby.gadtry.base.Strings.lowerFirst;
+import static com.github.harbby.gadtry.aop.proxy.Proxy.getInvocationHandler;
 
 /**
  * MockGo
@@ -52,7 +51,7 @@ public class MockGo
             return spy(superclass, target);
         }
         catch (Exception e) {
-            return Throwables.throwValueThrowable(e);
+            throw Throwables.throwThrowable(e);
         }
     }
 
@@ -83,12 +82,9 @@ public class MockGo
         AopInvocationHandler aopInvocationHandler = new MockGoAopInvocationHandler(target);
         ProxyRequest<T> request = ProxyRequest.builder(superclass)
                 .setInvocationHandler(aopInvocationHandler)
-                .setTarget(target)
                 .setClassLoader(superclass.getClassLoader())
                 .build();
-        T proxy = Proxy.proxy(request);
-        aopInvocationHandler.setProxyClass(proxy.getClass());
-        return proxy;
+        return Proxy.proxy(request);
     }
 
     public static <T> T mock(Class<T> superclass)
@@ -99,8 +95,7 @@ public class MockGo
                 .setInvocationHandler(aopInvocationHandler)
                 .build();
         T proxy = Proxy.proxy(request);
-        aopInvocationHandler.setProxyClass(proxy.getClass());
-        when(proxy.toString()).thenReturn(lowerFirst(superclass.getSimpleName()));
+        when(proxy.toString()).thenReturn(superclass.getSimpleName());
         return proxy;
     }
 

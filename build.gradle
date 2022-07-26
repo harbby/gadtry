@@ -44,13 +44,16 @@ tasks.named("processResources") {
 tasks.withType(org.gradle.jvm.tasks.Jar) { duplicatesStrategy = 'include' }
 
 dependencies {
-  implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
-  implementation group: 'net.java.dev.jna', name: 'jna-platform-jpms', version: '5.9.0'
+  compileOnly group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
+  compileOnly group: 'net.java.dev.jna', name: 'jna-platform-jpms', version: '5.9.0'
 
+  implementation 'org.ow2.asm:asm:9.3'
+
+  testImplementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
   testImplementation group: 'junit', name: 'junit', version: '4.12'
   testImplementation group: "org.openjdk.jmh", name: "jmh-core", version: "1.32"
   testImplementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
-  //testAnnotationProcessor group: "org.openjdk.jmh", name: "jmh-generator-annprocess", version: "1.32"
+  testAnnotationProcessor group: "org.openjdk.jmh", name: "jmh-generator-annprocess", version: "1.32"
 }
 
 jar {
@@ -120,7 +123,7 @@ jacocoTestReport {
 check.dependsOn jacocoTestReport
 
 task checkstyle(type: Checkstyle) {
-  configFile = file("${rootProject.projectDir}/src/checkstyle/facebook_checks.xml")
+  configFile = rootProject.file("src/checkstyle/facebook_checks.xml")
   source 'src'
   include '**/*.java'
   exclude '**/gen/**', '**/test/**', '**/build/**', '**/module-info.java'

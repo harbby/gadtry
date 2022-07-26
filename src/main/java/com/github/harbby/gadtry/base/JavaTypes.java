@@ -117,7 +117,7 @@ public class JavaTypes
         }
         else if (type instanceof GenericArrayType) {
             Class<?> typeToClass = typeToClass(((GenericArrayType) type).getGenericComponentType());
-            return Arrays.getArrayClass(typeToClass);
+            return ArrayUtil.getArrayClass(typeToClass);
         }
         throw new IllegalArgumentException("Cannot convert type to class");
     }

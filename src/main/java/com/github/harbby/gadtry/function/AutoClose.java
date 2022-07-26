@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.function;
 
 import java.io.Closeable;
 
+@FunctionalInterface
 public interface AutoClose
         extends Closeable
 {

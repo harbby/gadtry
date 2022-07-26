@@ -32,15 +32,17 @@ public class Streams
     private Streams() {}
 
     /**
-     * @param start 计数从 start 开始.默认是从 0 开始. 例如range(5)等价于range(0,5)
-     * @param stop  计数到 stop 结束,但不包括 stop
-     * @param step  步长,默认为1
+     * between [start,end)
+     *
+     * @param start start number
+     * @param end   end number
+     * @param step  default 1
      * @return IntStream
      */
-    public static IntStream range(final int start, int stop, int step)
+    public static IntStream range(final int start, int end, int step)
     {
         checkState(step != 0, "step must not 0");
-        int limit = (stop - start + Math.abs(step) - 1) / step;
+        int limit = (end - start + Math.abs(step) - 1) / step;
         if (limit <= 0) {
             return IntStream.empty();
         }
@@ -69,13 +71,13 @@ public class Streams
         return StreamSupport.intStream(a1, false);
     }
 
-    public static IntStream range(final int start, int stop)
+    public static IntStream range(final int start, int end)
     {
-        return range(start, stop, 1);
+        return range(start, end, 1);
     }
 
-    public static IntStream range(int stop)
+    public static IntStream range(int end)
     {
-        return range(0, stop, 1);
+        return range(0, end, 1);
     }
 }

@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.aop.event;
 
-import com.github.harbby.gadtry.aop.MethodSignature;
+import java.lang.reflect.Method;
 
 public interface Before
 {
@@ -27,7 +27,7 @@ public interface Before
         return getMethod().getName();
     }
 
-    MethodSignature getMethod();
+    Method getMethod();
 
     @SuppressWarnings("unchecked")
     default <V> V getArgument(int index)
@@ -37,12 +37,12 @@ public interface Before
 
     Object[] getArgs();
 
-    public static Before of(MethodSignature method, Object[] args)
+    public static Before of(Method method, Object[] args)
     {
         return new Before()
         {
             @Override
-            public MethodSignature getMethod()
+            public Method getMethod()
             {
                 return method;
             }

@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,28 +34,28 @@ public class LazysTest
     public void goLazyOneRunTest()
     {
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        final Supplier<List<String>> lazy = Lazys.goLazy(() -> {
+        final Supplier<List<String>> lazy = Lazys.of(() -> {
             atomicInteger.getAndIncrement(); //i++
             return new ArrayList<>();
         });
 
         Assert.assertTrue(lazy.get() == lazy.get());
         Assert.assertEquals(1, atomicInteger.get());
-        Assert.assertTrue(lazy.toString().contains("goLazy"));
+        Assert.assertTrue(lazy.toString().contains("Lazys.of"));
     }
 
     @Test
     public void getLazyGiveLazySupplier()
     {
         Lazys.LazySupplier<String> lazySupplier = new Lazys.LazySupplier<>(() -> "done");
-        Assert.assertEquals(Lazys.goLazy(lazySupplier).get(), "done");
+        Assert.assertEquals(Lazys.of(lazySupplier).get(), "done");
     }
 
     @Test
     public void goLazySerializableTest()
             throws IOException, ClassNotFoundException
     {
-        final Supplier<List<String>> lazy = Lazys.goLazy(() -> {
+        final Supplier<List<String>> lazy = Lazys.of((Supplier<List<String>> & Serializable) () -> {
             return Arrays.asList("1", "2", "3");
         });
 
@@ -71,10 +70,10 @@ public class LazysTest
     public void goLazy2SerializableTest()
             throws IOException, ClassNotFoundException
     {
-        final Function1<String, List<String>> lazy = Lazys.goLazy(init -> Arrays.asList(init));
+        final Function<String, List<String>> lazy = Lazys.of((Function<String, List<String>> & Serializable) init -> Arrays.asList(init));
 
-        byte[] bytes = Serializables.serialize(lazy);
-        final Function1<String, List<String>> serializableLazy = Serializables.byteToObject(bytes);
+        byte[] bytes = Serializables.serialize((Serializable) lazy);
+        final Function<String, List<String>> serializableLazy = Serializables.byteToObject(bytes);
 
         Assert.assertEquals(Arrays.asList("init"), serializableLazy.apply("init"));
         Assert.assertEquals(serializableLazy.apply("a1"), serializableLazy.apply("a2"));
@@ -84,20 +83,20 @@ public class LazysTest
     public void goLazyArgsTest()
             throws IOException
     {
-        final Function1<String, List<String>> lazy = Lazys.goLazy(init -> Arrays.asList(init));
+        final Function<String, List<String>> lazy = Lazys.of((Function<String, List<String>> & Serializable) init -> Arrays.asList(init));
 
         Assert.assertEquals(Arrays.asList("init"), lazy.apply("init"));
         Assert.assertTrue(lazy.apply("a1") == lazy.apply("a2"));
         Assert.assertTrue(Serializables.serialize((Serializable) lazy).length > 0);
-        Assert.assertTrue(Lazys.goLazy(lazy).apply("a3") == lazy.apply("a5"));
-        Assert.assertTrue(lazy.toString().contains("goLazy"));
+        Assert.assertTrue(Lazys.of(lazy).apply("a3") == lazy.apply("a5"));
+        Assert.assertTrue(lazy.toString().contains("Lazys.of"));
     }
 
     @Test
     public void forkFunctionCreateTest()
     {
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        final Function<String, List<String>> lazy = Lazys.goLazy(init -> {
+        final Function<String, List<String>> lazy = Lazys.of(init -> {
             atomicInteger.getAndIncrement();
             try {
                 TimeUnit.MILLISECONDS.sleep(200);
@@ -114,7 +113,7 @@ public class LazysTest
     public void forkCreatorCreateTest()
     {
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        final Supplier<List<String>> lazy = Lazys.goLazy(() -> {
+        final Supplier<List<String>> lazy = Lazys.of(() -> {
             atomicInteger.getAndIncrement();
             try {
                 TimeUnit.MILLISECONDS.sleep(100);

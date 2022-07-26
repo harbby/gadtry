@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.base;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -26,11 +27,6 @@ class JavaModuleExtPlatformImpl
     static {
         try {
             addExportsOrOpensJavaModules(Class.forName("jdk.internal.ref.Cleaner"), Platform.class, false);
-        }
-        catch (Exception ignored) {
-        }
-        try {
-            addExportsOrOpensJavaModules(Class.forName("sun.nio.ch.DirectBuffer"), Platform.class, false);
         }
         catch (Exception ignored) {
         }
@@ -55,13 +51,20 @@ class JavaModuleExtPlatformImpl
     }
 
     @Override
+    public Class<?> defineHiddenClass(Class<?> buddyClass, byte[] classBytes, boolean initialize)
+            throws IllegalAccessException
+    {
+        //Platform.getJavaVersion() >= 15
+        Platform.class.getModule().addReads(buddyClass.getModule());
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandles.Lookup prvlookup = MethodHandles.privateLookupIn(buddyClass, lookup);
+        return prvlookup.defineHiddenClass(classBytes, initialize).lookupClass();
+    }
+
+    @Override
     public void freeDirectBuffer(ByteBuffer buffer)
     {
-        // --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-        // --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
-        sun.nio.ch.DirectBuffer directBuffer = (sun.nio.ch.DirectBuffer) buffer;
-        jdk.internal.ref.Cleaner cleaner = directBuffer.cleaner();
-        cleaner.clean();
+        Platform.unsafe.invokeCleaner(buffer);
     }
 
     @Override
@@ -69,6 +72,20 @@ class JavaModuleExtPlatformImpl
     {
         // --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
         return jdk.internal.ref.Cleaner.create(ob, thunk);
+    }
+
+    @Override
+    public boolean isDirectMemoryPageAligned()
+    {
+        // jdk.internal.misc.VM.isDirectMemoryPageAligned();
+        try {
+            Class<?> aClass = Class.forName("jdk.internal.misc.VM");
+            Field field = aClass.getDeclaredField("pageAlignDirectMemory");
+            return Platform.unsafe.getBoolean(aClass, Platform.unsafe.staticFieldOffset(field));
+        }
+        catch (ClassNotFoundException | NoSuchFieldException e) {
+            throw new PlatFormUnsupportedOperation(e);
+        }
     }
 
     @Override

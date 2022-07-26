@@ -55,8 +55,6 @@ public class ArrayType
      * Returns a {@code Type} object representing the component type
      * of this array.
      *
-     * @return a {@code Type} object representing the component type
-     * of this array
      * @since 1.5
      */
     public Type getGenericComponentType()

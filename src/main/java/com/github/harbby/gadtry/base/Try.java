@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.function.AutoClose;
-import com.github.harbby.gadtry.function.exception.Runnable;
-import com.github.harbby.gadtry.function.exception.Supplier;
+import com.github.harbby.gadtry.function.Runnable;
+import com.github.harbby.gadtry.function.Supplier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -141,7 +141,9 @@ public class Try
         private final Supplier<T, java.lang.Throwable> runnable;
         private Consumer<T> onSuccess;
         private java.lang.Runnable onFinally;
-        private Function<Throwable, T> onError = Throwables::throwValueThrowable;
+        private Function<Throwable, T> onError = e -> {
+            throw Throwables.throwThrowable(e);
+        };
 
         public ValueOfTryCatcher(Supplier<T, Throwable> runnable)
         {

@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.aop.AopGo;
-import com.github.harbby.gadtry.function.Function1;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,9 +28,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Arrays.PRIMITIVE_TYPES;
+import static com.github.harbby.gadtry.base.ArrayUtil.PRIMITIVE_TYPES;
 import static com.github.harbby.gadtry.base.JavaTypes.getMethodSignature;
 import static com.github.harbby.gadtry.base.Try.noCatch;
 
@@ -211,7 +211,7 @@ public class JavaTypesTest
     @Test
     public void getClassGenericString()
     {
-        String check = "Ljava/lang/Object;Lcom/github/harbby/gadtry/function/Function1<Ljava/util/Map<Ljava/lang/String;" +
+        String check = "Ljava/lang/Object;Ljava/util/function/Function<Ljava/util/Map<Ljava/lang/String;" +
                 "Ljava/lang/Integer;>;Ljava/lang/String;>;Ljava/util/concurrent/Callable<Ljava/lang/Double;>;";
         Assert.assertEquals(check,
                 JavaTypes.getClassGenericString(GenericClassTest.class));
@@ -221,7 +221,7 @@ public class JavaTypesTest
     public void getClassGenericTypes()
     {
         List<Type> types = JavaTypes.getClassGenericTypes(GenericClassTest.class);
-        Assert.assertEquals(types.get(1), JavaTypes.make(Function1.class, new Type[] {JavaTypes.makeMapType(Map.class, String.class, Integer.class), String.class}, null));
+        Assert.assertEquals(types.get(1), JavaTypes.make(Function.class, new Type[] {JavaTypes.makeMapType(Map.class, String.class, Integer.class), String.class}, null));
     }
 
     @Test
@@ -246,7 +246,7 @@ public class JavaTypesTest
     }
 
     private static class GenericClassTest
-            implements Function1<Map<String, Integer>, String>, Callable<Double>
+            implements Function<Map<String, Integer>, String>, Callable<Double>
     {
         @Override
         public Double call()

@@ -15,97 +15,62 @@
  */
 package com.github.harbby.gadtry.collection.tuple;
 
-import java.util.Objects;
-
-public class Tuple2<F1, F2>
-        implements Tuple
+public interface Tuple2<K, V>
+        extends Tuple
 {
-    public F1 f1;
-    public F2 f2;
-
-    public Tuple2(F1 f1, F2 f2)
+    public static <K, V> Tuple2<K, V> of(K k, V v)
     {
-        this.f1 = f1;
-        this.f2 = f2;
+        return new JTuple2<>(k, v);
     }
 
-    public static <F1, F2> Tuple2<F1, F2> of(F1 f1, F2 f2)
+    public K key();
+
+    public V value();
+
+    default K f1()
     {
-        return new Tuple2<>(f1, f2);
+        return key();
     }
 
-    public F1 f1()
+    default V f2()
     {
-        return f1;
+        return value();
     }
 
-    public F2 f2()
+    public void setKey(K k);
+
+    public void setValue(V v);
+
+    default void setF1(K k)
     {
-        return f2;
+        this.setKey(k);
     }
 
-    public F1 key()
+    default void setF2(V v)
     {
-        return f1;
-    }
-
-    public F2 value()
-    {
-        return f2;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(f1, f2);
+        this.setValue(v);
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj) {
-            return true;
-        }
-
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
-        }
-
-        Tuple2 other = (Tuple2) obj;
-        return Objects.equals(this.f1, other.f1) &&
-                Objects.equals(this.f2, other.f2);
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format("(%s, %s)", f1, f2);
-    }
-
-    @Override
-    public int getArity()
+    default int getArity()
     {
         return 2;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T getField(int pos)
+    public default <T> T getField(int pos)
     {
         switch (pos) {
             case 1:
-                return (T) f1;
+                return (T) key();
             case 2:
-                return (T) f2;
+                return (T) value();
             default:
                 throw new IndexOutOfBoundsException(String.valueOf(pos));
         }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Tuple2<F1, F2> copy()
-    {
-        return new Tuple2<>(f1, f2);
-    }
+    public Tuple2<K, V> copy();
 }

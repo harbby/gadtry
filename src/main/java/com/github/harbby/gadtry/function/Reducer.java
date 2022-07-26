@@ -15,10 +15,8 @@
  */
 package com.github.harbby.gadtry.function;
 
-import java.io.Serializable;
-
+@FunctionalInterface
 public interface Reducer<V>
-        extends Serializable
 {
     V reduce(V input1, V input2);
 }

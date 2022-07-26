@@ -15,10 +15,9 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.function.Creator;
-import com.github.harbby.gadtry.function.Function1;
-
 import java.io.Serializable;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -26,39 +25,68 @@ public class Lazys
 {
     private Lazys() {}
 
-    private static <T> Creator<T> memoize(Creator<T> delegate)
+    public static <T> Supplier<T> of(Supplier<T> delegate)
     {
         return delegate instanceof LazySupplier ?
                 delegate :
                 new LazySupplier<>(requireNonNull(delegate));
     }
 
-    public static <T> Creator<T> of(Creator<T> delegate)
+    public static <F1, R> Function<F1, R> of(Function<F1, R> lambda)
     {
-        return memoize(delegate);
-    }
-
-    public static <T> Creator<T> goLazy(Creator<T> delegate)
-    {
-        return memoize(delegate);
-    }
-
-    public static <F1, R> Function1<F1, R> goLazy(Function1<F1, R> lambda)
-    {
-        return lambda instanceof LazyFunction1 ?
+        return lambda instanceof LazyFunction ?
                 lambda :
-                new LazyFunction1<>(requireNonNull(lambda));
+                new LazyFunction<>(requireNonNull(lambda));
     }
 
-    public static class LazyFunction1<F1, R>
-            implements Serializable, Function1<F1, R>
+    public static <R> Function<Supplier<R>, R> of()
     {
-        private final Function1<F1, R> delegate;
+        return new LazySupplier2<>();
+    }
+
+    public static class LazySupplier2<T>
+            implements Function<Supplier<T>, T>, Serializable
+    {
+        private static final long serialVersionUID = 7286040962786903681L;
+        private transient volatile boolean initialized;
+        private transient T value;
+
+        private LazySupplier2() {}
+
+        @Override
+        public T apply(Supplier<T> tCreator)
+        {
+            if (!this.initialized) {
+                synchronized (this) {
+                    if (!this.initialized) {
+                        T t = tCreator.get();
+                        this.value = t;
+                        // StoreStore
+                        this.initialized = true;
+                        return t;
+                    }
+                }
+            }
+            // LoadLoad
+            return this.value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Lazys.of()";
+        }
+    }
+
+    public static class LazyFunction<F1, R>
+            implements Serializable, Function<F1, R>
+    {
+        private final Function<F1, R> delegate;
         private transient volatile boolean initialized;
         private transient R value;
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 3059649382149812183L;
 
-        LazyFunction1(Function1<F1, R> delegate)
+        LazyFunction(Function<F1, R> delegate)
         {
             this.delegate = delegate;
         }
@@ -71,31 +99,32 @@ public class Lazys
                     if (!this.initialized) {
                         R t = this.delegate.apply(f1);
                         this.value = t;
-                        this.initialized = true;  //Atomic operation(原子操作)
+                        // StoreStore
+                        this.initialized = true;
                         return t;
                     }
                 }
             }
-
+            // LoadLoad
             return this.value;
         }
 
         @Override
         public String toString()
         {
-            return "Lazys.goLazy(" + this.delegate + ")";
+            return "Lazys.of(" + this.delegate + ")";
         }
     }
 
     public static class LazySupplier<T>
-            implements Serializable, Creator<T>
+            implements Serializable, Supplier<T>
     {
-        private final Creator<T> delegate;
+        private final Supplier<T> delegate;
         private transient volatile boolean initialized;
         private transient T value;
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 7273112384936327520L;
 
-        LazySupplier(Creator<T> delegate)
+        LazySupplier(Supplier<T> delegate)
         {
             this.delegate = delegate;
         }
@@ -107,19 +136,20 @@ public class Lazys
                     if (!this.initialized) {
                         T t = this.delegate.get();
                         this.value = t;
-                        this.initialized = true;  //Atomic operation(原子操作)
+                        // StoreStore
+                        this.initialized = true;
                         return t;
                     }
                 }
             }
-
+            // LoadLoad
             return this.value;
         }
 
         @Override
         public String toString()
         {
-            return "Lazys.goLazy(" + this.delegate + ")";
+            return "Lazys.of(" + this.delegate + ")";
         }
     }
 }

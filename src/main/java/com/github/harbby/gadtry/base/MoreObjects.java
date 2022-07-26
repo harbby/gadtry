@@ -20,7 +20,6 @@ import com.github.harbby.gadtry.collection.MutableSet;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,7 +31,7 @@ public class MoreObjects
     private MoreObjects() {}
 
     /**
-     * copy(浅) source object field data to target Object
+     * copy source object field data to target Object
      *
      * @param modelClass copy model
      * @param source     source object
@@ -116,34 +115,34 @@ public class MoreObjects
         }
     }
 
-    public static <T> T getOrDefault(T value, T defaultValue)
+    public static <T> T getNonNull(T value, T nonNullValue)
     {
         if (value == null) {
-            return defaultValue;
+            return requireNonNull(nonNullValue, "nonNullValue is null");
         }
         return value;
     }
 
-    public static <T> T getOrDefault(T value, Supplier<T> defaultValue)
+    public static <T> T getNonNull(T value, Supplier<T> defaultValue)
     {
-        requireNonNull(defaultValue, "defaultValue is null");
         if (value == null) {
-            return defaultValue.get();
+            requireNonNull(defaultValue, "Supplier is null");
+            return requireNonNull(defaultValue.get(), "Supplier.get() is null");
         }
         return value;
     }
 
     @SafeVarargs
-    public static <T> Optional<T> getFirstNonNull(T... values)
+    public static <T> T getFirstNonNull(T... values)
     {
         requireNonNull(values, "Both parameters are null");
         for (T value : values) {
             if (value != null) {
-                return Optional.of(value);
+                return value;
             }
         }
 
-        return Optional.empty();
+        throw new NullPointerException("values all null");
     }
 
     public static ToStringBuilder toStringHelper(Object object)

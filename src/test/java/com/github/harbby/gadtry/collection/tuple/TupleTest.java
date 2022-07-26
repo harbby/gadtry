@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class TupleTest
 {
-    private final Class<?>[] tupleClass = new Class[] {Tuple1.class, Tuple2.class, Tuple3.class,
+    private final Class<?>[] tupleClass = new Class[] {Tuple1.class, JTuple2.class, Tuple3.class,
             Tuple4.class, Tuple5.class, Tuple6.class, Tuple7.class, Tuple8.class, Tuple9.class};
 
     @Test

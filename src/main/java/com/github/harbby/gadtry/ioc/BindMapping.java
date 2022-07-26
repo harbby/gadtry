@@ -17,35 +17,36 @@ package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.base.Lazys;
 import com.github.harbby.gadtry.collection.MutableMap;
-import com.github.harbby.gadtry.function.Creator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class BindMapping
 {
-    private final Map<Class<?>, Creator<?>> bindMapping;
+    private final Map<Class<?>, Supplier<?>> bindMapping;
 
-    private BindMapping(Map<Class<?>, Creator<?>> bindMapping)
+    private BindMapping(Map<Class<?>, Supplier<?>> bindMapping)
     {
         this.bindMapping = bindMapping;
     }
 
-    public <T> Creator<T> get(Class<T> type)
+    @SuppressWarnings("unchecked")
+    public <T> Supplier<T> get(Class<T> type)
     {
-        return getOrDefault(type, null);
+        return (Supplier<T>) bindMapping.get(type);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Creator<T> getOrDefault(Class<T> type, Creator<T> defaultValue)
+    public <T> Supplier<T> getOrDefault(Class<T> type, Supplier<T> defaultValue)
     {
-        return (Creator<T>) bindMapping.getOrDefault(type, defaultValue);
+        return (Supplier<T>) bindMapping.getOrDefault(type, defaultValue);
     }
 
-    public Map<Class<?>, Creator<?>> getAllBeans()
+    public Map<Class<?>, Supplier<?>> getAllBeans()
     {
         return MutableMap.copy(bindMapping);
     }
@@ -62,11 +63,11 @@ public class BindMapping
 
     static class Builder
     {
-        private final Map<Class<?>, Creator<?>> map = new HashMap<>();
+        private final Map<Class<?>, Supplier<?>> map = new HashMap<>();
 
-        public <T> Builder bind(Class<T> type, Creator<? extends T> creator)
+        public <T> Builder bind(Class<T> type, Supplier<? extends T> creator)
         {
-            Creator<?> oldCreator = map.get(type);
+            Supplier<?> oldCreator = map.get(type);
             if (oldCreator != null) {
                 throw new InjectorException(" Unable to create IocFactory, see the following errors:\n" +
                         "A binding to " + type.toString() + " was already configured at " + oldCreator);
@@ -75,7 +76,7 @@ public class BindMapping
             return this;
         }
 
-        <T> void bindUpdate(Class<T> type, Creator<? extends T> creator)
+        <T> void bindUpdate(Class<T> type, Supplier<? extends T> creator)
         {
             map.put(type, creator);
         }
@@ -101,7 +102,7 @@ public class BindMapping
             @Override
             public <T> void bind(Class<T> key, T instance)
             {
-                builder.bind(key, Lazys.goLazy(() -> iocHandler.onCreate(key, instance)));
+                builder.bind(key, Lazys.of(() -> iocHandler.onCreate(key, instance)));
             }
 
             @Override
@@ -113,46 +114,46 @@ public class BindMapping
                     public void withSingle()
                     {
                         checkState(!key.isInterface(), key + "key is Interface");
-                        Creator<T> creator = () -> iocHandler.onCreate(key, context.getByNew(key));
-                        builder.bind(key, Lazys.goLazy(creator));
+                        Supplier<T> creator = () -> iocHandler.onCreate(key, context.getByNew(key));
+                        builder.bind(key, Lazys.of(creator));
                     }
 
                     @Override
                     public void noScope()
                     {
                         checkState(!key.isInterface(), key + "key is Interface");
-                        Creator<T> creator = () -> iocHandler.onCreate(key, context.getByNew(key));
+                        Supplier<T> creator = () -> iocHandler.onCreate(key, context.getByNew(key));
                         builder.bind(key, creator);
                     }
 
                     @Override
                     public Scope by(Class<? extends T> createClass)
                     {
-                        Creator<T> creator = () -> iocHandler.onCreate(key, context.getByNew(createClass));
+                        Supplier<T> creator = () -> iocHandler.onCreate(key, context.getByNew(createClass));
                         builder.bind(key, creator);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(creator));
+                        return () -> builder.bindUpdate(key, Lazys.of(creator));
                     }
 
                     @Override
                     public void byInstance(T instance)
                     {
-                        builder.bind(key, Lazys.goLazy(() -> iocHandler.onCreate(key, instance)));
+                        builder.bind(key, Lazys.of(() -> iocHandler.onCreate(key, instance)));
                     }
 
                     @Override
-                    public Scope byCreator(Creator<? extends T> creator)
+                    public Scope byCreator(Supplier<? extends T> creator)
                     {
-                        Creator<? extends T> proxyCreator = () -> iocHandler.onCreate(key, creator.get());
+                        Supplier<? extends T> proxyCreator = () -> iocHandler.onCreate(key, creator.get());
                         builder.bind(key, proxyCreator);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(proxyCreator));
+                        return () -> builder.bindUpdate(key, Lazys.of(proxyCreator));
                     }
 
                     @Override
-                    public Scope byCreator(Class<? extends Creator<T>> creatorClass)
+                    public Scope byCreator(Class<? extends Supplier<T>> creatorClass)
                     {
-                        Creator<? extends T> proxyCreator = () -> iocHandler.onCreate(key, context.getByNew(creatorClass).get());
+                        Supplier<? extends T> proxyCreator = () -> iocHandler.onCreate(key, context.getByNew(creatorClass).get());
                         builder.bind(key, proxyCreator);
-                        return () -> builder.bindUpdate(key, Lazys.goLazy(proxyCreator));
+                        return () -> builder.bindUpdate(key, Lazys.of(proxyCreator));
                     }
                 };
             }

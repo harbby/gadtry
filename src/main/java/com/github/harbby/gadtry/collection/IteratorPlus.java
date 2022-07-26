@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.base.Iterators;
-import com.github.harbby.gadtry.function.Function1;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -62,7 +61,7 @@ public interface IteratorPlus<E>
         return Iterators.flatMap(this, flatMap);
     }
 
-    default IteratorPlus<E> filter(Function1<E, Boolean> filter)
+    default IteratorPlus<E> filter(Function<E, Boolean> filter)
     {
         return Iterators.filter(this, filter);
     }

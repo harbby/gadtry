@@ -15,17 +15,17 @@
  */
 package com.github.harbby.gadtry.aop.aopgo;
 
-import com.github.harbby.gadtry.aop.MethodSignature;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.base.JavaTypes;
-import com.github.harbby.gadtry.function.Function1;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.aop.codegen.Proxy.getInvocationHandler;
+import static com.github.harbby.gadtry.aop.proxy.Proxy.getInvocationHandler;
 
 /**
  * Method Selector
@@ -33,7 +33,7 @@ import static com.github.harbby.gadtry.aop.codegen.Proxy.getInvocationHandler;
 public class PointcutBuilder<T>
 {
     private final T proxy;
-    protected final List<Function1<MethodSignature, Boolean>> filters = new ArrayList<>();
+    protected final List<Function<Method, Boolean>> filters = new ArrayList<>();
 
     public PointcutBuilder(T proxy)
     {
@@ -45,7 +45,7 @@ public class PointcutBuilder<T>
         AopInvocationHandler aopInvocationHandler = getInvocationHandler(proxy);
         aopInvocationHandler.setHandler((proxy, method, args) -> {
             aopInvocationHandler.initHandler();
-            filters.add(method1 -> method1.getMethod() == method);
+            filters.add(method1 -> method1 == method);
             return JavaTypes.getClassInitValue(method.getReturnType());
         });
         return proxy;
@@ -84,7 +84,7 @@ public class PointcutBuilder<T>
         return this;
     }
 
-    public PointcutBuilder<T> whereMethod(Function1<MethodSignature, Boolean> whereMethod)
+    public PointcutBuilder<T> whereMethod(Function<Method, Boolean> whereMethod)
     {
         filters.add(whereMethod);
         return this;
@@ -100,7 +100,7 @@ public class PointcutBuilder<T>
     {
     }
 
-    List<Function1<MethodSignature, Boolean>> build()
+    List<Function<Method, Boolean>> build()
     {
         return filters;
     }

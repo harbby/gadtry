@@ -15,13 +15,13 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.graph.Graph;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class IocFactoryImpl
         implements IocFactory
@@ -44,7 +44,7 @@ public class IocFactoryImpl
     }
 
     @Override
-    public <T> Creator<T> getCreator(Class<T> driver)
+    public <T> Supplier<T> getCreator(Class<T> driver)
     {
         return () -> getInstance(driver);
     }
@@ -93,13 +93,13 @@ public class IocFactoryImpl
                     public void byInstance(T instance) {}
 
                     @Override
-                    public Scope byCreator(Creator<? extends T> creator)
+                    public Scope byCreator(Supplier<? extends T> creator)
                     {
                         return () -> {};
                     }
 
                     @Override
-                    public Scope byCreator(Class<? extends Creator<T>> creatorClass)
+                    public Scope byCreator(Class<? extends Supplier<T>> creatorClass)
                     {
                         parserDep(key, creatorClass);
                         return () -> {};

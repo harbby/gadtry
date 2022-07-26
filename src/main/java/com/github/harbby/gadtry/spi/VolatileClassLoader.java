@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 import static com.github.harbby.gadtry.spi.SecurityClassLoader.findPlatformClassLoader;
 import static java.util.Objects.requireNonNull;
 
@@ -93,7 +92,12 @@ public class VolatileClassLoader
     {
         // first use SPI class loader
         URL url = spiClassLoader.getResource(name);
-        return getOrDefault(url, super.getResource(name));
+        if (url == null) {
+            return super.getResource(name);
+        }
+        else {
+            return url;
+        }
     }
 
     @Override

@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Platform;
-import com.github.harbby.gadtry.function.Promise;
 
 import java.io.EOFException;
 import java.io.IOException;

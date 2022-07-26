@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.cache;
 
-import com.github.harbby.gadtry.function.exception.Supplier;
+import com.github.harbby.gadtry.function.Supplier;
 
 import java.util.Map;
 

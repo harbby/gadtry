@@ -20,9 +20,10 @@ import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.aop.Aspect;
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.aopgo.MockBinder;
-import com.github.harbby.gadtry.aop.codegen.Proxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
 import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
+import com.github.harbby.gadtry.aop.proxy.Proxy;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
+import com.github.harbby.gadtry.base.MoreObjects;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.BindMapping;
 import com.github.harbby.gadtry.ioc.IocFactory;
@@ -31,8 +32,6 @@ import com.github.harbby.gadtry.ioc.IocHandler;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.github.harbby.gadtry.base.MoreObjects.getOrDefault;
 
 public class GadTry
 {
@@ -74,7 +73,7 @@ public class GadTry
                 public <T> MockBinder<T> bind(Class<T> superclass)
                 {
                     return (MockBinder<T>) pointcutMap.computeIfAbsent(superclass, (k) -> {
-                        ClassLoader loader = getOrDefault(superclass.getClassLoader(), ProxyAccess.class.getClassLoader());
+                        ClassLoader loader = MoreObjects.getNonNull(superclass.getClassLoader(), ProxyAccess.class.getClassLoader());
                         final AopInvocationHandler aopInvocationHandler = new AopInvocationHandler();
 
                         ProxyRequest<T> request = ProxyRequest.builder(superclass)

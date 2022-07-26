@@ -16,52 +16,29 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.aop.codegen.JavassistProxy;
-import com.github.harbby.gadtry.aop.codegen.ProxyAccess;
+import com.github.harbby.gadtry.aop.model.Test1;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
+import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
+import com.github.harbby.gadtry.base.MoreObjects;
+import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JavassistProxyV2Test
 {
-    private static class Test1
-    {
-        private final String name;
-
-        public Test1(String name)
-        {
-            this.name = name;
-        }
-
-        public String name()
-        {
-            return name;
-        }
-
-        public int age()
-        {
-            return 18;
-        }
-
-        public String getNameAndAge()
-        {
-            return name() + age();
-        }
-    }
-
     @Test
     public void javassistProxyV2Test()
     {
-        /**
-         * v2 method 名字加了前缀$_
-         * */
-        String name = "123123-1";
+        // v2 method 名字加了前缀$_
+        String name = "abc-";
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-        Test1 old = new Test1(name);
+        Test1 old = Test1.of(name);
         InvocationHandler handler = (proxy, method, args1) -> {
             System.out.println("before " + method.getName());
             if ("$_name".equals(method.getName())) {
@@ -75,10 +52,9 @@ public class JavassistProxyV2Test
         ProxyRequest<Test1> request = ProxyRequest.builder(Test1.class)
                 .setClassLoader(Test1.class.getClassLoader())
                 .setInvocationHandler(handler)
-                .enableV2()
-                .setTarget(old)
                 .build();
-        Test1 proxy = JavassistProxy.newProxyInstance(request);
+        Test1 proxy = ProxyFactory.getJavassistProxyV2().newProxyInstance(request);
+        MoreObjects.copyWriteObjectState(old.getClass(), old, proxy);
 
         Assert.assertEquals(18 - 1, proxy.age());
         Assert.assertEquals(name, proxy.name());
@@ -87,7 +63,7 @@ public class JavassistProxyV2Test
         System.out.println(proxy);
 
         //---支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "123123-117");   //上面带里age()，这里支持方法间this，所以生效了
+        Assert.assertEquals(proxy.getNameAndAge(), "abc-17");
     }
 
     @Test
@@ -96,7 +72,7 @@ public class JavassistProxyV2Test
         String name = "123123-1";
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-        Test1 old = new Test1(name);
+        Test1 old = Test1.of(name);
         InvocationHandler handler = (proxy, method, args1) -> {
             System.out.println("before " + method.getName());
             if ("name".equals(method.getName())) {
@@ -107,15 +83,14 @@ public class JavassistProxyV2Test
             }
             return method.invoke(old, args1);
         };
-        //使用v1代理，关闭this super支持，关闭方法间this调用支持
+        //使用v1代理，不支持this super支持，不支持方法间this调用支持
         ProxyRequest<Test1> request = ProxyRequest.builder(Test1.class)
                 .setClassLoader(Test1.class.getClassLoader())
                 .addInterface(Serializable.class)
                 .setInvocationHandler(handler)
-                .setTarget(old)
                 .build();
         //Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class, Serializable.class);
-        Test1 proxy = JavassistProxy.newProxyInstance(request);
+        Test1 proxy = ProxyFactory.getJavassistProxy().newProxyInstance(request);
 
         Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
         Assert.assertEquals(name, proxy.name());
@@ -124,5 +99,65 @@ public class JavassistProxyV2Test
 
         //---不支持方法间this调用
         Assert.assertEquals(proxy.getNameAndAge(), "123123-118");  //虽然上面代理了age()方法，但是这里并未生效
+    }
+
+    @Test
+    public void extendsTest()
+    {
+        People proxy = new PeopleA();
+        Assert.assertEquals(proxy.age, proxy.getAge());
+        Assert.assertEquals(proxy.name, proxy.getName());
+        Assert.assertEquals(proxy.isActive, proxy.isActive());
+        Assert.assertEquals(proxy.list, proxy.getList());
+    }
+
+    @Test
+    public void v2proxyTest()
+    {
+        People people = new People();
+        InvocationHandler invocationHandler = (proxy, method, args) -> method.invoke(proxy, args);
+        ProxyRequest<People> request = ProxyRequest.builder(People.class)
+                .setInvocationHandler(invocationHandler)
+                .setClassLoader(getClass().getClassLoader())
+                .build();
+        People proxy = ProxyFactory.getJavassistProxyV2().newProxyInstance(request);
+        MoreObjects.copyWriteObjectState(People.class, people, proxy);
+        Assert.assertEquals(proxy.age, proxy.getAge());
+        Assert.assertEquals(proxy.name, proxy.getName());
+        Assert.assertEquals(proxy.isActive, proxy.isActive());
+        Assert.assertEquals(proxy.list, proxy.getList());
+    }
+
+    public static class PeopleA
+            extends People
+    {
+    }
+
+    public static class People
+    {
+        public final List<String> list = MutableList.of("1", "2");
+        protected final String name = "name";
+        final int age = 18;
+        private final boolean isActive = true;
+
+        public List<String> getList()
+        {
+            return list;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public int getAge()
+        {
+            return age;
+        }
+
+        public boolean isActive()
+        {
+            return isActive;
+        }
     }
 }
