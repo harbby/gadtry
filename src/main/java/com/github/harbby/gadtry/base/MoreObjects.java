@@ -15,12 +15,11 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.MutableSet;
+import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -37,31 +36,26 @@ public class MoreObjects
      * @param source     source object
      * @param target     target object
      */
-    public static void copyWriteObjectState(Class<?> modelClass, Object source, Object target)
+    public static <T> void copyWriteObjectState(Class<T> modelClass, T source, T target)
     {
         requireNonNull(modelClass, "modelClass is null");
+        checkState(!modelClass.isInterface(), "don't copy interface field");
         requireNonNull(source, "source is null");
         requireNonNull(target, "target is null");
-        checkState(!modelClass.isInterface(), "don't copy interface field");
+        Unsafe unsafe = Platform.getUnsafe();
 
-        Set<Field> fields = MutableSet.<Field>builder().addAll(modelClass.getDeclaredFields())
-                .addAll(modelClass.getFields())
-                .build();
-
-        for (Field field : fields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-                continue;
+        Class<?> it = modelClass;
+        while (it != Object.class) {
+            Field[] fields = it.getDeclaredFields();
+            for (Field field : fields) {
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                long offset = unsafe.objectFieldOffset(field);
+                Object value = unsafe.getObject(source, offset);
+                unsafe.putObject(target, offset, value);
             }
-            if (!field.isAccessible()) {
-                field.setAccessible(true);
-            }
-            try {
-                Object value = field.get(source);
-                field.set(target, value);
-            }
-            catch (IllegalAccessException e) {
-                throw Throwables.throwThrowable(e);
-            }
+            it = it.getSuperclass();
         }
     }
 

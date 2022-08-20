@@ -25,11 +25,11 @@ public interface ProxyFactory
 
     <T> T newProxyInstance(ProxyRequest<T> request);
 
-    Class<?> getProxyClass(ClassLoader loader, Class<?>... driver);
+    <T> Class<? extends T> getProxyClass(ClassLoader loader, Class<T> supperClass, Class<?>... interfaces);
 
     boolean isProxyClass(Class<?> cl);
 
-    Class<?> getProxyClass(ProxyRequest<?> request);
+    <T> Class<? extends T> getProxyClass(ProxyRequest<T> request);
 
     InvocationHandler getInvocationHandler(Object proxy);
 
@@ -43,9 +43,14 @@ public interface ProxyFactory
         return JavassistProxy.javassistProxy;
     }
 
-    static AsmProxy getAsmProxy()
+    static ProxyFactory getAsmProxy()
     {
         return AsmProxy.asmProxy;
+    }
+
+    static ProxyFactory getAsmProxyV2()
+    {
+        return AsmProxyV2.asmProxyV2;
     }
 
     static ProxyFactory getJavassistProxyV2()

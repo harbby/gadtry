@@ -32,8 +32,6 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class Proxy
 {
-    public static final Object[] EMPTY = new Object[0];
-
     private Proxy() {}
 
     public static <T> T proxy(ProxyRequest<T> request)

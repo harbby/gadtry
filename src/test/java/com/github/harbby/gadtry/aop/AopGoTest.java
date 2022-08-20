@@ -16,7 +16,6 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.GadTry;
-import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
@@ -42,20 +41,24 @@ public class AopGoTest
         Tuple4<String, Integer, Double, Character> proxy = AopGo.proxy(Tuple4.of("1", 2, 4.0d, 'a'))
                 .aop(binder -> {
                     binder.doBefore(before -> {
-                        Assert.assertArrayEquals(before.getArgs(), new Object[0]);
+                        Object[] args = before.getArgs();
+                        Assert.assertTrue(args == null || args.length == 0);
                         action.set("before_" + before.getName());
                     }).when().f1();
                     binder.doAfterReturning(returning -> {
-                        Assert.assertArrayEquals(returning.getArgs(), new Object[0]);
+                        Object[] args = returning.getArgs();
+                        Assert.assertTrue(args == null || args.length == 0);
                         action.set("returning_" + returning.getName() + "_" + returning.getValue());
                     }).when().f2();
                     binder.doAfter(after -> {
+                        Object[] args = after.getArgs();
+                        Assert.assertTrue(args == null || args.length == 0);
                         Assert.assertTrue(after.isSuccess() && after.getThrowable() == null);
-                        Assert.assertArrayEquals(after.getArgs(), new Object[0]);
                         action.set("after_" + after.getName() + "_" + after.getValue());
                     }).when().f3();
                     binder.doAround(around -> {
-                        Assert.assertArrayEquals(around.getArgs(), new Object[0]);
+                        Object[] args = around.getArgs();
+                        Assert.assertTrue(args == null || args.length == 0);
                         Object value = around.proceed();
                         action.set("around_" + around.getName() + "_" + value);
                         return around.proceed();
@@ -93,20 +96,24 @@ public class AopGoTest
                 .build();
 
         AopGo.doBefore(before -> {
-            Assert.assertArrayEquals(before.getArgs(), new Object[0]);
+            Object[] args = before.getArgs();
+            Assert.assertTrue(args == null || args.length == 0);
             action.set("before_" + before.getName());
         }).when(proxy).f1();
         AopGo.doAfterReturning(returning -> {
-            Assert.assertArrayEquals(returning.getArgs(), new Object[0]);
+            Object[] args = returning.getArgs();
+            Assert.assertTrue(args == null || args.length == 0);
             action.set("returning_" + returning.getName() + "_" + returning.getValue());
         }).when(proxy).f2();
         AopGo.doAfter(after -> {
+            Object[] args = after.getArgs();
+            Assert.assertTrue(args == null || args.length == 0);
             Assert.assertTrue(after.isSuccess() && after.getThrowable() == null);
-            Assert.assertArrayEquals(after.getArgs(), new Object[0]);
             action.set("after_" + after.getName() + "_" + after.getValue());
         }).when(proxy).f3();
         AopGo.doAround(around -> {
-            Assert.assertArrayEquals(around.getArgs(), new Object[0]);
+            Object[] args = around.getArgs();
+            Assert.assertTrue(args == null || args.length == 0);
             Object value = around.proceed();
             action.set("around_" + around.getName() + "_" + value);
             return around.proceed();
@@ -171,7 +178,6 @@ public class AopGoTest
                     }).when().isEmpty();
                 })
                 .build();
-        //Assert.assertTrue(JdkProxy.isProxyClass(list.getClass()));
         Assert.assertEquals(list.size(), 1);
         Assert.assertTrue(list.isEmpty());
         Assert.assertEquals(actions, MutableSet.of("isEmpty"));
@@ -192,7 +198,6 @@ public class AopGoTest
                     }).when().isEmpty();
                 })
                 .build();
-        Assert.assertTrue(ProxyFactory.getAsmProxy().isProxyClass(list.getClass()));
         Assert.assertEquals(list.size(), 1);
         Assert.assertTrue(list.isEmpty());
         Assert.assertEquals(actions, MutableSet.of("isEmpty"));

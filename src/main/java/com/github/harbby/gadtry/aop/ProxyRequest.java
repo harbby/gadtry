@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.function.Function;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -31,29 +32,31 @@ public class ProxyRequest<T>
 {
     private ClassLoader classLoader;
     private InvocationHandler handler;
-    private Set<Class<?>> interfaces;
+    private final Set<Class<?>> interfaces;
     private final Class<T> superclass;
-    private final boolean isJdkClass;
+    private final boolean isAccessClass;
+    private Function<Class<? extends T>, T, Exception> function;
 
-    public ProxyRequest(Class<T> superclass)
+    public ProxyRequest(Class<T> superclass, Set<Class<?>> interfaces)
     {
+        this.interfaces = interfaces;
         this.superclass = superclass;
         ClassLoader supperClassLoader = superclass.getClassLoader();
         if (supperClassLoader == null) {
             // java8 BootClassLoader is null
-            this.isJdkClass = true;
+            this.isAccessClass = false;
             return;
         }
         else if (supperClassLoader == Platform.getBootstrapClassLoader()) {
             // java9+ BootClassLoader
-            this.isJdkClass = true;
+            this.isAccessClass = false;
             return;
         }
         if (Platform.getJavaVersion() > 8 && !Platform.isOpen(superclass, Platform.class)) {
-            this.isJdkClass = true;
+            this.isAccessClass = false;
             return;
         }
-        this.isJdkClass = false;
+        this.isAccessClass = true;
     }
 
     public ClassLoader getClassLoader()
@@ -66,6 +69,11 @@ public class ProxyRequest<T>
         return handler;
     }
 
+    public Function<Class<? extends T>, T, Exception> getCreateFunction()
+    {
+        return function;
+    }
+
     public Class<T> getSuperclass()
     {
         return superclass;
@@ -76,9 +84,9 @@ public class ProxyRequest<T>
         return interfaces;
     }
 
-    public boolean isJdkClass()
+    public boolean isAccessClass()
     {
-        return isJdkClass;
+        return isAccessClass;
     }
 
     public static <T> Builder<T> builder(Class<T> superclass)
@@ -89,21 +97,21 @@ public class ProxyRequest<T>
     public static class Builder<T>
     {
         private final ProxyRequest<T> request;
-        private final Set<Class<?>> superInterfaces = new HashSet<>();
 
         public Builder(Class<T> superclass)
         {
-            this.request = new ProxyRequest<>(requireNonNull(superclass, "superclass is null"));
+            requireNonNull(superclass, "superclass is null");
+            this.request = new ProxyRequest<>(superclass, new HashSet<>());
         }
 
         public Builder<T> addInterface(Class<?> it)
         {
             requireNonNull(it, "superInterface is null");
-            if (it != request.getSuperclass() && it != Serializable.class
+            if (it != request.superclass && it != Serializable.class
                     && it != ProxyAccess.class
-                    && !it.isAssignableFrom(request.getSuperclass())) {
+                    && !it.isAssignableFrom(request.superclass)) {
                 checkState(it.isInterface(), it.getName() + " not is Interface");
-                superInterfaces.add(it);
+                request.interfaces.add(it);
             }
             return this;
         }
@@ -129,9 +137,14 @@ public class ProxyRequest<T>
             return this;
         }
 
+        public Builder<T> setNewInstance(Function<Class<? extends T>, T, Exception> function)
+        {
+            request.function = function;
+            return this;
+        }
+
         public ProxyRequest<T> build()
         {
-            request.interfaces = superInterfaces;
             return request;
         }
     }

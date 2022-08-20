@@ -24,50 +24,52 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-public class AsmProxyTest
+public class AsmProxyTestV2
 {
     @Test
-    public void asmProxyV1Test()
+    public void asmProxyV2Test()
             throws Exception
     {
         String name = "abc-";
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
-
-        Test1 old = Test1.of(name);
         InvocationHandler handler = (proxy, method, args1) -> {
             System.out.println("before " + method.getName());
-            if ("name".equals(method.getName())) {
+            if ("$_name".equals(method.getName())) {
                 atomicBoolean.set(true);
             }
-            else if ("age".equals(method.getName())) {
-                return (int) method.invoke(old, args1) - 1;
+            else if ("$_age".equals(method.getName())) {
+                return (int) method.invoke(proxy, args1) - 1;
             }
-            return method.invoke(old, args1);
+            return method.invoke(proxy, args1);
         };
         ProxyRequest<Test1> request = ProxyRequest.builder(Test1.class)
                 .setClassLoader(Test1.class.getClassLoader())
                 .addInterface(Serializable.class)
                 .addInterface(java.util.function.DoubleConsumer.class)
+                .setNewInstance(proxyClass -> {
+                    Constructor<? extends Test1> constructor = proxyClass.getConstructor(String.class);
+                    return constructor.newInstance(name);
+                })
                 .setInvocationHandler(handler)
                 .build();
-
-        ProxyFactory factory = ProxyFactory.getAsmProxy();
+        ProxyFactory factory = ProxyFactory.getAsmProxyV2();
         Test1 proxy = factory.newProxyInstance(request);
 
-        Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
+        Assert.assertEquals(18 - 1, proxy.age());
         Assert.assertEquals(name, proxy.name());
         Assert.assertEquals(9.14D, proxy.sum("abc", 1, 2L, 3.14F), 0.000001);
         Assert.assertTrue(proxy instanceof ProxyAccess);
         Assert.assertTrue(atomicBoolean.get());
-
-        //---不支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "abc-18");  //虽然上面代理了age()方法，但是这里并未生效
+        //---支持方法间this调用
+        Assert.assertEquals(proxy.getNameAndAge(), "abc-17");
+        System.out.println(proxy);
     }
 
     @Test
@@ -82,7 +84,7 @@ public class AsmProxyTest
                 .addInterface(Supplier.class)
                 .addInterface(Supplier.class)
                 .build();
-        ProxyFactory proxyFactory = ProxyFactory.getAsmProxy();
+        ProxyFactory proxyFactory = ProxyFactory.getAsmProxyV2();
         Set<String> obj = proxyFactory.newProxyInstance(request);
         Assert.assertTrue(obj instanceof ProxyAccess);
     }

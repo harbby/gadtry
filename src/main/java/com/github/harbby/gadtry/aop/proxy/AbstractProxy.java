@@ -19,9 +19,8 @@ import com.github.harbby.gadtry.GadTry;
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.base.Platform;
-import com.github.harbby.gadtry.collection.MutableList;
+import com.github.harbby.gadtry.function.Function;
 import com.github.harbby.gadtry.io.IOUtils;
-import org.objectweb.asm.Type;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -33,8 +32,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractProxy
         implements ProxyFactory
@@ -69,49 +69,123 @@ public abstract class AbstractProxy
         return (T) newProxyInstance(request);
     }
 
-    protected Collection<Method> findProxyMethods(Class<?> supperClass, Collection<Class<?>> interfaces)
+    private static final class Key
     {
-        Map<String, Method> methods = new LinkedHashMap<>();
-        MutableList.Builder<Method> builder = MutableList.builder();
-        builder.addAll(supperClass.getMethods());
-        for (Class<?> ctClass : interfaces) {
-            builder.addAll(ctClass.getMethods());
+        private final String name; // must be interned (as from Method.getName())
+        private final Class<?>[] ptypes;
+
+        Key(Method method)
+        {
+            name = method.getName();
+            ptypes = method.getParameterTypes();
         }
-        List<Method> methodList = builder.build();
-        for (Method method : methodList) {
-            //final or private or static function not proxy
-            boolean checked = Modifier.isFinal(method.getModifiers()) ||
-                    Modifier.isPrivate(method.getModifiers()) ||
-                    Modifier.isStatic(method.getModifiers());
-            if (!checked) {
-                String key = String.format("%s%s", method.getName(), Type.getMethodDescriptor(method));
-                methods.put(key, method);
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o instanceof Key) {
+                Key that = (Key) o;
+                return name.equals(that.name)
+                        && Arrays.equals(ptypes, that.ptypes);
+            }
+            else {
+                return false;
             }
         }
-        return methods.values();
+
+        @Override
+        public int hashCode()
+        {
+            return System.identityHashCode(name) + // guaranteed interned String
+                    31 * Arrays.hashCode(ptypes);
+        }
+    }
+
+    private static final class MethodList
+    {
+        private final Map<Key, Method> methodsMap = new HashMap<>();
+
+        void merge(Method[] methods)
+        {
+            for (Method method : methods) {
+                methodsMap.putIfAbsent(new Key(method), method);
+            }
+        }
+
+        public Map<Key, Method> getMerged()
+        {
+            return methodsMap;
+        }
+    }
+
+    protected Collection<Method> findProxyMethods(Class<?> supperClass, Collection<Class<?>> interfaces, boolean isAccessClass)
+    {
+        MethodList methodList = new MethodList();
+        methodList.merge(supperClass.getMethods());
+        if (supperClass.isInterface()) {
+            methodList.merge(Object.class.getMethods());
+        }
+        else {
+            Class<?> it = supperClass;
+            while (it != Object.class) {
+                methodList.merge(it.getDeclaredMethods());
+                it = it.getSuperclass();
+            }
+        }
+        for (Class<?> ctClass : interfaces) {
+            methodList.merge(ctClass.getMethods());
+        }
+        List<Method> methods = new ArrayList<>();
+        for (Map.Entry<Key, Method> entry : methodList.getMerged().entrySet()) {
+            //final or private or static function not proxy
+            Method method = entry.getValue();
+            int mod = method.getModifiers();
+            boolean checked = !Modifier.isFinal(mod) &&
+                    !Modifier.isPrivate(mod) &&
+                    !Modifier.isStatic(mod);
+            if (!isAccessClass) {
+                checked = checked && (Modifier.isPublic(mod) || Modifier.isProtected(mod));
+            }
+            if (checked) {
+                methods.add(method);
+            }
+        }
+        return methods;
     }
 
     @Override
     public <T> T newProxyInstance(ProxyRequest<T> request)
     {
-        @SuppressWarnings("unchecked")
-        Class<? extends T> aClass = (Class<? extends T>) getProxyClass(request);
+        Class<? extends T> aClass = getProxyClass(request);
+        Function<Class<? extends T>, T, Exception> function = request.getCreateFunction();
         T proxyObj;
-        proxyObj = Platform.allocateInstance(aClass);
+        try {
+            if (function != null) {
+                proxyObj = function.apply(aClass);
+            }
+            else {
+                proxyObj = Platform.allocateInstance(aClass);
+            }
+        }
+        catch (Exception e) {
+            throw new MockGoException("new instance proxy class failed", e);
+        }
         ((ProxyAccess) proxyObj).setHandler(request.getHandler());
         return proxyObj;
     }
 
     @Override
-    public Class<?> getProxyClass(ClassLoader loader, Class<?>... drivers)
+    public <T> Class<? extends T> getProxyClass(ClassLoader loader, Class<T> supperClass, Class<?>... interfaces)
     {
-        checkState(drivers != null && drivers.length > 0, "interfaces is Empty");
-        ProxyRequest.Builder<?> request = ProxyRequest.builder(drivers[0])
-                .setClassLoader(loader);
-        if (drivers.length > 1) {
-            request.addInterface(Arrays.copyOfRange(drivers, 1, drivers.length));
-        }
-        return getProxyClass(request.build());
+        requireNonNull(supperClass, "supperClass is null");
+        ProxyRequest<T> request = ProxyRequest.builder(supperClass)
+                .addInterface(interfaces)
+                .setClassLoader(loader)
+                .build();
+        return getProxyClass(request);
     }
 
     @Override
@@ -120,14 +194,15 @@ public abstract class AbstractProxy
         return ProxyAccess.class.isAssignableFrom(cl) && proxyCache.containsValue(cl);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Class<?> getProxyClass(ProxyRequest<?> request)
+    public <T> Class<? extends T> getProxyClass(ProxyRequest<T> request)
     {
         List<Class<?>> validClass = new ArrayList<>();
         validClass.add(request.getSuperclass());
         validClass.addAll(request.getInterfaces());
         KeyX keyX = new KeyX(validClass);
-        return proxyCache.computeIfAbsent(keyX, k -> {
+        return (Class<? extends T>) proxyCache.computeIfAbsent(keyX, k -> {
             try {
                 return createProxyClass(request);
             }
@@ -140,6 +215,8 @@ public abstract class AbstractProxy
         });
     }
 
+    protected abstract String proxyClassNameFlag();
+
     @Override
     public InvocationHandler getInvocationHandler(Object proxy)
             throws IllegalArgumentException
@@ -148,25 +225,32 @@ public abstract class AbstractProxy
         return ((ProxyAccess) proxy).getHandler();
     }
 
-    private String createProxyClassName(ProxyRequest<?> request)
+    private String createProxyClassName(Class<?> superclass, boolean isAccessClass)
     {
-        Class<?> superclass = request.getSuperclass();
-
-        String beginName = superclass.getName();
-        if (request.isJdkClass()) {
+        String beginName;
+        if (isAccessClass) {
+            beginName = superclass.getName();
+        }
+        else {
             beginName = GadTry.class.getPackage().getName() + "." + superclass.getSimpleName();
         }
-        return beginName + "$GadtryAop" + number.getAndIncrement();
+        return String.format("%s$%s%s", beginName, proxyClassNameFlag(), number.getAndIncrement());
     }
 
     protected abstract byte[] generate(ClassLoader classLoader, String className, Class<?> superclass,
             Set<Class<?>> interfaceSet, Collection<Method> proxyMethods)
             throws Exception;
 
+    protected boolean enableHiddenClass()
+    {
+        return true;
+    }
+
     private Class<?> createProxyClass(ProxyRequest<?> request)
             throws Exception
     {
         Class<?> superclass = request.getSuperclass();
+        boolean isAccessClass = request.isAccessClass();
         final Set<Class<?>> interfaceSet = new HashSet<>();
         for (Class<?> it : request.getInterfaces()) {
             if (it == ProxyAccess.class || it.isAssignableFrom(superclass)) {
@@ -176,8 +260,8 @@ public abstract class AbstractProxy
             interfaceSet.add(it);
         }
 
-        Collection<Method> proxyMethods = findProxyMethods(superclass, interfaceSet);
-        String className = createProxyClassName(request);
+        Collection<Method> proxyMethods = findProxyMethods(superclass, interfaceSet, isAccessClass);
+        String className = createProxyClassName(superclass, isAccessClass);
         byte[] byteCode = this.generate(request.getClassLoader(), className, superclass, interfaceSet, proxyMethods);
         //this.toWrite(new File("./out", className.replace('.', '/') + ".class"), byteCode);
         int vmVersion = Platform.getJavaVersion();
@@ -190,8 +274,8 @@ public abstract class AbstractProxy
             return Platform.defineClass(byteCode, classLoader);
         }
 
-        Class<?> buddyClass = request.isJdkClass() ? GadTry.class : superclass;
-        if (vmVersion >= 15) {
+        Class<?> buddyClass = isAccessClass ? superclass : GadTry.class;
+        if (vmVersion >= 15 && this.enableHiddenClass()) {
             return Platform.defineHiddenClass(buddyClass, byteCode, false);
         }
         // 9 - 14

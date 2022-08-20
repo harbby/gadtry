@@ -15,25 +15,24 @@
  */
 package com.github.harbby.gadtry.aop.proxy;
 
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Set;
+import java.lang.reflect.InvocationHandler;
 
 public final class AsmProxy
-        extends AbstractProxy
+        extends AbstractAsmProxy
 {
     static final AsmProxy asmProxy = new AsmProxy();
 
     private AsmProxy() {}
 
-    protected byte[] generate(ClassLoader classLoader, String className, Class<?> superclass,
-            Set<Class<?>> interfaceSet, Collection<Method> proxyMethods)
+    @Override
+    protected Class<?> getHandlerClass()
     {
-        AsmProxyClassBuilder builder = new AsmProxyClassBuilder(
-                className,
-                superclass,
-                interfaceSet,
-                proxyMethods);
-        return builder.generate();
+        return InvocationHandler.class;
+    }
+
+    @Override
+    protected String proxyClassNameFlag()
+    {
+        return "GadtryAsmAop";
     }
 }

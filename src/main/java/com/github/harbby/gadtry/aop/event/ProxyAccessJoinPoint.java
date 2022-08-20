@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop.proxy;
+package com.github.harbby.gadtry.aop.event;
 
-import com.github.harbby.gadtry.aop.event.JoinPoint;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 
 import java.lang.reflect.Method;
 
-public class JavassistProxyJoinPoint
+public class ProxyAccessJoinPoint
         implements JoinPoint
 {
     private final ProxyAccess mock;
@@ -27,7 +27,7 @@ public class JavassistProxyJoinPoint
     private final Object[] args;
     private final Object instance;
 
-    public JavassistProxyJoinPoint(ProxyAccess mock, Method method, Object[] args, Object instance)
+    public ProxyAccessJoinPoint(ProxyAccess mock, Method method, Object[] args, Object instance)
     {
         this.mock = mock;
         this.method = method;

@@ -148,7 +148,7 @@ public class MockGoTest
     @Test
     public void disableSuperMethodMockWhenThen()
     {
-        HashMap proxy = MockGo.mock(HashMap.class);
+        HashMap<?, ?> proxy = MockGo.mock(HashMap.class);
         when(proxy.toString()).thenReturn("disableSuperMethodMockWhenThen");
         Assert.assertEquals(proxy.toString(), "disableSuperMethodMockWhenThen");
         when(proxy.size()).thenReturn(7);

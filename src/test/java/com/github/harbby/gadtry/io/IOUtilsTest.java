@@ -46,7 +46,7 @@ public class IOUtilsTest
 
     @Test
     public void copyByTestGiveFalse()
-            throws IOException
+            throws IOException, InstantiationException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = AopGo.proxy(PrintStream.class)
@@ -70,6 +70,7 @@ public class IOUtilsTest
 
     @Test
     public void copyByTestReturnCheckError()
+            throws InstantiationException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = AopGo.proxy(PrintStream.class)

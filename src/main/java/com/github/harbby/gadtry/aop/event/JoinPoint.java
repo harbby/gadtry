@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.aop.event;
 
-import com.github.harbby.gadtry.aop.proxy.JavassistProxyJoinPoint;
 import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 
 import java.lang.reflect.Method;
@@ -44,7 +43,7 @@ public interface JoinPoint
     {
         requireNonNull(instance, "instance is null");
         if (mock instanceof ProxyAccess) {
-            return new JavassistProxyJoinPoint((ProxyAccess) mock, method, args, instance);
+            return new ProxyAccessJoinPoint((ProxyAccess) mock, method, args, instance);
         }
         else {
             return new JdkProxyJoinPoint(mock, method, args, instance);

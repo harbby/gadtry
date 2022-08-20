@@ -128,10 +128,10 @@ public final class Platform
             ClassLoader classLoader = Platform.class.getClassLoader();
             try {
                 Class<?> aClass = classLoader.loadClass("com.github.harbby.gadtry.base.JavaModuleExtPlatformImpl");
-                obj = (ExtPlatform) aClass.newInstance();
+                obj = (ExtPlatform) aClass.getDeclaredConstructor().newInstance();
             }
-            catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+            catch (Exception e) {
+                throw new PlatFormUnsupportedOperation(e);
             }
             extPlatform = obj;
         }
@@ -532,14 +532,9 @@ public final class Platform
 
     @SuppressWarnings("unchecked")
     public static <T> T allocateInstance(Class<T> tClass)
-            throws PlatFormUnsupportedOperation
+            throws InstantiationException
     {
-        try {
-            return (T) unsafe.allocateInstance(tClass);
-        }
-        catch (InstantiationException e) {
-            throw Throwables.throwThrowable(e);
-        }
+        return (T) unsafe.allocateInstance(tClass);
     }
 
     @SuppressWarnings("unchecked")

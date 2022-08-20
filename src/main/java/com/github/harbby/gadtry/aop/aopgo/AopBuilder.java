@@ -74,12 +74,15 @@ public final class AopBuilder<T>
         }
         Map<AroundHandler, PointcutBuilder<T>> aspects = mockBinder.build();
         Map<Method, AroundHandler> methodAdviceMap = new HashMap<>();
-        aspects.forEach((k, v) -> {
+        for (Map.Entry<AroundHandler, PointcutBuilder<T>> entry : aspects.entrySet()) {
+            AroundHandler k = entry.getKey();
+            PointcutBuilder<T> v = entry.getValue();
             List<Method> methods = Proxy.filter(proxy.getClass(), v.build());
             //merge aspect
-            methods.forEach(method -> methodAdviceMap.merge(method, k, AroundHandler::merge));
-        });
-
+            for (Method method : methods) {
+                methodAdviceMap.merge(method, k, AroundHandler::merge);
+            }
+        }
         methodAdviceMap.forEach(aopInvocationHandler::register);
         return proxy;
     }

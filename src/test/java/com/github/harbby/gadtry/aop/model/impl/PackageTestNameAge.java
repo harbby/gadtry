@@ -21,4 +21,6 @@ interface PackageTestNameAge
         extends PackageTestName
 {
     public abstract int getAge();
+
+    public abstract double sum(long a, float b);
 }

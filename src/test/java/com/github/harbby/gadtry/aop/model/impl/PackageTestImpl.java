@@ -28,4 +28,10 @@ class PackageTestImpl
     {
         return 18;
     }
+
+    @Override
+    public double sum(long a, float b)
+    {
+        return a + b;
+    }
 }

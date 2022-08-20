@@ -62,6 +62,12 @@ final class JavassistProxyV2
         }
     }
 
+    @Override
+    protected String proxyClassNameFlag()
+    {
+        return "GadtryJssV2Aop";
+    }
+
     private static void addSupperMethodV2(CtClass proxyClass, CtMethod ctMethod, String methodNewName)
             throws NotFoundException, CannotCompileException
     {

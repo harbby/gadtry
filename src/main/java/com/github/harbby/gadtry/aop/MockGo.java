@@ -20,42 +20,55 @@ import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.aop.mockgo.MockGoAnnotations;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.aop.proxy.Proxy;
+import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
+import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.base.MoreObjects;
 import com.github.harbby.gadtry.base.Platform;
-import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
 import java.lang.reflect.Method;
 
 import static com.github.harbby.gadtry.aop.proxy.Proxy.getInvocationHandler;
+import static java.util.Objects.requireNonNull;
 
 /**
  * MockGo
  */
 public class MockGo
 {
-    private static final Tuple1<Tuple2<Object, Method>> LAST_MOCK_BY_WHEN_METHOD = new Tuple1<>(null);
+    private static final ThreadLocal<Tuple2<Object, Method>> LAST_MOCK_BY_WHEN_METHOD = new ThreadLocal<>();
 
     private MockGo() {}
 
-    public static <T> T spy(T target)
+    public static <T> T spy(T obj)
     {
-        return spy((Class<T>) target.getClass(), target);
+        requireNonNull(obj, "obj is null");
+        @SuppressWarnings("unchecked")
+        Class<T> superclass = (Class<T>) obj.getClass();
+        T proxyObj = spy(superclass);
+        MoreObjects.copyWriteObjectState(superclass, obj, proxyObj);
+        return proxyObj;
     }
 
-    public static <T> T spy(Class<T> superclass)
+    public static <T> T spy(Class<? extends T> spyClass)
     {
+        requireNonNull(spyClass, "spyClass is null");
+        ClassLoader classLoader = spyClass.getClassLoader();
+        Class<? extends T> proxyClass = ProxyFactory.getAsmProxyV2().getProxyClass(classLoader, spyClass);
+        T obj;
         try {
-            T target = Platform.allocateInstance2(superclass);
-            return spy(superclass, target);
+            obj = Platform.allocateInstance(proxyClass);
         }
-        catch (Exception e) {
-            throw Throwables.throwThrowable(e);
+        catch (InstantiationException e) {
+            throw new MockGoException("create mock class failed", e);
         }
+        AopInvocationHandler aopInvocationHandler = new MockGoAopInvocationHandler(obj);
+        ((ProxyAccess) obj).setHandler(aopInvocationHandler);
+        return obj;
     }
 
-    private static class MockGoAopInvocationHandler
+    public static class MockGoAopInvocationHandler
             extends AopInvocationHandler
     {
         public MockGoAopInvocationHandler(Object target)
@@ -72,19 +85,10 @@ public class MockGo
         public Object invoke(Object proxy, Method method, Object[] args)
                 throws Throwable
         {
+            Object value = super.invoke(proxy, method, args);
             LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
-            return super.invoke(proxy, method, args);
+            return value;
         }
-    }
-
-    public static <T> T spy(Class<T> superclass, T target)
-    {
-        AopInvocationHandler aopInvocationHandler = new MockGoAopInvocationHandler(target);
-        ProxyRequest<T> request = ProxyRequest.builder(superclass)
-                .setInvocationHandler(aopInvocationHandler)
-                .setClassLoader(superclass.getClassLoader())
-                .build();
-        return Proxy.proxy(request);
     }
 
     public static <T> T mock(Class<T> superclass)

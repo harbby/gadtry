@@ -15,12 +15,24 @@
  */
 package com.github.harbby.gadtry.aop.model;
 
+import com.github.harbby.gadtry.Beta;
+import com.github.harbby.gadtry.ioc.Autowired;
+import com.github.harbby.gadtry.ioc.Config;
+
 public class Test1
         extends Test1Supper
 {
     private final String name;
 
-    public Test1(String name)
+    @Beta
+    @Autowired
+    @Deprecated
+    public Test1(long a, @Config("old_name") @Deprecated String name)
+    {
+        this.name = name;
+    }
+
+    public Test1(@Config("name") @Deprecated String name)
     {
         this.name = name;
     }
@@ -40,24 +52,27 @@ public class Test1
         return 18;
     }
 
+    public String getNameAndAge()
+    {
+        return this.name() + this.age();
+    }
+
+    @Deprecated
+    @Beta
     public double sum(String begin, int a, double b, float c)
             throws Exception
     {
         return begin.length() + a + b + c;
     }
 
-    public double castToDouble(long a)
+    protected double castToDouble(long a)
     {
         return a;
     }
 
-    public double[] getDoubleArray(long a1, String a2)
+    @Deprecated
+    double[] getDoubleArray(long a1, String a2)
     {
         return new double[2];
-    }
-
-    public String getNameAndAge()
-    {
-        return name() + age();
     }
 }
