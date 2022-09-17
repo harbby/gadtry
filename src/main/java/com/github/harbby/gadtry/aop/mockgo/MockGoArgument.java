@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.github.harbby.gadtry.base.JavaTypes.getPrimitiveClassInitValue;
+import static com.github.harbby.gadtry.base.JavaTypes.getClassInitValue;
 
 public class MockGoArgument
 {
@@ -36,42 +36,42 @@ public class MockGoArgument
 
     public static int anyInt()
     {
-        return getPrimitiveClassInitValue(int.class);
+        return getClassInitValue(int.class);
     }
 
     public static byte anyByte()
     {
-        return getPrimitiveClassInitValue(byte.class);
+        return getClassInitValue(byte.class);
     }
 
     public static short anyShort()
     {
-        return getPrimitiveClassInitValue(short.class);
+        return getClassInitValue(short.class);
     }
 
     public static long anyLong()
     {
-        return getPrimitiveClassInitValue(long.class);
+        return getClassInitValue(long.class);
     }
 
     public static double anyDouble()
     {
-        return getPrimitiveClassInitValue(double.class);
+        return getClassInitValue(double.class);
     }
 
     public static char anyChar()
     {
-        return getPrimitiveClassInitValue(char.class);
+        return getClassInitValue(char.class);
     }
 
     public static float anyFloat()
     {
-        return getPrimitiveClassInitValue(float.class);
+        return getClassInitValue(float.class);
     }
 
     public static boolean anyBoolean()
     {
-        return getPrimitiveClassInitValue(boolean.class);
+        return getClassInitValue(boolean.class);
     }
 
     public static String anyString()
@@ -107,7 +107,7 @@ public class MockGoArgument
     /**
      * e.equals(input)
      *
-     * @param e equals e
+     * @param e   equals e
      * @param <E> e type
      * @return e;
      */
@@ -120,7 +120,7 @@ public class MockGoArgument
     /**
      * e == input
      *
-     * @param e same e
+     * @param e   same e
      * @param <E> e type
      * @return e
      */

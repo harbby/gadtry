@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.MutableList;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
@@ -134,22 +133,9 @@ public class JavaTypes
                 instanceof GenericArrayType;
     }
 
-    public static <T> T getClassInitValue(Class<?> aClass)
+    public static <T> T getClassInitValue(Class<T> aClass)
     {
-        if (!aClass.isPrimitive()) {
-            return null;
-        }
-        return getPrimitiveClassInitValue(aClass);
-    }
-
-    public static <T> T getPrimitiveClassInitValue(Class<?> aClass)
-    {
-        checkState(aClass.isPrimitive(), "%s not is primitive", aClass);
-        if (aClass == void.class) {
-            return null;
-        }
-        Object arr = java.lang.reflect.Array.newInstance(aClass, 1);
-        return (T) Array.get(arr, 0);
+        return TypeWrapper.getDefaultValue(aClass);
     }
 
     /**
@@ -158,70 +144,12 @@ public class JavaTypes
      */
     public static Class<?> getWrapperClass(Class<?> aClass)
     {
-        if (aClass == int.class) {  //Integer.TYPE
-            return Integer.class;
-        }
-        else if (aClass == short.class) {
-            return Short.class;
-        }
-        else if (aClass == long.class) {
-            return Long.class;
-        }
-        else if (aClass == float.class) {
-            return Float.class;
-        }
-        else if (aClass == double.class) {
-            return Double.class;
-        }
-        else if (aClass == byte.class) {
-            return Byte.class;
-        }
-        else if (aClass == boolean.class) {
-            return Boolean.class;
-        }
-        else if (aClass == char.class) {
-            return Character.class;
-        }
-        else if (aClass == void.class) {
-            return Void.class;
-        }
-        else {
-            throw new UnsupportedOperationException("this " + aClass + " haven't support!");
-        }
+        return TypeWrapper.asWrapperType(aClass);
     }
 
     public static Class<?> getPrimitiveClass(Class<?> aClass)
     {
-        if (aClass == Integer.class) {  //Integer.TYPE
-            return int.class;
-        }
-        else if (aClass == Short.class) {
-            return short.class;
-        }
-        else if (aClass == Long.class) {
-            return long.class;
-        }
-        else if (aClass == Float.class) {
-            return float.class;
-        }
-        else if (aClass == Double.class) {
-            return double.class;
-        }
-        else if (aClass == Byte.class) {
-            return byte.class;
-        }
-        else if (aClass == Boolean.class) {
-            return boolean.class;
-        }
-        else if (aClass == Character.class) {
-            return char.class;
-        }
-        else if (aClass == Void.class) {
-            return void.class;
-        }
-        else {
-            throw new UnsupportedOperationException("this " + aClass + " haven't support!");
-        }
+        return TypeWrapper.asPrimitiveType(aClass);
     }
 
     /**
@@ -241,38 +169,13 @@ public class JavaTypes
 
     public static String getClassSignature(final Class<?> type)
     {
-        if (int.class == type) {
-            return "I";
-        }
-        else if (void.class == type) {
-            return "V";
-        }
-        else if (boolean.class == type) {
-            return "Z";
-        }
-        else if (char.class == type) {  // Character
-            return "C";
-        }
-        else if (byte.class == type) {
-            return "B";
-        }
-        else if (short.class == type) {
-            return "S";
-        }
-        else if (float.class == type) {
-            return "F";
-        }
-        else if (long.class == type) {
-            return "J";
-        }
-        else if (double.class == type) {
-            return "D";
+        if (type.isPrimitive()) {
+            return String.valueOf(TypeWrapper.forPrimitiveType(type).basicTypeChar());
         }
         else if (type.isArray()) {
             return "[" + getClassSignature(type.getComponentType());
         }
         else {
-            checkNotPrimitive(type, "not found primitive type " + type);
             return "L" + type.getName().replaceAll("\\.", "/") + ";";
         }
     }

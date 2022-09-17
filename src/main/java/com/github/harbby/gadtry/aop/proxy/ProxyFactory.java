@@ -38,11 +38,6 @@ public interface ProxyFactory
         return JdkProxy.jdkProxy;
     }
 
-    static ProxyFactory getJavassistProxy()
-    {
-        return JavassistProxy.javassistProxy;
-    }
-
     static ProxyFactory getAsmProxy()
     {
         return AsmProxy.asmProxy;
@@ -51,10 +46,5 @@ public interface ProxyFactory
     static ProxyFactory getAsmProxyV2()
     {
         return AsmProxyV2.asmProxyV2;
-    }
-
-    static ProxyFactory getJavassistProxyV2()
-    {
-        return JavassistProxyV2.javassistProxyV2;
     }
 }

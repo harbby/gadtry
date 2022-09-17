@@ -16,20 +16,14 @@
 package com.github.harbby.gadtry.aop;
 
 import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
-import com.github.harbby.gadtry.aop.mockgo.AopInvocationHandler;
 import com.github.harbby.gadtry.aop.mockgo.MockGoAnnotations;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
-import com.github.harbby.gadtry.aop.proxy.Proxy;
-import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
-import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
-import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.MoreObjects;
-import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
 import java.lang.reflect.Method;
 
-import static com.github.harbby.gadtry.aop.proxy.Proxy.getInvocationHandler;
+import static com.github.harbby.gadtry.aop.MockInterceptor.LAST_MOCK_BY_WHEN_METHOD;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -37,7 +31,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class MockGo
 {
-    private static final ThreadLocal<Tuple2<Object, Method>> LAST_MOCK_BY_WHEN_METHOD = new ThreadLocal<>();
+    private static final MockHelper mockHelper = new MockAccessHelper();
 
     private MockGo() {}
 
@@ -54,53 +48,14 @@ public class MockGo
     public static <T> T spy(Class<? extends T> spyClass)
     {
         requireNonNull(spyClass, "spyClass is null");
-        ClassLoader classLoader = spyClass.getClassLoader();
-        Class<? extends T> proxyClass = ProxyFactory.getAsmProxyV2().getProxyClass(classLoader, spyClass);
-        T obj;
-        try {
-            obj = Platform.allocateInstance(proxyClass);
-        }
-        catch (InstantiationException e) {
-            throw new MockGoException("create mock class failed", e);
-        }
-        AopInvocationHandler aopInvocationHandler = new MockGoAopInvocationHandler(obj);
-        ((ProxyAccess) obj).setHandler(aopInvocationHandler);
-        return obj;
-    }
-
-    public static class MockGoAopInvocationHandler
-            extends AopInvocationHandler
-    {
-        public MockGoAopInvocationHandler(Object target)
-        {
-            super(target);
-        }
-
-        public MockGoAopInvocationHandler()
-        {
-            super();
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args)
-                throws Throwable
-        {
-            Object value = super.invoke(proxy, method, args);
-            LAST_MOCK_BY_WHEN_METHOD.set(Tuple2.of(proxy, method));
-            return value;
-        }
+        return mockHelper.generatorProxy(spyClass, true);
     }
 
     public static <T> T mock(Class<T> superclass)
     {
-        AopInvocationHandler aopInvocationHandler = new MockGoAopInvocationHandler();
-        ProxyRequest<T> request = ProxyRequest.builder(superclass)
-                .setClassLoader(superclass.getClassLoader())
-                .setInvocationHandler(aopInvocationHandler)
-                .build();
-        T proxy = Proxy.proxy(request);
-        when(proxy.toString()).thenReturn(superclass.getSimpleName());
-        return proxy;
+        T mock = mockHelper.generatorProxy(superclass, false);
+        when(mock.toString()).thenReturn(superclass.getSimpleName());
+        return mock;
     }
 
     public static void initMocks(Object testObject)
@@ -138,21 +93,16 @@ public class MockGo
 
     public static class DoBuilder
     {
-        private final AroundHandler function;
+        private final AroundHandler answer;
 
         public DoBuilder(AroundHandler function)
         {
-            this.function = function;
+            this.answer = function;
         }
 
         public <T> T when(T instance)
         {
-            AopInvocationHandler aopInvocationHandler = getInvocationHandler(instance);
-            aopInvocationHandler.setHandler((proxy, method, args) -> {
-                aopInvocationHandler.initHandler();
-                aopInvocationHandler.register(method, function);
-                return JavaTypes.getClassInitValue(method.getReturnType());
-            });
+            mockHelper.when(instance, answer);
             return instance;
         }
     }
@@ -189,9 +139,9 @@ public class MockGo
             bind(p -> value);
         }
 
-        public void thenAround(AroundHandler function)
+        public void thenAround(AroundHandler answer)
         {
-            bind(function);
+            bind(answer);
         }
 
         public void thenThrow(Throwable e)
@@ -201,10 +151,9 @@ public class MockGo
             });
         }
 
-        private void bind(AroundHandler pointcut)
+        private void bind(AroundHandler answer)
         {
-            AopInvocationHandler handler = getInvocationHandler(lastWhenMethod.f1());
-            handler.register(lastWhenMethod.f2(), pointcut);
+            mockHelper.bind(lastWhenMethod.f1(), lastWhenMethod.f2(), answer);
         }
     }
 }

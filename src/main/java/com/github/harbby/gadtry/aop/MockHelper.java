@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.ioc;
+package com.github.harbby.gadtry.aop;
 
-public interface IocHandler
+import com.github.harbby.gadtry.aop.aopgo.AroundHandler;
+
+import java.lang.reflect.Method;
+
+abstract class MockHelper
 {
-    <T> T onCreate(Class<T> key, T instance);
+    abstract <T> T generatorProxy(Class<? extends T> superClas, boolean isSpy);
 
-    static final IocHandler NO_AOP_HANDLER = new IocHandler()
-    {
-        @Override
-        public <T> T onCreate(Class<T> key, T instance)
-        {
-            return instance;
-        }
-    };
+    abstract void when(Object instance, AroundHandler answer);
+
+    abstract void bind(Object instance, Method method, AroundHandler answer);
 }

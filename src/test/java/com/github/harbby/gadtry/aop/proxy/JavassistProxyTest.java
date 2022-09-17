@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop.impl;
+package com.github.harbby.gadtry.aop.proxy;
 
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.aop.model.Test1;
-import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
-import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Streams;
 import javassist.ClassPool;
@@ -40,7 +38,7 @@ import java.util.stream.Stream;
 
 public class JavassistProxyTest
 {
-    private final ProxyFactory factory = ProxyFactory.getJavassistProxy();
+    private final ProxyFactory factory = JavassistProxy.javassistProxy;
 
     @Test
     public void moreSuperclass()

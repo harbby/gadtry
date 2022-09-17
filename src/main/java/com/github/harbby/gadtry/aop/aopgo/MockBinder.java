@@ -70,10 +70,4 @@ public class MockBinder<T>
         aspects.put(function, pointcutBuilder);
         return pointcutBuilder;
     }
-
-    public static <T> void copyWrite(MockBinder<T> copyIn, MockBinder<T> copyOut)
-    {
-        copyOut.aspects.clear();
-        copyOut.aspects.putAll(copyIn.aspects);
-    }
 }

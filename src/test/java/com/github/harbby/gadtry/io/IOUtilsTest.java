@@ -39,7 +39,7 @@ public class IOUtilsTest
         try (
                 ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8));
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            IOUtils.copyBytes(inputStream, outputStream, 1024);
+            IOUtils.copy(inputStream, outputStream, 1024);
             Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
         }
     }
@@ -63,7 +63,7 @@ public class IOUtilsTest
                 .build();
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
-            IOUtils.copyBytes(inputStream, printStream, 1024);
+            IOUtils.copy(inputStream, printStream, 1024);
             Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
         }
     }
@@ -82,7 +82,7 @@ public class IOUtilsTest
                 .build();
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
-            IOUtils.copyBytes(inputStream, printStream, 1024);
+            IOUtils.copy(inputStream, printStream, 1024);
             Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
             Assert.fail();
         }

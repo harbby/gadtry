@@ -42,7 +42,6 @@ public class Proxy
         }
         else {
             checkState(!Modifier.isFinal(superclass.getModifiers()), superclass + " is final");
-            //return ProxyFactory.getJavassistProxy().newProxyInstance(request);
             return ProxyFactory.getAsmProxy().newProxyInstance(request);
         }
     }

@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.GadTry;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.aop.model.PackageTestName;
 import com.github.harbby.gadtry.aop.model.impl.PackageTestUtil;
@@ -66,7 +65,7 @@ public class PackageProxyTests
                     }).when().size();
                 })
                 .build();
-        Assert.assertTrue(set.getClass().getName().startsWith(GadTry.class.getPackage().getName()));
+        Assert.assertTrue(set.getClass().getName().startsWith(AopGo.class.getPackage().getName()));
         set.size();
         Assert.assertEquals(Arrays.asList("before1"), actions);
     }

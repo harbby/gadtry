@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop;
+package com.github.harbby.gadtry.aop.proxy2;
 
-import com.github.harbby.gadtry.aop.aopgo.AopBuilder;
+import com.github.harbby.gadtry.aop.event.JoinPoint;
 
-public class AopGo
+import java.lang.reflect.Method;
+
+public interface MethodCaller
+        extends JoinPoint
 {
-    private AopGo() {}
+    Object getMock();
 
-    public interface ByInstance<T>
-    {
-        public AopBuilder<T> byInstance(T target);
-    }
+    String getName();
 
-    public static <T> ByInstance<T> proxy(Class<T> superclass)
-    {
-        return target -> new AopBuilder<>(superclass, target);
-    }
+    Object proceed()
+            throws Exception;
 
-    public static <T> AopBuilder<T> proxy(T instance)
-    {
-        return new AopBuilder<T>((Class<T>) instance.getClass(), instance);
-    }
+    @Override
+    Object proceed(Object[] args)
+            throws Throwable;
+
+    Object[] getArgs();
+
+    <O> O getArgument(int i);
+
+    Method getMethod();
 }

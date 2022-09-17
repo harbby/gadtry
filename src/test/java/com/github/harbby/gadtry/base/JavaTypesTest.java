@@ -94,8 +94,8 @@ public class JavaTypesTest
     @Test
     public void getPrimitiveClassInitValue()
     {
-        Assert.assertNull(JavaTypes.getPrimitiveClassInitValue(void.class));
-        Assert.assertEquals((double) JavaTypes.getPrimitiveClassInitValue(double.class), 0.0d, 0.0d);
+        Assert.assertNull(JavaTypes.getClassInitValue(void.class));
+        Assert.assertEquals(JavaTypes.getClassInitValue(double.class), 0.0d, 0.0d);
     }
 
     @Test
@@ -181,7 +181,7 @@ public class JavaTypesTest
             JavaTypes.getPrimitiveClass(Object.class);
             Assert.fail();
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (IllegalArgumentException ignored) {
         }
     }
 
@@ -204,7 +204,7 @@ public class JavaTypesTest
             JavaTypes.getWrapperClass(Object.class);
             Assert.fail();
         }
-        catch (UnsupportedOperationException ignored) {
+        catch (IllegalArgumentException ignored) {
         }
     }
 

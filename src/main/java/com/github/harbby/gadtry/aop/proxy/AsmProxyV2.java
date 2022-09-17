@@ -16,14 +16,18 @@
 package com.github.harbby.gadtry.aop.proxy;
 
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.collection.ImmutableSet;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Set;
 
+import static com.github.harbby.gadtry.aop.proxy2.AsmUtil.pushClass;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -44,6 +48,11 @@ public final class AsmProxyV2
 
     private AsmProxyV2() {}
 
+    protected Set<Class<?>> defaultSuperInterface()
+    {
+        return ImmutableSet.of(ProxyAccess.class, Serializable.class);
+    }
+
     @Override
     protected Class<?> getHandlerClass()
     {
@@ -63,13 +72,17 @@ public final class AsmProxyV2
         String descriptor = Type.getMethodDescriptor(method);
         super.addProxyMethod(classWriter, className, method, bindName, superclass, methodId);
         String methodName = METHOD_STARTS_WITH + method.getName();
+        //ACC_SYNTHETIC
         MethodVisitor mv = classWriter.visitMethod(ACC_PUBLIC, methodName, descriptor, null, null);
         mv.visitCode();
         if (Modifier.isAbstract(method.getModifiers())) {
             this.addAbstractMethod(mv, method);
         }
         else {
-            this.addSupperMethod(mv, superclass, method, descriptor);
+            int varIndex = addSupperMethod(mv, superclass, method, descriptor);
+            Type type = Type.getType(method.getReturnType());
+            mv.visitInsn(type.getOpcode(IRETURN));
+            mv.visitMaxs(varIndex, varIndex);
         }
         mv.visitEnd();
     }
@@ -88,7 +101,9 @@ public final class AsmProxyV2
     private void addAbstractMethod(MethodVisitor mv, Method method)
     {
         Class<?> returnType = method.getReturnType();
+        int maxStack;
         if (returnType == void.class) {
+            maxStack = 0;
             mv.visitInsn(RETURN);
         }
         else {
@@ -103,11 +118,13 @@ public final class AsmProxyV2
                 mv.visitMethodInsn(INVOKEVIRTUAL, internalName,
                         returnType.getName() + "Value", "()" + Type.getDescriptor(returnType), false);
                 mv.visitInsn(type.getOpcode(IRETURN));
+                maxStack = type.getSize();
             }
             else {
                 mv.visitInsn(ACONST_NULL);
                 mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
                 mv.visitInsn(ARETURN);
+                maxStack = 1;
             }
         }
         int varIndex = 1;
@@ -115,29 +132,29 @@ public final class AsmProxyV2
             Type type = Type.getType(parameterType);
             varIndex += type.getSize();
         }
-        mv.visitMaxs(1, varIndex);
+        mv.visitMaxs(maxStack, varIndex);
     }
 
-    private void addSupperMethod(MethodVisitor methodVisitor, Class<?> superclass, Method method, String descriptor)
+    public static int addSupperMethod(MethodVisitor methodVisitor, Class<?> superclass, Method method, String descriptor)
     {
         methodVisitor.visitVarInsn(ALOAD, 0); // this
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        int varIndex = 1;
-        for (Class<?> parameterType : parameterTypes) {
-            Type type = Type.getType(parameterType);
-            int loadCmd = type.getOpcode(ILOAD);
-            methodVisitor.visitVarInsn(loadCmd, varIndex);
-            varIndex += type.getSize();
-        }
+        int varIndex = visitArgsInsn(methodVisitor, method);
         Class<?> declaringClass = method.getDeclaringClass();
         Class<?> ownerClass = declaringClass.isAssignableFrom(superclass) ? superclass : declaringClass;
         String ownerName = Type.getInternalName(ownerClass);
         boolean isInterface = ownerClass.isInterface();
         methodVisitor.visitMethodInsn(INVOKESPECIAL, ownerName, method.getName(), descriptor, isInterface);
-        Class<?> returnType = method.getReturnType();
-        Type type = Type.getType(returnType);
-        int opCode = type.getOpcode(IRETURN);
-        methodVisitor.visitInsn(opCode);
-        methodVisitor.visitMaxs(varIndex, varIndex);
+        return varIndex;
+    }
+
+    public static int visitArgsInsn(MethodVisitor mv, Method method)
+    {
+        int varIndex = 1;
+        for (Class<?> parameterType : method.getParameterTypes()) {
+            Type type = Type.getType(parameterType);
+            mv.visitVarInsn(type.getOpcode(ILOAD), varIndex); //stack+=typeSize
+            varIndex += type.getSize();
+        }
+        return varIndex;
     }
 }

@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop.impl;
+package com.github.harbby.gadtry.aop.proxy;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.model.Test1;
-import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
-import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.collection.MutableList;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,7 +54,7 @@ public class JavassistProxyV2Test
                     return constructor.newInstance(name);
                 })
                 .build();
-        Test1 proxy = ProxyFactory.getJavassistProxyV2().newProxyInstance(request);
+        Test1 proxy = JavassistProxyV2.javassistProxyV2.newProxyInstance(request);
 
         Assert.assertEquals(18 - 1, proxy.age());
         Assert.assertEquals(name, proxy.name());
@@ -91,7 +89,7 @@ public class JavassistProxyV2Test
                 .setInvocationHandler(handler)
                 .build();
         //Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class, Serializable.class);
-        Test1 proxy = ProxyFactory.getJavassistProxy().newProxyInstance(request);
+        Test1 proxy = JavassistProxy.javassistProxy.newProxyInstance(request);
 
         Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
         Assert.assertEquals(name, proxy.name());
@@ -121,7 +119,7 @@ public class JavassistProxyV2Test
                 .setClassLoader(getClass().getClassLoader())
                 .setNewInstance(aClass -> aClass.getConstructor().newInstance())
                 .build();
-        People proxy = ProxyFactory.getJavassistProxyV2().newProxyInstance(request);
+        People proxy = JavassistProxyV2.javassistProxyV2.newProxyInstance(request);
         Assert.assertEquals(proxy.age, proxy.getAge());
         Assert.assertEquals(proxy.name, proxy.getName());
         Assert.assertEquals(proxy.isActive, proxy.isActive());

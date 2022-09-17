@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static java.util.Objects.requireNonNull;
 
 public class BindMapping
 {
@@ -89,12 +88,6 @@ public class BindMapping
 
     public static BindMapping create(Bean... beans)
     {
-        return create(IocHandler.NO_AOP_HANDLER, beans);
-    }
-
-    public static BindMapping create(IocHandler iocHandler, Bean... beans)
-    {
-        requireNonNull(iocHandler, "iocHandler is null");
         final BindMapping.Builder builder = BindMapping.builder();
         final InternalContext context = new InternalContext(builder.build());
         final Binder binder = new Binder()
@@ -102,7 +95,7 @@ public class BindMapping
             @Override
             public <T> void bind(Class<T> key, T instance)
             {
-                builder.bind(key, Lazys.of(() -> iocHandler.onCreate(key, instance)));
+                builder.bind(key, () -> instance);
             }
 
             @Override
@@ -114,7 +107,7 @@ public class BindMapping
                     public void withSingle()
                     {
                         checkState(!key.isInterface(), key + "key is Interface");
-                        Supplier<T> creator = () -> iocHandler.onCreate(key, context.getByNew(key));
+                        Supplier<T> creator = () -> context.getByNew(key);
                         builder.bind(key, Lazys.of(creator));
                     }
 
@@ -122,14 +115,14 @@ public class BindMapping
                     public void noScope()
                     {
                         checkState(!key.isInterface(), key + "key is Interface");
-                        Supplier<T> creator = () -> iocHandler.onCreate(key, context.getByNew(key));
+                        Supplier<T> creator = () -> context.getByNew(key);
                         builder.bind(key, creator);
                     }
 
                     @Override
                     public Scope by(Class<? extends T> createClass)
                     {
-                        Supplier<T> creator = () -> iocHandler.onCreate(key, context.getByNew(createClass));
+                        Supplier<T> creator = () -> context.getByNew(createClass);
                         builder.bind(key, creator);
                         return () -> builder.bindUpdate(key, Lazys.of(creator));
                     }
@@ -137,21 +130,20 @@ public class BindMapping
                     @Override
                     public void byInstance(T instance)
                     {
-                        builder.bind(key, Lazys.of(() -> iocHandler.onCreate(key, instance)));
+                        builder.bind(key, () -> instance);
                     }
 
                     @Override
                     public Scope byCreator(Supplier<? extends T> creator)
                     {
-                        Supplier<? extends T> proxyCreator = () -> iocHandler.onCreate(key, creator.get());
-                        builder.bind(key, proxyCreator);
-                        return () -> builder.bindUpdate(key, Lazys.of(proxyCreator));
+                        builder.bind(key, creator);
+                        return () -> builder.bindUpdate(key, Lazys.of(creator));
                     }
 
                     @Override
                     public Scope byCreator(Class<? extends Supplier<T>> creatorClass)
                     {
-                        Supplier<? extends T> proxyCreator = () -> iocHandler.onCreate(key, context.getByNew(creatorClass).get());
+                        Supplier<? extends T> proxyCreator = () -> context.getByNew(creatorClass).get();
                         builder.bind(key, proxyCreator);
                         return () -> builder.bindUpdate(key, Lazys.of(proxyCreator));
                     }

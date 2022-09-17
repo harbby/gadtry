@@ -15,17 +15,14 @@
  */
 package com.github.harbby.gadtry.aop.proxy;
 
-import com.github.harbby.gadtry.GadTry;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.function.Function;
 import com.github.harbby.gadtry.io.IOUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -47,6 +44,8 @@ import static java.util.Objects.requireNonNull;
 public abstract class AbstractProxy
         implements ProxyFactory
 {
+    private static final Class<?> DEFAULT_BUDDY_CLASS = AopGo.class;
+    private static final String DEFAULT_PACKAGE_NAME = DEFAULT_BUDDY_CLASS.getPackage().getName();
     private final AtomicLong number;
     private final ConcurrentMap<KeyX, Class<?>> proxyCache;
 
@@ -111,7 +110,9 @@ public abstract class AbstractProxy
         void merge(Method[] methods)
         {
             for (Method method : methods) {
-                methodsMap.putIfAbsent(new Key(method), method);
+                if (!method.isSynthetic()) {  // method.isBridge()
+                    methodsMap.putIfAbsent(new Key(method), method);
+                }
             }
         }
 
@@ -232,7 +233,7 @@ public abstract class AbstractProxy
             beginName = superclass.getName();
         }
         else {
-            beginName = GadTry.class.getPackage().getName() + "." + superclass.getSimpleName();
+            beginName = DEFAULT_PACKAGE_NAME + "." + superclass.getSimpleName();
         }
         return String.format("%s$%s%s", beginName, proxyClassNameFlag(), number.getAndIncrement());
     }
@@ -263,7 +264,7 @@ public abstract class AbstractProxy
         Collection<Method> proxyMethods = findProxyMethods(superclass, interfaceSet, isAccessClass);
         String className = createProxyClassName(superclass, isAccessClass);
         byte[] byteCode = this.generate(request.getClassLoader(), className, superclass, interfaceSet, proxyMethods);
-        //this.toWrite(new File("./out", className.replace('.', '/') + ".class"), byteCode);
+        IOUtils.write(byteCode, new File("out", className.replace('.', '/') + ".class"));
         int vmVersion = Platform.getJavaVersion();
         if (vmVersion < 9) {
             // java 8 or java7
@@ -274,22 +275,11 @@ public abstract class AbstractProxy
             return Platform.defineClass(byteCode, classLoader);
         }
 
-        Class<?> buddyClass = isAccessClass ? superclass : GadTry.class;
+        Class<?> buddyClass = isAccessClass ? superclass : DEFAULT_BUDDY_CLASS;
         if (vmVersion >= 15 && this.enableHiddenClass()) {
             return Platform.defineHiddenClass(buddyClass, byteCode, false);
         }
         // 9 - 14
         return Platform.defineClass(buddyClass, byteCode);
-    }
-
-    private void toWrite(File file, byte[] byteCode)
-    {
-        file.getParentFile().mkdirs();
-        try (FileOutputStream outputStream = new FileOutputStream(file, false)) {
-            IOUtils.copyBytes(new ByteArrayInputStream(byteCode), outputStream, 4096);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

@@ -15,7 +15,11 @@
  */
 package com.github.harbby.gadtry.aop.proxy;
 
+import com.github.harbby.gadtry.collection.ImmutableSet;
+
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
+import java.util.Set;
 
 public final class AsmProxy
         extends AbstractAsmProxy
@@ -23,6 +27,11 @@ public final class AsmProxy
     static final AsmProxy asmProxy = new AsmProxy();
 
     private AsmProxy() {}
+
+    protected Set<Class<?>> defaultSuperInterface()
+    {
+        return ImmutableSet.of(ProxyAccess.class, Serializable.class);
+    }
 
     @Override
     protected Class<?> getHandlerClass()

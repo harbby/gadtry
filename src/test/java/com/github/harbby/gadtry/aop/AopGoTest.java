@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import com.github.harbby.gadtry.GadTry;
 import com.github.harbby.gadtry.base.JavaTypes;
+import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableSet;
@@ -34,6 +34,21 @@ import static com.github.harbby.gadtry.aop.mockgo.MockGoArgument.anyInt;
 
 public class AopGoTest
 {
+    @Test
+    public void testConcurrent10()
+    {
+        Streams.range(10).parallel().forEach(x -> {
+            Set set = AopGo.proxy(HashSet.class).byInstance(new HashSet<String>())
+                    .aop(binder -> {
+                        binder.doAfter(after -> {
+                            String name = after.getName();
+                            System.out.println(name);
+                        }).returnType(void.class, Boolean.class);
+                    }).build();
+            set.clear();
+        });
+    }
+
     @Test
     public void proxyTestGiveTuple4()
     {
@@ -70,60 +85,6 @@ public class AopGoTest
                     }).when().getField(anyInt());
                 })
                 .build();
-        proxy.f1();
-        Assert.assertEquals(action.get(), "before_f1");
-        proxy.f2();
-        Assert.assertEquals(action.get(), "returning_f2_2");
-        proxy.f3();
-        Assert.assertEquals(action.get(), "after_f3_4.0");
-        proxy.f4();
-        Assert.assertEquals(action.get(), "around_f4_a");
-
-        Assert.assertEquals(proxy.getField(1), "1");
-        try {
-            proxy.getField(0);
-        }
-        catch (IndexOutOfBoundsException e) {
-            Assert.assertEquals(action.get(), "afterThrowing_getField_0");
-        }
-    }
-
-    @Test
-    public void createAfterMock()
-    {
-        Tuple1<String> action = new Tuple1<>(null);
-        Tuple4<String, Integer, Double, Character> proxy = AopGo.proxy(Tuple4.of("1", 2, 4.0d, 'a'))
-                .build();
-
-        AopGo.doBefore(before -> {
-            Object[] args = before.getArgs();
-            Assert.assertTrue(args == null || args.length == 0);
-            action.set("before_" + before.getName());
-        }).when(proxy).f1();
-        AopGo.doAfterReturning(returning -> {
-            Object[] args = returning.getArgs();
-            Assert.assertTrue(args == null || args.length == 0);
-            action.set("returning_" + returning.getName() + "_" + returning.getValue());
-        }).when(proxy).f2();
-        AopGo.doAfter(after -> {
-            Object[] args = after.getArgs();
-            Assert.assertTrue(args == null || args.length == 0);
-            Assert.assertTrue(after.isSuccess() && after.getThrowable() == null);
-            action.set("after_" + after.getName() + "_" + after.getValue());
-        }).when(proxy).f3();
-        AopGo.doAround(around -> {
-            Object[] args = around.getArgs();
-            Assert.assertTrue(args == null || args.length == 0);
-            Object value = around.proceed();
-            action.set("around_" + around.getName() + "_" + value);
-            return around.proceed();
-        }).when(proxy).f4();
-        AopGo.doAfterThrowing(throwing -> {
-            Assert.assertArrayEquals(throwing.getArgs(), new Object[] {0});
-            Assert.assertEquals(throwing.<Integer>getArgument(0).intValue(), 0);
-            action.set("afterThrowing_" + throwing.getName() + "_" + throwing.getThrowable().getMessage());
-        }).when(proxy).getField(anyInt());
-
         proxy.f1();
         Assert.assertEquals(action.get(), "before_f1");
         proxy.f2();
@@ -190,7 +151,6 @@ public class AopGoTest
         List<String> list = AopGo.proxy(new ArrayList<String>())
                 .aop(binder -> {
                     binder.doAround(cut -> {
-                        Assert.assertTrue(cut.mock().getClass().getName().startsWith(GadTry.class.getPackage().getName()));
                         return (int) cut.proceed() + 1;
                     }).whereMethod(method -> method.getName().startsWith("size"));
                     binder.doBefore(before -> {

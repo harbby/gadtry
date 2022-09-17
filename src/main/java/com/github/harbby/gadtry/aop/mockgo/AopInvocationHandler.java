@@ -50,6 +50,7 @@ public class AopInvocationHandler
                 if (proxy instanceof ProxyAccess) {
                     return ((ProxyAccess) proxy).callRealMethod(method, target, args);
                 }
+                //jdk proxy
                 return method.invoke(target, args);
             }
         };

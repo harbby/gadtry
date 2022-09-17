@@ -17,6 +17,8 @@ package com.github.harbby.gadtry.io;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -100,7 +102,7 @@ public class IOUtils
      * @param buffSize the size of the buffer, 4096
      * @throws IOException IOException
      */
-    public static void copyBytes(InputStream in, OutputStream out, int buffSize)
+    public static void copy(InputStream in, OutputStream out, int buffSize)
             throws IOException
     {
         PrintStream ps = out instanceof PrintStream ? (PrintStream) out : null;
@@ -112,6 +114,12 @@ public class IOUtils
                 throw new IOException("Unable to write to output stream.");
             }
         }
+    }
+
+    public static void copy(InputStream in, OutputStream out)
+            throws IOException
+    {
+        copy(in, out, 4096);
     }
 
     public static List<String> readAllLines(InputStream inputStream)
@@ -213,5 +221,25 @@ public class IOUtils
         }
 
         return result;
+    }
+
+    public static void write(byte[] bytes, String filePath)
+            throws IOException
+    {
+        write(bytes, new File(filePath));
+    }
+
+    public static void write(byte[] bytes, File file)
+            throws IOException
+    {
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            if (!parent.mkdirs()) {
+                throw new IOException("mkdir parent dir " + parent + " failed");
+            }
+        }
+        try (FileOutputStream outputStream = new FileOutputStream(file, false)) {
+            outputStream.write(bytes);
+        }
     }
 }

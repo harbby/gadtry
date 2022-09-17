@@ -26,7 +26,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -37,6 +36,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.github.harbby.gadtry.aop.proxy2.AsmUtil.pushClass;
+import static com.github.harbby.gadtry.aop.proxy2.AsmUtil.pushIntNumber;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -49,26 +50,22 @@ import static org.objectweb.asm.Opcodes.ANEWARRAY;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.ATHROW;
-import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
-import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
-import static org.objectweb.asm.Opcodes.LDC;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.SIPUSH;
 
 public abstract class AbstractAsmProxy
         extends AbstractProxy
@@ -148,6 +145,8 @@ public abstract class AbstractAsmProxy
                 isPublic);
     }
 
+    protected abstract Set<Class<?>> defaultSuperInterface();
+
     protected byte[] generate(ClassLoader classLoader, String classFullName, Class<?> superclass,
             Set<Class<?>> interfaceSet, Collection<Method> proxyMethods)
     {
@@ -162,8 +161,9 @@ public abstract class AbstractAsmProxy
         else {
             superName = Type.getInternalName(superclass);
         }
-        interfaceList.add(Type.getInternalName(ProxyAccess.class));
-        interfaceList.add(Type.getInternalName(Serializable.class));
+        for (Class<?> interfaceClass : defaultSuperInterface()) {
+            interfaceList.add(Type.getInternalName(interfaceClass));
+        }
         for (Class<?> it : interfaceSet) {
             interfaceList.add(Type.getInternalName(it));
         }
@@ -311,25 +311,6 @@ public abstract class AbstractAsmProxy
         }
     }
 
-    static void pushIntNumber(MethodVisitor methodVisitor, int number)
-    {
-        if (number >= -1 && number <= 5) {
-            // [-1,5] see: ICONST_M1, ICONST_0, ICONST_1, ICONST_2 , ... , ICONST_5
-            methodVisitor.visitInsn(ICONST_0 + number);
-        }
-        else if (number >= Byte.MIN_VALUE && number <= Byte.MAX_VALUE) {
-            // [-128~127]
-            methodVisitor.visitIntInsn(BIPUSH, number);
-        }
-        else if (number >= Short.MIN_VALUE && number <= Short.MAX_VALUE) {
-            methodVisitor.visitIntInsn(SIPUSH, number);
-        }
-        else {
-            //number >= Integer.MIN_VALUE && number <= Integer.MAX_VALUE
-            methodVisitor.visitIntInsn(LDC, number);
-        }
-    }
-
     protected void addReturn(MethodVisitor methodVisitor, Method method)
     {
         Class<?> typeClass = method.getReturnType();
@@ -381,19 +362,6 @@ public abstract class AbstractAsmProxy
         //methodVisitor.visitMethodInsn(INVOKESTATIC, "javassist/util/proxy/RuntimeSupport", "findMethod", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/reflect/Method;", false);
         methodVisitor.visitFieldInsn(PUTSTATIC, className, bindName, "Ljava/lang/reflect/Method;");
         return stack;
-    }
-
-    protected void pushClass(MethodVisitor methodVisitor, Class<?> arg)
-    {
-        if (arg.isPrimitive()) {
-            Class<?> wrapper = JavaTypes.getWrapperClass(arg);
-            methodVisitor.visitFieldInsn(GETSTATIC,
-                    Type.getInternalName(wrapper), "TYPE",
-                    "Ljava/lang/Class;"); // stack = 6
-        }
-        else {
-            methodVisitor.visitLdcInsn(Type.getType(arg));  // stack = 6
-        }
     }
 
     private void createMethods(ClassWriter classWriter, String className, Collection<Method> proxyMethods, Class<?> superclass)

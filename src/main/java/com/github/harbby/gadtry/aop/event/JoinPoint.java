@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 public interface JoinPoint
         extends Before
 {
-    Object mock();
+    Object getMock();
 
     default Object proceed()
             throws Throwable
@@ -61,7 +61,7 @@ public interface JoinPoint
             }
 
             @Override
-            public Object mock()
+            public Object getMock()
             {
                 return mock;
             }

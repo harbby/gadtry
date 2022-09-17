@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.aop.proxy;
 
-import com.github.harbby.gadtry.Beta;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.base.Try;
 import javassist.CannotCompileException;
@@ -31,7 +30,6 @@ import java.lang.reflect.Field;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Beta
 final class JavassistProxyV2
         extends AbstractJavassistProxy
 {

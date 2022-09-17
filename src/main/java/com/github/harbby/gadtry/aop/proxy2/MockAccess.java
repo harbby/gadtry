@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.collection.iterator;
+package com.github.harbby.gadtry.aop.proxy2;
 
-import com.github.harbby.gadtry.collection.IteratorPlus;
-import com.github.harbby.gadtry.collection.tuple.Tuple2;
+import java.lang.reflect.InvocationHandler;
 
-public interface KvIterator<K, V>
-        extends IteratorPlus<Tuple2<K, V>>
+public interface MockAccess
 {
     /**
-     * 唯一键
+     * sets a handler.  It can be used for changing handlers
+     * during runtime.
      *
-     * @return key是否具有唯一性
+     * @param handler {@link InvocationHandler}
      */
-    public boolean primaryKey();
+    public void setHandler(Interceptor handler);
+
+    /**
+     * get a handler.  It can be used for changing handlers
+     * during runtime.
+     *
+     * @return handler {@link InvocationHandler}
+     */
+    public Interceptor getHandler();
 }

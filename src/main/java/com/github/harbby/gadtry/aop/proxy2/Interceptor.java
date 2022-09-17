@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.aop;
+package com.github.harbby.gadtry.aop.proxy2;
 
-import com.github.harbby.gadtry.aop.aopgo.AopBuilder;
+import java.lang.reflect.Method;
+import java.util.concurrent.Callable;
 
-public class AopGo
+/**
+ * @see java.lang.reflect.InvocationHandler#invoke(Object, Method, Object[])
+ */
+public interface Interceptor
 {
-    private AopGo() {}
-
-    public interface ByInstance<T>
-    {
-        public AopBuilder<T> byInstance(T target);
-    }
-
-    public static <T> ByInstance<T> proxy(Class<T> superclass)
-    {
-        return target -> new AopBuilder<>(superclass, target);
-    }
-
-    public static <T> AopBuilder<T> proxy(T instance)
-    {
-        return new AopBuilder<T>((Class<T>) instance.getClass(), instance);
-    }
+    Object invoke(Object proxy, Method method, Callable<Object> caller)
+            throws Throwable;
 }

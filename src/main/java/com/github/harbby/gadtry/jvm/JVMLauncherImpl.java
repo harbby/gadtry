@@ -167,11 +167,11 @@ public class JVMLauncherImpl<R>
             url = requireNonNull(ClassLoader.getSystemClassLoader().getResource("./agent.jar"), "not found resource ./agent.jar");
         }
         if (Strings.isNotBlank(taskProcessName)) {
-            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.getPath()).getPath(), JVMLauncher.class.getName(), taskProcessName));
-            ops.add(JVMLauncher.class.getPackage().getName() + "." + taskProcessName);
+            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.getPath()).getPath(), ForkVmProcess.class.getName(), taskProcessName));
+            ops.add(ForkVmProcess.class.getPackage().getName() + "." + taskProcessName);
         }
         else {
-            ops.add(JVMLauncher.class.getName());
+            ops.add(ForkVmProcess.class.getName());
         }
 
         ops.add(String.valueOf(System.currentTimeMillis()));

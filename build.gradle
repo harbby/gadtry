@@ -44,9 +44,7 @@ tasks.named("processResources") {
 tasks.withType(org.gradle.jvm.tasks.Jar) { duplicatesStrategy = 'include' }
 
 dependencies {
-  compileOnly group: 'org.javassist', name: 'javassist', version: '3.29.1-GA'
   compileOnly group: 'net.java.dev.jna', name: 'jna-platform-jpms', version: '5.9.0'
-
   implementation 'org.ow2.asm:asm:9.3'
 
   testImplementation group: 'org.javassist', name: 'javassist', version: '3.29.1-GA'

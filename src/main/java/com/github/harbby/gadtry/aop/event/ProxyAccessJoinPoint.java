@@ -42,7 +42,7 @@ public class ProxyAccessJoinPoint
     }
 
     @Override
-    public Object mock()
+    public Object getMock()
     {
         return mock;
     }

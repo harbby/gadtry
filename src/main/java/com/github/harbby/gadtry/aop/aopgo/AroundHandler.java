@@ -47,9 +47,9 @@ public interface AroundHandler
                 }
 
                 @Override
-                public Object mock()
+                public Object getMock()
                 {
-                    return joinPoint.mock();
+                    return joinPoint.getMock();
                 }
 
                 @Override

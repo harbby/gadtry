@@ -327,12 +327,8 @@ public class JVMLaunchersTest
     public void testStartVMError()
             throws Exception
     {
-        String f = "testForkJvmThrowRuntimeException123";
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .task(() -> {
-                    //----child vm task
-                    return 0;
-                })
+                .task(() -> 0)
                 .setClassLoader(this.getClass().getClassLoader())
                 .setXms("16m")
                 .setXmx("16m")
@@ -344,8 +340,10 @@ public class JVMLaunchersTest
             Assert.fail();
         }
         catch (JVMException e) {
-            Assert.assertTrue(e.getMessage().contains(JVMLauncher.class.getName()));
-            e.printStackTrace();
+            String errorMsg = String.format("Error: Could not find or load main class %s\n" +
+                            "Caused by: java.lang.ClassNotFoundException: %s\n",
+                    ForkVmProcess.class.getName(), ForkVmProcess.class.getName());
+            Assert.assertEquals(e.getMessage(), errorMsg);
         }
     }
 
