@@ -24,14 +24,6 @@ import java.nio.ByteBuffer;
 class JavaModuleExtPlatformImpl
         implements Platform.ExtPlatform
 {
-    static {
-        try {
-            addExportsOrOpensJavaModules(Class.forName("jdk.internal.ref.Cleaner"), Platform.class, false);
-        }
-        catch (Exception ignored) {
-        }
-    }
-
     /**
      * Converts the class byte code to a java.lang.Class object
      * This method is available in Java 9 or later
@@ -71,6 +63,7 @@ class JavaModuleExtPlatformImpl
     public Object createCleaner(Object ob, Runnable thunk)
     {
         // --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+        // addExportsOrOpensJavaModules(Class.forName("jdk.internal.ref.Cleaner"), Platform.class, false);
         return jdk.internal.ref.Cleaner.create(ob, thunk);
     }
 

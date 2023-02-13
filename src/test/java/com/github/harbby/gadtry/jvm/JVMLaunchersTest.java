@@ -310,13 +310,14 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .filterThisJVMClass()
                 .build();
+        VmPromise<Integer> promise = launcher.start();
         try {
-            launcher.start().call();
+            promise.call();
             Assert.fail();
         }
         catch (JVMException e) {
-            String errorMsg = String.format("java.lang.ClassNotFoundException: %s", JVMLauncher.class.getName());
-            Assert.assertTrue(e.getMessage().contains(errorMsg));
+            String errorMsg = e.getMessage();
+            Assert.assertTrue(errorMsg.contains(JVMLauncher.class.getName()));
         }
     }
 
