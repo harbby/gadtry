@@ -6,7 +6,7 @@ sourceCompatibility = targetVersion
 targetCompatibility = targetVersion
 
 jacoco {
-  toolVersion = "0.8.7"
+  toolVersion = "0.8.8"
 }
 
 sourceSets {

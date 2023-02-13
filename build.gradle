@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.9.10-SNAPSHOT"  //SNAPSHOT
+version = "1.9.12"  //SNAPSHOT
 
 def jdk = project.hasProperty('jdk') ? project.jdk : 'java11'  //default -Pjdk=java11
 //def jdk = System.getProperty("jdk") ?: " -Djdk=java11
@@ -45,7 +45,7 @@ tasks.withType(org.gradle.jvm.tasks.Jar) { duplicatesStrategy = 'include' }
 
 dependencies {
   compileOnly group: 'net.java.dev.jna', name: 'jna-platform-jpms', version: '5.9.0'
-  implementation 'org.ow2.asm:asm:9.3'
+  implementation 'org.ow2.asm:asm:9.4'
 
   testImplementation group: 'org.javassist', name: 'javassist', version: '3.29.1-GA'
   testImplementation group: 'junit', name: 'junit', version: '4.12'

@@ -20,9 +20,7 @@ import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.mockgo.MockGoException;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.function.Function;
-import com.github.harbby.gadtry.io.IOUtils;
 
-import java.io.File;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -264,7 +262,7 @@ public abstract class AbstractProxy
         Collection<Method> proxyMethods = findProxyMethods(superclass, interfaceSet, isAccessClass);
         String className = createProxyClassName(superclass, isAccessClass);
         byte[] byteCode = this.generate(request.getClassLoader(), className, superclass, interfaceSet, proxyMethods);
-        IOUtils.write(byteCode, new File("out", className.replace('.', '/') + ".class"));
+        // IOUtils.write(byteCode, new File("out", className.replace('.', '/') + ".class"));
         int vmVersion = Platform.getJavaVersion();
         if (vmVersion < 9) {
             // java 8 or java7

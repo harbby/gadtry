@@ -16,13 +16,11 @@
 package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.base.Platform;
-import com.github.harbby.gadtry.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
-import java.io.File;
 import java.lang.instrument.Instrumentation;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -42,7 +40,7 @@ public class JvmAgent
         ClassWriter classWriter = new ClassWriter(classReader, 0);
         classReader.accept(new ClassModify(Opcodes.ASM9, classWriter, mainClass), ClassReader.SKIP_DEBUG);
         byte[] byteCode = classWriter.toByteArray();
-        IOUtils.write(byteCode, new File("out/1.class"));
+        // IOUtils.write(byteCode, new File("out/1.class"));
         if (Platform.getJavaVersion() > 8) {
             Platform.defineClass(oldMainClass, byteCode);
         }

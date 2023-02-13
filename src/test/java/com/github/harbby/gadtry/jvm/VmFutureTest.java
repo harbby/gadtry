@@ -15,21 +15,28 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.aop.MockGo;
 import com.github.harbby.gadtry.function.AutoClose;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.instrument.Instrumentation;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 public class VmFutureTest
 {
+    @Test
+    public void agentTest()
+            throws Exception
+    {
+        Instrumentation instrumentation = MockGo.mock(Instrumentation.class);
+        JvmAgent.premain(JVMLauncher.class.getName() + ":newClassName", instrumentation);
+        Assert.assertNotNull(Class.forName(JVMLauncher.class.getPackage().getName() + ".newClassName"));
+    }
+
     @Test
     public void taskErrorTest()
             throws JVMException, InterruptedException
@@ -83,23 +90,19 @@ public class VmFutureTest
                     return "done";
                 })
                 .build();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
         VmPromise<String> vmPromise = launcher.start();
         try (AutoClose ignored = vmPromise::cancel) {
-            executor.submit(vmPromise::call).get(100, TimeUnit.MILLISECONDS);
+            vmPromise.call(100, TimeUnit.MILLISECONDS);
             Assert.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof TimeoutException);
-        }
-        finally {
-            executor.shutdown();
+            Assert.assertTrue(e instanceof JVMTimeoutException);
         }
     }
 
     @Test
     public void getTimeOut()
-            throws JVMException, InterruptedException, ExecutionException
+            throws JVMException, InterruptedException
     {
         JVMLauncher<String> launcher = JVMLaunchers.<String>newJvm()
                 .setXmx("32m")
@@ -131,7 +134,7 @@ public class VmFutureTest
 
         VmPromise<String> promise = launcher.start();
         try {
-            Assert.assertFalse(promise.isDone());
+            Assert.assertTrue(promise.isAlive());
         }
         finally {
             promise.cancel();

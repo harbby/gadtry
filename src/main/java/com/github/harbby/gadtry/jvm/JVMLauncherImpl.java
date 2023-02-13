@@ -73,7 +73,7 @@ public class JVMLauncherImpl<R>
 
     @Override
     public R startAndGet()
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         return startAndGet(this.task);
     }
@@ -85,8 +85,7 @@ public class JVMLauncherImpl<R>
         requireNonNull(task, "Fork VM Task is null");
         try {
             byte[] bytes = Serializables.serialize(task);
-            VmPromise<R> promise = this.startAndGetByte(bytes);
-            return promise;
+            return this.startAndGetByte(bytes);
         }
         catch (IOException e) {
             throw new JVMException(e);
@@ -102,7 +101,7 @@ public class JVMLauncherImpl<R>
 
     @Override
     public R startAndGet(VmCallable<R> task)
-            throws JVMException
+            throws JVMException, InterruptedException
     {
         return this.start(task).call();
     }
@@ -111,31 +110,23 @@ public class JVMLauncherImpl<R>
             throws IOException
     {
         ProcessBuilder builder = new ProcessBuilder(buildMainArg(otherVmOps))
-                .redirectErrorStream(true);
+                .redirectErrorStream(false);
         if (workDirectory != null && workDirectory.exists() && workDirectory.isDirectory()) {
             builder.directory(workDirectory);
         }
         builder.environment().putAll(environment);
-
         Process process = builder.start();
 
         //send task to child vm
-        try (OutputStream os = process.getOutputStream()) {
+        OutputStream os = process.getOutputStream();
+        try {
             os.write(task);
             os.flush();
         }
-        catch (IOException ignored) { //child not running
+        catch (IOException e) {
+            // child vm exited
         }
-        ChildVMChannelInputStream reader = new ChildVMChannelInputStream(process.getInputStream());
-        VmPromise<byte[]> promise = new VmPromise.VmPromiseImpl(process, reader, consoleHandler);
-        return promise.map(bytes -> {
-            try {
-                return Serializables.byteToObject(bytes, classLoader);
-            }
-            catch (IOException | ClassNotFoundException e) {
-                throw new JVMException("child result decoder failed", e);
-            }
-        });
+        return new VmPromiseImpl<>(process, consoleHandler, classLoader);
     }
 
     private String getUserAddClasspath()
@@ -166,15 +157,14 @@ public class JVMLauncherImpl<R>
         if (!url.getPath().endsWith(".jar")) {
             url = requireNonNull(ClassLoader.getSystemClassLoader().getResource("./agent.jar"), "not found resource ./agent.jar");
         }
+        Class<?> processClass = JVMLauncher.class;
         if (Strings.isNotBlank(taskProcessName)) {
-            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.getPath()).getPath(), ForkVmProcess.class.getName(), taskProcessName));
-            ops.add(ForkVmProcess.class.getPackage().getName() + "." + taskProcessName);
+            ops.add(String.format("-javaagent:%s=%s:%s", new File(url.getPath()).getPath(), processClass.getName(), taskProcessName));
+            ops.add(processClass.getPackage().getName() + "." + taskProcessName);
         }
         else {
-            ops.add(ForkVmProcess.class.getName());
+            ops.add(processClass.getName());
         }
-
-        ops.add(String.valueOf(System.currentTimeMillis()));
         return ops;
     }
 }

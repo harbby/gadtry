@@ -21,55 +21,89 @@ import com.github.harbby.gadtry.base.Throwables;
 import sun.misc.Unsafe;
 
 import java.io.FilterOutputStream;
-import java.io.NotSerializableException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Callable;
+
+import static com.github.harbby.gadtry.jvm.JVMLauncherImpl.VM_HEADER;
 
 public final class ForkVmProcess
 {
     private ForkVmProcess() {}
 
-    public static void main(String[] args)
+    public static void runMain(String[] args)
             throws Exception
     {
-        /*
-         * plan1:
-         * System.err.close();
-         * System.setErr(System.out);
-         *
-         * plan2:
-         * if (Platform.getClassVersion() > 52) {
-         *      ops.add("--add-opens=java.base/java.io=ALL-UNNAMED");
-         * }
-         */
-        ChildVMSystemOutputStream wrapperOutStream = new ChildVMSystemOutputStream(System.out);
-        Unsafe unsafe = Platform.getUnsafe();
-        System.setOut(wrapperOutStream);
-        // plan3:
-        Field field = FilterOutputStream.class.getDeclaredField("out");
-        unsafe.putObject(System.err, unsafe.objectFieldOffset(field), wrapperOutStream);  //equals to: field.set(System.err, mock);
-
-        //first write header
-        wrapperOutStream.writeVmHeader();
-
-        try (ObjectInputStream ois = new ObjectInputStream(System.in)) {
-            VmCallable<?> task = (VmCallable<?>) ois.readObject();
+        OutputStream sysErr = initSysError();
+        try {
+            // first read sys.in
+            Callable<?> task = Serializables.byteToObject(System.in, ClassLoader.getSystemClassLoader());
+            // check parent
+            Thread thread = new StdinListenerThread();
+            thread.start();
+            //2. write header to sys.err
+            sysErr.write(VM_HEADER, 0, VM_HEADER.length);
+            sysErr.flush();
+            //3. call task
             Object value = task.call();
-            if (value != null && !(value instanceof Serializable)) {
-                throw new NotSerializableException("not serialize result: " + value);
-            }
-
-            byte[] result = Serializables.serialize((Serializable) value);
-            wrapperOutStream.release(false, result);
+            byte[] result = Serializables.serialize(value);
+            saveTarget(sysErr, result, true);
+            System.exit(0);
         }
         catch (Throwable e) {
             byte[] err = Throwables.getStackTraceAsString(e).getBytes(StandardCharsets.UTF_8);
-            wrapperOutStream.release(true, err);
+            saveTarget(sysErr, err, false);
+            System.exit(1);
         }
         finally {
-            System.exit(0);
+            sysErr.close();
+        }
+    }
+
+    private static class StdinListenerThread
+            extends Thread
+    {
+        @Override
+        public void run()
+        {
+            try {
+                while (System.in.read() != -1) {
+                    // pass
+                }
+            }
+            catch (IOException e) {
+                // e.printStackTrace();
+            }
+            // Parent exits.
+            System.exit(2);
+        }
+    }
+
+    private static OutputStream initSysError()
+            throws Exception
+    {
+        Unsafe unsafe = Platform.getUnsafe();
+        Field field = FilterOutputStream.class.getDeclaredField("out");
+        long offset = unsafe.objectFieldOffset(field);
+        OutputStream sysOut = (OutputStream) unsafe.getObject(System.out, offset);
+        OutputStream sysErr = (OutputStream) unsafe.getObject(System.err, offset);
+        // redirect Error Stream
+        unsafe.putObject(System.err, offset, sysOut);
+        return sysErr;
+    }
+
+    private static void saveTarget(OutputStream outputStream, byte[] bytes, boolean success)
+    {
+        try {
+            outputStream.write(success ? '0' : '1');
+            outputStream.write(bytes);
+            outputStream.flush();
+        }
+        catch (IOException e) {
+            // sys err failed
+            e.printStackTrace();
         }
     }
 }

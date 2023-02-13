@@ -70,39 +70,14 @@ public class JVMLaunchersTest
         Assert.assertEquals(rs, Arrays.asList("line: 1", "line: 2", "line: 3"));
     }
 
-    @Test
-    public void ioEncoderTest()
-            throws IOException
-    {
-        PipedOutputStream outStream = new PipedOutputStream();
-        PipedInputStream pipeIn = new PipedInputStream(outStream);
-        ChildVMSystemOutputStream out = new ChildVMSystemOutputStream(new PrintStream(outStream));
-        new Thread(() -> {
-            //mock child vm
-            out.writeVmHeader();
-            out.println("line: " + 1);
-            out.println("line: " + 2);
-            out.println("line: " + 3);
-            out.release(true, new byte[0]);
-            out.close();
-        }).start();
-        InputStream in = new ChildVMChannelInputStream(pipeIn);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
-        List<String> rs = new ArrayList<>();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            rs.add(line);
-        }
-        Assert.assertEquals(rs, Arrays.asList("line: 1", "line: 2", "line: 3"));
-    }
-
     @Ignore
     @Test
     public void realtimeTest()
+            throws InterruptedException
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .task(() -> {
-                    for (int i = 0; i < 30; i++) {
+                    for (int i = 0; i < 15; i++) {
                         TimeUnit.SECONDS.sleep(1);
                         System.out.println("time: " + System.currentTimeMillis());
                     }
@@ -340,10 +315,8 @@ public class JVMLaunchersTest
             Assert.fail();
         }
         catch (JVMException e) {
-            String errorMsg = String.format("Error: Could not find or load main class %s\n" +
-                            "Caused by: java.lang.ClassNotFoundException: %s\n",
-                    ForkVmProcess.class.getName(), ForkVmProcess.class.getName());
-            Assert.assertEquals(e.getMessage(), errorMsg);
+            String errorMsg = String.format("java.lang.ClassNotFoundException: %s", JVMLauncher.class.getName());
+            Assert.assertTrue(e.getMessage().contains(errorMsg));
         }
     }
 
@@ -390,7 +363,15 @@ public class JVMLaunchersTest
                 .build();
 
         final Object lock = new Object();
-        CompletableFuture.supplyAsync(launcher::startAndGet).whenComplete((code, error) -> {
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return launcher.startAndGet();
+            }
+            catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }).whenComplete((code, error) -> {
+            Assert.assertTrue(error.getMessage().contains(f));
             synchronized (lock) {
                 lock.notify();
             }
@@ -418,7 +399,14 @@ public class JVMLaunchersTest
         Lock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
         lock.lock();
-        CompletableFuture.supplyAsync(launcher::startAndGet).whenComplete((value, error) -> {
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return launcher.startAndGet();
+            }
+            catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }).whenComplete((value, error) -> {
             Assert.assertEquals(2019, value.intValue());
             System.out.println(value);
             lock.lock();

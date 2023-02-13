@@ -15,25 +15,23 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.Platform;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 public interface VmPromise<R>
         extends Promise<R>
 {
     R call()
-            throws JVMException;
+            throws JVMException, InterruptedException;
+
+    R call(long timeout, TimeUnit timeUnit)
+            throws JVMException, InterruptedException;
 
     long pid();
 
-    public boolean isDone();
+    boolean isAlive();
 
     void cancel();
 
@@ -49,15 +47,23 @@ public interface VmPromise<R>
             }
 
             @Override
-            public boolean isDone()
+            public boolean isAlive()
             {
-                return VmPromise.this.isDone();
+                return VmPromise.this.isAlive();
             }
 
             @Override
             public E call()
+                    throws InterruptedException
             {
                 return map.apply(VmPromise.this.call());
+            }
+
+            @Override
+            public E call(long timeout, TimeUnit timeUnit)
+                    throws JVMException, InterruptedException
+            {
+                return map.apply(VmPromise.this.call(timeout, timeUnit));
             }
 
             @Override
@@ -66,71 +72,5 @@ public interface VmPromise<R>
                 VmPromise.this.cancel();
             }
         };
-    }
-
-    public static class VmPromiseImpl
-            implements VmPromise<byte[]>
-    {
-        private final Process process;
-        private final ChildVMChannelInputStream childVmReader;
-        private final Consumer<String> consoleHandler;
-
-        VmPromiseImpl(Process process, ChildVMChannelInputStream reader, Consumer<String> consoleHandler)
-        {
-            this.process = process;
-            this.childVmReader = reader;
-            this.consoleHandler = consoleHandler;
-        }
-
-        @Override
-        public byte[] call()
-        {
-            try (ChildVMChannelInputStream reader = childVmReader) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    consoleHandler.accept(line);
-                }
-                byte[] bytes = reader.readResult();
-                if (reader.isSuccess()) {
-                    process.destroy();
-                    return bytes;
-                }
-                else {
-                    throw new JVMException(new String(bytes, UTF_8));
-                }
-            }
-            catch (EOFException e) {
-                if (process.isAlive()) {
-                    process.destroy();
-                    try {
-                        process.waitFor();
-                    }
-                    catch (InterruptedException ignored) {
-                        throw new JVMException("interrupted while waiting for child jvm to exit");
-                    }
-                }
-                throw new JVMException("child process abnormal exit, exit code " + process.exitValue());
-            }
-            catch (IOException e) {
-                throw new JVMException("child jvm exec failed", e);
-            }
-        }
-
-        @Override
-        public long pid()
-        {
-            return Platform.getProcessPid(process);
-        }
-
-        public boolean isDone()
-        {
-            return !process.isAlive();
-        }
-
-        @Override
-        public void cancel()
-        {
-            process.destroy();
-        }
     }
 }

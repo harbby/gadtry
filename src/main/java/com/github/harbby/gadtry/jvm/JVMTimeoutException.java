@@ -15,23 +15,18 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-public interface JVMLauncher<R>
+public class JVMTimeoutException
+        extends RuntimeException
 {
-    public R startAndGet()
-            throws JVMException, InterruptedException;
+    private static final long serialVersionUID = -5977203306543080503L;
 
-    public R startAndGet(VmCallable<R> task)
-            throws JVMException, InterruptedException;
-
-    public VmPromise<R> start(VmCallable<R> task)
-            throws JVMException;
-
-    public VmPromise<R> start()
-            throws JVMException;
-
-    public static void main(String[] args)
-            throws Exception
+    public JVMTimeoutException()
     {
-        ForkVmProcess.runMain(args);
+        super();
+    }
+
+    public JVMTimeoutException(String message)
+    {
+        super(message);
     }
 }
