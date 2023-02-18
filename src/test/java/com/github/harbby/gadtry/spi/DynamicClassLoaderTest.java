@@ -21,54 +21,20 @@ import org.junit.Test;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 
 public class DynamicClassLoaderTest
 {
-    private final URL url = this.getClass().getClassLoader().getResource("version2/h2-1.4.199.jar");
+    private final URL url = DynamicClassLoaderTest.class.getProtectionDomain().getCodeSource().getLocation();
 
     @Test
     public void addURLJarFile()
-            throws ClassNotFoundException
-    {
-        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
-        classLoader.addJarFile(url);
-
-        Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
-    }
-
-    @Test
-    public void addJarFile()
             throws ClassNotFoundException, MalformedURLException
     {
-        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0], this.getClass().getClassLoader());
+        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
         classLoader.addJarFile(new File(url.getFile()));
-        Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
-    }
 
-    @Test
-    public void addJarFiles()
-            throws ClassNotFoundException, MalformedURLException
-    {
-        DynamicClassLoader classLoader = new DynamicClassLoader(this.getClass().getClassLoader());
-        classLoader.addJarFiles(Arrays.asList(new File(url.getFile())));
-        Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
-    }
-
-    @Test
-    public void addDir()
-            throws ClassNotFoundException, MalformedURLException
-    {
-        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
-
-        classLoader.addDir(new File(url.getFile()).getParentFile());
-        Assert.assertNotNull(classLoader.loadClass("org.h2.Driver"));
-    }
-
-    @Test
-    public void toStringTest()
-    {
-        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[0]);
-        Assert.assertTrue(classLoader.toString().contains("time:"));
+        Class<?> newClass = classLoader.loadClass(DynamicClassLoaderTest.class.getName());
+        Assert.assertNotNull(newClass);
+        Assert.assertNotSame(newClass, DynamicClassLoaderTest.class);
     }
 }

@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.jvm;
+package com.github.harbby.gadtry.io;
 
-public class JVMTimeoutException
-        extends JVMException
+public class GadtryIOException
+        extends RuntimeException
 {
-    private static final long serialVersionUID = -5977203306543080503L;
+    private static final long serialVersionUID = -5819644260818480079L;
 
-    public JVMTimeoutException()
+    public GadtryIOException()
     {
         super();
     }
 
-    public JVMTimeoutException(String message)
+    public GadtryIOException(String message)
     {
         super(message);
+    }
+
+    public GadtryIOException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public GadtryIOException(Throwable cause)
+    {
+        super(cause);
     }
 }

@@ -24,11 +24,14 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Platform.isWindows;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -40,35 +43,44 @@ public class JVMLauncherImpl<R>
     private final VmCallable<R> task;
     private final Collection<URL> userJars;
     private final Consumer<String> consoleHandler;
-    private final boolean depThisJvm;
+    private final boolean ignoreClasspath;
     private final List<String> otherVmOps;
     private final Map<String, String> environment;
     private final ClassLoader classLoader;
     private final File workDirectory;
     private final String taskProcessName;
     private final File javaCmd;
+    private final long timeoutNanos;
+    private final boolean autoExit;
+    private final boolean redirectOutputToNull;
 
     public JVMLauncherImpl(VmCallable<R> task,
             Consumer<String> consoleHandler,
             Collection<URL> userJars,
-            boolean depThisJvm,
+            boolean ignoreClasspath,
             List<String> otherVmOps,
             Map<String, String> environment,
             ClassLoader classLoader,
             File workDirectory,
             String taskProcessName,
-            File javaCmd)
+            File javaCmd,
+            long timeoutNanos,
+            boolean autoExit,
+            boolean redirectOutputToNull)
     {
         this.task = task;
         this.userJars = userJars;
         this.consoleHandler = consoleHandler;
-        this.depThisJvm = depThisJvm;
+        this.ignoreClasspath = ignoreClasspath;
         this.otherVmOps = otherVmOps;
         this.environment = environment;
         this.classLoader = classLoader;
         this.workDirectory = workDirectory;
         this.taskProcessName = taskProcessName;
         this.javaCmd = javaCmd;
+        this.timeoutNanos = timeoutNanos;
+        this.autoExit = autoExit;
+        this.redirectOutputToNull = redirectOutputToNull;
     }
 
     @Override
@@ -103,8 +115,11 @@ public class JVMLauncherImpl<R>
     public R startAndGet(VmCallable<R> task)
             throws JVMException, InterruptedException
     {
-        return this.start(task).call();
+        return this.start(task).call(timeoutNanos, TimeUnit.NANOSECONDS);
     }
+
+    private static final File NULL_FILE = new File(isWindows() ? "NUL" : "/dev/null");
+    private static final ProcessBuilder.Redirect DISCARD = ProcessBuilder.Redirect.to(NULL_FILE);
 
     private VmPromise<R> startAndGetByte(byte[] task)
             throws IOException
@@ -114,6 +129,10 @@ public class JVMLauncherImpl<R>
         if (workDirectory != null && workDirectory.exists() && workDirectory.isDirectory()) {
             builder.directory(workDirectory);
         }
+        if (redirectOutputToNull) {
+            builder.redirectOutput(DISCARD);
+        }
+
         builder.environment().putAll(environment);
         Process process = builder.start();
 
@@ -126,7 +145,7 @@ public class JVMLauncherImpl<R>
         catch (IOException e) {
             // child vm exited
         }
-        return new VmPromiseImpl<>(process, consoleHandler, classLoader);
+        return new VmPromiseImpl<>(process, consoleHandler, classLoader, timeoutNanos);
     }
 
     private String getUserAddClasspath()
@@ -143,7 +162,7 @@ public class JVMLauncherImpl<R>
         ops.addAll(otherVmOps);
 
         String classpath = getUserAddClasspath();
-        classpath = depThisJvm ? System.getProperty("java.class.path") + File.pathSeparator + classpath : classpath;
+        classpath = ignoreClasspath ? classpath : String.join(File.pathSeparator, System.getProperty("java.class.path"), classpath);
         //ops.add("-classpath");
         //ops.add(classpath);
         environment.put("CLASSPATH", classpath);
@@ -165,6 +184,8 @@ public class JVMLauncherImpl<R>
         else {
             ops.add(processClass.getName());
         }
+        // args
+        Collections.addAll(ops, String.valueOf(autoExit));
         return ops;
     }
 }

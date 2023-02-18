@@ -23,14 +23,12 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static com.github.harbby.gadtry.spi.SecurityClassLoader.findPlatformClassLoader;
+import static com.github.harbby.gadtry.spi.SecurityClassLoader.PLATFORM_CLASS_LOADER;
 import static java.util.Objects.requireNonNull;
 
 public class VolatileClassLoader
         extends URLClassLoader
 {
-    private static final ClassLoader PLATFORM_CLASS_LOADER = findPlatformClassLoader();
-
     private volatile ClassLoader spiClassLoader;
 
     public VolatileClassLoader(URL[] urls, ClassLoader spiClassLoader)

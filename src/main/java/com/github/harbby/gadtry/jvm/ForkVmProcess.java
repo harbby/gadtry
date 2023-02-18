@@ -36,13 +36,23 @@ public final class ForkVmProcess
     public static void runMain(String[] args)
             throws Exception
     {
+        boolean autoExit = Boolean.parseBoolean(args[0]);
         OutputStream sysErr = initSysError();
+        doMain(autoExit, sysErr);
+    }
+
+    private static void doMain(boolean autoExit, OutputStream sysErr)
+    {
         try {
             // first read sys.in
             Callable<?> task = Serializables.byteToObject(System.in, ClassLoader.getSystemClassLoader());
             // check parent
-            Thread thread = new StdinListenerThread();
-            thread.start();
+            if (autoExit) {
+                Thread teakThread = new StdinListenerThread();
+                teakThread.setName("StdinListenerThread");
+                teakThread.start();
+            }
+
             //2. write header to sys.err
             sysErr.write(VM_HEADER, 0, VM_HEADER.length);
             sysErr.flush();
@@ -57,14 +67,13 @@ public final class ForkVmProcess
             saveTarget(sysErr, err, false);
             System.exit(1);
         }
-        finally {
-            sysErr.close();
-        }
     }
 
     private static class StdinListenerThread
             extends Thread
     {
+        private StdinListenerThread() {}
+
         @Override
         public void run()
         {
@@ -72,12 +81,12 @@ public final class ForkVmProcess
                 while (System.in.read() != -1) {
                     // pass
                 }
+                // Parent exits.
+                System.exit(2);
             }
             catch (IOException e) {
                 // e.printStackTrace();
             }
-            // Parent exits.
-            System.exit(2);
         }
     }
 

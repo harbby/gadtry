@@ -22,9 +22,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -38,7 +40,6 @@ public class JVMLaunchers
     public static class VmBuilder<T>
     {
         private VmCallable<T> task;
-        private boolean depThisJvm = true;
         private Consumer<String> consoleHandler = System.out::println;
         private final List<URL> tmpJars = new ArrayList<>();
         private final List<String> otherVmOps = new ArrayList<>();
@@ -47,11 +48,15 @@ public class JVMLaunchers
         private File workDir;
         private String taskProcessName;
         private File javaCmd = getJavaCmd(System.getProperty("java.home"));
+        private long timeoutNanos = -1;
+        private boolean autoExit;
+        private boolean redirectOutputToNull;
+        private boolean ignoreClasspath;
 
         private static File getJavaCmd(String javaHome)
         {
             File file;
-            if (Platform.isWin()) {
+            if (Platform.isWindows()) {
                 file = new File(javaHome, "bin/java.exe");
             }
             else {
@@ -93,9 +98,9 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> filterThisJVMClass()
+        public VmBuilder<T> ignoreParentClasspath()
         {
-            depThisJvm = false;
+            ignoreClasspath = true;
             return this;
         }
 
@@ -119,23 +124,15 @@ public class JVMLaunchers
 
         public VmBuilder<T> setXms(String xms)
         {
-            otherVmOps.add("-Xms" + xms);
-            return this;
+            return this.addVmOps("-Xms" + xms);
         }
 
         public VmBuilder<T> setXmx(String xmx)
         {
-            otherVmOps.add("-Xmx" + xmx);
-            return this;
+            return this.addVmOps("-Xmx" + xmx);
         }
 
-        public VmBuilder<T> addVmOps(String ops)
-        {
-            otherVmOps.add(ops);
-            return this;
-        }
-
-        public VmBuilder<T> addVmOps(List<String> ops)
+        public VmBuilder<T> addVmOps(Collection<String> ops)
         {
             otherVmOps.addAll(ops);
             return this;
@@ -143,16 +140,17 @@ public class JVMLaunchers
 
         public VmBuilder<T> addVmOps(String... ops)
         {
-            return addVmOps(Arrays.asList(ops));
+            Collections.addAll(otherVmOps, ops);
+            return this;
         }
 
-        public VmBuilder<T> setEnvironment(Map<String, String> env)
+        public VmBuilder<T> addEnvironment(Map<String, String> env)
         {
             this.environment.putAll(requireNonNull(env, "env is null"));
             return this;
         }
 
-        public VmBuilder<T> setEnvironment(String key, String value)
+        public VmBuilder<T> addEnvironment(String key, String value)
         {
             checkState(isNotBlank(key), "key is null or Empty");
             checkState(isNotBlank(value), "value is null or Empty");
@@ -160,10 +158,38 @@ public class JVMLaunchers
             return this;
         }
 
+        public VmBuilder<T> timeout(long timeout, TimeUnit timeUnit)
+        {
+            checkState(timeout > 0, "timeout should > 0");
+            requireNonNull(timeUnit, "timeUnit is null");
+            this.timeoutNanos = timeUnit.toNanos(timeout);
+            return this;
+        }
+
+        /**
+         * enable child vm autoClose on parent vm exited
+         * default is false
+         */
+        public VmBuilder<T> autoExit()
+        {
+            this.autoExit = true;
+            return this;
+        }
+
+        /**
+         * enable redirect sys.out to linux /dev/null
+         */
+        public VmBuilder<T> redirectOutputToNull()
+        {
+            this.redirectOutputToNull = true;
+            return this;
+        }
+
         public JVMLauncher<T> build()
         {
-            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, depThisJvm,
-                    otherVmOps, environment, classLoader, workDir, taskProcessName, javaCmd);
+            return new JVMLauncherImpl<>(task, consoleHandler, tmpJars, ignoreClasspath,
+                    otherVmOps, environment, classLoader, workDir, taskProcessName, javaCmd,
+                    timeoutNanos, autoExit, redirectOutputToNull);
         }
     }
 

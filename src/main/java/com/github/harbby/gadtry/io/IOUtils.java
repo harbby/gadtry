@@ -24,9 +24,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class IOUtils
 {
@@ -92,6 +94,12 @@ public class IOUtils
         }
 
         return total;
+    }
+
+    public static String toString(InputStream in, Charset charset)
+            throws IOException
+    {
+        return new String(IOUtils.readAllBytes(in), charset);
     }
 
     /**
@@ -240,6 +248,79 @@ public class IOUtils
         }
         try (FileOutputStream outputStream = new FileOutputStream(file, false)) {
             outputStream.write(bytes);
+        }
+    }
+
+    /**
+     * copied from jdk11
+     * Returns a new {@code OutputStream} which discards all bytes.  The
+     * returned stream is initially open.  The stream is closed by calling
+     * the {@code close()} method.  Subsequent calls to {@code close()} have
+     * no effect.
+     *
+     * <p> While the stream is open, the {@code write(int)}, {@code
+     * write(byte[])}, and {@code write(byte[], int, int)} methods do nothing.
+     * After the stream has been closed, these methods all throw {@code
+     * IOException}.
+     *
+     * <p> The {@code flush()} method does nothing.
+     *
+     * @return an {@code OutputStream} which discards all bytes
+     * @since 11
+     */
+    public static OutputStream nullOutputStream()
+    {
+        return new OutputStream()
+        {
+            private volatile boolean closed;
+
+            private void ensureOpen()
+                    throws IOException
+            {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public void write(int b)
+                    throws IOException
+            {
+                ensureOpen();
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len)
+                    throws IOException
+            {
+                Objects.checkFromIndexSize(off, len, b.length);
+                ensureOpen();
+            }
+
+            @Override
+            public void close()
+            {
+                closed = true;
+            }
+        };
+    }
+
+    public static void zipBoolArray(boolean[] src, int srcPos, byte[] dest, int destPos, int boolArrayLength)
+    {
+        int byteSize = (boolArrayLength + 7) >> 3;
+        Arrays.fill(dest, destPos, destPos + byteSize, (byte) 0);
+        for (int i = 0; i < boolArrayLength; i++) {
+            if (src[i + srcPos]) {
+                dest[(i >> 3) + destPos] |= 0x80 >> (i & 7);
+            }
+        }
+    }
+
+    public static void unzipBoolArray(byte[] src, int srcPos, boolean[] dest, int destPos, int boolArrayLength)
+    {
+        for (int i = 0; i < boolArrayLength; i++) {
+            byte v = src[(i >> 3) + srcPos];
+            dest[i + destPos] = (v & (0x80 >> (i & 7))) != 0;
         }
     }
 }

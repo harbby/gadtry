@@ -2,8 +2,8 @@ pluginManagement {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://plugins.gradle.org/m2/" }
+    maven(url = "https://plugins.gradle.org/m2/")
   }
 }
 
-rootProject.name = 'gadtry'
+rootProject.name = "gadtry"

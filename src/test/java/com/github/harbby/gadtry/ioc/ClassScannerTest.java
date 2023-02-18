@@ -16,17 +16,14 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.spi.ClassScanner;
-import com.github.harbby.gadtry.spi.DynamicClassLoader;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Set;
 
 @Deprecated
@@ -69,9 +66,6 @@ public class ClassScannerTest
     public void jarProtocolScanTest()
             throws IOException, URISyntaxException
     {
-        URL url = this.getClass().getClassLoader().getResource("version2/h2-1.4.199.jar");
-        Assert.assertTrue(new File(url.getFile()).exists());
-        DynamicClassLoader classLoader = new DynamicClassLoader(new URL[] {url});
         Set<Class<?>> classes = ClassScanner.scanClasses("org.junit", this.getClass().getClassLoader());
         Assert.assertTrue(classes.size() > 0);
     }

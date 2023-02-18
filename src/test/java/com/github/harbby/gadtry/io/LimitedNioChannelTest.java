@@ -125,7 +125,7 @@ public class LimitedNioChannelTest
             Assert.assertTrue(limitInputStream.markSupported());
             Assert.assertTrue(limitInputStream.available() > 0);
             limitInputStream.mark(5);
-            Assert.assertEquals(new String(IOUtils.readAllBytes(limitInputStream), StandardCharsets.UTF_8), msg.trim());
+            Assert.assertEquals(IOUtils.toString(limitInputStream, StandardCharsets.UTF_8), msg.trim());
             Assert.assertEquals(limitInputStream.read(), -1);
             limitInputStream.reset();
             StringBuffer buffer = new StringBuffer();

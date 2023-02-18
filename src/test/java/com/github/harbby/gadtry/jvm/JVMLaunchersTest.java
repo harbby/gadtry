@@ -308,7 +308,7 @@ public class JVMLaunchersTest
                 .setXms("16m")
                 .setXmx("16m")
                 .setConsole(System.out::println)
-                .filterThisJVMClass()
+                .ignoreParentClasspath()
                 .build();
         VmPromise<Integer> promise = launcher.start();
         try {
@@ -335,8 +335,8 @@ public class JVMLaunchersTest
                     Assert.assertEquals(System.getenv("k1"), "v1");
                     return env;
                 })
-                .setEnvironment("TestEnv", envValue)
-                .setEnvironment(MutableMap.of("k1", "v1"))
+                .addEnvironment("TestEnv", envValue)
+                .addEnvironment(MutableMap.of("k1", "v1"))
                 .addUserJars(Collections.emptyList())
                 .setXms("16m")
                 .setXmx("16m")
@@ -441,5 +441,104 @@ public class JVMLaunchersTest
         else {
             Assert.assertEquals(dir, jvmWorkDir);
         }
+    }
+
+    @Test(expected = JVMTimeoutException.class)
+    public void should_success_timeoutTest()
+            throws InterruptedException
+    {
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .task(() -> {
+                    TimeUnit.DAYS.sleep(1);
+                    return 0;
+                }).addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .timeout(200, TimeUnit.MILLISECONDS)
+                .build();
+        launcher.startAndGet();
+    }
+
+    @Test
+    public void should_success_redirectOutputToNull()
+            throws InterruptedException
+    {
+        String msg = "hello gadtry.";
+        List<String> logs = new ArrayList<>();
+        JVMLauncher<Integer> baseLauncher = JVMLaunchers.<Integer>newJvm()
+                .task(() -> {
+                    System.out.println(msg);
+                    return 0;
+                }).addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(logs::add)
+                .build();
+        Assert.assertEquals(0, baseLauncher.startAndGet().intValue());
+        Assert.assertEquals(Collections.singletonList(msg), logs);
+
+        List<String> testLogs = new ArrayList<>();
+        JVMLauncher<Integer> testLauncher = JVMLaunchers.<Integer>newJvm()
+                .task(() -> {
+                    System.out.println(msg);
+                    return 0;
+                }).addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(testLogs::add)
+                .redirectOutputToNull()
+                .build();
+        Assert.assertEquals(0, testLauncher.startAndGet().intValue());
+        Assert.assertTrue(testLogs.isEmpty());
+    }
+
+    @Test
+    public void should_success_childBlockIO()
+            throws InterruptedException
+    {
+        JVMLauncher<Integer> baseLauncher = JVMLaunchers.<Integer>newJvm()
+                .task(() -> {
+                    byte[] bytes = new byte[85000];
+                    Arrays.fill(bytes, (byte) 1);
+                    System.out.write(bytes);
+                    return 0;
+                }).addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .autoExit()
+                .build();
+        VmPromise<Integer> vmPromise = baseLauncher.start();
+        TimeUnit.MILLISECONDS.sleep(500);
+        try {
+            Assert.assertTrue(vmPromise.isAlive());
+        }
+        finally {
+            vmPromise.cancel();
+        }
+    }
+
+    @Test
+    public void should_success_childNotBlockIO_by_redirectOutputToNull()
+            throws InterruptedException
+    {
+        JVMLauncher<Integer> baseLauncher = JVMLaunchers.<Integer>newJvm()
+                .task(() -> {
+                    byte[] bytes = new byte[85000];
+                    Arrays.fill(bytes, (byte) 1);
+                    System.out.write(bytes);
+                    return 0;
+                }).addUserJars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
+                .setConsole(System.out::println)
+                .autoExit()
+                .redirectOutputToNull()
+                .build();
+        VmPromise<Integer> vmPromise = baseLauncher.start();
+        TimeUnit.MILLISECONDS.sleep(500);
+        Assert.assertFalse(vmPromise.isAlive());
+        Assert.assertEquals(0, vmPromise.call().intValue());
     }
 }

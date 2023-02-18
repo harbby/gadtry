@@ -21,24 +21,24 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
 
+import static com.github.harbby.gadtry.spi.SecurityClassLoader.PLATFORM_CLASS_LOADER;
+
 public class DynamicClassLoader
         extends URLClassLoader
 {
-    private final long createTime = System.currentTimeMillis();
-
     public DynamicClassLoader(URL[] urls, ClassLoader parent)
     {
-        super(urls, parent);
+        this(urls, parent, null);
     }
 
     public DynamicClassLoader(ClassLoader parent)
     {
-        super(new URL[0], parent);
+        this(new URL[0], parent);
     }
 
     public DynamicClassLoader(URL[] urls)
     {
-        super(urls);
+        this(urls, PLATFORM_CLASS_LOADER);
     }
 
     public DynamicClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory)
@@ -67,32 +67,6 @@ public class DynamicClassLoader
     public void addJarFile(File jarfile)
             throws MalformedURLException
     {
-        this.addURL(jarfile.toURI().toURL());
-    }
-
-    public void addDir(File path)
-            throws MalformedURLException
-    {
-        if (!path.exists()) {
-            return;
-        }
-
-        if (path.isDirectory()) {
-            File[] files = path.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    this.addDir(file);
-                }
-            }
-        }
-        else {
-            this.addJarFile(path);
-        }
-    }
-
-    @Override
-    public String toString()
-    {
-        return super.toString() + " time:" + createTime;
+        this.addJarFile(jarfile.toURI().toURL());
     }
 }

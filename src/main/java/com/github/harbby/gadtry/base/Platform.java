@@ -251,7 +251,7 @@ public final class Platform
         return version[0];
     }
 
-    public static boolean isWin()
+    public static boolean isWindows()
     {
         return osName().startsWith("Windows");
     }
@@ -318,7 +318,7 @@ public final class Platform
         if (Platform.getJavaVersion() > 8) {
             return ExtPlatformHolder.getExtPlatform().getCurrentProcessId();
         }
-        if (Platform.isWin() || Platform.isLinux() || Platform.isMac()) {
+        if (Platform.isWindows() || Platform.isLinux() || Platform.isMac()) {
             return Long.parseLong(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         }
         else {
@@ -341,7 +341,7 @@ public final class Platform
                 throw new PlatFormUnsupportedOperation(e);
             }
         }
-        else if (Platform.isWin()) {
+        else if (Platform.isWindows()) {
             try {
                 Field field = process.getClass().getDeclaredField("handle");
                 field.setAccessible(true);

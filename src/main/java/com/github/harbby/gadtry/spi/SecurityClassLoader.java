@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
@@ -32,9 +33,9 @@ import static java.util.Objects.requireNonNull;
  * plugins should not have access to the system (application) class loader
  */
 public class SecurityClassLoader
-        extends DynamicClassLoader
+        extends URLClassLoader
 {
-    private static final ClassLoader PLATFORM_CLASS_LOADER = findPlatformClassLoader();
+    static final ClassLoader PLATFORM_CLASS_LOADER = findPlatformClassLoader();
 
     private final ClassLoader spiClassLoader;
     private final List<String> spiPackages;
@@ -84,7 +85,7 @@ public class SecurityClassLoader
                 return resolveClass(spiClassLoader.loadClass(name), resolve);
             }
 
-            // Look for class locally
+            // Look for resource locally in BootClassLoader
             return super.loadClass(name, resolve);
         }
     }
@@ -105,7 +106,7 @@ public class SecurityClassLoader
             return spiClassLoader.getResource(name);
         }
 
-        // Look for resource locally
+        // Look for resource locally in BootClassLoader
         return super.getResource(name);
     }
 
@@ -118,7 +119,7 @@ public class SecurityClassLoader
             return spiClassLoader.getResources(name);
         }
 
-        // Use local resources
+        // Look for resource locally in BootClassLoader
         return super.getResources(name);
     }
 
@@ -139,7 +140,6 @@ public class SecurityClassLoader
         return className.replace('.', '/');
     }
 
-    @SuppressWarnings("JavaReflectionMemberAccess")
     static ClassLoader findPlatformClassLoader()
     {
         try {

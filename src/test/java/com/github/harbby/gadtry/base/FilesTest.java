@@ -26,21 +26,21 @@ public class FilesTest
     @Test
     public void listFilesRecursiveGiveFalse()
     {
-        File file = new File(this.getClass().getClassLoader().getResource("version1").getFile()).getParentFile();
+        File file = new File(this.getClass().getClassLoader().getResource("blogCatalog-dataset").getFile());
         List<File> fileList = Files.listFiles(file, false, pathname -> {
             return true;
         });
-        Assert.assertEquals(fileList.size(), 0);
+        Assert.assertEquals(fileList.size(), 1);
     }
 
     @Test
     public void listFilesGiveFile()
     {
-        File file = new File(this.getClass().getClassLoader().getResource("version1/h2-1.4.191.jar").getFile());
+        File file = new File(this.getClass().getClassLoader().getResource("blogCatalog-dataset").getFile());
         List<File> fileList = Files.listFiles(file, true, pathname -> {
             return true;
         });
-        Assert.assertEquals(fileList.size(), 1);
+        Assert.assertEquals(fileList.size(), 3);
     }
 
     @Test

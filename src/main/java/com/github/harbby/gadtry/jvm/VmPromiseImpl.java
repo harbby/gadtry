@@ -37,23 +37,25 @@ public class VmPromiseImpl<T>
     private final Process process;
     private final Consumer<String> consoleHandler;
     private final ClassLoader classLoader;
+    private final long timeoutNanos;
 
-    VmPromiseImpl(Process process, Consumer<String> consoleHandler, ClassLoader classLoader)
+    VmPromiseImpl(Process process, Consumer<String> consoleHandler, ClassLoader classLoader, long timeoutNanos)
     {
         this.process = process;
         this.consoleHandler = consoleHandler;
         this.classLoader = classLoader;
+        this.timeoutNanos = timeoutNanos;
     }
 
     @Override
     public T call(long timeout, TimeUnit timeUnit)
-            throws JVMException, JVMTimeoutException, InterruptedException
+            throws JVMException, InterruptedException
     {
         return this.call0(timeUnit.toNanos(timeout));
     }
 
     private T call0(long nanos)
-            throws JVMException, JVMTimeoutException, InterruptedException
+            throws JVMException, InterruptedException
     {
         long end = System.nanoTime() + nanos;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -102,7 +104,7 @@ public class VmPromiseImpl<T>
     public T call()
             throws InterruptedException
     {
-        return this.call0(-1);
+        return this.call0(timeoutNanos);
     }
 
     @Override
@@ -157,8 +159,7 @@ public class VmPromiseImpl<T>
             case '0':
                 return Serializables.byteToObject(errorStream, classLoader);
             case '1':
-                byte[] bytes = IOUtils.readAllBytes(errorStream);
-                throw new JVMException(new String(bytes));
+                throw new JVMException(IOUtils.toString(errorStream, UTF_8));
             default:
                 throw new JVMException("child process unknown error");
         }
