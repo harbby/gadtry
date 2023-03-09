@@ -79,8 +79,8 @@ public class ArrayJCodecs
                 return;
             }
             output.writeVarInt(values.length + 1, false);
-            for (boolean e : values) {
-                output.writeBoolean(e);
+            if (values.length > 0) {
+                output.writeBoolArray(values);
             }
         }
 
@@ -95,9 +95,7 @@ public class ArrayJCodecs
                 return zeroArr;
             }
             boolean[] values = new boolean[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readBoolean();
-            }
+            input.readBoolArray(values, 0, len);
             return values;
         }
 

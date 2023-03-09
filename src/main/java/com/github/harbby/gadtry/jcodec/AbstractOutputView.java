@@ -396,9 +396,7 @@ public abstract class AbstractOutputView
     @Override
     public final void writeBoolArray(boolean[] value)
     {
-        if (value.length == 0) {
-            return;
-        }
+        assert value.length > 0;
         int byteSize = (value.length + 7) >> 3;
         require(byteSize);
         IOUtils.zipBoolArray(value, 0, buffer, offset, value.length);
