@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.base.Iterators;
+import com.github.harbby.gadtry.collection.iterator.PeekIterator;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -29,6 +30,11 @@ public interface IteratorPlus<E>
     static <E> IteratorPlus<E> empty()
     {
         return Iterators.empty();
+    }
+
+    default PeekIterator<E> asPeekIterator()
+    {
+        return Iterators.peekIterator(this);
     }
 
     default boolean isEmpty()

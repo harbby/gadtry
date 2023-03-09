@@ -13,28 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec.codecs;
 
-public class GadtryEOFException
-        extends GadtryIOException
+import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
+import com.github.harbby.gadtry.jcodec.OutputView;
+
+import java.util.Comparator;
+
+/**
+ * @author ivan
+ * @date 2021.02.09 10:01:00
+ * float Serialize
+ */
+public class FloatJcodec
+        implements Jcodec<Float>
 {
-    public GadtryEOFException()
+    @Override
+    public void encoder(Float value, OutputView output)
     {
-        super();
+        output.writeFloat(value);
     }
 
-    public GadtryEOFException(String message)
+    @Override
+    public Float decoder(InputView input)
     {
-        super(message);
+        return input.readFloat();
     }
 
-    public GadtryEOFException(String message, Throwable cause)
+    @Override
+    public Comparator<Float> comparator()
     {
-        super(message, cause);
-    }
-
-    public GadtryEOFException(Throwable cause)
-    {
-        super(cause);
+        return Float::compare;
     }
 }

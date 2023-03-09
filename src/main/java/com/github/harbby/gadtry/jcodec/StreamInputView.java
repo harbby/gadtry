@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec;
+
+import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-public final class DataInputStreamView
-        extends AbstractInputStreamView
+public final class StreamInputView
+        extends AbstractInputView
 {
     private final InputStream in;
 
-    public DataInputStreamView(InputStream in)
+    public StreamInputView(InputStream in)
     {
         super(new byte[1 << 16]);
         this.in = in;
@@ -36,19 +38,19 @@ public final class DataInputStreamView
             this.in.close();
         }
         catch (IOException e) {
-            throw new GadtryIOException(e);
+            throw new JcodecException(e);
         }
     }
 
     @Override
     protected int tryReadFully0(byte[] b, int off, int len)
-            throws GadtryIOException
+            throws JcodecException
     {
         try {
             return IOUtils.tryReadFully(in, b, off, len);
         }
         catch (IOException e) {
-            throw new GadtryIOException(e);
+            throw new JcodecException(e);
         }
     }
 

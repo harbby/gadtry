@@ -28,7 +28,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class IOUtils
 {
@@ -293,7 +292,7 @@ public class IOUtils
             public void write(byte[] b, int off, int len)
                     throws IOException
             {
-                Objects.checkFromIndexSize(off, len, b.length);
+                //Objects.checkFromIndexSize(off, len, b.length);
                 ensureOpen();
             }
 

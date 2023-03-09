@@ -13,86 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec;
 
 import com.github.harbby.gadtry.base.Strings;
+import com.github.harbby.gadtry.io.IOUtils;
 
-import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
 
-import static java.util.Objects.requireNonNull;
-
-public class DataOutputStreamView
-        implements DataOutputView
+public abstract class AbstractOutputView
+        extends OutputStream
+        implements OutputView
 {
-    protected final WritableByteChannel channel;
-    protected final OutputStream outputStream;
-    protected final ByteBuffer byteBuffer;
     protected final byte[] buffer;
     protected int offset;
 
-    public DataOutputStreamView(WritableByteChannel channel)
+    public AbstractOutputView()
     {
         //64k
-        this(channel, 1 << 16);
+        this(1 << 16);
     }
 
-    public DataOutputStreamView(OutputStream outputStream)
+    public AbstractOutputView(int buffSize)
     {
-        this(outputStream, 1 << 16);
-    }
-
-    public DataOutputStreamView(OutputStream outputStream, int buffSize)
-    {
-        //64k
-        //this(channel, 1 << 16);
-        this.outputStream = requireNonNull(outputStream, "outputStream is null");
-        this.channel = null;
         this.buffer = new byte[buffSize];
-        this.byteBuffer = ByteBuffer.wrap(buffer);
         this.offset = 0;
-    }
-
-    public DataOutputStreamView(WritableByteChannel channel, int buffSize)
-    {
-        this.channel = requireNonNull(channel, "channel is null");
-        this.outputStream = null;
-        this.buffer = new byte[buffSize];
-        this.byteBuffer = ByteBuffer.wrap(buffer);
-        this.offset = 0;
-    }
-
-    @Override
-    public void flush()
-    {
-        try {
-            if (outputStream != null) {
-                outputStream.write(buffer, 0, offset);
-            }
-            else {
-                byteBuffer.position(0);
-                byteBuffer.limit(offset);
-                channel.write(byteBuffer);
-            }
-        }
-        catch (IOException e) {
-            throw new GadtryIOException(e);
-        }
-        this.offset = 0;
-    }
-
-    @Override
-    public void close()
-    {
-        try (WritableByteChannel ignored = this.channel;
-                OutputStream ignored1 = this.outputStream) {
-            this.flush();
-        }
-        catch (IOException e) {
-            throw new GadtryIOException(e);
-        }
     }
 
     protected void require(int required)
@@ -102,6 +46,14 @@ public class DataOutputStreamView
             this.flush();
         }
     }
+
+    @Override
+    public abstract void flush()
+            throws JcodecException;
+
+    @Override
+    public abstract void close()
+            throws JcodecException;
 
     @Override
     public void write(int b)
@@ -196,20 +148,20 @@ public class DataOutputStreamView
 
     @Override
     public final void writeAsciiString(String s)
-            throws GadtryEOFException
+            throws JcodecEOFException
     {
         if (s == null) {
-            throw new GadtryIOException("Encoding ascii string, str is null.");
+            throw new JcodecException("Encoding ascii string, str is null.");
         }
         int len = s.length();
         if (len == 0) {
-            throw new GadtryIOException("Encoding ascii string, str.length() is zero.");
+            throw new JcodecException("Encoding ascii string, str.length() is zero.");
         }
         this.writeAscii0(s, len);
     }
 
     private void writeAscii0(String s, int len)
-            throws GadtryEOFException
+            throws JcodecEOFException
     {
         assert len > 0;
         int ramming = buffer.length - offset;

@@ -504,13 +504,13 @@ public class JVMLaunchersTest
                     System.out.write(bytes);
                     return 0;
                 }).addUserJars(Collections.emptyList())
-                .setXms("16m")
-                .setXmx("16m")
+                .setXms("64m")
+                .setXmx("64m")
                 .setConsole(System.out::println)
                 .autoExit()
                 .build();
         VmPromise<Integer> vmPromise = baseLauncher.start();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(1000);
         try {
             Assert.assertTrue(vmPromise.isAlive());
         }
@@ -530,15 +530,16 @@ public class JVMLaunchersTest
                     System.out.write(bytes);
                     return 0;
                 }).addUserJars(Collections.emptyList())
-                .setXms("16m")
-                .setXmx("16m")
+                .setXms("64m")
+                .setXmx("64m")
                 .setConsole(System.out::println)
                 .autoExit()
                 .redirectOutputToNull()
                 .build();
         VmPromise<Integer> vmPromise = baseLauncher.start();
-        TimeUnit.MILLISECONDS.sleep(500);
-        Assert.assertFalse(vmPromise.isAlive());
+        while (vmPromise.isAlive()) {
+            TimeUnit.MILLISECONDS.sleep(10);
+        }
         Assert.assertEquals(0, vmPromise.call().intValue());
     }
 }

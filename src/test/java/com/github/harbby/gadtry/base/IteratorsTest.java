@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -391,6 +392,31 @@ public class IteratorsTest
     }
 
     @Test
+    public void hashCodeComparatorSortedReduceTest()
+    {
+        List<Tuple2<String, Integer>> input = Arrays.asList(
+                Tuple2.of("500", 1),
+                Tuple2.of("41k", 1),
+                Tuple2.of("42L", 1),
+                Tuple2.of("43-", 1),
+                Tuple2.of("43-", 1),
+                Tuple2.of("42L", 1),
+                Tuple2.of("43-", 1),
+                Tuple2.of("43-", 1));
+        Comparator<String> comparator = (x, y) -> x.hashCode() - y.hashCode();
+        // sort by key
+        input.sort((x, y) -> comparator.compare(x.key(), y.key()));
+        Iterator<Tuple2<String, Integer>> rs = Iterators.reduceHashSorted(input.iterator(), Integer::sum, comparator);
+        List<Tuple2<String, Integer>> data = ImmutableList.copy(rs);
+        Assert.assertEquals(Arrays.asList(
+                Tuple2.of("41k", 1),
+                Tuple2.of("42L", 2),
+                Tuple2.of("43-", 4),
+                Tuple2.of("500", 1)
+        ), data);
+    }
+
+    @Test
     public void reduceSortedOtherBranchTest()
     {
         Assert.assertFalse(Iterators.reduceSorted(Iterators.of(), Integer::sum).hasNext());
@@ -438,10 +464,10 @@ public class IteratorsTest
     }
 
     @Test
-    public void anyMatch()
+    public void stopAtFirstMatching()
     {
         PeekIterator<Integer> iterator = Iterators.of(1, 2, 3, 4, 5);
-        Iterator<Integer> out = Iterators.anyMatchStop(iterator, o -> o == 3);
+        Iterator<Integer> out = Iterators.stopAtFirstMatching(iterator, o -> o == 3);
         Assert.assertEquals(ImmutableList.copy(out), Arrays.asList(1, 2));
     }
 }

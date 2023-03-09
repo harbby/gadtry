@@ -13,65 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec;
 
 import java.io.Closeable;
 
-public interface DataOutputView
+public interface OutputView
         extends Closeable
 {
     void writeInt(int v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void write(int b)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void write(byte[] b)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void write(byte[] b, int off, int len)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeBoolean(boolean v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeByte(int v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeShort(int v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeChar(int v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeLong(long v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeFloat(float v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeDouble(double v)
-            throws GadtryIOException;
+            throws JcodecException;
 
+    /**
+     * if false, Positive numbers are more efficient, negative numbers are less efficient,
+     * negative numbers are at least 5 bytes and positive numbers are at least 1 byte.
+     */
     void writeVarInt(int v, boolean optimizeNegativeNumber)
-            throws GadtryIOException;
+            throws JcodecException;
 
+    /**
+     * if false, Positive numbers are more efficient, negative numbers are less efficient,
+     * negative numbers are at least 9 bytes and positive numbers are at least 1 byte.
+     */
     void writeVarLong(long v, boolean optimizeNegativeNumber)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeBoolArray(boolean[] v)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeAsciiString(String s)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void writeString(String s)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void flush()
-            throws GadtryIOException;
+            throws JcodecException;
 
     @Override
     void close()
-            throws GadtryIOException;
+            throws JcodecException;
 }

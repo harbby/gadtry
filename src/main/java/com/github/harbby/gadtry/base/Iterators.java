@@ -21,6 +21,7 @@ import com.github.harbby.gadtry.collection.iterator.LengthIterator;
 import com.github.harbby.gadtry.collection.iterator.MarkIterator;
 import com.github.harbby.gadtry.collection.iterator.PeekIterator;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
+import com.github.harbby.gadtry.function.FilterFunction;
 import com.github.harbby.gadtry.function.Reducer;
 
 import java.util.ArrayList;
@@ -224,6 +225,47 @@ public class Iterators
     public static <E> IteratorPlus<E> wrap(E... values)
     {
         return of(values);
+    }
+
+    public static <E> WrapListIterator<E> wrapList(List<E> list)
+    {
+        return new WrapListIterator<>(list);
+    }
+
+    private static class WrapListIterator<V>
+            implements PeekIterator<V>
+    {
+        private final List<V> list;
+        private int i = 0;
+
+        private WrapListIterator(List<V> list)
+        {
+            this.list = list;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return i < list.size();
+        }
+
+        @Override
+        public V next()
+        {
+            if (!this.hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return list.get(i++);
+        }
+
+        @Override
+        public V peek()
+        {
+            if (!this.hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return list.get(i);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -475,12 +517,12 @@ public class Iterators
         }
         return new IteratorPlus<E>()
         {
-            private Iterator<E> child = requireNonNull(iterators.next(), "user flatMap not return null");
+            private Iterator<E> child;
 
             @Override
             public boolean hasNext()
             {
-                if (child.hasNext()) {
+                if (child != null && child.hasNext()) {
                     return true;
                 }
                 while (iterators.hasNext()) {
@@ -527,26 +569,32 @@ public class Iterators
         {
             this.iterator = requireNonNull(iterator, "iterator is null");
             this.filter = requireNonNull(filter, "filter is null");
-            this.hasNextValue = true;
-            nextValue();
+            this.hasNextValue = false;
         }
 
-        private void nextValue()
+        private boolean tryNext()
         {
             while (iterator.hasNext()) {
                 V v = iterator.next();
                 if (filter.apply(v)) {
                     this.value = v;
-                    return;
+                    return true;
                 }
             }
-            this.hasNextValue = false;
+            return false;
         }
 
         @Override
         public boolean hasNext()
         {
-            return hasNextValue;
+            if (hasNextValue) {
+                return true;
+            }
+            else {
+                boolean hasNext = tryNext();
+                this.hasNextValue = hasNext;
+                return hasNext;
+            }
         }
 
         @Override
@@ -556,7 +604,7 @@ public class Iterators
                 throw new NoSuchElementException();
             }
             V v = this.value;
-            this.nextValue();
+            this.hasNextValue = tryNext();
             return v;
         }
 
@@ -607,26 +655,32 @@ public class Iterators
             this.max = max;
             this.setp = setp;
 
-            this.hasNextValue = true;
-            this.nextValue();
+            this.hasNextValue = false;
         }
 
-        private void nextValue()
+        private boolean tryNext()
         {
             while (iterator.hasNext()) {
                 V e = iterator.next();
                 if (random.nextInt(max) < setp) {
                     this.value = e;
-                    return;
+                    return true;
                 }
             }
-            this.hasNextValue = false;
+            return false;
         }
 
         @Override
         public boolean hasNext()
         {
-            return hasNextValue;
+            if (hasNextValue) {
+                return true;
+            }
+            else {
+                boolean hasNext = this.tryNext();
+                this.hasNextValue = hasNext;
+                return hasNext;
+            }
         }
 
         @Override
@@ -636,7 +690,7 @@ public class Iterators
                 throw new NoSuchElementException();
             }
             V v = this.value;
-            this.nextValue();
+            this.hasNextValue = this.tryNext();
             return v;
         }
     }
@@ -719,12 +773,12 @@ public class Iterators
         }
         return new IteratorPlus<Tuple2<K, V>>()
         {
-            private Tuple2<K, V> lastRow = input.next();
+            private Tuple2<K, V> nextRow;
 
             @Override
             public boolean hasNext()
             {
-                return input.hasNext() || lastRow != null;
+                return nextRow != null || input.hasNext();
             }
 
             @Override
@@ -733,20 +787,94 @@ public class Iterators
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                while (input.hasNext()) {
-                    Tuple2<K, V> tp = input.next();
-                    if (!Objects.equals(tp.f1(), lastRow.f1())) {
-                        Tuple2<K, V> result = lastRow;
-                        this.lastRow = tp;
-                        return result;
-                    }
-                    lastRow.setF2(reducer.reduce(lastRow.f2(), tp.f2()));
+                if (nextRow == null) {
+                    nextRow = input.next();
                 }
-                Tuple2<K, V> result = lastRow;
-                lastRow = null;
+                while (input.hasNext()) {
+                    Tuple2<K, V> it = input.next();
+                    if (!Objects.equals(it.key(), nextRow.key())) {
+                        Tuple2<K, V> rs = nextRow;
+                        this.nextRow = it;
+                        return rs;
+                    }
+                    else {
+                        nextRow.setValue(reducer.reduce(nextRow.value(), it.value()));
+                    }
+                }
+                Tuple2<K, V> result = nextRow;
+                nextRow = null;
                 return result;
             }
         };
+    }
+
+    /**
+     * We only have a partial ordering, e.g. comparing the keys by hash code, which means that
+     * multiple distinct keys might be treated as equal by the ordering. To deal with this, we
+     * need to read all keys considered equal by the ordering at once and compare them.
+     */
+    public static <K, V> IteratorPlus<Tuple2<K, V>> reduceHashSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer, Comparator<K> comparator)
+    {
+        requireNonNull(reducer, "reducer is null");
+        requireNonNull(input, "input iterator is null");
+        if (!input.hasNext()) {
+            return Iterators.empty();
+        }
+        Iterator<Iterator<Tuple2<K, V>>> it = new IteratorPlus<Iterator<Tuple2<K, V>>>()
+        {
+            private final List<Tuple2<K, V>> lastRows = new ArrayList<>();
+            private final WrapListIterator<Tuple2<K, V>> listIterator = wrapList(lastRows);
+            private Tuple2<K, V> nextRow;
+
+            @Override
+            public boolean hasNext()
+            {
+                return nextRow != null || input.hasNext();
+            }
+
+            private void tryMerge(K k1, Tuple2<K, V> tp)
+            {
+                for (Tuple2<K, V> it : lastRows) {
+                    if (Objects.equals(it.key(), k1)) {
+                        it.setValue(reducer.reduce(it.value(), tp.value()));
+                        return;
+                    }
+                }
+                lastRows.add(tp);
+            }
+
+            @Override
+            public Iterator<Tuple2<K, V>> next()
+            {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                if (nextRow == null) {
+                    nextRow = input.next();
+                    lastRows.add(nextRow);
+                }
+                else {
+                    listIterator.i = 0;
+                    lastRows.clear();
+                    lastRows.add(nextRow);
+                }
+                K k2 = nextRow.key();
+                while (input.hasNext()) {
+                    Tuple2<K, V> tp = input.next();
+                    K k1 = tp.key();
+                    if (comparator.compare(k1, k2) == 0) {
+                        tryMerge(k1, tp);
+                    }
+                    else {
+                        this.nextRow = tp;
+                        return listIterator;
+                    }
+                }
+                nextRow = null;
+                return listIterator;
+            }
+        };
+        return concat(it);
     }
 
     private static class MergeJoinIterator<K, V1, V2>
@@ -850,31 +978,18 @@ public class Iterators
         private final Iterator<V> iterator;
         private final Runnable autoClose;
         private boolean hasNextValue;
-        private V value;
 
         private AutoCloseIterator(Iterator<V> iterator, Runnable autoClose)
         {
             this.iterator = requireNonNull(iterator, "iterator is null");
             this.autoClose = requireNonNull(autoClose, "autoClose is null");
-            this.hasNextValue = true;
-            this.nextValue();
-        }
-
-        private void nextValue()
-        {
-            if (iterator.hasNext()) {
-                this.value = iterator.next();
-            }
-            else {
-                this.hasNextValue = false;
-                autoClose.run();
-            }
+            this.hasNextValue = false;
         }
 
         @Override
         public boolean hasNext()
         {
-            return hasNextValue;
+            return hasNextValue || iterator.hasNext();
         }
 
         @Override
@@ -883,41 +998,49 @@ public class Iterators
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            V v = this.value;
-            this.nextValue();
+            V v = this.iterator.next();
+
+            if (!iterator.hasNext()) {
+                this.autoClose.run();
+                this.hasNextValue = false;
+            }
+            else {
+                this.hasNextValue = true;
+            }
             return v;
         }
     }
 
-    public static <V> PeekIterator<V> anyMatchStop(PeekIterator<V> iterator, Function<V, Boolean> stopMatcher)
+    public static <V> PeekIterator<V> stopAtFirstMatching(PeekIterator<V> iterator, FilterFunction<V> stopMatcher)
     {
-        return new AnyMatchIterator<>(iterator, stopMatcher);
+        return new StopAtFirstMatchingIterator<>(iterator, stopMatcher);
     }
 
-    private static class AnyMatchIterator<V>
+    private static class StopAtFirstMatchingIterator<V>
             implements PeekIterator<V>
     {
         private final PeekIterator<V> iterator;
-        private final Function<V, Boolean> stopMatcher;
+        private final FilterFunction<V> stopMatcher;
 
         private V value;
         private boolean hasNextValue;
+        private boolean initd;
 
-        private AnyMatchIterator(PeekIterator<V> iterator, Function<V, Boolean> stopMatcher)
+        private StopAtFirstMatchingIterator(PeekIterator<V> iterator, FilterFunction<V> stopMatcher)
         {
             this.iterator = requireNonNull(iterator, "iterator is null");
             this.stopMatcher = requireNonNull(stopMatcher, "stopMatcher is null");
+            this.initd = false;
             this.hasNextValue = true;
-            this.nextValue();
         }
 
-        private void nextValue()
+        private void tryNext()
         {
             if (iterator.hasNext()) {
-                V v0 = iterator.peek();
-                if (!stopMatcher.apply(v0)) {
-                    V v1 = iterator.next();
-                    checkState(v0 == v1, "bugs: iterator.peek() != iterator.next()");
+                V v1 = iterator.peek();
+                if (!stopMatcher.apply(v1)) {
+                    V v2 = iterator.next();
+                    assert v1 == v2;
                     this.value = v1;
                     return;
                 }
@@ -928,6 +1051,10 @@ public class Iterators
         @Override
         public boolean hasNext()
         {
+            if (!initd) {
+                this.tryNext();
+                this.initd = true;
+            }
             return hasNextValue;
         }
 
@@ -938,7 +1065,7 @@ public class Iterators
                 throw new NoSuchElementException();
             }
             V v = this.value;
-            this.nextValue();
+            this.tryNext();
             return v;
         }
 
@@ -960,46 +1087,33 @@ public class Iterators
         }
         return new PeekIterator<V>()
         {
-            private boolean hashNextValue;
+            private boolean hasDefined = false;
             private V value;
-
-            {
-                this.hashNextValue = true;
-                nextValue();
-            }
-
-            private void nextValue()
-            {
-                if (iterator.hasNext()) {
-                    this.value = iterator.next();
-                }
-                else {
-                    this.hashNextValue = false;
-                }
-            }
 
             @Override
             public boolean hasNext()
             {
-                return hashNextValue;
+                return hasDefined || iterator.hasNext();
             }
 
             @Override
             public V next()
             {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
+                if (hasDefined) {
+                    hasDefined = false;
+                    return value;
                 }
-                V v = this.value;
-                this.nextValue();
-                return v;
+                else {
+                    return iterator.next();
+                }
             }
 
             @Override
             public V peek()
             {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
+                if (!hasDefined) {
+                    this.value = iterator.next();
+                    hasDefined = true;
                 }
                 return this.value;
             }
@@ -1029,7 +1143,7 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 final K cKey = iterator.peek().f1();
-                Iterator<V> child = Iterators.anyMatchStop(iterator, x -> !Objects.equals(x.f1(), cKey)).map(Tuple2::f2);
+                Iterator<V> child = Iterators.stopAtFirstMatching(iterator, x -> !Objects.equals(x.f1(), cKey)).map(Tuple2::f2);
                 return Tuple2.of(cKey, mapGroupFunc.apply(cKey, child));
             }
         };

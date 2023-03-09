@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec;
 
 import java.io.Closeable;
 
-public interface DataInputView
+public interface InputView
         extends Closeable
 {
     void readFully(byte[] b)
-            throws GadtryIOException;
+            throws JcodecException;
 
     void readFully(byte[] b, int off, int len)
-            throws GadtryIOException;
+            throws JcodecException;
 
     int tryReadFully(byte[] b, int off, int len)
-            throws GadtryIOException;
+            throws JcodecException;
 
     /**
      * Reads the next byte of data from the input stream. The value byte is
@@ -41,60 +41,60 @@ public interface DataInputView
      *
      * @return the next byte of data, or {@code -1} if the end of the
      * stream is reached.
-     * @throws GadtryIOException if an I/O error occurs.
+     * @throws JcodecException if an I/O error occurs.
      */
     int read()
-            throws GadtryIOException;
+            throws JcodecException;
 
     int skipBytes(int n)
-            throws GadtryIOException;
+            throws JcodecException;
 
     boolean readBoolean()
-            throws GadtryIOException;
+            throws JcodecException;
 
     byte readByte()
-            throws GadtryIOException;
+            throws JcodecException;
 
     int readUnsignedByte()
-            throws GadtryIOException;
+            throws JcodecException;
 
     short readShort()
-            throws GadtryIOException;
+            throws JcodecException;
 
     int readUnsignedShort()
-            throws GadtryIOException;
+            throws JcodecException;
 
     char readChar()
-            throws GadtryIOException;
+            throws JcodecException;
 
     int readInt()
-            throws GadtryIOException;
+            throws JcodecException;
 
     long readLong()
-            throws GadtryIOException;
+            throws JcodecException;
 
     float readFloat()
-            throws GadtryIOException;
+            throws JcodecException;
 
     double readDouble()
-            throws GadtryIOException;
+            throws JcodecException;
 
     String readAsciiString()
-            throws GadtryIOException;
+            throws JcodecException;
 
     String readString()
-            throws GadtryIOException;
+            throws JcodecException;
 
     void readBoolArray(boolean[] booleans, int pos, int len)
-            throws GadtryIOException;
+            throws JcodecException;
 
     int readVarInt(boolean optimizeNegativeNumber)
-            throws GadtryIOException;
+            throws JcodecException;
 
     long readVarLong(boolean optimizeNegativeNumber)
-            throws GadtryIOException;
+            throws JcodecException;
 
     @Override
     void close()
-            throws GadtryIOException;
+            throws JcodecException;
 }

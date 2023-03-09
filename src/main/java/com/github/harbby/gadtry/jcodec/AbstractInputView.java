@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec;
+
+import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.InputStream;
 
-public abstract class AbstractInputStreamView
+public abstract class AbstractInputView
         extends InputStream
-        implements DataInputView
+        implements InputView
 {
     protected final byte[] buffer;
     protected int position;
@@ -28,20 +30,20 @@ public abstract class AbstractInputStreamView
     private byte[] stringBuffer = new byte[32];
     private char[] charBuffer;
 
-    protected AbstractInputStreamView(byte[] buffer)
+    protected AbstractInputView(byte[] buffer)
     {
         this.buffer = buffer;
         this.limit = buffer.length;
         this.position = buffer.length;
         if (buffer.length > Integer.MAX_VALUE >> 4) {
-            throw new GadtryIOException("buffer is large: capacity: " + buffer.length);
+            throw new JcodecException("buffer is large: capacity: " + buffer.length);
         }
     }
 
     protected final void require(int required)
     {
         if (required > buffer.length) {
-            throw new GadtryIOException("buffer is small: capacity: " + buffer.length + ", required: " + required);
+            throw new JcodecException("buffer is small: capacity: " + buffer.length + ", required: " + required);
         }
         if (limit - position < required) {
             int n = 0;
@@ -49,13 +51,13 @@ public abstract class AbstractInputStreamView
                 n = this.refill();
             }
             if (n < required) {
-                throw new GadtryEOFException("required: " + required);
+                throw new JcodecEOFException("required: " + required);
             }
         }
     }
 
     protected final int refill()
-            throws GadtryIOException
+            throws JcodecException
     {
         int l = limit - position;
         if (l > 0) {
@@ -70,35 +72,35 @@ public abstract class AbstractInputStreamView
     }
 
     protected abstract int tryReadFully0(byte[] b, int off, int len)
-            throws GadtryIOException;
+            throws JcodecException;
 
     @Override
     public final int skipBytes(int n)
-            throws GadtryIOException
+            throws JcodecException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public final void readFully(byte[] b)
-            throws GadtryIOException
+            throws JcodecException
     {
         this.readFully(b, 0, b.length);
     }
 
     @Override
     public final void readFully(byte[] b, int off, int len)
-            throws GadtryIOException
+            throws JcodecException
     {
         int n = this.tryReadFully(b, off, len);
         if (n < len) {
-            throw new GadtryEOFException();
+            throw new JcodecEOFException();
         }
     }
 
     @Override
     public final int tryReadFully(byte[] b, int off, int len)
-            throws GadtryIOException
+            throws JcodecException
     {
         if (limit != buffer.length & position == limit) {
             return -1;
@@ -128,7 +130,7 @@ public abstract class AbstractInputStreamView
 
     @Override
     public int read()
-            throws GadtryIOException
+            throws JcodecException
     {
         if (this.position == this.limit) {
             if (limit != buffer.length) {
@@ -143,7 +145,7 @@ public abstract class AbstractInputStreamView
 
     @Override
     public final int read(byte[] b, int off, int len)
-            throws GadtryIOException
+            throws JcodecException
     {
         return this.tryReadFully(b, off, len);
     }
@@ -353,7 +355,7 @@ public abstract class AbstractInputStreamView
                     require(1);
                     char2 = buffer[position++];
                     if ((char2 & 0xC0) != 0x80) {
-                        throw new GadtryEOFException("malformed input around byte " + position);
+                        throw new JcodecEOFException("malformed input around byte " + position);
                     }
                     charBuffer[count] = (char) (((char1 & 0x1F) << 6) |
                             (char2 & 0x3F));
@@ -364,7 +366,7 @@ public abstract class AbstractInputStreamView
                     char2 = buffer[position++];
                     char3 = buffer[position++];
                     if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
-                        throw new GadtryEOFException("malformed input around byte " + (position - 1));
+                        throw new JcodecEOFException("malformed input around byte " + (position - 1));
                     }
                     charBuffer[count] = (char) (((char1 & 0x0F) << 12) |
                             ((char2 & 0x3F) << 6) |
@@ -372,7 +374,7 @@ public abstract class AbstractInputStreamView
                     break;
                 default:
                     /* 10xx xxxx,  1111 xxxx */
-                    throw new GadtryEOFException("malformed input around byte " + count);
+                    throw new JcodecEOFException("malformed input around byte " + count);
             }
         }
     }

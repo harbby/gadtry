@@ -13,30 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.io;
+package com.github.harbby.gadtry.jcodec.codecs;
 
-public class GadtryIOException
-        extends RuntimeException
+import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
+import com.github.harbby.gadtry.jcodec.OutputView;
+
+import java.util.Comparator;
+
+/**
+ * @author ivan
+ * @date 2021.02.09 10:01:00
+ * byte Serialize
+ */
+public class ByteJcodec
+        implements Jcodec<Byte>
 {
-    private static final long serialVersionUID = -5819644260818480079L;
-
-    public GadtryIOException()
+    @Override
+    public void encoder(Byte value, OutputView output)
     {
-        super();
+        output.writeByte(value);
     }
 
-    public GadtryIOException(String message)
+    @Override
+    public Byte decoder(InputView input)
     {
-        super(message);
+        return input.readByte();
     }
 
-    public GadtryIOException(String message, Throwable cause)
+    @Override
+    public Comparator<Byte> comparator()
     {
-        super(message, cause);
-    }
-
-    public GadtryIOException(Throwable cause)
-    {
-        super(cause);
+        return Byte::compare;
     }
 }
