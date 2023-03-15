@@ -33,5 +33,8 @@ public interface Jcodec<E>
     /**
      * sortMerge shuffle need
      */
-    public Comparator<E> comparator();
+    public default Comparator<E> comparator()
+    {
+        return new HashCodeComparator<>();
+    }
 }

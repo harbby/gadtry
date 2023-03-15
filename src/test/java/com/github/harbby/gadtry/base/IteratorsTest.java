@@ -281,7 +281,8 @@ public class IteratorsTest
                 (x, y) -> Integer.compare(y, x),
                 list1.iterator(),
                 list2.iterator(),
-                list3.iterator());
+                list3.iterator(),
+                Iterators.empty());
         List<Integer> out = ImmutableList.copy(iterator);
         Assert.assertEquals(out, Arrays.asList(27, 22, 20, 16, 15, 13, 11, 9, 8, 8, 7, 5, 4, 3, 1, 0));
     }
@@ -381,7 +382,7 @@ public class IteratorsTest
                 Tuple2.of(2, 1),
                 Tuple2.of(7, 1),
                 Tuple2.of(8, 1));
-        Iterator<Tuple2<Integer, Integer>> rs = Iterators.reduceSorted(input, Integer::sum);
+        Iterator<Tuple2<Integer, Integer>> rs = Iterators.reduceByKeySorted(input, Integer::sum);
         List<Tuple2<Integer, Integer>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(
                 Tuple2.of(1, 1),
@@ -406,7 +407,7 @@ public class IteratorsTest
         Comparator<String> comparator = (x, y) -> x.hashCode() - y.hashCode();
         // sort by key
         input.sort((x, y) -> comparator.compare(x.key(), y.key()));
-        Iterator<Tuple2<String, Integer>> rs = Iterators.reduceHashSorted(input.iterator(), Integer::sum, comparator);
+        Iterator<Tuple2<String, Integer>> rs = Iterators.reduceByKeyHashSorted(input.iterator(), Integer::sum, comparator);
         List<Tuple2<String, Integer>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(
                 Tuple2.of("41k", 1),
@@ -419,8 +420,8 @@ public class IteratorsTest
     @Test
     public void reduceSortedOtherBranchTest()
     {
-        Assert.assertFalse(Iterators.reduceSorted(Iterators.of(), Integer::sum).hasNext());
-        Iterator<Tuple2<Integer, Integer>> rs = Iterators.reduceSorted(Iterators.of(Tuple2.of(1, 1)), Integer::sum);
+        Assert.assertFalse(Iterators.reduceByKeySorted(Iterators.of(), Integer::sum).hasNext());
+        Iterator<Tuple2<Integer, Integer>> rs = Iterators.reduceByKeySorted(Iterators.of(Tuple2.of(1, 1)), Integer::sum);
         Assert.assertEquals(rs.next(), Tuple2.of(1, 1));
         checkNoSuchElement(rs);
     }
@@ -454,7 +455,7 @@ public class IteratorsTest
                 Tuple2.of(2, 1),
                 Tuple2.of(2, 1),
                 Tuple2.of(8, 1));
-        Iterator<Tuple2<Integer, String>> rs = Iterators.mapGroupSorted(input, (k, iterator) -> k + "->" + Iterators.size(iterator));
+        Iterator<Tuple2<Integer, String>> rs = Iterators.groupAndMap(input, (k, iterator) -> k + "->" + Iterators.size(iterator));
         List<Tuple2<Integer, String>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(
                 Tuple2.of(1, "1->1"),

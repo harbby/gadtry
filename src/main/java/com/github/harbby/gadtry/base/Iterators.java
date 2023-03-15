@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.collection.IteratorPlus;
+import com.github.harbby.gadtry.collection.PairPriorityQueue;
 import com.github.harbby.gadtry.collection.iterator.LengthIterator;
 import com.github.harbby.gadtry.collection.iterator.MarkIterator;
 import com.github.harbby.gadtry.collection.iterator.PeekIterator;
@@ -622,10 +623,10 @@ public class Iterators
      * double fraction = setp / max
      *
      * @param iterator 待抽样的Iterator
-     * @param setp     setp
-     * @param max      max
-     * @param seed     随机因子
-     * @param <E>      type
+     * @param setp setp
+     * @param max max
+     * @param seed 随机因子
+     * @param <E> type
      * @return 抽样后的Iterator
      */
     public static <E> IteratorPlus<E> sample(Iterator<E> iterator, int setp, int max, long seed)
@@ -716,7 +717,7 @@ public class Iterators
         };
     }
 
-    public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, List<Iterator<T>> inputs)
+    public static <T> Iterator<T> mergeSorted_bak(Comparator<T> comparator, List<Iterator<T>> inputs)
     {
         requireNonNull(comparator, "comparator is null");
         requireNonNull(inputs, "inputs is null");
@@ -758,27 +759,92 @@ public class Iterators
         };
     }
 
+    public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, List<Iterator<T>> inputs)
+    {
+        requireNonNull(comparator, "comparator is null");
+        requireNonNull(inputs, "inputs is null");
+        if (inputs.size() == 0) {
+            return Iterators.empty();
+        }
+        if (inputs.size() == 1) {
+            return inputs.get(0);
+        }
+
+        return new SortMergeIterator<>(comparator, inputs);
+    }
+
+    private static final class SortMergeIterator<V>
+            implements Iterator<V>
+    {
+        private final PairPriorityQueue<V, Iterator<V>> priorityQueue;
+        private final Object[] heap;
+
+        private SortMergeIterator(Comparator<V> comparator, List<Iterator<V>> inputs)
+        {
+            // create an array to store the current elements and their iterator indices
+            Object[] heap = new Object[inputs.size() * 2];
+            int size = 0;
+            // fill the array with the first elements of each iterator
+            for (Iterator<V> iterator : inputs) {
+                if (iterator.hasNext()) {
+                    heap[size++] = iterator.next();
+                    heap[size++] = iterator;
+                }
+            }
+            this.priorityQueue = new PairPriorityQueue<>(heap, size, comparator);
+            this.heap = heap;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return priorityQueue.size() > 0;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public V next()
+        {
+            if (priorityQueue.size() == 0) {
+                throw new NoSuchElementException();
+            }
+
+            // get the minimum element and its iterator index from the heap
+            V value = (V) this.heap[0];
+            Iterator<V> iterator = (Iterator<V>) this.heap[1];
+            // replace the minimum element with the next element of its iterator, if any
+            if (iterator.hasNext()) {
+                priorityQueue.replaceHead(iterator.next(), iterator);
+            }
+            else {
+                priorityQueue.removeHead();
+            }
+            return value;
+        }
+    }
+
     @SafeVarargs
     public static <T> Iterator<T> mergeSorted(Comparator<T> comparator, Iterator<T>... inputs)
     {
         return mergeSorted(comparator, ImmutableList.copy(inputs));
     }
 
-    public static <K, V> IteratorPlus<Tuple2<K, V>> reduceSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer)
+    public static <K, V> IteratorPlus<Tuple2<K, V>> reduceByKeySorted(Iterator<Tuple2<K, V>> sortedInput, Reducer<V> reducer)
     {
         requireNonNull(reducer, "reducer is null");
-        requireNonNull(input, "input iterator is null");
-        if (!input.hasNext()) {
+        requireNonNull(sortedInput, "input iterator is null");
+        if (!sortedInput.hasNext()) {
             return Iterators.empty();
         }
         return new IteratorPlus<Tuple2<K, V>>()
         {
             private Tuple2<K, V> nextRow;
+            private boolean closed;
 
             @Override
             public boolean hasNext()
             {
-                return nextRow != null || input.hasNext();
+                return !closed || sortedInput.hasNext();
             }
 
             @Override
@@ -788,10 +854,10 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 if (nextRow == null) {
-                    nextRow = input.next();
+                    nextRow = sortedInput.next();
                 }
-                while (input.hasNext()) {
-                    Tuple2<K, V> it = input.next();
+                while (sortedInput.hasNext()) {
+                    Tuple2<K, V> it = sortedInput.next();
                     if (!Objects.equals(it.key(), nextRow.key())) {
                         Tuple2<K, V> rs = nextRow;
                         this.nextRow = it;
@@ -801,9 +867,8 @@ public class Iterators
                         nextRow.setValue(reducer.reduce(nextRow.value(), it.value()));
                     }
                 }
-                Tuple2<K, V> result = nextRow;
-                nextRow = null;
-                return result;
+                closed = true;
+                return this.nextRow;
             }
         };
     }
@@ -813,11 +878,11 @@ public class Iterators
      * multiple distinct keys might be treated as equal by the ordering. To deal with this, we
      * need to read all keys considered equal by the ordering at once and compare them.
      */
-    public static <K, V> IteratorPlus<Tuple2<K, V>> reduceHashSorted(Iterator<Tuple2<K, V>> input, Reducer<V> reducer, Comparator<K> comparator)
+    public static <K, V> IteratorPlus<Tuple2<K, V>> reduceByKeyHashSorted(Iterator<Tuple2<K, V>> hashSortedInput, Reducer<V> reducer, Comparator<K> comparator)
     {
         requireNonNull(reducer, "reducer is null");
-        requireNonNull(input, "input iterator is null");
-        if (!input.hasNext()) {
+        requireNonNull(hashSortedInput, "input iterator is null");
+        if (!hashSortedInput.hasNext()) {
             return Iterators.empty();
         }
         Iterator<Iterator<Tuple2<K, V>>> it = new IteratorPlus<Iterator<Tuple2<K, V>>>()
@@ -829,7 +894,7 @@ public class Iterators
             @Override
             public boolean hasNext()
             {
-                return nextRow != null || input.hasNext();
+                return nextRow != null || hashSortedInput.hasNext();
             }
 
             private void tryMerge(K k1, Tuple2<K, V> tp)
@@ -850,7 +915,7 @@ public class Iterators
                     throw new NoSuchElementException();
                 }
                 if (nextRow == null) {
-                    nextRow = input.next();
+                    nextRow = hashSortedInput.next();
                     lastRows.add(nextRow);
                 }
                 else {
@@ -859,8 +924,8 @@ public class Iterators
                     lastRows.add(nextRow);
                 }
                 K k2 = nextRow.key();
-                while (input.hasNext()) {
-                    Tuple2<K, V> tp = input.next();
+                while (hashSortedInput.hasNext()) {
+                    Tuple2<K, V> tp = hashSortedInput.next();
                     K k1 = tp.key();
                     if (comparator.compare(k1, k2) == 0) {
                         tryMerge(k1, tp);
@@ -1013,6 +1078,8 @@ public class Iterators
 
     public static <V> PeekIterator<V> stopAtFirstMatching(PeekIterator<V> iterator, FilterFunction<V> stopMatcher)
     {
+        requireNonNull(iterator, "iterator is null");
+        requireNonNull(stopMatcher, "stopMatcher is null");
         return new StopAtFirstMatchingIterator<>(iterator, stopMatcher);
     }
 
@@ -1028,8 +1095,8 @@ public class Iterators
 
         private StopAtFirstMatchingIterator(PeekIterator<V> iterator, FilterFunction<V> stopMatcher)
         {
-            this.iterator = requireNonNull(iterator, "iterator is null");
-            this.stopMatcher = requireNonNull(stopMatcher, "stopMatcher is null");
+            this.iterator = iterator;
+            this.stopMatcher = stopMatcher;
             this.initd = false;
             this.hasNextValue = true;
         }
@@ -1120,32 +1187,93 @@ public class Iterators
         };
     }
 
-    public static <K, V, O> IteratorPlus<Tuple2<K, O>> mapGroupSorted(Iterator<Tuple2<K, V>> input, BiFunction<K, Iterator<V>, O> mapGroupFunc)
+    public static <K, V, O> IteratorPlus<Tuple2<K, O>> groupAndMap(Iterator<Tuple2<K, V>> sortedByKeyInput, BiFunction<K, Iterator<V>, O> mapGroupFunc)
     {
-        requireNonNull(input, "input Iterator is null");
+        requireNonNull(sortedByKeyInput, "the sorted by key input Iterator is null");
         requireNonNull(mapGroupFunc, "mapGroupFunc is null");
-        if (!input.hasNext()) {
+        if (!sortedByKeyInput.hasNext()) {
             return Iterators.empty();
         }
-        PeekIterator<Tuple2<K, V>> iterator = peekIterator(input);
+
         return new IteratorPlus<Tuple2<K, O>>()
         {
+            private Tuple2<K, V> nextGroup;
+
             @Override
             public boolean hasNext()
             {
-                return iterator.hasNext();
+                return nextGroup != null || sortedByKeyInput.hasNext();
             }
 
             @Override
             public Tuple2<K, O> next()
             {
                 if (!hasNext()) {
-                    throw new NoSuchElementException();
+                    throw new NoSuchElementException("No more groups available");
                 }
-                final K cKey = iterator.peek().f1();
-                Iterator<V> child = Iterators.stopAtFirstMatching(iterator, x -> !Objects.equals(x.f1(), cKey)).map(Tuple2::f2);
-                return Tuple2.of(cKey, mapGroupFunc.apply(cKey, child));
+                Tuple2<K, V> firstGroup = nextGroup == null ? sortedByKeyInput.next() : nextGroup;
+                final K groupKey = firstGroup.key();
+                GroupSortedIterator<K, V> child = new GroupSortedIterator<>(sortedByKeyInput, firstGroup);
+                O rs = mapGroupFunc.apply(groupKey, child);
+                nextGroup = child.currentValue;
+                return Tuple2.of(groupKey, rs);
             }
         };
+    }
+
+    private static class GroupSortedIterator<K, V>
+            implements PeekIterator<V>
+    {
+        private final Iterator<Tuple2<K, V>> input;
+        private final K groupKey;
+
+        private Tuple2<K, V> currentValue;
+        private boolean hasNextValue;
+
+        private GroupSortedIterator(Iterator<Tuple2<K, V>> input, Tuple2<K, V> firstGroup)
+        {
+            this.input = input;
+            this.groupKey = firstGroup.key();
+            this.currentValue = firstGroup;
+            this.hasNextValue = true;
+        }
+
+        private void tryNext()
+        {
+            if (input.hasNext()) {
+                currentValue = input.next();
+                hasNextValue = Objects.equals(groupKey, currentValue.key());
+            }
+            else {
+                currentValue = null;
+                hasNextValue = false;
+            }
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return hasNextValue;
+        }
+
+        @Override
+        public V next()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            V v = this.currentValue.value();
+            this.tryNext();
+            return v;
+        }
+
+        @Override
+        public V peek()
+        {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return this.currentValue.value();
+        }
     }
 }
