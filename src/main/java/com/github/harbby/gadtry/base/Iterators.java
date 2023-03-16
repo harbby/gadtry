@@ -1187,7 +1187,7 @@ public class Iterators
         };
     }
 
-    public static <K, V, O> IteratorPlus<Tuple2<K, O>> groupAndMap(Iterator<Tuple2<K, V>> sortedByKeyInput, BiFunction<K, Iterator<V>, O> mapGroupFunc)
+    public static <K, V, O> IteratorPlus<Tuple2<K, O>> groupByKeySorted(Iterator<Tuple2<K, V>> sortedByKeyInput, BiFunction<K, Iterator<V>, O> mapGroupFunc)
     {
         requireNonNull(sortedByKeyInput, "the sorted by key input Iterator is null");
         requireNonNull(mapGroupFunc, "mapGroupFunc is null");

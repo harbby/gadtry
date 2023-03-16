@@ -448,14 +448,14 @@ public class IteratorsTest
     }
 
     @Test
-    public void mapGroupSortedTest()
+    public void groupByKeySortedTest()
     {
         Iterator<Tuple2<Integer, Integer>> input = Iterators.of(
                 Tuple2.of(1, 1),
                 Tuple2.of(2, 1),
                 Tuple2.of(2, 1),
                 Tuple2.of(8, 1));
-        Iterator<Tuple2<Integer, String>> rs = Iterators.groupAndMap(input, (k, iterator) -> k + "->" + Iterators.size(iterator));
+        Iterator<Tuple2<Integer, String>> rs = Iterators.groupByKeySorted(input, (k, iterator) -> k + "->" + Iterators.size(iterator));
         List<Tuple2<Integer, String>> data = ImmutableList.copy(rs);
         Assert.assertEquals(Arrays.asList(
                 Tuple2.of(1, "1->1"),

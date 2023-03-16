@@ -36,8 +36,8 @@ public class PairPriorityQueueTest
         PairPriorityQueue<Integer, String> queue = new PairPriorityQueue<>(heap, heap.length, Integer::compare);
         Arrays.sort(intArr);
         for (int i = 0; i < intArr.length; i++) {
-            int v = (int) heap[0];
-            String pair = (String) heap[1];
+            int v = queue.getHeapKey();
+            String pair = queue.getHeapValue();
             Assert.assertEquals(intArr[i], v);
             Assert.assertEquals(pair, "data_" + v);
             queue.removeHead();
@@ -59,8 +59,8 @@ public class PairPriorityQueueTest
         Assert.assertEquals(queue.size(), heap.length);
         Arrays.sort(intArr);
         for (int i = 0; i < intArr.length; i++) {
-            int v = (int) heap[0];
-            int pair = (int) heap[1];
+            int v = queue.getHeapKey();
+            int pair = queue.getHeapValue();
             Assert.assertEquals(intArr[i], v);
             Assert.assertEquals(pair, v & 1);
             queue.removeHead();

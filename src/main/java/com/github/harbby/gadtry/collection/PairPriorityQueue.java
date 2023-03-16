@@ -48,10 +48,36 @@ public class PairPriorityQueue<K, V>
      */
     public PairPriorityQueue(final Object[] elements, final int count, final Comparator<K> keyComparator)
     {
+        this(elements, count, keyComparator, false);
+    }
+
+    /**
+     * Constructs a new priority queue with the given array, size and comparator.
+     * The array is adjusted to a min-heap according to the comparator.
+     *
+     * @param elements The array to store the elements
+     * @param count The number of elements in the array
+     * @param keyComparator The comparator to compare the keys
+     * @param isSorted input elements is sorted by key
+     */
+    public PairPriorityQueue(final Object[] elements, final int count, final Comparator<K> keyComparator, boolean isSorted)
+    {
         this.elements = elements;
         this.count = count;
         this.keyComparator = keyComparator;
-        // adjust the array to a min-heap
+        if (!isSorted) {
+            // adjust the array to a min-heap
+            this.heapify();
+        }
+    }
+
+    /**
+     * Establishes the heap invariant (described above) in the entire tree,
+     * assuming nothing about the order of the elements prior to the call.
+     * This classic algorithm due to Floyd (1964) is known to be O(size).
+     */
+    private void heapify()
+    {
         for (int i = ((count - 2) / 2 - 1) / 2; i >= 0; i--) {
             siftDown(elements, keyComparator, count, i * 2);
         }
@@ -64,8 +90,9 @@ public class PairPriorityQueue<K, V>
      * @throws AssertionError if the queue is empty
      */
     @SuppressWarnings("unchecked")
-    public K getHeapKey() {
-        assert !isEmpty();
+    public K getHeapKey()
+    {
+        // ensureNotEmpty();
         return (K) elements[0];
     }
 
@@ -76,9 +103,20 @@ public class PairPriorityQueue<K, V>
      * @throws AssertionError if the queue is empty
      */
     @SuppressWarnings("unchecked")
-    public V getHeapValue() {
-        assert !isEmpty();
+    public V getHeapValue()
+    {
+        // ensureNotEmpty();
         return (V) elements[1];
+    }
+
+    private void ensureCapacity() // ensure enough space in the array
+    {
+        assert count + 2 <= elements.length;
+    }
+
+    private void ensureNotEmpty() // ensure enough space in the array
+    {
+        assert count > 0;
     }
 
     /**
@@ -91,7 +129,7 @@ public class PairPriorityQueue<K, V>
      */
     public void add(K k, V v)
     {
-        assert count + 2 <= elements.length;
+        // ensureCapacity();
         elements[count++] = k;
         elements[count++] = v;
         siftUp(elements, keyComparator, count - 2);
@@ -102,8 +140,9 @@ public class PairPriorityQueue<K, V>
      *
      * @return True if the queue is empty, false otherwise
      */
-    public boolean isEmpty() {
-        return count > 0;
+    public boolean isEmpty()
+    {
+        return count == 0;
     }
 
     /**
@@ -116,7 +155,7 @@ public class PairPriorityQueue<K, V>
      */
     public void replaceHead(K k, V v)
     {
-        assert !isEmpty();
+        // ensureNotEmpty();
         elements[0] = k;
         elements[1] = v;
         // adjust the heap again
@@ -131,7 +170,7 @@ public class PairPriorityQueue<K, V>
      */
     public void removeHead()
     {
-        assert count > 0;
+        // ensureNotEmpty();
         // remove the minimum element from the heap by swapping it with the last element and reducing the size
         swap(elements, 0, count - 2);
         swap(elements, 1, count - 1);
@@ -142,14 +181,14 @@ public class PairPriorityQueue<K, V>
     }
 
     /**
-     * Returns the size of the queue, which is equal to half of
+     * Returns the size of the queue, which is equal to
      * the number of elements in the array.
      *
-     * @return The size of
+     * @return The size of queue
      */
     public int size()
     {
-        return count / 2;
+        return count;
     }
 
     // helper method to move an element up in a min-heap until it satisfies the heap property
