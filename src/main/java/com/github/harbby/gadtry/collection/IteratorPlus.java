@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.collection.iterator.PeekIterator;
+import com.github.harbby.gadtry.function.FilterFunction;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -27,19 +28,9 @@ import java.util.stream.Stream;
 public interface IteratorPlus<E>
         extends Iterator<E>
 {
-    static <E> IteratorPlus<E> empty()
-    {
-        return Iterators.empty();
-    }
-
     default PeekIterator<E> asPeekIterator()
     {
         return Iterators.peekIterator(this);
-    }
-
-    default boolean isEmpty()
-    {
-        return !this.hasNext();
     }
 
     default Stream<E> toStream()
@@ -67,7 +58,7 @@ public interface IteratorPlus<E>
         return Iterators.flatMap(this, flatMap);
     }
 
-    default IteratorPlus<E> filter(Function<E, Boolean> filter)
+    default IteratorPlus<E> filter(FilterFunction<E> filter)
     {
         return Iterators.filter(this, filter);
     }

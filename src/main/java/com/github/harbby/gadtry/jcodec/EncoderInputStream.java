@@ -15,18 +15,15 @@
  */
 package com.github.harbby.gadtry.jcodec;
 
-import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.collection.IteratorPlus;
+import com.github.harbby.gadtry.collection.iterator.CloseIterator;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.NoSuchElementException;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class EncoderInputStream<E>
-        implements IteratorPlus<E>, Closeable
+        implements CloseIterator<E>
 {
     private final InputView dataInput;
     private final Jcodec<E> jcodec;
@@ -46,12 +43,7 @@ public class EncoderInputStream<E>
     {
         boolean hasNext = index < count;
         if (!hasNext) {
-            try {
-                this.close();
-            }
-            catch (IOException e) {
-                throw Throwables.throwThrowable(e);
-            }
+            this.close();
         }
         return hasNext;
     }
@@ -68,7 +60,6 @@ public class EncoderInputStream<E>
 
     @Override
     public void close()
-            throws IOException
     {
         dataInput.close();
     }

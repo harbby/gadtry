@@ -15,10 +15,10 @@
  */
 package com.github.harbby.gadtry.collection.iterator;
 
-import com.github.harbby.gadtry.collection.IteratorPlus;
+import java.util.Iterator;
 
 public interface PeekIterator<E>
-        extends IteratorPlus<E>
+        extends Iterator<E>
 {
     E peek();
 }

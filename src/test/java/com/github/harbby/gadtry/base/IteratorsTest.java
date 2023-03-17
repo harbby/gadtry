@@ -177,21 +177,6 @@ public class IteratorsTest
     }
 
     @Test
-    public void iteratorMapTest()
-    {
-        List<String> list = MutableList.of("1", "2", "3");
-        Iterable iterable = Iterators.map(list, x -> Integer.parseInt(x) + 1);
-        Assert.assertEquals(Arrays.asList(2, 3, 4), ImmutableList.copy(iterable));
-
-        Iterator limit = iterable.iterator();
-        while (limit.hasNext()) {
-            limit.next();
-            limit.remove();
-        }
-        Assert.assertTrue(list.isEmpty());
-    }
-
-    @Test
     public void iteratorMapperReduceTest()
     {
         List<Integer> list = Arrays.asList(1, 2, 3);
@@ -461,6 +446,28 @@ public class IteratorsTest
                 Tuple2.of(1, "1->1"),
                 Tuple2.of(2, "2->2"),
                 Tuple2.of(8, "8->1")
+        ), data);
+    }
+
+    @Test
+    public void groupByKeySortedLoopTest()
+    {
+        Iterator<Tuple2<Integer, Integer>> input = Iterators.of(
+                Tuple2.of(1, 1),
+                Tuple2.of(2, 1),
+                Tuple2.of(2, 1),
+                Tuple2.of(8, 1));
+        Iterator<Tuple2<Integer, Iterator<Integer>>> rs = Iterators.groupByKeySorted(input, (k, iterator) -> iterator);
+        List<Tuple2<Integer, Integer>> data = new ArrayList<>(3);
+        while (rs.hasNext()) {
+            Tuple2<Integer, Iterator<Integer>> it = rs.next();
+            int size = (int) Iterators.size(it.value());
+            data.add(Tuple2.of(it.key(), size));
+        }
+        Assert.assertEquals(Arrays.asList(
+                Tuple2.of(1, 1),
+                Tuple2.of(2, 2),
+                Tuple2.of(8, 1)
         ), data);
     }
 

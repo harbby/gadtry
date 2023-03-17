@@ -15,27 +15,21 @@
  */
 package com.github.harbby.gadtry.base;
 
-import com.github.harbby.gadtry.collection.IteratorPlus;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Iterator;
+
 public class IteratorPlusTest
 {
     @Test
-    public void emptyTest()
-    {
-        Assert.assertTrue(IteratorPlus.empty().isEmpty());
-        Assert.assertFalse(IteratorPlus.empty().toStream().iterator().hasNext());
-    }
-
-    @Test
     public void allTest()
     {
-        IteratorPlus<String> source = Iterators.of("1,2,3,4,5");
+        Iterator<String> source = Iterators.of("1,2,3,4,5");
         Tuple1<Boolean> closed = Tuple1.of(false);
-        Assert.assertFalse(source.isEmpty());
-        int rs = source.flatMap(x -> Iterators.of(x.split(",")))
+        Assert.assertTrue(source.hasNext());
+        int rs = Iterators.flatMap(source, x -> Iterators.of(x.split(",")))
                 .map(Integer::parseInt)
                 .filter(x -> x < 5)
                 .limit(3)

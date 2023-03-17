@@ -15,10 +15,10 @@
  */
 package com.github.harbby.gadtry.collection.iterator;
 
-import com.github.harbby.gadtry.collection.IteratorPlus;
+import java.util.Iterator;
 
 public interface MarkIterator<E>
-        extends IteratorPlus<E>
+        extends Iterator<E>
 {
     void mark();
 

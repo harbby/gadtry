@@ -41,7 +41,7 @@ public class LengthIteratorJcodec<E>
     public void encoder(Iterator<E> value, OutputView output)
     {
         checkState(value instanceof LengthIterator, "only support LengthIterator");
-        output.writeInt(((LengthIterator<?>) value).length());
+        output.writeLong(((LengthIterator<?>) value).length());
         while (value.hasNext()) {
             eJcodec.encoder(value.next(), output);
         }
@@ -56,7 +56,7 @@ public class LengthIteratorJcodec<E>
             private int index = 0;
 
             @Override
-            public int length()
+            public long length()
             {
                 return length;
             }
@@ -75,6 +75,12 @@ public class LengthIteratorJcodec<E>
                 }
                 index++;
                 return eJcodec.decoder(input);
+            }
+
+            @Override
+            public long size()
+            {
+                return length - index;
             }
         };
     }
