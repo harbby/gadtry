@@ -19,16 +19,14 @@ import java.util.Comparator;
 
 /**
  * A generic class that implements a priority queue based on an array.
- * It can store a pair of key-value elements, where the key is used to compare the priority of the elements, and the value is used to store data.
+ * It uses the DataFormat interface to abstract data access, which is used to flexibly support various different data structures, such as PairDataFormat.
  * A comparator can be used to customize the comparison rule of the keys.
  * Elements can be added, removed or reset at the head of the queue.
- * <p>
- * &lt;K&gt; The type of the key
- * &lt;V&gt; The type of the value
  *
  * @author harbby
  * @version 1.0
  * @see java.util.PriorityQueue
+ * @see FastPriorityQueue.DataFormat
  */
 public class FastPriorityQueue
 {

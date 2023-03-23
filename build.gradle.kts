@@ -83,11 +83,12 @@ checkstyle {
   //configFile = file("${rootDir}/src/checkstyle/facebook_checks.xml")
 }
 //assemble.dependsOn 'checkstyle'
-tasks.register<Checkstyle>("checkstyle") {
+
+tasks.named<Checkstyle>("checkstyleMain") {
   configFile = rootProject.file("src/checkstyle/facebook_checks.xml")
   source("src")
   include("**/*.java")
-  exclude("**/gen/**", "**/test/**", "**/build/**", "**/module-info.java")
+  exclude("**/gen/**", "**/test/**", "**/build/**", "**/module-info.java", "**/TimSort.java")
   classpath = files()
 }
 
@@ -108,7 +109,7 @@ license {
   }
   header = rootProject.file("src/license/LICENSE-HEADER.txt")
   strictCheck = true
-  excludes(listOf("**/*.properties", "**/*.sql", "**/*.txt"))
+  excludes(listOf("**/*.properties", "**/*.sql", "**/*.txt", "**/com/github/harbby/gadtry/base/TimSort.java",))
   //include "**/*.java"
 }
 
@@ -122,6 +123,7 @@ tasks.jacocoTestReport {
   classDirectories.setFrom(files(classDirectories.files.map {
     fileTree(it) {
       exclude(
+              "**/com/github/harbby/gadtry/base/TimSort.class",
               "**/com/github/harbby/gadtry/spi/ServiceLoad.class",
               "**/com/github/harbby/gadtry/collection/IntArrayBuffer**",
               "**/com/github/harbby/gadtry/base/JavaParameterizedTypeImpl.class",

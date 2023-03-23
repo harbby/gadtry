@@ -79,4 +79,41 @@ public final class Maths
     {
         return (int) (C2 * Integer.rotateLeft((int) (code * C1), 15));
     }
+
+    /**
+     * This is a widely used modified version of the MurmurHash3 algorithm.
+     * It is characterized by the following features: excellent performance,
+     * low collision rate, and good distribution of hash values.
+     * This algorithm is used in various applications,
+     * such as hash tables, bloom filters, and data partitioning.
+     * The implementation is based on the MurmurHash3 implementation from Google Guava library.
+     *
+     * @param key  The input 32-bit integer key.
+     * @param seed The seed value for hashing.
+     * @return The resulting hash value, which is a non-negative 32-bit integer.
+     */
+    public static int murmurHash3Int(int key, int seed)
+    {
+        int h = seed;
+        final int c1 = 0xcc9e2d51;
+        final int c2 = 0x1b873593;
+        key *= c1;
+        key = Integer.rotateLeft(key, 15);
+        key *= c2;
+        h ^= key;
+        h = Integer.rotateLeft(h, 13);
+        h = h * 5 + 0xe6546b64;
+        h ^= 4;
+        h ^= h >>> 16;
+        h *= 0x85ebca6b;
+        h ^= h >>> 13;
+        h *= 0xc2b2ae35;
+        h ^= h >>> 16;
+        return h;
+    }
+
+    public static int murmurHash3Int(int key)
+    {
+        return murmurHash3Int(key, 0);
+    }
 }

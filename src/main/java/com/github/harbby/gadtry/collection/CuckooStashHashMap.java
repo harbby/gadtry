@@ -209,17 +209,17 @@ public class CuckooStashHashMap<K, V>
 
     private void pushToStash(K key, V value)
     {
-        for (int i = capacity + stashSize; i < keys.length; i++) {
-            if (keys[i] == null) {
-                keys[i] = key;
-                values[i] = value;
-                stashSize++;
-                return;
-            }
+        if (stashSize < stashCapacity) {
+            int i = capacity + stashSize;
+            keys[i] = key;
+            values[i] = value;
+            stashSize++;
         }
-        //stash is full
-        resize();
-        this.put0(key, value);
+        else {
+            //stash is full
+            resize();
+            this.put0(key, value);
+        }
     }
 
     @SuppressWarnings("unchecked")

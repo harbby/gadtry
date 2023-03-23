@@ -23,10 +23,10 @@
         <property name="format" value="\n\n\s*\}" />
         <property name="message" value="Blank line before closing brace" />
     </module>
-    <module name="RegexpMultiline">
-        <property name="format" value="[^;]\s\)+\s*[\{;,]?\s*\n" />
-        <property name="message" value="Whitespace character before closing brace" />
-    </module>
+    <!--<module name="RegexpMultiline">-->
+    <!--<property name="format" value="[^;]\s\)+\s*[\{;,]?\s*\n" />-->
+    <!--<property name="message" value="Whitespace character before closing brace" />-->
+    <!--</module>-->
     <module name="RegexpMultiline">
         <property name="format" value="\n\n\n" />
         <property name="message" value="Multiple consecutive blank lines" />
@@ -44,11 +44,11 @@
         <property name="message" value="Whitespace inside empty lambda body" />
     </module>
     <module name="TreeWalker">
-<!--        <module name="RegexpSinglelineJava">-->
-<!--            <property name="ignoreComments" value="true" />-->
-<!--            <property name="format" value="System\.out\.println" />-->
-<!--            <property name="message" value="No new line before extends/implements" />-->
-<!--        </module>-->
+        <!--        <module name="RegexpSinglelineJava">-->
+        <!--            <property name="ignoreComments" value="true" />-->
+        <!--            <property name="format" value="System\.out\.println" />-->
+        <!--            <property name="message" value="No new line before extends/implements" />-->
+        <!--        </module>-->
         <module name="RegexpSinglelineJava">
             <property name="ignoreComments" value="true" />
             <property name="format" value="(class|interface) ([a-zA-Z0-9_])+(&lt;.*&gt;)? (extends|implements)" />
@@ -198,12 +198,18 @@
             <property name="allowLineBreaks" value="false" />
         </module>
 
-<!--        <module name="IllegalToken">-->
-<!--            <property name="tokens" value="LITERAL_ASSERT" />-->
-<!--        </module>-->
+        <!--        <module name="IllegalToken">-->
+        <!--            <property name="tokens" value="LITERAL_ASSERT" />-->
+        <!--        </module>-->
 
         <module name="IllegalImport">
             <property name="illegalPkgs" value="
+                org.ideal.sylph.hadoop.shaded,
+                org.ideal.sylph.hadoop.$internal,
+                org.ideal.sylph.hive.$internal,
+                com.datastax.driver.$internal,
+                org.weakref.jmx.internal,
+                jersey.repackaged,
                 jdk.nashorn.internal,
                 jdk.internal" />
         </module>
