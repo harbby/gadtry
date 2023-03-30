@@ -21,8 +21,8 @@ import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.collection.iterator.MarkIterator;
 import com.github.harbby.gadtry.collection.iterator.PeekIterator;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +38,7 @@ public class IteratorsTest
     {
         try {
             iterator.next();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NoSuchElementException ignored) {
         }
@@ -51,28 +51,28 @@ public class IteratorsTest
 
         MarkIterator<String> iterator = (MarkIterator<String>) Iterators.of(number);
         iterator.mark();
-        Assert.assertArrayEquals(number, ImmutableList.copy(() -> iterator).toArray(new String[0]));
+        Assertions.assertArrayEquals(number, ImmutableList.copy(() -> iterator).toArray(new String[0]));
         checkNoSuchElement(iterator);
         iterator.reset();
-        Assert.assertArrayEquals(number, ImmutableList.copy(iterator).toArray(new String[0]));
+        Assertions.assertArrayEquals(number, ImmutableList.copy(iterator).toArray(new String[0]));
     }
 
     @Test
     public void toStreamTest()
     {
         List<String> number = ImmutableList.of("1", "2", "3");
-        Assert.assertEquals(Iterators.toStream(number).collect(Collectors.toList()), number);
-        Assert.assertEquals(Iterators.toStream(() -> number.iterator()).collect(Collectors.toList()), number);
-        Assert.assertEquals(Iterators.toStream(number.iterator()).collect(Collectors.toList()), number);
+        Assertions.assertEquals(Iterators.toStream(number).collect(Collectors.toList()), number);
+        Assertions.assertEquals(Iterators.toStream(() -> number.iterator()).collect(Collectors.toList()), number);
+        Assertions.assertEquals(Iterators.toStream(number.iterator()).collect(Collectors.toList()), number);
     }
 
     @Test
     public void createEmptyIteratorTest()
     {
-        Assert.assertFalse(Iterators.empty().hasNext());
+        Assertions.assertFalse(Iterators.empty().hasNext());
         try {
             Iterators.empty().next();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NoSuchElementException ignored) {
         }
@@ -81,11 +81,11 @@ public class IteratorsTest
     @Test
     public void isEmptyTest()
     {
-        Assert.assertTrue(Iterators.isEmpty(new ArrayList()));
-        Assert.assertTrue(Iterators.isEmpty(Iterators.empty()));
-        Assert.assertTrue(Iterators.isEmpty(Iterators::empty));
+        Assertions.assertTrue(Iterators.isEmpty(new ArrayList()));
+        Assertions.assertTrue(Iterators.isEmpty(Iterators.empty()));
+        Assertions.assertTrue(Iterators.isEmpty(Iterators::empty));
 
-        Assert.assertFalse(Iterators.isEmpty(Iterators.of(1)));
+        Assertions.assertFalse(Iterators.isEmpty(Iterators.of(1)));
     }
 
     @Test
@@ -93,22 +93,22 @@ public class IteratorsTest
     {
         List<String> list = Arrays.asList("1", "2", "3");
 
-        Assert.assertEquals(list.get(0), Iterators.getFirst(list.iterator(), 0));
-        Assert.assertEquals(list.get(1), Iterators.getFirst(list.iterator(), 1));
-        Assert.assertEquals(list.get(2), Iterators.getFirst(list.iterator(), 2));
+        Assertions.assertEquals(list.get(0), Iterators.getFirst(list.iterator(), 0));
+        Assertions.assertEquals(list.get(1), Iterators.getFirst(list.iterator(), 1));
+        Assertions.assertEquals(list.get(2), Iterators.getFirst(list.iterator(), 2));
 
-        Assert.assertEquals("-1", Iterators.getFirst(Iterators.empty(), 999, "-1"));
+        Assertions.assertEquals("-1", Iterators.getFirst(Iterators.empty(), 999, "-1"));
 
         try {
             Iterators.getFirst(Iterators.empty(), 999);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NoSuchElementException ignored) {
         }
 
         try {
             Iterators.getFirst(Iterators.empty(), -1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException ignored) {
         }
@@ -119,11 +119,11 @@ public class IteratorsTest
     {
         List<String> list = Arrays.asList("1", "2", "3");
         String last = Iterators.getLast(list.iterator());
-        Assert.assertEquals(list.get(list.size() - 1), last);
+        Assertions.assertEquals(list.get(list.size() - 1), last);
 
         try {
             Iterators.getLast(Iterators.empty());
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NoSuchElementException ignored) {
         }
@@ -132,18 +132,18 @@ public class IteratorsTest
     @Test
     public void getLastReturnDefault()
     {
-        Assert.assertEquals(Iterators.getLast(() -> Iterators.empty(), "done"), "done");
-        Assert.assertEquals(Iterators.getLast(new ArrayList<>(), "done"), "done");
-        Assert.assertEquals("-1", Iterators.getLast(new ArrayList<>(), "-1"));
+        Assertions.assertEquals(Iterators.getLast(() -> Iterators.empty(), "done"), "done");
+        Assertions.assertEquals(Iterators.getLast(new ArrayList<>(), "done"), "done");
+        Assertions.assertEquals("-1", Iterators.getLast(new ArrayList<>(), "-1"));
     }
 
     @Test
     public void getLastTestDefaultValueByIterator2()
     {
-        Assert.assertEquals("123", Iterators.getLast(MutableSet.of("123"), "-1"));
-        Assert.assertEquals("123", Iterators.getLast(MutableList.of("123"), "-1"));
-        Assert.assertEquals("123", Iterators.getLast(MutableSet.of("123")));
-        Assert.assertEquals("123", Iterators.getLast(MutableList.of("123")));
+        Assertions.assertEquals("123", Iterators.getLast(MutableSet.of("123"), "-1"));
+        Assertions.assertEquals("123", Iterators.getLast(MutableList.of("123"), "-1"));
+        Assertions.assertEquals("123", Iterators.getLast(MutableSet.of("123")));
+        Assertions.assertEquals("123", Iterators.getLast(MutableList.of("123")));
     }
 
     @Test
@@ -151,11 +151,11 @@ public class IteratorsTest
     {
         List<String> list = Arrays.asList("1", "2", "3");
         String last = Iterators.getLast(list);
-        Assert.assertEquals(list.get(list.size() - 1), last);
+        Assertions.assertEquals(list.get(list.size() - 1), last);
 
         try {
             Iterators.getLast(new ArrayList<>());
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NoSuchElementException e) {
         }
@@ -166,14 +166,14 @@ public class IteratorsTest
     {
         List<String> list = new ArrayList<>();
         String last = Iterators.getLast(list, "-1");
-        Assert.assertEquals("-1", last);
+        Assertions.assertEquals("-1", last);
     }
 
     @Test
     public void iteratorSizeTestReturn3()
     {
         List<String> list = Arrays.asList("1", "2", "3");
-        Assert.assertEquals(3, Iterators.size(list.iterator()));
+        Assertions.assertEquals(3, Iterators.size(list.iterator()));
     }
 
     @Test
@@ -181,8 +181,8 @@ public class IteratorsTest
     {
         List<Integer> list = Arrays.asList(1, 2, 3);
         int sum = Iterators.reduce(list.iterator(), Integer::sum).get();
-        Assert.assertEquals(6, sum);
-        Assert.assertFalse(Iterators.reduce(Iterators.empty(), Integer::sum).isPresent());
+        Assertions.assertEquals(6, sum);
+        Assertions.assertFalse(Iterators.reduce(Iterators.empty(), Integer::sum).isPresent());
     }
 
     @Test
@@ -190,23 +190,23 @@ public class IteratorsTest
     {
         List<String> list = Arrays.asList("1", "2", "3");
         List<String> limit = ImmutableList.copy(() -> Iterators.limit(list.iterator(), 1));
-        Assert.assertEquals(Arrays.asList("1"), limit);
+        Assertions.assertEquals(Arrays.asList("1"), limit);
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void limitError()
     {
         try {
             Iterators.limit(Iterators.empty(), -1);
         }
         catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "limit must >= 0");
+            Assertions.assertEquals(e.getMessage(), "limit must >= 0");
         }
 
         Iterator<String> iterator = Iterators.limit(Iterators.empty(), 1);
         List<String> limit = ImmutableList.copy(() -> iterator);
-        Assert.assertTrue(limit.isEmpty());
-        iterator.next();
+        Assertions.assertTrue(limit.isEmpty());
+        Assertions.assertThrows(NoSuchElementException.class, iterator::next);
     }
 
     @Test
@@ -217,7 +217,7 @@ public class IteratorsTest
             list.add(num + 1);
         });
 
-        Assert.assertEquals(list, Arrays.asList(2, 3, 4));
+        Assertions.assertEquals(list, Arrays.asList(2, 3, 4));
     }
 
     @Test
@@ -232,15 +232,15 @@ public class IteratorsTest
             return strings.iterator();
         });
 
-        Assert.assertEquals(Iterators.size(iterator), 7);
+        Assertions.assertEquals(Iterators.size(iterator), 7);
         checkNoSuchElement(iterator);
     }
 
     @Test
     public void mergeSorted1()
     {
-        Assert.assertFalse(Iterators.mergeSorted(Integer::compareTo).hasNext());
-        Assert.assertEquals(1, (int) Iterators.mergeSorted(Integer::compareTo, Iterators.of(1)).next());
+        Assertions.assertFalse(Iterators.mergeSorted(Integer::compareTo).hasNext());
+        Assertions.assertEquals(1, (int) Iterators.mergeSorted(Integer::compareTo, Iterators.of(1)).next());
         List<Integer> list1 = Arrays.asList(1, 5, 7, 9, 13, 27);
         List<Integer> list2 = Arrays.asList(0, 4, 8, 16, 20);
         List<Integer> list3 = Arrays.asList(3, 8, 11, 15, 22);
@@ -251,7 +251,7 @@ public class IteratorsTest
                 list3.iterator(),
                 Iterators.empty());
         List<Integer> out = ImmutableList.copy(iterator);
-        Assert.assertEquals(out, Arrays.asList(0, 1, 3, 4, 5, 7, 8, 8, 9, 11, 13, 15, 16, 20, 22, 27));
+        Assertions.assertEquals(out, Arrays.asList(0, 1, 3, 4, 5, 7, 8, 8, 9, 11, 13, 15, 16, 20, 22, 27));
         checkNoSuchElement(iterator);
     }
 
@@ -269,7 +269,7 @@ public class IteratorsTest
                 list3.iterator(),
                 Iterators.empty());
         List<Integer> out = ImmutableList.copy(iterator);
-        Assert.assertEquals(out, Arrays.asList(27, 22, 20, 16, 15, 13, 11, 9, 8, 8, 7, 5, 4, 3, 1, 0));
+        Assertions.assertEquals(out, Arrays.asList(27, 22, 20, 16, 15, 13, 11, 9, 8, 8, 7, 5, 4, 3, 1, 0));
     }
 
     @Test
@@ -279,7 +279,7 @@ public class IteratorsTest
         Iterator<Integer> iterator = Iterators.filter(list1.iterator(), x -> x != null && x > 2);
         List<Integer> out = ImmutableList.copy(iterator);
         System.out.println(out);
-        Assert.assertEquals(out, Arrays.asList(3, 5));
+        Assertions.assertEquals(out, Arrays.asList(3, 5));
         checkNoSuchElement(iterator);
     }
 
@@ -290,7 +290,7 @@ public class IteratorsTest
         Iterator<Integer> iterator = Iterators.sample(list1.iterator(), 3, 6, 12345);
         List<Integer> out = ImmutableList.copy(iterator);
         System.out.println(out);
-        Assert.assertEquals(out, Arrays.asList(1, 5, 6));
+        Assertions.assertEquals(out, Arrays.asList(1, 5, 6));
         checkNoSuchElement(iterator);
     }
 
@@ -312,7 +312,7 @@ public class IteratorsTest
                 Tuple2.of(9, "v2_9"));
         Iterator<Tuple2<Integer, Tuple2<String, String>>> rs = Iterators.mergeJoin(Integer::compare, left, right);
         List<Tuple2<Integer, Tuple2<String, String>>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of(2, Tuple2.of("v1_2_1", "v2_2")),
                 Tuple2.of(2, Tuple2.of("v1_2_2", "v2_2")),
                 Tuple2.of(7, Tuple2.of("v1_7", "v2_7_1")),
@@ -333,7 +333,7 @@ public class IteratorsTest
                 Tuple2.of(4, "v2_4"));
         Iterator<Tuple2<Integer, Tuple2<String, String>>> rs = Iterators.mergeJoin(Integer::compare, left, right);
         List<Tuple2<Integer, Tuple2<String, String>>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of(2, Tuple2.of("v1_2", "v2_2"))
         ), data);
     }
@@ -345,7 +345,7 @@ public class IteratorsTest
         Iterator<Tuple2<Integer, String>> right = Iterators.of(Tuple2.of(2, "v2_2"));
         Iterator<Tuple2<Integer, Tuple2<String, String>>> rs = Iterators.mergeJoin(Integer::compare, left, right);
         List<Tuple2<Integer, Tuple2<String, String>>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of(2, Tuple2.of("v1_2", "v2_2"))
         ), data);
     }
@@ -353,8 +353,8 @@ public class IteratorsTest
     @Test
     public void innerMergeJoinOtherTest()
     {
-        Assert.assertFalse(Iterators.mergeJoin(Integer::compare, Iterators.of(), Iterators.of(Tuple2.of(1, 1))).hasNext());
-        Assert.assertFalse(Iterators.mergeJoin(Integer::compare, Iterators.of(Tuple2.of(1, 1)), Iterators.of()).hasNext());
+        Assertions.assertFalse(Iterators.mergeJoin(Integer::compare, Iterators.of(), Iterators.of(Tuple2.of(1, 1))).hasNext());
+        Assertions.assertFalse(Iterators.mergeJoin(Integer::compare, Iterators.of(Tuple2.of(1, 1)), Iterators.of()).hasNext());
         checkNoSuchElement(Iterators.mergeJoin(Integer::compare, Iterators.of(Tuple2.of(1, 1)), Iterators.of(Tuple2.of(2, 2))));
     }
 
@@ -369,7 +369,7 @@ public class IteratorsTest
                 Tuple2.of(8, 1));
         Iterator<Tuple2<Integer, Integer>> rs = Iterators.reduceByKeySorted(input, Integer::sum);
         List<Tuple2<Integer, Integer>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of(1, 1),
                 Tuple2.of(2, 2),
                 Tuple2.of(7, 1),
@@ -394,7 +394,7 @@ public class IteratorsTest
         input.sort((x, y) -> comparator.compare(x.key(), y.key()));
         Iterator<Tuple2<String, Integer>> rs = Iterators.reduceByKeyHashSorted(input.iterator(), Integer::sum, comparator);
         List<Tuple2<String, Integer>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of("41k", 1),
                 Tuple2.of("42L", 2),
                 Tuple2.of("43-", 4),
@@ -405,9 +405,9 @@ public class IteratorsTest
     @Test
     public void reduceSortedOtherBranchTest()
     {
-        Assert.assertFalse(Iterators.reduceByKeySorted(Iterators.of(), Integer::sum).hasNext());
+        Assertions.assertFalse(Iterators.reduceByKeySorted(Iterators.of(), Integer::sum).hasNext());
         Iterator<Tuple2<Integer, Integer>> rs = Iterators.reduceByKeySorted(Iterators.of(Tuple2.of(1, 1)), Integer::sum);
-        Assert.assertEquals(rs.next(), Tuple2.of(1, 1));
+        Assertions.assertEquals(rs.next(), Tuple2.of(1, 1));
         checkNoSuchElement(rs);
     }
 
@@ -416,7 +416,7 @@ public class IteratorsTest
     {
         Iterator<Tuple2<String, Long>> rs = Iterators.zipIndex(Iterators.wrap("a", "b", "c"), 0);
         List<Tuple2<String, Long>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of("a", 0L),
                 Tuple2.of("b", 1L),
                 Tuple2.of("c", 2L)
@@ -427,9 +427,9 @@ public class IteratorsTest
     public void concatAppendTest()
     {
         Iterator<String> rs = Iterators.concat(Iterators.of("a"), Iterators.of("b", "c"), Iterators.empty());
-        Assert.assertEquals(ImmutableList.copy(rs), Arrays.asList("a", "b", "c"));
+        Assertions.assertEquals(ImmutableList.copy(rs), Arrays.asList("a", "b", "c"));
         checkNoSuchElement(rs);
-        Assert.assertFalse(Iterators.concat(Iterators.empty()).hasNext());
+        Assertions.assertFalse(Iterators.concat(Iterators.empty()).hasNext());
     }
 
     @Test
@@ -442,7 +442,7 @@ public class IteratorsTest
                 Tuple2.of(8, 1));
         Iterator<Tuple2<Integer, String>> rs = Iterators.groupByKeySorted(input, (k, iterator) -> k + "->" + Iterators.size(iterator));
         List<Tuple2<Integer, String>> data = ImmutableList.copy(rs);
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of(1, "1->1"),
                 Tuple2.of(2, "2->2"),
                 Tuple2.of(8, "8->1")
@@ -464,7 +464,7 @@ public class IteratorsTest
             int size = (int) Iterators.size(it.value());
             data.add(Tuple2.of(it.key(), size));
         }
-        Assert.assertEquals(Arrays.asList(
+        Assertions.assertEquals(Arrays.asList(
                 Tuple2.of(1, 1),
                 Tuple2.of(2, 2),
                 Tuple2.of(8, 1)
@@ -476,6 +476,6 @@ public class IteratorsTest
     {
         PeekIterator<Integer> iterator = Iterators.of(1, 2, 3, 4, 5);
         Iterator<Integer> out = Iterators.stopAtFirstMatching(iterator, o -> o == 3);
-        Assert.assertEquals(ImmutableList.copy(out), Arrays.asList(1, 2));
+        Assertions.assertEquals(ImmutableList.copy(out), Arrays.asList(1, 2));
     }
 }

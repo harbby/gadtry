@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Try;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -40,8 +40,8 @@ public class ImmutableListTest
         List<Integer> list = ImmutableList.of(1, 2, 3);
         byte[] bytes = Serializables.serialize((Serializable) list);
         List<Integer> out = Serializables.byteToObject(bytes);
-        Assert.assertEquals(list, out);
-        Assert.assertEquals(out, Arrays.asList(1, 2, 3));
+        Assertions.assertEquals(list, out);
+        Assertions.assertEquals(out, Arrays.asList(1, 2, 3));
     }
 
     @Test
@@ -52,31 +52,31 @@ public class ImmutableListTest
             Class<?>[] types = IntStream.range(0, i).mapToObj(x -> Object.class).toArray(Class[]::new);
             Object[] strings = IntStream.range(0, i).mapToObj(x -> "str" + x).toArray(String[]::new);
             List<String> list = (List<String>) ImmutableList.class.getMethod("of", types).invoke(null, strings);
-            Assert.assertEquals(list, IntStream.range(0, i).mapToObj(x -> "str" + x).collect(Collectors.toList()));
+            Assertions.assertEquals(list, IntStream.range(0, i).mapToObj(x -> "str" + x).collect(Collectors.toList()));
         }
     }
 
     @Test
     public void warpTest()
     {
-        Assert.assertEquals(ImmutableList.wrap(new String[] {"a"}), Arrays.asList("a"));
-        Assert.assertEquals(ImmutableList.wrap(new String[0]), Collections.emptyList());
+        Assertions.assertEquals(ImmutableList.wrap(new String[] {"a"}), Arrays.asList("a"));
+        Assertions.assertEquals(ImmutableList.wrap(new String[0]), Collections.emptyList());
     }
 
     @Test
     public void subListTest()
     {
         List<Integer> list1 = ImmutableList.of(1, 2, 3);
-        Assert.assertEquals(Arrays.asList(1, 2, 3).listIterator(3).previous().intValue(), 3);
-        Assert.assertEquals(list1.listIterator(3).previous().intValue(), 3);
+        Assertions.assertEquals(Arrays.asList(1, 2, 3).listIterator(3).previous().intValue(), 3);
+        Assertions.assertEquals(list1.listIterator(3).previous().intValue(), 3);
 
         List<Integer> list = ImmutableList.of(1, 2, 3, 4, 5);
-        Assert.assertEquals(Arrays.asList(1, 2, 3, 4, 5).subList(1, 4), Arrays.asList(2, 3, 4));
-        Assert.assertEquals(list.subList(1, 4), Arrays.asList(2, 3, 4));
+        Assertions.assertEquals(Arrays.asList(1, 2, 3, 4, 5).subList(1, 4), Arrays.asList(2, 3, 4));
+        Assertions.assertEquals(list.subList(1, 4), Arrays.asList(2, 3, 4));
 
         try {
             list.sort(Integer::compareTo);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (UnsupportedOperationException ignored) {
         }
@@ -84,35 +84,35 @@ public class ImmutableListTest
         //other check
         try {
             list.listIterator(-1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ignored) {
         }
 
         try {
             list.listIterator(list.size() + 1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ignored) {
         }
 
         try {
             list.subList(-1, list.size());
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ignored) {
         }
 
         try {
             list.subList(0, list.size() + 1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ignored) {
         }
 
         try {
             list.subList(3, 1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ignored) {
         }
@@ -125,28 +125,28 @@ public class ImmutableListTest
         ListIterator<Integer> iterator = list.listIterator();
         List<Integer> rs = new ArrayList<>();
 
-        Assert.assertEquals(0, iterator.nextIndex());
-        Assert.assertEquals(1, iterator.next().intValue());
+        Assertions.assertEquals(0, iterator.nextIndex());
+        Assertions.assertEquals(1, iterator.next().intValue());
 
-        Assert.assertEquals(1, iterator.nextIndex());
-        Assert.assertEquals(2, iterator.next().intValue());
+        Assertions.assertEquals(1, iterator.nextIndex());
+        Assertions.assertEquals(2, iterator.next().intValue());
 
-        Assert.assertEquals(2, iterator.nextIndex());
-        Assert.assertEquals(3, iterator.next().intValue());
+        Assertions.assertEquals(2, iterator.nextIndex());
+        Assertions.assertEquals(3, iterator.next().intValue());
 
-        Try.of(iterator::nextIndex).onSuccess(Assert::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
-        Try.of(iterator::next).onSuccess(Assert::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
+        Try.of(iterator::nextIndex).onSuccess(Assertions::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
+        Try.of(iterator::next).onSuccess(Assertions::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
         //--------
-        Assert.assertEquals(2, iterator.previousIndex());
-        Assert.assertEquals(3, iterator.previous().intValue());
-        Assert.assertEquals(2, iterator.previous().intValue());
-        Assert.assertEquals(1, iterator.previous().intValue());
-        Try.of(iterator::previousIndex).onSuccess(Assert::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
-        Try.of(iterator::previous).onSuccess(Assert::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
+        Assertions.assertEquals(2, iterator.previousIndex());
+        Assertions.assertEquals(3, iterator.previous().intValue());
+        Assertions.assertEquals(2, iterator.previous().intValue());
+        Assertions.assertEquals(1, iterator.previous().intValue());
+        Try.of(iterator::previousIndex).onSuccess(Assertions::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
+        Try.of(iterator::previous).onSuccess(Assertions::fail).matchException(NoSuchElementException.class, e -> {}).doTry();
         //---error check
 
-        Try.of(() -> iterator.add(-1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
-        Try.of(() -> iterator.set(-1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
-        Try.of(iterator::remove).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Try.of(() -> iterator.add(-1)).onSuccess(Assertions::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Try.of(() -> iterator.set(-1)).onSuccess(Assertions::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Try.of(iterator::remove).onSuccess(Assertions::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
     }
 }

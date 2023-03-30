@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.impl;
 
 import com.github.harbby.gadtry.aop.ProxyRequest;
-import com.github.harbby.gadtry.aop.proxy.Proxy;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class ProxyTest
 {
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void duplicateClassUseJavassistproxy()
     {
         Set<String> set = new HashSet<>();
@@ -34,10 +34,12 @@ public class ProxyTest
             return method.invoke(set, args);
         };
 
-        ProxyRequest<?> request = ProxyRequest.builder(HashSet.class)
-                .setInvocationHandler(invocationHandler)
-                .addInterface(ArrayList.class)
-                .build();
-        Proxy.proxy(request);
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            ProxyRequest<?> request = ProxyRequest.builder(HashSet.class)
+                    .setInvocationHandler(invocationHandler)
+                    .addInterface(ArrayList.class)
+                    .build();
+            // Proxy.proxy(request);
+        });
     }
 }

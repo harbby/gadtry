@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,13 +24,15 @@ import java.util.Properties;
 
 public class BindMappingTest
 {
-    @Test(expected = InjectorException.class)
+    @Test
     public void builder()
     {
-        IocFactory.create(binder ->
-        {
-            binder.bind(Map.class, new HashMap());
-            binder.bind(Map.class).byInstance(new Properties());
+        Assertions.assertThrows(InjectorException.class, ()-> {
+            IocFactory.create(binder ->
+            {
+                binder.bind(Map.class, new HashMap());
+                binder.bind(Map.class).byInstance(new Properties());
+            });
         });
     }
 
@@ -39,44 +41,48 @@ public class BindMappingTest
     {
         IocFactory iocFactory = IocFactory.create(binder -> binder.bind(Map.class, new HashMap()));
         BindMapping bindMapping = iocFactory.getAllBeans();
-        Assert.assertEquals(bindMapping.getAllBeans().size(), 1);
-        Assert.assertTrue(bindMapping.toString().contains("interface java.util.Map="));
-        Assert.assertEquals(bindMapping.get(Map.class).get(), new HashMap());
+        Assertions.assertEquals(bindMapping.getAllBeans().size(), 1);
+        Assertions.assertTrue(bindMapping.toString().contains("interface java.util.Map="));
+        Assertions.assertEquals(bindMapping.get(Map.class).get(), new HashMap());
     }
 
     @Test
     public void createGiveKeyWithSingle()
     {
         BindMapping bindMapping = BindMapping.create(binder -> binder.bind(HashMap.class).withSingle());
-        Assert.assertEquals(bindMapping.getAllBeans().size(), 1);
-        Assert.assertTrue(bindMapping.get(HashMap.class).get() == bindMapping.get(HashMap.class).get());
+        Assertions.assertEquals(bindMapping.getAllBeans().size(), 1);
+        Assertions.assertTrue(bindMapping.get(HashMap.class).get() == bindMapping.get(HashMap.class).get());
     }
 
     @Test
     public void createGiveKeyAndInstance()
     {
         BindMapping bindMapping = BindMapping.create(binder -> binder.bind(Map.class, new HashMap()));
-        Assert.assertEquals(bindMapping.getAllBeans().size(), 1);
-        Assert.assertTrue(bindMapping.get(Map.class).get() == bindMapping.get(Map.class).get());
+        Assertions.assertEquals(bindMapping.getAllBeans().size(), 1);
+        Assertions.assertTrue(bindMapping.get(Map.class).get() == bindMapping.get(Map.class).get());
     }
 
     @Test
     public void createGiveKeyByInstance()
     {
         BindMapping bindMapping = BindMapping.create(binder -> binder.bind(Map.class).byInstance(new HashMap()));
-        Assert.assertEquals(bindMapping.get(Map.class).get(), new HashMap());
-        Assert.assertTrue(bindMapping.get(Map.class).get() == bindMapping.get(Map.class).get());
+        Assertions.assertEquals(bindMapping.get(Map.class).get(), new HashMap());
+        Assertions.assertTrue(bindMapping.get(Map.class).get() == bindMapping.get(Map.class).get());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void createGiveInterfaceWithSingleReturnIllegalStateException()
     {
-        IocFactory.create(binder -> binder.bind(Map.class).withSingle());
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            IocFactory.create(binder -> binder.bind(Map.class).withSingle());
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void createGiveInterfaceWithNoScopeReturnIllegalStateException()
     {
-        IocFactory.create(binder -> binder.bind(Map.class).noScope());
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            IocFactory.create(binder -> binder.bind(Map.class).noScope());
+        });
     }
 }

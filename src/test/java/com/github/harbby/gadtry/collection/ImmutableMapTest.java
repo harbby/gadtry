@@ -15,9 +15,9 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,7 +43,7 @@ public class ImmutableMapTest
     public void baseTest()
     {
         ImmutableMap<String, Integer> immutableMap = ImmutableMap.copy(dist);
-        Assert.assertEquals(immutableMap, dist);
+        Assertions.assertEquals(immutableMap, dist);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class ImmutableMapTest
                 .put("b", 2)
                 .putAll(Collections.singletonMap("e", 9))
                 .build();
-        Assert.assertEquals(immutableMap, dist);
+        Assertions.assertEquals(immutableMap, dist);
     }
 
     @Test
@@ -69,9 +69,9 @@ public class ImmutableMapTest
         keys1.forEach(i -> builder.put(i, "value" + i));
         keys2.forEach(i -> builder.put(i, "value" + i));
         Map<Integer, String> map = builder.build();
-        Assert.assertEquals(map.size(), size);
-        keys1.forEach(i -> Assert.assertEquals(map.get(i), "value" + i));
-        keys2.forEach(i -> Assert.assertEquals(map.get(i), "value" + i));
+        Assertions.assertEquals(map.size(), size);
+        keys1.forEach(i -> Assertions.assertEquals(map.get(i), "value" + i));
+        keys2.forEach(i -> Assertions.assertEquals(map.get(i), "value" + i));
     }
 
     private static final String temple = "public static <K, V> ImmutableMap<K, V> of(%s)\n" +
@@ -81,7 +81,7 @@ public class ImmutableMapTest
             "    return copyOfNodes(nodes);\n" +
             "}";
 
-    @Ignore
+    @Disabled
     @Test
     public void MethodOfCodeGen()
     {

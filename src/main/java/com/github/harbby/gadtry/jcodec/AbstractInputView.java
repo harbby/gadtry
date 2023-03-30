@@ -272,8 +272,7 @@ public abstract class AbstractInputView
         }
     }
 
-    @Override
-    public final String readAsciiString()
+    private final String readAsciiString()
     {
         for (int i = position; i < limit; i++) {
             if (buffer[i] < 0) {

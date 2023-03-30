@@ -18,9 +18,9 @@ package com.github.harbby.gadtry.jvm;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Threads;
 import com.github.harbby.gadtry.collection.MutableMap;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -67,10 +67,10 @@ public class JVMLaunchersTest
         while ((line = reader.readLine()) != null) {
             rs.add(line);
         }
-        Assert.assertEquals(rs, Arrays.asList("line: 1", "line: 2", "line: 3"));
+        Assertions.assertEquals(rs, Arrays.asList("line: 1", "line: 2", "line: 3"));
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void realtimeTest()
             throws InterruptedException
@@ -89,7 +89,7 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .build();
         int exitCode = launcher.startAndGet();
-        Assert.assertEquals(exitCode, 0);
+        Assertions.assertEquals(exitCode, 0);
     }
 
     @Test
@@ -113,7 +113,7 @@ public class JVMLaunchersTest
         for (int i = 0; i < 3; i++) {
             System.out.println("************ check" + i);
             byte[] vmLoadBytes = launcher.startAndGet();
-            Assert.assertArrayEquals(vmLoadBytes, bytes);
+            Assertions.assertArrayEquals(vmLoadBytes, bytes);
         }
     }
 
@@ -135,8 +135,8 @@ public class JVMLaunchersTest
                 .build();
 
         List<String> vmResult = launcher.startAndGet();
-        Assert.assertTrue(vmResult.contains("-Xms5m"));
-        Assert.assertTrue(vmResult.contains("-Xmx5m"));
+        Assertions.assertTrue(vmResult.contains("-Xms5m"));
+        Assertions.assertTrue(vmResult.contains("-Xmx5m"));
     }
 
     @Test
@@ -162,8 +162,8 @@ public class JVMLaunchersTest
                 }).build();
 
         long out = launcher.startAndGet();
-        Assert.assertEquals(out, 1L);
-        Assert.assertEquals(logs, Collections.singletonList(hookLog));
+        Assertions.assertEquals(out, 1L);
+        Assertions.assertEquals(logs, Collections.singletonList(hookLog));
     }
 
     @Test
@@ -184,7 +184,7 @@ public class JVMLaunchersTest
 
         VmPromise<Long> out = launcher.start();
         System.out.println("pid is " + out.pid());
-        Assert.assertEquals(out.call().longValue(), out.pid());
+        Assertions.assertEquals(out.call().longValue(), out.pid());
     }
 
     @Test
@@ -211,9 +211,9 @@ public class JVMLaunchersTest
                     System.out.println(line);
                 }).build();
         String rs = launcher.startAndGet();
-        Assert.assertEquals(JVMLauncher.class.getName(), rs);
-        Assert.assertTrue(childVmLogs.contains("WARNING: An illegal reflective access operation has occurred"));
-        Assert.assertTrue(childVmLogs.contains("WARNING: Please consider reporting this to the maintainers of com.github.harbby.gadtry.base.Threads"));
+        Assertions.assertEquals(JVMLauncher.class.getName(), rs);
+        Assertions.assertTrue(childVmLogs.contains("WARNING: An illegal reflective access operation has occurred"));
+        Assertions.assertTrue(childVmLogs.contains("WARNING: Please consider reporting this to the maintainers of com.github.harbby.gadtry.base.Threads"));
     }
 
     @Test
@@ -236,10 +236,10 @@ public class JVMLaunchersTest
 
         try {
             launcher.startAndGet();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (JVMException e) {
-            Assert.assertTrue(e.getMessage().contains("java.lang.reflect.InaccessibleObjectException: Unable to" +
+            Assertions.assertTrue(e.getMessage().contains("java.lang.reflect.InaccessibleObjectException: Unable to" +
                     " make private static native java.lang.Thread[] java.lang.Thread.getThreads()" +
                     " accessible: module java.base does not \"opens java.lang\" to unnamed module"));
         }
@@ -269,7 +269,7 @@ public class JVMLaunchersTest
             builder.addVmOps("--add-opens=java.base/java.lang=ALL-UNNAMED");
         }
         JVMLauncher<String> launcher = builder.build();
-        Assert.assertEquals(launcher.startAndGet(), JVMLauncher.class.getPackage().getName() + "." + taskName);
+        Assertions.assertEquals(launcher.startAndGet(), JVMLauncher.class.getPackage().getName() + "." + taskName);
     }
 
     @Test
@@ -291,10 +291,10 @@ public class JVMLaunchersTest
 
         try {
             launcher.start().call();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (JVMException e) {
-            Assert.assertTrue(e.getMessage().contains(f));
+            Assertions.assertTrue(e.getMessage().contains(f));
         }
     }
 
@@ -313,11 +313,11 @@ public class JVMLaunchersTest
         VmPromise<Integer> promise = launcher.start();
         try {
             promise.call();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (JVMException e) {
             String errorMsg = e.getMessage();
-            Assert.assertTrue(errorMsg.contains(JVMLauncher.class.getName()));
+            Assertions.assertTrue(errorMsg.contains(JVMLauncher.class.getName()));
         }
     }
 
@@ -331,8 +331,8 @@ public class JVMLaunchersTest
                     //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
                     String env = System.getenv("TestEnv");
-                    Assert.assertEquals(env, envValue);
-                    Assert.assertEquals(System.getenv("k1"), "v1");
+                    Assertions.assertEquals(env, envValue);
+                    Assertions.assertEquals(System.getenv("k1"), "v1");
                     return env;
                 })
                 .addEnvironment("TestEnv", envValue)
@@ -344,7 +344,7 @@ public class JVMLaunchersTest
                 .build();
 
         String out = launcher.startAndGet();
-        Assert.assertEquals(out, envValue);
+        Assertions.assertEquals(out, envValue);
     }
 
     @Test
@@ -372,7 +372,7 @@ public class JVMLaunchersTest
                 throw new RuntimeException(e);
             }
         }).whenComplete((code, error) -> {
-            Assert.assertTrue(error.getMessage().contains(f));
+            Assertions.assertTrue(error.getMessage().contains(f));
             synchronized (lock) {
                 lock.notify();
             }
@@ -408,7 +408,7 @@ public class JVMLaunchersTest
                 throw new RuntimeException(e);
             }
         }).whenComplete((value, error) -> {
-            Assert.assertEquals(2019, value.intValue());
+            Assertions.assertEquals(2019, value.intValue());
             System.out.println(value);
             lock.lock();
             condition.signal();  //唤醒睡眠的主线程
@@ -436,16 +436,15 @@ public class JVMLaunchersTest
             return new File(System.getProperty("user.dir"));
         });
         if (Platform.isMac()) {
-            Assert.assertEquals(new File("/private", dir.getPath()), jvmWorkDir);
+            Assertions.assertEquals(new File("/private", dir.getPath()), jvmWorkDir);
         }
         else {
-            Assert.assertEquals(dir, jvmWorkDir);
+            Assertions.assertEquals(dir, jvmWorkDir);
         }
     }
 
-    @Test(expected = JVMTimeoutException.class)
+    @Test
     public void should_success_timeoutTest()
-            throws InterruptedException
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .task(() -> {
@@ -457,7 +456,9 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .timeout(200, TimeUnit.MILLISECONDS)
                 .build();
-        launcher.startAndGet();
+        Assertions.assertThrows(JVMTimeoutException.class, ()-> {
+            launcher.startAndGet();
+        });
     }
 
     @Test
@@ -475,8 +476,8 @@ public class JVMLaunchersTest
                 .setXmx("16m")
                 .setConsole(logs::add)
                 .build();
-        Assert.assertEquals(0, baseLauncher.startAndGet().intValue());
-        Assert.assertEquals(Collections.singletonList(msg), logs);
+        Assertions.assertEquals(0, baseLauncher.startAndGet().intValue());
+        Assertions.assertEquals(Collections.singletonList(msg), logs);
 
         List<String> testLogs = new ArrayList<>();
         JVMLauncher<Integer> testLauncher = JVMLaunchers.<Integer>newJvm()
@@ -489,8 +490,8 @@ public class JVMLaunchersTest
                 .setConsole(testLogs::add)
                 .redirectOutputToNull()
                 .build();
-        Assert.assertEquals(0, testLauncher.startAndGet().intValue());
-        Assert.assertTrue(testLogs.isEmpty());
+        Assertions.assertEquals(0, testLauncher.startAndGet().intValue());
+        Assertions.assertTrue(testLogs.isEmpty());
     }
 
     @Test
@@ -512,7 +513,7 @@ public class JVMLaunchersTest
         VmPromise<Integer> vmPromise = baseLauncher.start();
         TimeUnit.MILLISECONDS.sleep(1000);
         try {
-            Assert.assertTrue(vmPromise.isAlive());
+            Assertions.assertTrue(vmPromise.isAlive());
         }
         finally {
             vmPromise.cancel();
@@ -540,6 +541,6 @@ public class JVMLaunchersTest
         while (vmPromise.isAlive()) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
-        Assert.assertEquals(0, vmPromise.call().intValue());
+        Assertions.assertEquals(0, vmPromise.call().intValue());
     }
 }

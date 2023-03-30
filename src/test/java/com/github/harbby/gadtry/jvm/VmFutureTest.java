@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.jvm;
 
 import com.github.harbby.gadtry.aop.MockGo;
 import com.github.harbby.gadtry.function.AutoClose;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
@@ -34,7 +34,7 @@ public class VmFutureTest
     {
         Instrumentation instrumentation = MockGo.mock(Instrumentation.class);
         JvmAgent.premain(JVMLauncher.class.getName() + ":newClassName", instrumentation);
-        Assert.assertNotNull(Class.forName(JVMLauncher.class.getPackage().getName() + ".newClassName"));
+        Assertions.assertNotNull(Class.forName(JVMLauncher.class.getPackage().getName() + ".newClassName"));
     }
 
     @Test
@@ -50,10 +50,10 @@ public class VmFutureTest
 
         try {
             launcher.startAndGet();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (JVMException e) {
-            Assert.assertTrue(e.getMessage().contains("java.io.IOException: form jvm task test"));
+            Assertions.assertTrue(e.getMessage().contains("java.io.IOException: form jvm task test"));
         }
     }
 
@@ -72,10 +72,10 @@ public class VmFutureTest
                 }).build();
         try {
             launcher.startAndGet();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (JVMException e) {
-            Assert.assertEquals(e.getMessage(), "child process abnormal exit, exit code " + exitCode);
+            Assertions.assertEquals(e.getMessage(), "child process abnormal exit, exit code " + exitCode);
         }
     }
 
@@ -93,10 +93,10 @@ public class VmFutureTest
         VmPromise<String> vmPromise = launcher.start();
         try (AutoClose ignored = vmPromise::cancel) {
             vmPromise.call(100, TimeUnit.MILLISECONDS);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof JVMTimeoutException);
+            Assertions.assertTrue(e instanceof JVMTimeoutException);
         }
     }
 
@@ -114,7 +114,7 @@ public class VmFutureTest
 
         VmPromise<String> promise = launcher.start();
         try {
-            Assert.assertEquals(promise.call(), "done");
+            Assertions.assertEquals(promise.call(), "done");
         }
         finally {
             promise.cancel();
@@ -134,7 +134,7 @@ public class VmFutureTest
 
         VmPromise<String> promise = launcher.start();
         try {
-            Assert.assertTrue(promise.isAlive());
+            Assertions.assertTrue(promise.isAlive());
         }
         finally {
             promise.cancel();
@@ -153,7 +153,7 @@ public class VmFutureTest
                 }).build();
         VmPromise<String> promise = launcher.start();
         try {
-            Assert.assertTrue(promise.pid() > 0);
+            Assertions.assertTrue(promise.pid() > 0);
         }
         finally {
             promise.cancel();

@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.MockGo;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static com.github.harbby.gadtry.aop.MockGo.doReturn;
 import static com.github.harbby.gadtry.aop.MockGo.when;
@@ -66,77 +66,77 @@ public class SpyInterfaceClassTest
     public void mockInterfaceTest()
     {
         UserInterface user = MockGo.mock(UserInterface.class);
-        Assert.assertEquals(user.getAge(), 0);
-        Assert.assertNull(user.getName());
-        Assert.assertNull(user.getUpperName());
-        Assert.assertNull(user.getNameAge());
+        Assertions.assertEquals(user.getAge(), 0);
+        Assertions.assertNull(user.getName());
+        Assertions.assertNull(user.getUpperName());
+        Assertions.assertNull(user.getNameAge());
 
         when(user.getName()).thenReturn("hello");
-        Assert.assertNull(user.getUpperName());
+        Assertions.assertNull(user.getUpperName());
         doReturn(666).when(user).getAge();
-        Assert.assertNull(user.getNameAge());
+        Assertions.assertNull(user.getNameAge());
         when(user.getUpperName()).thenReturn("SUCCEED");
-        Assert.assertEquals(user.getUpperName(), "SUCCEED");
+        Assertions.assertEquals(user.getUpperName(), "SUCCEED");
     }
 
     @Test
     public void spyInterfaceWhenThanTest()
     {
         UserInterface user = MockGo.spy(UserInterface.class);
-        Assert.assertEquals(user.getNameAge(), "null:0");
+        Assertions.assertEquals(user.getNameAge(), "null:0");
 
         when(user.getNameAge()).thenReturn("success2");
-        Assert.assertEquals(user.getNameAge(), "success2");
+        Assertions.assertEquals(user.getNameAge(), "success2");
     }
 
     @Test
     public void spyInterfaceTest()
     {
         UserInterface user = MockGo.spy(UserInterface.class);
-        Assert.assertEquals(user.getAge(), 0);
-        Assert.assertNull(user.getName());
-        Assert.assertNull(user.getUpperName());
-        Assert.assertEquals(user.getNameAge(), "null:0");
+        Assertions.assertEquals(user.getAge(), 0);
+        Assertions.assertNull(user.getName());
+        Assertions.assertNull(user.getUpperName());
+        Assertions.assertEquals(user.getNameAge(), "null:0");
 
         when(user.getName()).thenReturn("hello");
-        Assert.assertEquals(user.getUpperName(), "HELLO");
+        Assertions.assertEquals(user.getUpperName(), "HELLO");
         doReturn(666).when(user).getAge();
-        Assert.assertEquals(user.getNameAge(), "hello:666");
+        Assertions.assertEquals(user.getNameAge(), "hello:666");
         when(user.getUpperName()).thenReturn("SUCCEED");
-        Assert.assertEquals(user.getUpperName(), "SUCCEED");
+        Assertions.assertEquals(user.getUpperName(), "SUCCEED");
     }
 
     @Test
     public void mockUser0ClassTest()
     {
         UserInterface user = MockGo.mock(User0.class);
-        Assert.assertEquals(user.getAge(), 0);
-        Assert.assertNull(user.getName());
-        Assert.assertNull(user.getUpperName());
-        Assert.assertNull(user.getNameAge());
+        Assertions.assertEquals(user.getAge(), 0);
+        Assertions.assertNull(user.getName());
+        Assertions.assertNull(user.getUpperName());
+        Assertions.assertNull(user.getNameAge());
 
         when(user.getName()).thenReturn("hello");
         doReturn(666).when(user).getAge();
-        Assert.assertNull(user.getNameAge());
-        Assert.assertNull(user.getUpperName());
+        Assertions.assertNull(user.getNameAge());
+        Assertions.assertNull(user.getUpperName());
         when(user.getUpperName()).thenReturn("SUCCEED");
-        Assert.assertEquals(user.getUpperName(), "SUCCEED");
+        Assertions.assertEquals(user.getUpperName(), "SUCCEED");
     }
 
     @Test
     public void spyUser0ClassTest()
     {
         UserInterface user = MockGo.spy(User0.class);
-        Assert.assertEquals(user.getAge(), 18);
-        Assert.assertEquals(user.getName(), "user0");
-        Assert.assertEquals(user.getUpperName(), "USER0");
-        Assert.assertEquals(user.getNameAge(), "user0:18");
+        Assertions.assertEquals(user.getAge(), 18);
+        Assertions.assertEquals(user.getName(), "user0");
+        Assertions.assertEquals(user.getUpperName(), "USER0");
+        Assertions.assertEquals(user.getNameAge(), "user0:18");
 
         when(user.getName()).thenReturn("hello");
         doReturn(666).when(user).getAge();
-        Assert.assertEquals(user.getNameAge(), "hello:666");
-        Assert.assertEquals(user.getUpperName(), "HELLO");
+        Assertions.assertEquals(user.getNameAge(), "hello:666");
+        Assertions.assertEquals(user.getUpperName(), "HELLO");
         when(user.getUpperName()).thenReturn("SUCCEED");
-        Assert.assertEquals(user.getUpperName(), "SUCCEED");
+        Assertions.assertEquals(user.getUpperName(), "SUCCEED");
     }
 }

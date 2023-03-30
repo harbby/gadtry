@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.io;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
@@ -29,15 +29,15 @@ public class ByteBufferInputStreamTest
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         ByteBufferInputStream inputStream = new ByteBufferInputStream(buffer, ByteBuffer.wrap(new byte[0]));
 
-        Assert.assertTrue(inputStream.available() > 0);
-        Assert.assertEquals(inputStream.read(), 255); //255 = -1 & 0xFF
-        Assert.assertTrue(inputStream.available() > 0);
-        Assert.assertEquals(inputStream.read(), 2);
+        Assertions.assertTrue(inputStream.available() > 0);
+        Assertions.assertEquals(inputStream.read(), 255); //255 = -1 & 0xFF
+        Assertions.assertTrue(inputStream.available() > 0);
+        Assertions.assertEquals(inputStream.read(), 2);
 
-        Assert.assertEquals(inputStream.available(), 0);
-        Assert.assertEquals(inputStream.read(), -1);
-        Assert.assertEquals(inputStream.read(), -1);
-        Assert.assertEquals(inputStream.available(), 0);
+        Assertions.assertEquals(inputStream.available(), 0);
+        Assertions.assertEquals(inputStream.read(), -1);
+        Assertions.assertEquals(inputStream.read(), -1);
+        Assertions.assertEquals(inputStream.available(), 0);
     }
 
     @Test
@@ -46,17 +46,17 @@ public class ByteBufferInputStreamTest
         ByteBuffer buffer1 = ByteBuffer.wrap(new byte[] {1, 2, 3});
         ByteBuffer buffer2 = ByteBuffer.wrap(new byte[] {4, 5, 6});
         ByteBufferInputStream inputStream = new ByteBufferInputStream(buffer1, buffer2);
-        Assert.assertTrue(inputStream.markSupported());
-        Assert.assertEquals(inputStream.read(), 1);
-        Assert.assertEquals(inputStream.read(), 2);
+        Assertions.assertTrue(inputStream.markSupported());
+        Assertions.assertEquals(inputStream.read(), 1);
+        Assertions.assertEquals(inputStream.read(), 2);
         inputStream.mark(1);
-        Assert.assertEquals(inputStream.read(), 3);
-        Assert.assertEquals(inputStream.read(), 4);
+        Assertions.assertEquals(inputStream.read(), 3);
+        Assertions.assertEquals(inputStream.read(), 4);
         inputStream.reset();
-        Assert.assertEquals(inputStream.read(), 3);
-        Assert.assertEquals(inputStream.read(), 4);
+        Assertions.assertEquals(inputStream.read(), 3);
+        Assertions.assertEquals(inputStream.read(), 4);
         inputStream.reset();
-        Assert.assertEquals(inputStream.read(), 3);
-        Assert.assertEquals(inputStream.read(), 4);
+        Assertions.assertEquals(inputStream.read(), 3);
+        Assertions.assertEquals(inputStream.read(), 4);
     }
 }

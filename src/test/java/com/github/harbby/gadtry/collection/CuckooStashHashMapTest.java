@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,12 +34,12 @@ public class CuckooStashHashMapTest
             map.put(new String(new char[] {c, c}), i + 1);
         });
         int size = map.size();
-        Assert.assertEquals(size, 26);
+        Assertions.assertEquals(size, 26);
         map.get("yy");
         IntStream.range(0, 26).forEach(i -> {
             char c = (char) ('a' + i);
             Integer v = map.get(new String(new char[] {c, c}));
-            Assert.assertEquals(map.get(new String(new char[] {c, c})).intValue(), i + 1);
+            Assertions.assertEquals(map.get(new String(new char[] {c, c})).intValue(), i + 1);
         });
 
         System.out.println(map);
@@ -63,20 +63,22 @@ public class CuckooStashHashMapTest
         map.remove(19);
         map.remove(46);
         map.remove(34);
-        Assert.assertTrue(map.isEmpty());
+        Assertions.assertTrue(map.isEmpty());
     }
 
-    @Test(expected = java.util.ConcurrentModificationException.class)
+    @Test
     public void foreachEntryRemoveThrowConcurrentModificationException()
     {
         Map<Integer, Integer> map = new HashMap<>(4);  //new HashMap<>(4)
         map.put(34, 999);
         map.put(19, 999);
         map.put(46, 999);
-        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-            map.remove(entry.getKey());
-        }
-        System.out.println(map);
+
+        Assertions.assertThrows(java.util.ConcurrentModificationException.class, ()-> {
+            for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+                map.remove(entry.getKey());
+            }
+        });
     }
 
     @Test
@@ -91,7 +93,7 @@ public class CuckooStashHashMapTest
             iterator.next();
             iterator.remove();
         }
-        Assert.assertTrue(map.isEmpty());
+        Assertions.assertTrue(map.isEmpty());
     }
 
     @Test
@@ -106,7 +108,7 @@ public class CuckooStashHashMapTest
             iterator.next();
             iterator.remove();
         }
-        Assert.assertTrue(map.isEmpty());
+        Assertions.assertTrue(map.isEmpty());
     }
 
     @Test
@@ -123,28 +125,28 @@ public class CuckooStashHashMapTest
                 iterator.next();
                 iterator.remove();
                 iterator.remove();
-                Assert.fail();
+                Assertions.fail();
             }
         }
         catch (IllegalStateException e) {
-            Assert.assertEquals("please call `iterator.next()` first", e.getMessage());
+            Assertions.assertEquals("please call `iterator.next()` first", e.getMessage());
         }
-        Assert.assertEquals(map.size(), 2);
+        Assertions.assertEquals(map.size(), 2);
 
         try {
             Iterator<Integer> iterator = map.keySet().iterator();
             while (iterator.hasNext()) {
                 iterator.remove();
-                Assert.fail();
+                Assertions.fail();
             }
         }
         catch (IllegalStateException e) {
-            Assert.assertEquals("please call `iterator.next()` first", e.getMessage());
+            Assertions.assertEquals("please call `iterator.next()` first", e.getMessage());
         }
-        Assert.assertEquals(map.size(), 2);
+        Assertions.assertEquals(map.size(), 2);
     }
 
-    @Test(expected = java.util.ConcurrentModificationException.class)
+    @Test
     public void foreachKeysRemoveThrowConcurrentModificationException()
     {
         Map<Integer, Integer> map = new CuckooStashHashMap<>(4);
@@ -152,9 +154,11 @@ public class CuckooStashHashMapTest
         map.put(19, 999);
         map.put(46, 999);
 
-        for (Integer key : map.keySet()) {
-            map.remove(key);
-        }
+        Assertions.assertThrows(java.util.ConcurrentModificationException.class, ()-> {
+            for (Integer key : map.keySet()) {
+                map.remove(key);
+            }
+        });
     }
 
     @Test
@@ -169,10 +173,10 @@ public class CuckooStashHashMapTest
             iterator.next();
             iterator.remove();
         }
-        Assert.assertTrue(map.isEmpty());
+        Assertions.assertTrue(map.isEmpty());
     }
 
-    @Test(expected = java.util.ConcurrentModificationException.class)
+    @Test
     public void foreachValuesRemoveThrowConcurrentModificationException()
     {
         Map<Integer, Integer> map = new CuckooStashHashMap<>(4);
@@ -180,10 +184,12 @@ public class CuckooStashHashMapTest
         map.put(19, 999);
         map.put(46, 999);
 
-        for (Integer value : map.values()) {
-            map.remove(19);
-            System.out.println(value);
-        }
+        Assertions.assertThrows(java.util.ConcurrentModificationException.class, ()-> {
+            for (Integer value : map.values()) {
+                map.remove(19);
+                System.out.println(value);
+            }
+        });
     }
 
     @Test
@@ -197,7 +203,7 @@ public class CuckooStashHashMapTest
         for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
             entry.setValue(999);
         }
-        Assert.assertEquals(ImmutableMap.of(34, 999, 19, 999, 46, 999), map);
+        Assertions.assertEquals(ImmutableMap.of(34, 999, 19, 999, 46, 999), map);
     }
 
     @Test
@@ -209,6 +215,6 @@ public class CuckooStashHashMapTest
         map.put(46, 3);
         map.put(99, 4);
 
-        Assert.assertEquals(ImmutableMap.of(34, 1, 19, 2, 46, 3, 99, 4), map);
+        Assertions.assertEquals(ImmutableMap.of(34, 1, 19, 2, 46, 3, 99, 4), map);
     }
 }

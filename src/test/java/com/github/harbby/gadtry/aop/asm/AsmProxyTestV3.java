@@ -21,8 +21,8 @@ import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.aop.proxy2.AsmProxyV3;
 import com.github.harbby.gadtry.aop.proxy2.Interceptor;
 import com.github.harbby.gadtry.aop.proxy2.MockAccess;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -96,13 +96,13 @@ public class AsmProxyTestV3
         field.setAccessible(true);
         field.set(proxy, handler);
 
-        Assert.assertEquals(18 - 1, proxy.age());
-        Assert.assertEquals(name, proxy.name());
-        Assert.assertEquals(9.14D, proxy.sum("abc", 1, 2L, 3.14F), 0.000001);
-        Assert.assertTrue(proxy instanceof MockAccess);
-        Assert.assertTrue(atomicBoolean.get());
+        Assertions.assertEquals(18 - 1, proxy.age());
+        Assertions.assertEquals(name, proxy.name());
+        Assertions.assertEquals(9.14D, proxy.sum("abc", 1, 2L, 3.14F), 0.000001);
+        Assertions.assertTrue(proxy instanceof MockAccess);
+        Assertions.assertTrue(atomicBoolean.get());
         //---支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "abc-17");
+        Assertions.assertEquals(proxy.getNameAndAge(), "abc-17");
         System.out.println(proxy.toString());
     }
 }

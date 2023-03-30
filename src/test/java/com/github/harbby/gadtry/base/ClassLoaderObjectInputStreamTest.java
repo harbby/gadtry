@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -33,9 +33,9 @@ public class ClassLoaderObjectInputStreamTest
         byte[] bytes = Serializables.serialize(1);
         ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(bytes);
         ClassLoaderObjectInputStream objectInputStream = new ClassLoaderObjectInputStream(arrayInputStream, this.getClass().getClassLoader());
-        Assert.assertEquals(int.class, objectInputStream.resolveClass(intClass));
+        Assertions.assertEquals(int.class, objectInputStream.resolveClass(intClass));
 
         //ObjectStreamClass
-        Assert.assertEquals(1, (int) objectInputStream.readObject());
+        Assertions.assertEquals(1, (int) objectInputStream.readObject());
     }
 }

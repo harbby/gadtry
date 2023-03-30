@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.aop.mockgo;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
@@ -25,90 +25,90 @@ public class MockGoArgumentTest
     @Test
     public void any()
     {
-        Assert.assertNull(MockGoArgument.any());
+        Assertions.assertNull(MockGoArgument.any());
     }
 
     @Test
     public void anyInt()
     {
-        Assert.assertEquals(MockGoArgument.anyInt(), 0);
+        Assertions.assertEquals(MockGoArgument.anyInt(), 0);
     }
 
     @Test
     public void anyByte()
     {
-        Assert.assertEquals(MockGoArgument.anyByte(), 0);
+        Assertions.assertEquals(MockGoArgument.anyByte(), 0);
     }
 
     @Test
     public void anyShort()
     {
-        Assert.assertEquals(MockGoArgument.anyShort(), 0);
+        Assertions.assertEquals(MockGoArgument.anyShort(), 0);
     }
 
     @Test
     public void anyLong()
     {
-        Assert.assertEquals(MockGoArgument.anyLong(), 0L);
+        Assertions.assertEquals(MockGoArgument.anyLong(), 0L);
     }
 
     @Test
     public void anyDouble()
     {
-        Assert.assertEquals(MockGoArgument.anyDouble(), 0.0d, 0.0d);
+        Assertions.assertEquals(MockGoArgument.anyDouble(), 0.0d, 0.0d);
     }
 
     @Test
     public void anyChar()
     {
-        Assert.assertEquals(MockGoArgument.anyChar(), 0);
+        Assertions.assertEquals(MockGoArgument.anyChar(), 0);
     }
 
     @Test
     public void anyFloat()
     {
-        Assert.assertEquals(MockGoArgument.anyFloat(), 0f, 0f);
+        Assertions.assertEquals(MockGoArgument.anyFloat(), 0f, 0f);
     }
 
     @Test
     public void anyBoolean()
     {
-        Assert.assertFalse(MockGoArgument.anyBoolean());
+        Assertions.assertFalse(MockGoArgument.anyBoolean());
     }
 
     @Test
     public void anyString()
     {
-        Assert.assertEquals(MockGoArgument.anyString(), "");
+        Assertions.assertEquals(MockGoArgument.anyString(), "");
     }
 
     @Test
     public void anyMap()
     {
-        Assert.assertEquals(MockGoArgument.anyMap(), Collections.emptyMap());
+        Assertions.assertEquals(MockGoArgument.anyMap(), Collections.emptyMap());
     }
 
     @Test
     public void anyList()
     {
-        Assert.assertEquals(MockGoArgument.anyList(), Collections.emptyList());
+        Assertions.assertEquals(MockGoArgument.anyList(), Collections.emptyList());
     }
 
     @Test
     public void anySet()
     {
-        Assert.assertEquals(MockGoArgument.anySet(), Collections.emptySet());
+        Assertions.assertEquals(MockGoArgument.anySet(), Collections.emptySet());
     }
 
     @Test
     public void anyIterator()
     {
-        Assert.assertFalse(MockGoArgument.anyIterator().hasNext());
+        Assertions.assertFalse(MockGoArgument.anyIterator().hasNext());
     }
 
     @Test
     public void anyIterable()
     {
-        Assert.assertFalse(MockGoArgument.anyIterable().iterator().hasNext());
+        Assertions.assertFalse(MockGoArgument.anyIterable().iterator().hasNext());
     }
 }

@@ -70,9 +70,6 @@ public interface OutputView
     void writeBoolArray(boolean[] v)
             throws JcodecException;
 
-    void writeAsciiString(String s)
-            throws JcodecException;
-
     void writeString(String s)
             throws JcodecException;
 

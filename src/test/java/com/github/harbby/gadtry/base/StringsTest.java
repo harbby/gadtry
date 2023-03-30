@@ -15,35 +15,35 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class StringsTest
 {
     @Test
     public void isNotBlank()
     {
-        Assert.assertFalse(Strings.isNotBlank(""));
-        Assert.assertFalse(Strings.isNotBlank(null));
-        Assert.assertFalse(Strings.isNotBlank("   "));
+        Assertions.assertFalse(Strings.isNotBlank(""));
+        Assertions.assertFalse(Strings.isNotBlank(null));
+        Assertions.assertFalse(Strings.isNotBlank("   "));
 
-        Assert.assertTrue(Strings.isNotBlank(" dwa "));
+        Assertions.assertTrue(Strings.isNotBlank(" dwa "));
     }
 
     @Test
     public void isBlank()
     {
-        Assert.assertTrue(Strings.isBlank(""));
-        Assert.assertTrue(Strings.isBlank(null));
-        Assert.assertTrue(Strings.isBlank("   "));
+        Assertions.assertTrue(Strings.isBlank(""));
+        Assertions.assertTrue(Strings.isBlank(null));
+        Assertions.assertTrue(Strings.isBlank("   "));
     }
 
     @Test
     public void isAsciiTest()
     {
-        Assert.assertTrue(Strings.isAscii("info"));
-        Assert.assertTrue(Strings.isAscii("Info"));
-        Assert.assertTrue(Strings.isAscii("123info.!#@&123Abc"));
-        Assert.assertFalse(Strings.isAscii("hello!,你好"));
+        Assertions.assertTrue(Strings.isAscii("info"));
+        Assertions.assertTrue(Strings.isAscii("Info"));
+        Assertions.assertTrue(Strings.isAscii("123info.!#@&123Abc"));
+        Assertions.assertFalse(Strings.isAscii("hello!,你好"));
     }
 }

@@ -30,6 +30,7 @@ import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.security.CodeSource;
+import java.util.Comparator;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -117,6 +118,8 @@ public final class Platform
 
         public Class<?> defineHiddenClass(Class<?> buddyClass, byte[] classBytes, boolean initialize)
                 throws IllegalAccessException;
+
+        public <A> Comparator<A> getArrayComparator(Class<A> typeClass);
     }
 
     private static class ExtPlatformHolder
@@ -127,7 +130,7 @@ public final class Platform
             ExtPlatform obj;
             ClassLoader classLoader = Platform.class.getClassLoader();
             try {
-                Class<?> aClass = classLoader.loadClass("com.github.harbby.gadtry.base.JavaModuleExtPlatformImpl");
+                Class<?> aClass = classLoader.loadClass("com.github.harbby.gadtry.base.ExtPlatformImpl");
                 obj = (ExtPlatform) aClass.getDeclaredConstructor().newInstance();
             }
             catch (Exception e) {
@@ -139,6 +142,17 @@ public final class Platform
         public static ExtPlatform getExtPlatform()
         {
             return extPlatform;
+        }
+    }
+
+    public static <A> Comparator<A> getArrayComparator(Class<A> typeClass)
+    {
+        if (getJavaVersion() < 9) {
+            throw new PlatFormUnsupportedOperation("not support java8");
+        }
+        else {
+            checkArgument(typeClass.isArray() && typeClass.componentType().isPrimitive(), "must be primitive array.class");
+            return ExtPlatformHolder.getExtPlatform().getArrayComparator(typeClass);
         }
     }
 
@@ -383,7 +397,7 @@ public final class Platform
     public static Class<?> defineHiddenClass(Class<?> buddyClass, byte[] classBytes, boolean initialize)
             throws IllegalAccessException
     {
-        checkState(getJavaVersion() > 8, "This method is available in Java 9 or later");
+        checkState(getJavaVersion() >= 15, "This method is available in Java 15 or later");
         return ExtPlatformHolder.getExtPlatform().defineHiddenClass(buddyClass, classBytes, initialize);
     }
 

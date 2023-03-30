@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -31,49 +31,49 @@ public class StreamsTest
     {
         int[] array = range(10).toArray();
 
-        Assert.assertArrayEquals(array, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+        Assertions.assertArrayEquals(array, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
     }
 
     @Test
     public void testRange1To5()
     {
         int[] array = range(1, 5).toArray();
-        Assert.assertArrayEquals(array, new int[] {1, 2, 3, 4});
+        Assertions.assertArrayEquals(array, new int[] {1, 2, 3, 4});
     }
 
     @Test
     public void range0To30Step5()
     {
         int[] array = range(0, 30, 5).toArray();
-        Assert.assertArrayEquals(array, new int[] {0, 5, 10, 15, 20, 25});
+        Assertions.assertArrayEquals(array, new int[] {0, 5, 10, 15, 20, 25});
     }
 
     @Test
     public void range0To10Step3()
     {
         int[] array = range(0, 10, 3).toArray();
-        Assert.assertArrayEquals(array, new int[] {0, 3, 6, 9});
+        Assertions.assertArrayEquals(array, new int[] {0, 3, 6, 9});
     }
 
     @Test
     public void range0To_10Step_1()
     {
         int[] array = range(0, -10, -1).toArray();
-        Assert.assertArrayEquals(array, new int[] {0, -1, -2, -3, -4, -5, -6, -7, -8, -9});
+        Assertions.assertArrayEquals(array, new int[] {0, -1, -2, -3, -4, -5, -6, -7, -8, -9});
     }
 
     @Test
     public void range1To0ReturnEmp()
     {
         int[] array = range(1, 0).toArray();
-        Assert.assertArrayEquals(array, new int[0]);
+        Assertions.assertArrayEquals(array, new int[0]);
     }
 
     @Test
     public void range0ReturnEmp()
     {
         int[] array = range(0).toArray();
-        Assert.assertArrayEquals(array, new int[0]);
+        Assertions.assertArrayEquals(array, new int[0]);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class StreamsTest
                 list.offer(x);   //如果使用ArrayList线程不安全 可以观察到null值, 数据缺少, 或者越界错误 三种情况
             });
             System.out.println(list);
-            Assert.assertArrayEquals(list.stream().sorted().mapToInt(x -> x).toArray(), new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+            Assertions.assertArrayEquals(list.stream().sorted().mapToInt(x -> x).toArray(), new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
         }
     }
 
@@ -97,6 +97,6 @@ public class StreamsTest
     public void parallelRange1To5()
     {
         int[] array = range(1, 5).parallel().toArray();
-        Assert.assertArrayEquals(array, new int[] {1, 2, 3, 4});
+        Assertions.assertArrayEquals(array, new int[] {1, 2, 3, 4});
     }
 }

@@ -15,27 +15,34 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 public class InjectorExceptionTest
 {
-    @Test(expected = InjectorException.class)
+    @Test
     public void injectorExceptionGiveString()
     {
-        throw new InjectorException("done");
+        Assertions.assertThrows(InjectorException.class, ()-> {
+            throw new InjectorException("done");
+        });
     }
 
-    @Test(expected = InjectorException.class)
+    @Test
     public void injectorExceptionGiveException()
     {
-        throw new InjectorException(new IOException("done"));
+        Assertions.assertThrows(InjectorException.class, ()-> {
+            throw new InjectorException(new IOException("done"));
+        });
     }
 
-    @Test(expected = InjectorException.class)
+    @Test
     public void injectorExceptionGiveStringAndException()
     {
-        throw new InjectorException("done", new IOException("error"));
+        Assertions.assertThrows(InjectorException.class, ()-> {
+            throw new InjectorException("done", new IOException("error"));
+        });
     }
 }

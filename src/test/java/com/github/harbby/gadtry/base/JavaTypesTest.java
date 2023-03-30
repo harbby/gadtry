@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.aop.AopGo;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.ArrayUtil.PRIMITIVE_TYPES;
@@ -41,15 +42,15 @@ public class JavaTypesTest
     public void getMethodSignatureTest()
             throws NoSuchMethodException
     {
-        Assert.assertEquals("()Ljava/lang/String;", getMethodSignature(Object.class.getMethod("toString")));
-        Assert.assertEquals("([CII)Ljava/lang/String;", getMethodSignature(String.class.getDeclaredMethod("valueOf", char[].class, int.class, int.class)));
+        Assertions.assertEquals("()Ljava/lang/String;", getMethodSignature(Object.class.getMethod("toString")));
+        Assertions.assertEquals("([CII)Ljava/lang/String;", getMethodSignature(String.class.getDeclaredMethod("valueOf", char[].class, int.class, int.class)));
     }
 
     @Test
     public void getClassSignatureTest()
     {
         String str = PRIMITIVE_TYPES.stream().map(JavaTypes::getClassSignature).collect(Collectors.joining());
-        Assert.assertEquals(str, "ISJFDZBCV");
+        Assertions.assertEquals(str, "ISJFDZBCV");
     }
 
     @Test
@@ -59,8 +60,8 @@ public class JavaTypesTest
         Type listType = JavaTypes.make(List.class, new Type[] {String.class}, null);
         Type maType = JavaTypes.make(Map.class, new Type[] {String.class, listType}, null);
 
-        Assert.assertTrue(Serializables.serialize((Serializable) maType).length > 0);
-        Assert.assertTrue(maType.toString().length() > 0);
+        Assertions.assertTrue(Serializables.serialize((Serializable) maType).length > 0);
+        Assertions.assertTrue(maType.toString().length() > 0);
     }
 
     @Test
@@ -68,7 +69,7 @@ public class JavaTypesTest
     {
         Type mapType = JavaTypes.make(new TypeReference<Map<String, Object>>() {});
         Type type2 = JavaTypes.makeMapType(Map.class, String.class, Object.class);
-        Assert.assertEquals(type2, mapType);
+        Assertions.assertEquals(type2, mapType);
     }
 
     @Test
@@ -76,26 +77,26 @@ public class JavaTypesTest
     {
         try {
             JavaTypes.make(List.class, new Type[] {int.class}, null);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException e) {
-            Assert.assertEquals(e.getMessage(), "Java Generic Type not support PrimitiveType");
+            Assertions.assertEquals(e.getMessage(), "Java Generic Type not support PrimitiveType");
         }
 
         try {
             JavaTypes.make(int.class, new Type[] {String.class}, null);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException e) {
-            Assert.assertEquals(e.getMessage(), "rawType int must not PrimitiveType");
+            Assertions.assertEquals(e.getMessage(), "rawType int must not PrimitiveType");
         }
     }
 
     @Test
     public void getPrimitiveClassInitValue()
     {
-        Assert.assertNull(JavaTypes.getClassInitValue(void.class));
-        Assert.assertEquals(JavaTypes.getClassInitValue(double.class), 0.0d, 0.0d);
+        Assertions.assertNull(JavaTypes.getClassInitValue(void.class));
+        Assertions.assertEquals(JavaTypes.getClassInitValue(double.class), 0.0d, 0.0d);
     }
 
     @Test
@@ -103,14 +104,14 @@ public class JavaTypesTest
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
         type = JavaTypes.makeArrayType(type);
-        Assert.assertEquals(type.getTypeName(), "java.util.List<java.lang.String>[]");
-        Assert.assertEquals(JavaTypes.typeToClass(type), List[].class);
+        Assertions.assertEquals(type.getTypeName(), "java.util.List<java.lang.String>[]");
+        Assertions.assertEquals(JavaTypes.typeToClass(type), List[].class);
 
-        Assert.assertEquals(JavaTypes.makeArrayType(String.class).getTypeName(), "java.lang.String[]");
+        Assertions.assertEquals(JavaTypes.makeArrayType(String.class).getTypeName(), "java.lang.String[]");
 
         try {
             JavaTypes.makeArrayType(int.class);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException ignored) {
         }
@@ -120,17 +121,17 @@ public class JavaTypesTest
     public void isClassType()
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
-        Assert.assertTrue(JavaTypes.isClassType(type));
-        Assert.assertFalse(JavaTypes.isClassType(AopGo.proxy(Type.class).byInstance(String.class).aop(biner -> biner.doBefore(a -> {})).build()));
-        Assert.assertTrue(JavaTypes.isClassType(String.class));
+        Assertions.assertTrue(JavaTypes.isClassType(type));
+        Assertions.assertFalse(JavaTypes.isClassType(AopGo.proxy(Type.class).byInstance(String.class).aop(biner -> biner.doBefore(a -> {})).build()));
+        Assertions.assertTrue(JavaTypes.isClassType(String.class));
     }
 
     @Test
     public void typeToClass()
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
-        Assert.assertEquals(JavaTypes.typeToClass(type), List.class);
-        Assert.assertEquals(JavaTypes.typeToClass(String.class), String.class);
+        Assertions.assertEquals(JavaTypes.typeToClass(type), List.class);
+        Assertions.assertEquals(JavaTypes.typeToClass(String.class), String.class);
     }
 
     @Test
@@ -139,15 +140,15 @@ public class JavaTypesTest
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
         Type arrayType = ArrayType.make(type);
 
-        Assert.assertTrue(JavaTypes.isClassType(arrayType));
-        Assert.assertEquals(JavaTypes.typeToClass(arrayType), List[].class);
+        Assertions.assertTrue(JavaTypes.isClassType(arrayType));
+        Assertions.assertEquals(JavaTypes.typeToClass(arrayType), List[].class);
 
         try {
             JavaTypes.typeToClass(AopGo.proxy(Type.class).byInstance(String.class).aop(biner -> biner.doBefore(a -> {})).build());
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException e) {
-            Assert.assertEquals("Cannot convert type to class", e.getMessage());
+            Assertions.assertEquals("Cannot convert type to class", e.getMessage());
         }
     }
 
@@ -156,7 +157,7 @@ public class JavaTypesTest
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
         Type type2 = JavaTypes.make(List.class, new Type[] {String.class}, null);
-        Assert.assertEquals(type, type2);
+        Assertions.assertEquals(type, type2);
     }
 
     @Test
@@ -164,7 +165,7 @@ public class JavaTypesTest
     {
         Type type = JavaTypes.make(List.class, new Type[] {String.class}, null);
         Type type2 = JavaTypes.make(List.class, new Type[] {String.class}, null);
-        Assert.assertEquals(type.hashCode(), type2.hashCode());
+        Assertions.assertEquals(type.hashCode(), type2.hashCode());
     }
 
     @Test
@@ -175,11 +176,11 @@ public class JavaTypesTest
                 .collect(Collectors.toList());
         List<Class<?>> primitiveTypes = wrappers.stream().map(JavaTypes::getPrimitiveClass)
                 .collect(Collectors.toList());
-        Assert.assertEquals(primitiveTypes, PRIMITIVE_TYPES);
+        Assertions.assertEquals(primitiveTypes, PRIMITIVE_TYPES);
 
         try {
             JavaTypes.getPrimitiveClass(Object.class);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ignored) {
         }
@@ -198,11 +199,11 @@ public class JavaTypesTest
             return (Class<?>) field.get(null);
         })).collect(Collectors.toList());
 
-        Assert.assertEquals(PRIMITIVE_TYPES, typeClassList);
+        Assertions.assertEquals(PRIMITIVE_TYPES, typeClassList);
 
         try {
             JavaTypes.getWrapperClass(Object.class);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ignored) {
         }
@@ -213,7 +214,7 @@ public class JavaTypesTest
     {
         String check = "Ljava/lang/Object;Ljava/util/function/Function<Ljava/util/Map<Ljava/lang/String;" +
                 "Ljava/lang/Integer;>;Ljava/lang/String;>;Ljava/util/concurrent/Callable<Ljava/lang/Double;>;";
-        Assert.assertEquals(check,
+        Assertions.assertEquals(check,
                 JavaTypes.getClassGenericString(GenericClassTest.class));
     }
 
@@ -221,28 +222,29 @@ public class JavaTypesTest
     public void getClassGenericTypes()
     {
         List<Type> types = JavaTypes.getClassGenericTypes(GenericClassTest.class);
-        Assert.assertEquals(types.get(1), JavaTypes.make(Function.class, new Type[] {JavaTypes.makeMapType(Map.class, String.class, Integer.class), String.class}, null));
+        Assertions.assertEquals(types.get(1), JavaTypes.make(Function.class, new Type[] {JavaTypes.makeMapType(Map.class, String.class, Integer.class), String.class}, null));
     }
 
     @Test
     public void makeMapTypeTest()
     {
         MapType mapType = JavaTypes.makeMapType(Map.class, String.class, Integer.class);
-        Assert.assertEquals(mapType.getTypeName(), "java.util.Map<java.lang.String, java.lang.Integer>");
+        Assertions.assertEquals(mapType.getTypeName(), "java.util.Map<java.lang.String, java.lang.Integer>");
     }
 
     @Test
     public void getClassGenericTypesReturnEmpGiveJavaTypesTest()
     {
         List<Type> types = JavaTypes.getClassGenericTypes(JavaTypesTest.class);
-        Assert.assertEquals(types, Collections.singletonList(Object.class));
+        Assertions.assertEquals(types, Collections.singletonList(Object.class));
     }
 
     @Test
     public void getClassLocationTest()
     {
         String path = JavaTypes.getClassLocation(Test.class).getPath();
-        Assert.assertEquals(new File(path).getName(), "junit-4.12.jar");
+        String name = new File(path).getName();
+        Assertions.assertTrue(Pattern.matches("junit-jupiter-api-[0-9.]+\\.jar", name));
     }
 
     private static class GenericClassTest

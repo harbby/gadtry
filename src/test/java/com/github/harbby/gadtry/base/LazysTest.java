@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -39,16 +39,16 @@ public class LazysTest
             return new ArrayList<>();
         });
 
-        Assert.assertTrue(lazy.get() == lazy.get());
-        Assert.assertEquals(1, atomicInteger.get());
-        Assert.assertTrue(lazy.toString().contains("Lazys.of"));
+        Assertions.assertTrue(lazy.get() == lazy.get());
+        Assertions.assertEquals(1, atomicInteger.get());
+        Assertions.assertTrue(lazy.toString().contains("Lazys.of"));
     }
 
     @Test
     public void getLazyGiveLazySupplier()
     {
         Lazys.LazySupplier<String> lazySupplier = new Lazys.LazySupplier<>(() -> "done");
-        Assert.assertEquals(Lazys.of(lazySupplier).get(), "done");
+        Assertions.assertEquals(Lazys.of(lazySupplier).get(), "done");
     }
 
     @Test
@@ -62,8 +62,8 @@ public class LazysTest
         byte[] bytes = Serializables.serialize((Serializable) lazy);
         final Supplier<List<String>> serializableLazy = Serializables.byteToObject(bytes);
 
-        Assert.assertTrue(serializableLazy != lazy);
-        Assert.assertEquals(Arrays.asList("1", "2", "3"), serializableLazy.get());
+        Assertions.assertTrue(serializableLazy != lazy);
+        Assertions.assertEquals(Arrays.asList("1", "2", "3"), serializableLazy.get());
     }
 
     @Test
@@ -75,8 +75,8 @@ public class LazysTest
         byte[] bytes = Serializables.serialize((Serializable) lazy);
         final Function<String, List<String>> serializableLazy = Serializables.byteToObject(bytes);
 
-        Assert.assertEquals(Arrays.asList("init"), serializableLazy.apply("init"));
-        Assert.assertEquals(serializableLazy.apply("a1"), serializableLazy.apply("a2"));
+        Assertions.assertEquals(Arrays.asList("init"), serializableLazy.apply("init"));
+        Assertions.assertEquals(serializableLazy.apply("a1"), serializableLazy.apply("a2"));
     }
 
     @Test
@@ -85,11 +85,11 @@ public class LazysTest
     {
         final Function<String, List<String>> lazy = Lazys.of((Function<String, List<String>> & Serializable) init -> Arrays.asList(init));
 
-        Assert.assertEquals(Arrays.asList("init"), lazy.apply("init"));
-        Assert.assertTrue(lazy.apply("a1") == lazy.apply("a2"));
-        Assert.assertTrue(Serializables.serialize((Serializable) lazy).length > 0);
-        Assert.assertTrue(Lazys.of(lazy).apply("a3") == lazy.apply("a5"));
-        Assert.assertTrue(lazy.toString().contains("Lazys.of"));
+        Assertions.assertEquals(Arrays.asList("init"), lazy.apply("init"));
+        Assertions.assertTrue(lazy.apply("a1") == lazy.apply("a2"));
+        Assertions.assertTrue(Serializables.serialize((Serializable) lazy).length > 0);
+        Assertions.assertTrue(Lazys.of(lazy).apply("a3") == lazy.apply("a5"));
+        Assertions.assertTrue(lazy.toString().contains("Lazys.of"));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class LazysTest
             return Arrays.asList(init);
         });
         Streams.range(1, 5).parallel().forEach(x -> lazy.apply("init"));
-        Assert.assertEquals(atomicInteger.get(), 1);
+        Assertions.assertEquals(atomicInteger.get(), 1);
     }
 
     @Test
@@ -123,6 +123,6 @@ public class LazysTest
             return Arrays.asList("init");
         });
         Streams.range(1, 5).parallel().forEach(x -> lazy.get());
-        Assert.assertEquals(atomicInteger.get(), 1);
+        Assertions.assertEquals(atomicInteger.get(), 1);
     }
 }

@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,17 +36,17 @@ public class TryTest
                 }).matchException(IllegalStateException.class, e -> {})
                 .onFailure(e -> {
                     func.add("onFailure");
-                    Assert.assertTrue(e instanceof UnsupportedOperationException);
+                    Assertions.assertTrue(e instanceof UnsupportedOperationException);
                 }).onFinally(() -> func.add("onFinally"))
                 .doTry();
-        Assert.assertEquals(func, Arrays.asList("of", "onSuccess", "onFailure", "onFinally"));
+        Assertions.assertEquals(func, Arrays.asList("of", "onSuccess", "onFailure", "onFinally"));
 
         AtomicInteger atomicInteger = new AtomicInteger(1);
         Try.of(() -> atomicInteger.set(10)).onSuccess(atomicInteger::getAndIncrement).doTry();
-        Assert.assertEquals(11, atomicInteger.get());
+        Assertions.assertEquals(11, atomicInteger.get());
 
         Try.of(() -> atomicInteger.set(5)).doTry();
-        Assert.assertEquals(atomicInteger.get(), 5);
+        Assertions.assertEquals(atomicInteger.get(), 5);
     }
 
     @Test
@@ -60,14 +60,14 @@ public class TryTest
                 }).matchException(IllegalStateException.class, e -> false)
                 .onFailure(e -> {
                     func.add("onFailure");
-                    Assert.assertTrue(e instanceof UnsupportedOperationException);
+                    Assertions.assertTrue(e instanceof UnsupportedOperationException);
                     return true;
                 }).onFinally(() -> func.add("onFinally"))
                 .doTry();
-        Assert.assertEquals(func, Arrays.asList("of", "onSuccess", "onFailure", "onFinally"));
+        Assertions.assertEquals(func, Arrays.asList("of", "onSuccess", "onFailure", "onFinally"));
 
-        Assert.assertEquals(2, Try.valueOf(() -> new AtomicInteger(1)).onSuccess(AtomicInteger::getAndIncrement).doTry().get());
-        Assert.assertEquals(1, Try.valueOf(() -> 1).doTry().intValue());
-        Assert.assertEquals(0, Try.valueOf(() -> 1 / 0).matchException(ArithmeticException.class, e -> 0).doTry().intValue());
+        Assertions.assertEquals(2, Try.valueOf(() -> new AtomicInteger(1)).onSuccess(AtomicInteger::getAndIncrement).doTry().get());
+        Assertions.assertEquals(1, Try.valueOf(() -> 1).doTry().intValue());
+        Assertions.assertEquals(0, Try.valueOf(() -> 1 / 0).matchException(ArithmeticException.class, e -> 0).doTry().intValue());
     }
 }

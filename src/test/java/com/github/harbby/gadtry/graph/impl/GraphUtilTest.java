@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.graph.Graph;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
@@ -35,6 +35,6 @@ public class GraphUtilTest
             graphBuilder.addEdge(i, i + 1);
         }
 
-        Assert.assertEquals(graphBuilder.create().printShow().size(), 4001);
+        Assertions.assertEquals(graphBuilder.create().printShow().size(), 4001);
     }
 }

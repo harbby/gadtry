@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.base.Serializables;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -47,17 +47,17 @@ public class GraphxTest
     public void testCreateGraph1()
     {
         List<? extends Route<?, ?>> list = graph.searchRuleRoute(route -> true);
-        Assert.assertEquals(list.size(), 6);
+        Assertions.assertEquals(list.size(), 6);
         graph.printShow().forEach(System.out::println);
 
-        Assert.assertEquals(graph.getNode("a2").nextNodes().size(), 2);
+        Assertions.assertEquals(graph.getNode("a2").nextNodes().size(), 2);
 
         try {
             graph.getNode("a100");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NullPointerException e) {
-            Assert.assertEquals(e.getMessage(), "NO SUCH Node a100");
+            Assertions.assertEquals(e.getMessage(), "NO SUCH Node a100");
         }
     }
 
@@ -65,13 +65,13 @@ public class GraphxTest
     public void getLastEdge()
     {
         Route<?, ?> route = graph.getRoute("a1", "a2", "a5");
-        Assert.assertEquals(route.getLastEdge().getOutNode().getValue(), "a5");
+        Assertions.assertEquals(route.getLastEdge().getOutNode().getValue(), "a5");
         try {
             Route.builder(route.getLastNode()).create().getLastEdge();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException e) {
-            Assert.assertEquals(e.getMessage(), "this Route only begin node");
+            Assertions.assertEquals(e.getMessage(), "this Route only begin node");
         }
     }
 
@@ -79,10 +79,10 @@ public class GraphxTest
     public void getLastNode()
     {
         Route<?, ?> route = graph.getRoute("a1", "a2", "a5");
-        Assert.assertEquals(route.getLastNode(2).getValue(), "a1");
+        Assertions.assertEquals(route.getLastNode(2).getValue(), "a1");
         try {
             route.getLastNode(3).getValue();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (NoSuchElementException ignored) {
         }
@@ -93,14 +93,14 @@ public class GraphxTest
     {
         Route<?, ?> route1 = graph.getRoute("a1", "a2", "a5");
         Route<?, ?> route2 = graph.getRoute("a1", "a2", "a5");
-        Assert.assertEquals(route1.hashCode(), route2.hashCode());
-        Assert.assertEquals(route1, route2);
-        Assert.assertEquals(route1, route1);
-        Assert.assertFalse(route1.equals(null));
-        Assert.assertFalse(route1.equals(""));
+        Assertions.assertEquals(route1.hashCode(), route2.hashCode());
+        Assertions.assertEquals(route1, route2);
+        Assertions.assertEquals(route1, route1);
+        Assertions.assertFalse(route1.equals(null));
+        Assertions.assertFalse(route1.equals(""));
 
-        Assert.assertNotEquals(graph.getRoute("a1", "a2", "a5"), graph.getRoute("a2", "a5"));
-        Assert.assertNotEquals(graph.getRoute("a1", "a2", "a5"), graph.getRoute("a1", "a2"));
+        Assertions.assertNotEquals(graph.getRoute("a1", "a2", "a5"), graph.getRoute("a2", "a5"));
+        Assertions.assertNotEquals(graph.getRoute("a1", "a2", "a5"), graph.getRoute("a1", "a2"));
     }
 
     @Test
@@ -145,7 +145,7 @@ public class GraphxTest
 
         Route<?, ?> route = routes.get(0);
         GraphNode node = route.getLastNode(1);
-        Assert.assertEquals(node.getValue(), "Error");
+        Assertions.assertEquals(node.getValue(), "Error");
     }
 
     @Test
@@ -181,7 +181,7 @@ public class GraphxTest
 
         graph.printShow().forEach(System.out::println);
         byte[] bytes = Serializables.serialize(graph);
-        Assert.assertNotNull(bytes);
+        Assertions.assertNotNull(bytes);
     }
 
     @Test
@@ -215,6 +215,6 @@ public class GraphxTest
 
         NodeOperator.runGraph(graph);
         graph.printShow().forEach(System.out::println);
-        Assert.assertEquals(6, db.get());
+        Assertions.assertEquals(6, db.get());
     }
 }

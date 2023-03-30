@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.util.function.UnaryOperator;
@@ -39,7 +39,7 @@ public class ComparatorTest
     public void Java8TypeIntersectionTest()
     {
         UnaryOperator<Integer> func = makeComparator();
-        Assert.assertEquals(func.apply(1).intValue(), 2);
-        Assert.assertTrue(func instanceof Serializable);
+        Assertions.assertEquals(func.apply(1).intValue(), 2);
+        Assertions.assertTrue(func instanceof Serializable);
     }
 }

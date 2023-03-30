@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.cache;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,8 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class LRUHashCacheTest
 {
@@ -76,15 +76,15 @@ public class LRUHashCacheTest
         for (int i = 1; i <= 10; i++) {
             cache.put("key" + i, "value" + i);
         }
-        Assert.assertTrue(evictList.isEmpty());
+        Assertions.assertTrue(evictList.isEmpty());
 
         String value = cache.get("key11", () -> "value11");
-        Assert.assertEquals(value, "value11");
-        Assert.assertEquals(evictList, Collections.singletonList("key1:value1 cause:OVERFLOW"));
+        Assertions.assertEquals(value, "value11");
+        Assertions.assertEquals(evictList, Collections.singletonList("key1:value1 cause:OVERFLOW"));
 
-        Assert.assertEquals(cache.put("key2", "value22"), "value2");
+        Assertions.assertEquals(cache.put("key2", "value22"), "value2");
         assertNull(cache.put("key12", "value12"));
-        Assert.assertEquals(evictList, Arrays.asList("key1:value1 cause:OVERFLOW", "key3:value3 cause:OVERFLOW"));
+        Assertions.assertEquals(evictList, Arrays.asList("key1:value1 cause:OVERFLOW", "key3:value3 cause:OVERFLOW"));
     }
 
     @Test
@@ -98,14 +98,14 @@ public class LRUHashCacheTest
                 TimeUnit.MILLISECONDS.toMillis(300));
         cache.put("k1", "v1");
         cache.get("k2", () -> "v2");
-        Assert.assertEquals(cache.size(), 2);
+        Assertions.assertEquals(cache.size(), 2);
         TimeUnit.MILLISECONDS.sleep(301);
 
-        Assert.assertTrue(evictList.isEmpty()); //check lazy clear
+        Assertions.assertTrue(evictList.isEmpty()); //check lazy clear
         assertNull(cache.getIfPresent("k1"));
-        Assert.assertEquals(evictList, Collections.singletonList("k1:v1 cause:TIME_OUT")); //check lazy clear
+        Assertions.assertEquals(evictList, Collections.singletonList("k1:v1 cause:TIME_OUT")); //check lazy clear
         assertNull(cache.getIfPresent("k2"));
-        Assert.assertEquals(evictList, Arrays.asList("k1:v1 cause:TIME_OUT", "k2:v2 cause:TIME_OUT"));
+        Assertions.assertEquals(evictList, Arrays.asList("k1:v1 cause:TIME_OUT", "k2:v2 cause:TIME_OUT"));
     }
 
     @Test
@@ -119,9 +119,9 @@ public class LRUHashCacheTest
                 TimeUnit.MILLISECONDS.toMillis(300));
         cache.put("k1", "v1");
         cache.get("k2", () -> "v2");
-        Assert.assertEquals(cache.size(), 2);
+        Assertions.assertEquals(cache.size(), 2);
         TimeUnit.MILLISECONDS.sleep(301);
 
-        Assert.assertTrue(cache.getAllPresent().isEmpty());
+        Assertions.assertTrue(cache.getAllPresent().isEmpty());
     }
 }

@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.graph.impl;
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.Route;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class RouteImplTest
 {
@@ -34,13 +34,13 @@ public class RouteImplTest
         builder.add(GraphEdge.of(n1));
 
         Route<String, Void> route = builder.create();
-        Assert.assertTrue(route.containsLoop());
+        Assertions.assertTrue(route.containsLoop());
     }
 
     @Test
     public void edgeToString()
     {
         GraphEdge<String, Void> edge = GraphEdge.of(GraphNode.of("2"));
-        Assert.assertEquals(edge.toString(), "GraphEdge{out=2, value=null}");
+        Assertions.assertEquals(edge.toString(), "GraphEdge{out=2, value=null}");
     }
 }

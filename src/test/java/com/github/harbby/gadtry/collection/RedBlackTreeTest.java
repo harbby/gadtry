@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.collection;
 import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.graph.Graph;
 import org.fusesource.jansi.Ansi;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,9 +92,9 @@ public class RedBlackTreeTest
         show(tree);
 
         //delete
-        Assert.assertEquals(tree.remove(12, 12), "value" + 12);
-        Assert.assertEquals(tree.remove(140, 140), "value" + 140);
-        Assert.assertEquals(tree.remove(67, 67), "value" + 67);
+        Assertions.assertEquals(tree.remove(12, 12), "value" + 12);
+        Assertions.assertEquals(tree.remove(140, 140), "value" + 140);
+        Assertions.assertEquals(tree.remove(67, 67), "value" + 67);
         show(tree);
     }
 
@@ -130,12 +130,12 @@ public class RedBlackTreeTest
         Collections.shuffle(copyData);
         copyData.forEach(i -> {
             String value = tree.get(i, i);
-            Assert.assertEquals(value, "value" + i);
+            Assertions.assertEquals(value, "value" + i);
         });
 
         List<Integer> numbers = new ArrayList<>();
         Iterators.foreach(tree.iterator(), (n) -> numbers.add(n.getKey()));
-        Assert.assertEquals(numbers, ImmutableList.of(89, 40, 23, 12, 34, 67, 45, 78, 120, 100, 90, 110, 140, 130, 160, 150, 170, 180));
+        Assertions.assertEquals(numbers, ImmutableList.of(89, 40, 23, 12, 34, 67, 45, 78, 120, 100, 90, 110, 140, 130, 160, 150, 170, 180));
         //show
         show(tree);
     }
@@ -150,11 +150,11 @@ public class RedBlackTreeTest
         tree.put("dddd", 4, 9);
         tree.put("eeeee", 5, 9);
         show(tree);
-        Assert.assertEquals(3, tree.get("ccc", 9).intValue());
-        Assert.assertEquals(1, tree.remove("a", 9).intValue());
-        Assert.assertTrue(tree.containsKey("ccc", 9));
-        Assert.assertEquals(3, tree.remove("ccc", 9).intValue());
-        Assert.assertFalse(tree.containsKey("ccc", 9));
+        Assertions.assertEquals(3, tree.get("ccc", 9).intValue());
+        Assertions.assertEquals(1, tree.remove("a", 9).intValue());
+        Assertions.assertTrue(tree.containsKey("ccc", 9));
+        Assertions.assertEquals(3, tree.remove("ccc", 9).intValue());
+        Assertions.assertFalse(tree.containsKey("ccc", 9));
         show(tree);
     }
 

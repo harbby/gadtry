@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -46,12 +46,12 @@ public class ImmutableSetTest
                             Integer[] intArr = IntStream.range(0, c).mapToObj(x -> x).toArray(Integer[]::new);
                             set = (ImmutableSet<Integer>) method.invoke(null, (Object[]) intArr);
                         }
-                        Assert.assertEquals(set.size(), c);
-                        Assert.assertEquals(set, new HashSet<>(Arrays.asList(IntStream.range(0, c).mapToObj(x -> x).toArray(Integer[]::new))));
+                        Assertions.assertEquals(set.size(), c);
+                        Assertions.assertEquals(set, new HashSet<>(Arrays.asList(IntStream.range(0, c).mapToObj(x -> x).toArray(Integer[]::new))));
                     }
                     catch (IllegalAccessException | InvocationTargetException e) {
                         e.printStackTrace();
-                        Assert.fail();
+                        Assertions.fail();
                     }
                 });
     }
@@ -59,7 +59,7 @@ public class ImmutableSetTest
     @Test
     public void emptyTest()
     {
-        Assert.assertEquals(ImmutableSet.of(), new HashSet<>());
+        Assertions.assertEquals(ImmutableSet.of(), new HashSet<>());
     }
 
     @Test
@@ -69,6 +69,6 @@ public class ImmutableSetTest
                 .add(1)
                 .addAll(Arrays.asList(1, 1, 2, 2, 2))
                 .build();
-        Assert.assertEquals(immutableSet, new HashSet<>(Arrays.asList(1, 2)));
+        Assertions.assertEquals(immutableSet, new HashSet<>(Arrays.asList(1, 2)));
     }
 }

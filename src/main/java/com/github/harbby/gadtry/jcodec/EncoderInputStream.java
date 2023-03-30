@@ -26,15 +26,15 @@ public class EncoderInputStream<E>
         implements CloseIterator<E>
 {
     private final InputView dataInput;
-    private final Jcodec<E> jcodec;
+    private final Serializer<E> serializer;
     private final long count;
     private long index = 0;
 
-    public EncoderInputStream(long count, Jcodec<E> jcodec, InputView dataInput)
+    public EncoderInputStream(long count, Serializer<E> serializer, InputView dataInput)
     {
         checkState(count >= 0, "row count >= 0");
         this.count = count;
-        this.jcodec = requireNonNull(jcodec, "encoder is null");
+        this.serializer = requireNonNull(serializer, "encoder is null");
         this.dataInput = requireNonNull(dataInput, "dataInput is null");
     }
 
@@ -55,7 +55,7 @@ public class EncoderInputStream<E>
             throw new NoSuchElementException();
         }
         index++;
-        return jcodec.decoder(dataInput);
+        return serializer.read(dataInput);
     }
 
     @Override

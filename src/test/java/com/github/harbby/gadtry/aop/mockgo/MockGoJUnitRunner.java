@@ -16,24 +16,16 @@
 package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.MockGo;
-import org.junit.runners.BlockJUnit4ClassRunner;
-import org.junit.runners.model.InitializationError;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class MockGoJUnitRunner
-        extends BlockJUnit4ClassRunner
+        implements BeforeEachCallback
 {
-    public MockGoJUnitRunner(Class testClass)
-            throws InitializationError
-    {
-        super(testClass);
-    }
-
     @Override
-    protected Object createTest()
+    public void beforeEach(ExtensionContext context)
             throws Exception
     {
-        Object obj = super.createTest();
-        MockGo.initMocks(obj);
-        return obj;
+        MockGo.initMocks(context.getRequiredTestInstance());
     }
 }

@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -35,7 +35,7 @@ public class TimSortTest
             TimSort.sort(intArr, Integer::compareTo, new TimeSortDataFormat.SingleDataFormat<>());
             Arrays.sort(copyArr, Integer::compareTo);
 
-            Assert.assertArrayEquals(intArr, copyArr);
+            Assertions.assertArrayEquals(intArr, copyArr);
         }
     }
 
@@ -57,8 +57,8 @@ public class TimSortTest
             for (int i = 0; i < size; i++) {
                 int v = (int) data[i * 2];
                 String str = (String) data[i * 2 + 1];
-                Assert.assertEquals(baseArr[i], v);
-                Assert.assertEquals(str, "int_" + v);
+                Assertions.assertEquals(baseArr[i], v);
+                Assertions.assertEquals(str, "int_" + v);
             }
         }
     }

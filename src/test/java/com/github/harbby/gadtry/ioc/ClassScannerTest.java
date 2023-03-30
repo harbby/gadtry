@@ -16,10 +16,9 @@
 package com.github.harbby.gadtry.ioc;
 
 import com.github.harbby.gadtry.spi.ClassScanner;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -27,7 +26,7 @@ import java.net.URISyntaxException;
 import java.util.Set;
 
 @Deprecated
-@RunWith(JUnit4.class)
+@ExtendWith({})
 public class ClassScannerTest
         implements Serializable
 {
@@ -37,13 +36,13 @@ public class ClassScannerTest
     {
         ClassScanner scanner = ClassScanner.builder("com.github.harbby.gadtry")
                 .subclassOf(Serializable.class)
-                .annotated(RunWith.class)
+                .annotated(ExtendWith.class)
                 .classLoader(this.getClass().getClassLoader())
                 .filter(aClass -> !aClass.isEnum())
                 .scan();
         Set<Class<?>> classSet = scanner.getClasses();
-        Assert.assertTrue(!classSet.isEmpty());
-        Assert.assertTrue(classSet.contains(ClassScannerTest.class));
+        Assertions.assertTrue(!classSet.isEmpty());
+        Assertions.assertTrue(classSet.contains(ClassScannerTest.class));
     }
 
     @Test
@@ -52,13 +51,13 @@ public class ClassScannerTest
     {
         ClassScanner scanner = ClassScanner.builder("com.github.harbby.gadtry").scan();
 
-        Set<Class<?>> classSet = scanner.getClassWithAnnotated(RunWith.class, Deprecated.class);
-        Assert.assertTrue(classSet.contains(ClassScannerTest.class));
+        Set<Class<?>> classSet = scanner.getClassWithAnnotated(ExtendWith.class, Deprecated.class);
+        Assertions.assertTrue(classSet.contains(ClassScannerTest.class));
 
         classSet = scanner.getClassWithSubclassOf(Serializable.class);
-        Assert.assertTrue(classSet.contains(ClassScannerTest.class));
+        Assertions.assertTrue(classSet.contains(ClassScannerTest.class));
         for (Class<?> aClass : classSet) {
-            Assert.assertTrue(Serializable.class.isAssignableFrom(aClass));
+            Assertions.assertTrue(Serializable.class.isAssignableFrom(aClass));
         }
     }
 
@@ -66,8 +65,8 @@ public class ClassScannerTest
     public void jarProtocolScanTest()
             throws IOException, URISyntaxException
     {
-        Set<Class<?>> classes = ClassScanner.scanClasses("org.junit", this.getClass().getClassLoader());
-        Assert.assertTrue(classes.size() > 0);
+        Set<Class<?>> classes = ClassScanner.scanClasses("com.github.harbby.gadtry.ioc", this.getClass().getClassLoader());
+        Assertions.assertTrue(classes.size() > 0);
     }
 
     @Test
@@ -78,11 +77,11 @@ public class ClassScannerTest
                 .annotated(Deprecated.class, Test.class)
                 .scan();
         Set<Class<?>> classSet = scanner.getClasses();
-        Assert.assertTrue(!classSet.isEmpty());
-        Assert.assertTrue(classSet.contains(ClassScannerTest.class));
+        Assertions.assertTrue(!classSet.isEmpty());
+        Assertions.assertTrue(classSet.contains(ClassScannerTest.class));
         for (Class<?> aClass : classSet) {
             boolean check = aClass.getAnnotation(Deprecated.class) != null || aClass.getAnnotation(Test.class) != null;
-            Assert.assertTrue(check);
+            Assertions.assertTrue(check);
         }
     }
 
@@ -94,7 +93,7 @@ public class ClassScannerTest
                 .filter(aClass -> aClass.getName().equals(ClassScannerTest.class.getName()))
                 .scan();
         Set<Class<?>> classSet = scanner.getClasses();
-        Assert.assertEquals(1, classSet.size());
-        Assert.assertTrue(classSet.contains(ClassScannerTest.class));
+        Assertions.assertEquals(1, classSet.size());
+        Assertions.assertTrue(classSet.contains(ClassScannerTest.class));
     }
 }

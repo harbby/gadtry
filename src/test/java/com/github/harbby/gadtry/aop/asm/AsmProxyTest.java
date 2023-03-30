@@ -20,8 +20,8 @@ import com.github.harbby.gadtry.aop.model.Test1;
 import com.github.harbby.gadtry.aop.proxy.ProxyAccess;
 import com.github.harbby.gadtry.aop.proxy.ProxyFactory;
 import com.github.harbby.gadtry.base.JavaTypes;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -60,14 +60,14 @@ public class AsmProxyTest
         ProxyFactory factory = ProxyFactory.getAsmProxy();
         Test1 proxy = factory.newProxyInstance(request);
 
-        Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
-        Assert.assertEquals(name, proxy.name());
-        Assert.assertEquals(9.14D, proxy.sum("abc", 1, 2L, 3.14F), 0.000001);
-        Assert.assertTrue(proxy instanceof ProxyAccess);
-        Assert.assertTrue(atomicBoolean.get());
+        Assertions.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
+        Assertions.assertEquals(name, proxy.name());
+        Assertions.assertEquals(9.14D, proxy.sum("abc", 1, 2L, 3.14F), 0.000001);
+        Assertions.assertTrue(proxy instanceof ProxyAccess);
+        Assertions.assertTrue(atomicBoolean.get());
 
         //---不支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "abc-18");  //虽然上面代理了age()方法，但是这里并未生效
+        Assertions.assertEquals(proxy.getNameAndAge(), "abc-18");  //虽然上面代理了age()方法，但是这里并未生效
     }
 
     @Test
@@ -84,6 +84,6 @@ public class AsmProxyTest
                 .build();
         ProxyFactory proxyFactory = ProxyFactory.getAsmProxy();
         Set<String> obj = proxyFactory.newProxyInstance(request);
-        Assert.assertTrue(obj instanceof ProxyAccess);
+        Assertions.assertTrue(obj instanceof ProxyAccess);
     }
 }

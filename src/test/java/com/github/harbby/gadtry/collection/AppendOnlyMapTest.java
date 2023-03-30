@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.collection;
 
 import com.github.harbby.gadtry.base.TimSort;
 import com.github.harbby.gadtry.base.TimeSortDataFormat;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -59,15 +59,15 @@ public class AppendOnlyMapTest
         treeMap.merge(null, 1, Integer::sum);
         treeMap.merge(null, 1, Integer::sum);
 
-        Assert.assertEquals(appendOnlyMap.size(), treeMap.size());
+        Assertions.assertEquals(appendOnlyMap.size(), treeMap.size());
 
         Object[] objects = appendOnlyMap.compress();
 
         TimSort.sort(objects, 0, appendOnlyMap.size(), comparator, new TimeSortDataFormat.PairDataFormat<>());
         int i = 0;
         for (Map.Entry<Integer, Integer> entry : treeMap.entrySet()) {
-            Assert.assertEquals(entry.getKey(), objects[i]);
-            Assert.assertEquals(entry.getValue(), objects[i + 1]);
+            Assertions.assertEquals(entry.getKey(), objects[i]);
+            Assertions.assertEquals(entry.getValue(), objects[i + 1]);
             i += 2;
         }
     }

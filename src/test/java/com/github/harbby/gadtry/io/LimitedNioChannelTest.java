@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.io;
 import com.github.harbby.gadtry.aop.MockGo;
 import com.github.harbby.gadtry.base.Try;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,7 +43,7 @@ public class LimitedNioChannelTest
     {
         File file = new File(requireNonNull(LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt")).getFile());
         int length = (int) file.length();
-        Assert.assertEquals(length, 1988);
+        Assertions.assertEquals(length, 1988);
         ByteBuffer allBytes = ByteBuffer.allocate(length);
         ByteBuffer tmp = ByteBuffer.allocate(128);
         try (FileChannel fileChannel = new FileInputStream(file).getChannel()) {
@@ -54,7 +54,7 @@ public class LimitedNioChannelTest
                 tmp.clear();
             }
         }
-        Assert.assertEquals(allBytes.position(), length / 2);
+        Assertions.assertEquals(allBytes.position(), length / 2);
     }
 
     @Test
@@ -72,17 +72,17 @@ public class LimitedNioChannelTest
         });
 
         Try.of(() -> new LimitedNioChannel(channel, -1))
-                .onSuccess(Assert::fail)
-                .matchException(IllegalStateException.class, e -> Assert.assertEquals(e.getMessage(), "limit must be non-negative"))
+                .onSuccess(Assertions::fail)
+                .matchException(IllegalStateException.class, e -> Assertions.assertEquals(e.getMessage(), "limit must be non-negative"))
                 .doTry();
 
         LimitedNioChannel limitedNioChannel = new LimitedNioChannel(channel, 10);
-        Try.of(() -> limitedNioChannel.write(ByteBuffer.allocate(1))).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Try.of(() -> limitedNioChannel.write(ByteBuffer.allocate(1))).onSuccess(Assertions::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
         limitedNioChannel.position(5);
-        Assert.assertEquals(limitedNioChannel.position(), 5);
-        Try.of(() -> limitedNioChannel.truncate(1)).onSuccess(Assert::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
-        Assert.assertEquals(3L, limitedNioChannel.size());
-        Assert.assertTrue(limitedNioChannel.isOpen());
+        Assertions.assertEquals(limitedNioChannel.position(), 5);
+        Try.of(() -> limitedNioChannel.truncate(1)).onSuccess(Assertions::fail).matchException(UnsupportedOperationException.class, e -> {}).doTry();
+        Assertions.assertEquals(3L, limitedNioChannel.size());
+        Assertions.assertTrue(limitedNioChannel.isOpen());
 
         limitedNioChannel.close();
     }
@@ -93,18 +93,18 @@ public class LimitedNioChannelTest
     {
         File file = new File(requireNonNull(LimitedNioChannelTest.class.getClassLoader().getResource("blogCatalog-dataset/readme.txt")).getFile());
         int length = (int) file.length();
-        Assert.assertEquals(length, 1988);
+        Assertions.assertEquals(length, 1988);
         ByteBuffer allBytes = ByteBuffer.allocate(length);
         byte[] tmp = new byte[128];
         try (LimitInputStream limitInputStream = new LimitInputStream(new FileInputStream(file), length / 2)) {
-            Assert.assertEquals(limitInputStream.read(tmp, 0, 0), 0);
+            Assertions.assertEquals(limitInputStream.read(tmp, 0, 0), 0);
             int len = -1;
             while ((len = limitInputStream.read(tmp)) != -1) {
                 allBytes.put(tmp, 0, len);
             }
-            Assert.assertEquals(limitInputStream.read(), -1);
+            Assertions.assertEquals(limitInputStream.read(), -1);
         }
-        Assert.assertEquals(allBytes.position(), length / 2);
+        Assertions.assertEquals(allBytes.position(), length / 2);
     }
 
     @Test
@@ -118,22 +118,22 @@ public class LimitedNioChannelTest
                 limitInputStream.reset();
             }
             catch (IOException e) {
-                Assert.assertEquals(e.getMessage(), "Mark not set");
+                Assertions.assertEquals(e.getMessage(), "Mark not set");
             }
 
             limitInputStream.skip(1);
-            Assert.assertTrue(limitInputStream.markSupported());
-            Assert.assertTrue(limitInputStream.available() > 0);
+            Assertions.assertTrue(limitInputStream.markSupported());
+            Assertions.assertTrue(limitInputStream.available() > 0);
             limitInputStream.mark(5);
-            Assert.assertEquals(IOUtils.toString(limitInputStream, StandardCharsets.UTF_8), msg.trim());
-            Assert.assertEquals(limitInputStream.read(), -1);
+            Assertions.assertEquals(IOUtils.toString(limitInputStream, StandardCharsets.UTF_8), msg.trim());
+            Assertions.assertEquals(limitInputStream.read(), -1);
             limitInputStream.reset();
             StringBuffer buffer = new StringBuffer();
             int b;
             while ((b = limitInputStream.read()) != -1) {
                 buffer.append((char) b);
             }
-            Assert.assertEquals(buffer.toString(), "hello world!");
+            Assertions.assertEquals(buffer.toString(), "hello world!");
         }
     }
 
@@ -149,7 +149,7 @@ public class LimitedNioChannelTest
                 limitInputStream.reset();
             }
             catch (IOException e) {
-                Assert.assertEquals(e.getMessage(), "Mark not supported");
+                Assertions.assertEquals(e.getMessage(), "Mark not supported");
             }
         }
 
@@ -157,7 +157,7 @@ public class LimitedNioChannelTest
             new LimitInputStream(inputStream, -1);
         }
         catch (IllegalStateException e) {
-            Assert.assertEquals(e.getMessage(), "limit must be non-negative");
+            Assertions.assertEquals(e.getMessage(), "limit must be non-negative");
         }
     }
 }

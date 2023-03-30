@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.collection;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -43,10 +43,10 @@ public class FastPriorityQueueTest
         for (int i = 0; i < intArr.length; i++) {
             int v = dataFormat.getHead();
             String pair = dataFormat.getHeadValue();
-            Assert.assertEquals(intArr[i], v);
-            Assert.assertEquals(pair, "data_" + v);
+            Assertions.assertEquals(intArr[i], v);
+            Assertions.assertEquals(pair, "data_" + v);
             queue.removeHead();
-            Assert.assertEquals(queue.size(), (int) (heap.length / 2 - (i + 1)));
+            Assertions.assertEquals(queue.size(), (int) (heap.length / 2 - (i + 1)));
         }
     }
 
@@ -62,15 +62,15 @@ public class FastPriorityQueueTest
         for (int j : intArr) {
             dataFormat.add(j, j & 1, queue);
         }
-        Assert.assertEquals(queue.size(), intArr.length);
+        Assertions.assertEquals(queue.size(), intArr.length);
         Arrays.sort(intArr);
         for (int i = 0; i < intArr.length; i++) {
             int v = dataFormat.getHead();
             int pair = dataFormat.getHeadValue();
-            Assert.assertEquals(intArr[i], v);
-            Assert.assertEquals(pair, v & 1);
+            Assertions.assertEquals(intArr[i], v);
+            Assertions.assertEquals(pair, v & 1);
             queue.removeHead();
-            Assert.assertEquals(queue.size(), (int) (heap.length / 2 - (i + 1)));
+            Assertions.assertEquals(queue.size(), (int) (heap.length / 2 - (i + 1)));
         }
     }
 
@@ -115,9 +115,9 @@ public class FastPriorityQueueTest
         Arrays.sort(intArr);
         for (int i = 0; i < intArr.length; i++) {
             int v = dataFormat.getHead();
-            Assert.assertEquals(intArr[i], v);
+            Assertions.assertEquals(intArr[i], v);
             queue.removeHead();
-            Assert.assertEquals(queue.size(), (int) (heap.length - (i + 1)));
+            Assertions.assertEquals(queue.size(), (int) (heap.length - (i + 1)));
         }
     }
 }

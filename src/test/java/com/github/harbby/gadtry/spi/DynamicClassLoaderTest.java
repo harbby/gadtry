@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.spi;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -34,7 +34,7 @@ public class DynamicClassLoaderTest
         classLoader.addJarFile(new File(url.getFile()));
 
         Class<?> newClass = classLoader.loadClass(DynamicClassLoaderTest.class.getName());
-        Assert.assertNotNull(newClass);
-        Assert.assertNotSame(newClass, DynamicClassLoaderTest.class);
+        Assertions.assertNotNull(newClass);
+        Assertions.assertNotSame(newClass, DynamicClassLoaderTest.class);
     }
 }

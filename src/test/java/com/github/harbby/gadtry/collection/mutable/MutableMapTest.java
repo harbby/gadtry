@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.collection.mutable;
 
 import com.github.harbby.gadtry.collection.MutableMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ public class MutableMapTest
         map.put("a1", 1);
 
         Map<String, Integer> create = MutableMap.copy(map);
-        Assert.assertEquals(create, map);
+        Assertions.assertEquals(create, map);
     }
 
     @Test
@@ -49,13 +49,13 @@ public class MutableMapTest
         Map<String, Integer> check = new HashMap<>(map);
         check.put("a3", 3);
 
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
     public void ofCreateTest()
     {
-        Assert.assertEquals(MutableMap.of(), Collections.emptyMap());
+        Assertions.assertEquals(MutableMap.of(), Collections.emptyMap());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class MutableMapTest
         check.put("a1", 1);
 
         Map<String, Integer> create = MutableMap.of("a1", 1);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class MutableMapTest
         check.put("a2", 2);
 
         Map<String, Integer> create = MutableMap.of("a1", 1, "a2", 2);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -88,7 +88,7 @@ public class MutableMapTest
         check.put("a3", 3);
 
         Map<String, Integer> create = MutableMap.of("a1", 1, "a2", 2, "a3", 3);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class MutableMapTest
         check.put("a4", 4);
 
         Map<String, Integer> create = MutableMap.of("a1", 1, "a2", 2, "a3", 3, "a4", 4);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -115,7 +115,7 @@ public class MutableMapTest
         check.put("a5", 5);
 
         Map<String, Integer> create = MutableMap.of("a1", 1, "a2", 2, "a3", 3, "a4", 4, "a5", 5);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class MutableMapTest
                 "a4", 4,
                 "a5", 5,
                 "a6", 6);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -157,7 +157,7 @@ public class MutableMapTest
                 "a5", 5,
                 "a6", 6,
                 "a7", 7);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -181,6 +181,6 @@ public class MutableMapTest
                 "a6", 6,
                 "a7", 7,
                 "a8", 8);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 }

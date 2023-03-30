@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -55,7 +55,7 @@ public class GenericTest
         Class<?> a1 = GenericClass.class;
         ParameterizedType parameterizedType = (ParameterizedType) a1.getGenericSuperclass();
         Type[] types = parameterizedType.getActualTypeArguments();
-        Assert.assertEquals(types[0], String.class);
+        Assertions.assertEquals(types[0], String.class);
     }
 
     @Test
@@ -65,6 +65,6 @@ public class GenericTest
 
         ParameterizedType parameterizedType = (ParameterizedType) a1;
         Type[] types = parameterizedType.getActualTypeArguments();
-        Assert.assertEquals(types[0], JavaTypes.makeMapType(Map.class, String.class, Integer.class));
+        Assertions.assertEquals(types[0], JavaTypes.makeMapType(Map.class, String.class, Integer.class));
     }
 }

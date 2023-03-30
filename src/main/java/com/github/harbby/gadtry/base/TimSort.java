@@ -103,12 +103,11 @@ public final class TimSort<K, ARRAY> {
     /**
      * Creates a TimSort instance to maintain the state of an ongoing sort.
      *
-     * @param a the array to be sorted
      * @param len the length of the array to be sorted
      * @param c the comparator to determine the order of the sort
      * @param format array data formatter
      */
-    private TimSort(ARRAY a, int len, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    private TimSort(int len, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
         this.c = c;
         this.format = format;
         this.fixedLength = len;
@@ -171,6 +170,12 @@ public final class TimSort<K, ARRAY> {
         if (DEBUG) assert this.stackSize == 1;
     }
 
+    /**
+     * @param timSorter cached timSorter
+     * @param a the array to be sorted
+     * @param lo the index of the first element in the range to be sorted
+     * @param hi the index after the last element in the range to be sorted
+     * */
     public static <K, ARRAY> void sort(TimSort<K, ARRAY> timSorter, ARRAY a, int lo, int hi) {
         // Arrays.checkStartAndEnd(a.length, lo, hi);
         int nRemaining  = hi - lo;
@@ -187,14 +192,13 @@ public final class TimSort<K, ARRAY> {
         timSorter.sort(a, lo, hi);
     }
 
-    public static <K, ARRAY> TimSort<K, ARRAY> createFixedLengthTimeSort(ARRAY a, int len, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    public static <K, ARRAY> TimSort<K, ARRAY> createFixedLengthTimeSort(int len, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
         if (len < MIN_MERGE) {
             throw new IllegalArgumentException("len must > " + MIN_MERGE);
         }
         requireNonNull(format, "dataFormat is null");
-        requireNonNull(a, "array is null");
         requireNonNull(c, "Comparator a is null");
-        return new TimSort<>(a, len, c , format);
+        return new TimSort<>(len, c , format);
     }
 
     /*
@@ -222,7 +226,7 @@ public final class TimSort<K, ARRAY> {
          * extending short natural runs to minRun elements, and merging runs
          * to maintain stack invariant.
          */
-        TimSort<K, ARRAY> ts = new TimSort<K, ARRAY>(a, nRemaining, c, format);
+        TimSort<K, ARRAY> ts = new TimSort<K, ARRAY>(nRemaining, c, format);
         ts.sort(a, lo, hi);
     }
     /**

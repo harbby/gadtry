@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.graph;
 import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -81,7 +81,7 @@ public class BlogCatalogDatasetTest
             boolean next = route.size() <= 2 && !route.containsLoop();
             return next;
         }).stream().filter(route -> route.size() == 2).collect(Collectors.toList());
-        Assert.assertEquals(12548, routeList.size());
+        Assertions.assertEquals(12548, routeList.size());
     }
 
     @Test
@@ -99,14 +99,14 @@ public class BlogCatalogDatasetTest
             }
             return next;
         });
-        Assert.assertEquals(6, routeList.size());
+        Assertions.assertEquals(6, routeList.size());
     }
 
     @Test
     public void searchGive1to7Max3SizeReturn6()
     {
         SearchBuilder.Mode[] modes = SearchBuilder.Mode.values();
-        Assert.assertEquals(modes.length, 3);
+        Assertions.assertEquals(modes.length, 3);
         for (SearchBuilder.Mode mode : modes) {
             List<Route<String, Void>> routeList = new ArrayList<>();
             SearchResult<String, Void> result = graph.search()
@@ -121,8 +121,8 @@ public class BlogCatalogDatasetTest
                         return next;
                     }).search();
 
-            Assert.assertEquals(6, routeList.size());
-            Assert.assertEquals(11805, result.getFindNodeNumber());
+            Assertions.assertEquals(6, routeList.size());
+            Assertions.assertEquals(11805, result.getFindNodeNumber());
         }
     }
 
@@ -144,9 +144,9 @@ public class BlogCatalogDatasetTest
                 .globalRule(context -> context.getFindNodeNumber() < 200 && (System.currentTimeMillis() - context.getSearchStartTime()) < 10_000)  //找到200个人时就结束
                 .search();
 
-        Assert.assertEquals(1, routeList.size());
-        Assert.assertEquals(200, result.getFindNodeNumber());
-        Assert.assertTrue((System.currentTimeMillis() - result.getSearchStartTime()) < 10_000);
+        Assertions.assertEquals(1, routeList.size());
+        Assertions.assertEquals(200, result.getFindNodeNumber());
+        Assertions.assertTrue((System.currentTimeMillis() - result.getSearchStartTime()) < 10_000);
     }
 
     @Test
@@ -164,14 +164,14 @@ public class BlogCatalogDatasetTest
                 .stream()
                 .filter(route -> route.getLastNodeId().equals("7"))
                 .collect(Collectors.toList());
-        Assert.assertEquals(3, routeList.size());
+        Assertions.assertEquals(3, routeList.size());
 
         routeList = builder.mode(SearchBuilder.Mode.DEPTH_FIRST)
                 .search().getRoutes()
                 .stream()
                 .filter(route -> route.getLastNodeId().equals("7"))
                 .collect(Collectors.toList());
-        Assert.assertEquals(2, routeList.size());
+        Assertions.assertEquals(2, routeList.size());
     }
 
     @Test
@@ -191,8 +191,8 @@ public class BlogCatalogDatasetTest
                 .filter(route -> route.getLastNodeId().equals("1047"))
                 .map(x -> String.join("-", x.getIds())).collect(Collectors.toSet());
 
-        Assert.assertEquals(MutableSet.of("1-9-1047"), routeList);
-        Assert.assertEquals(result.getFindNodeNumber(), 185);
+        Assertions.assertEquals(MutableSet.of("1-9-1047"), routeList);
+        Assertions.assertEquals(result.getFindNodeNumber(), 185);
     }
 
     public static interface CloseableIterator<T>

@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.collection.mutable;
 
 import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.collection.MutableList;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,21 +29,21 @@ public class MutableListTest
     public void asList()
     {
         List<Integer> create = MutableList.asList(1, new Integer[] {1, 2, 3});
-        Assert.assertEquals(create, Arrays.asList(1, 1, 2, 3));
+        Assertions.assertEquals(create, Arrays.asList(1, 1, 2, 3));
     }
 
     @Test
     public void copy()
     {
         List<Integer> create = MutableList.copy(() -> Iterators.of(1, 2, 3));
-        Assert.assertEquals(create, Arrays.asList(1, 2, 3));
+        Assertions.assertEquals(create, Arrays.asList(1, 2, 3));
     }
 
     @Test
     public void of()
     {
         List<Integer> create = MutableList.of(1, 2, 3);
-        Assert.assertEquals(create, Arrays.asList(1, 2, 3));
+        Assertions.assertEquals(create, Arrays.asList(1, 2, 3));
     }
 
     @Test
@@ -57,6 +57,6 @@ public class MutableListTest
                 .addAll(Iterators.of(4))
                 .addAll(Arrays.asList(5))
                 .build();
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 }

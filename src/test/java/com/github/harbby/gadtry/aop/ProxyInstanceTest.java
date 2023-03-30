@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.aop;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,12 +42,12 @@ public class ProxyInstanceTest
                 .aop(binder -> {
                     binder.doAfterReturning(methodInfo -> {
                         atomicBoolean.set(true);
-                        Assert.assertEquals(methodInfo.getName(), "get");
+                        Assertions.assertEquals(methodInfo.getName(), "get");
                     }).annotated(Deprecated.class);
                 }).build();
 
-        Assert.assertEquals(supplier.get(), "hello");
-        Assert.assertTrue(atomicBoolean.get());
+        Assertions.assertEquals(supplier.get(), "hello");
+        Assertions.assertTrue(atomicBoolean.get());
     }
 
     @Test
@@ -61,8 +61,8 @@ public class ProxyInstanceTest
                     }).returnType(boolean.class);
                 })
                 .build();
-        Assert.assertTrue(set.isEmpty());
-        Assert.assertEquals(Arrays.asList("isEmpty"), rs);
+        Assertions.assertTrue(set.isEmpty());
+        Assertions.assertEquals(Arrays.asList("isEmpty"), rs);
     }
 
     @Test
@@ -78,10 +78,10 @@ public class ProxyInstanceTest
                         Object value = proxyContext.proceed();
                         switch (name) {
                             case "add":
-                                Assert.assertEquals(true, value);  //Set or List
+                                Assertions.assertEquals(true, value);  //Set or List
                                 break;
                             case "size":
-                                Assert.assertTrue(value instanceof Integer);
+                                Assertions.assertTrue(value instanceof Integer);
                                 break;
                         }
                         return value;
@@ -91,8 +91,8 @@ public class ProxyInstanceTest
 
         set.clear();
         set.add("t1");
-        Assert.assertEquals(1, set.size());
-        Assert.assertEquals(actions, Arrays.asList("clear", "add"));
+        Assertions.assertEquals(1, set.size());
+        Assertions.assertEquals(actions, Arrays.asList("clear", "add"));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class ProxyInstanceTest
                 }).build();
         set.clear();
         set.add("t1");
-        Assert.assertEquals(1, set.size());
-        Assert.assertEquals(actions, Arrays.asList("clear", "add"));
+        Assertions.assertEquals(1, set.size());
+        Assertions.assertEquals(actions, Arrays.asList("clear", "add"));
     }
 }

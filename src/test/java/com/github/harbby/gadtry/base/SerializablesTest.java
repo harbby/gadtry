@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,6 +30,6 @@ public class SerializablesTest
         byte[] bytes = Serializables.serialize("123456");
         ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
 
-        Assert.assertEquals(Serializables.byteToObject(inputStream), "123456");
+        Assertions.assertEquals(Serializables.byteToObject(inputStream), "123456");
     }
 }

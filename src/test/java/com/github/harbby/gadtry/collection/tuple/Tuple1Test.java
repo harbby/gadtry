@@ -15,15 +15,15 @@
  */
 package com.github.harbby.gadtry.collection.tuple;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class Tuple1Test
 {
     private Tuple1<String> tuple;
 
-    @Before
+    @BeforeEach
     public void init()
     {
         tuple = Tuple1.of("1");
@@ -32,45 +32,45 @@ public class Tuple1Test
     @Test
     public void set()
     {
-        Assert.assertEquals(tuple.get(), "1");
+        Assertions.assertEquals(tuple.get(), "1");
         tuple.set("2");
-        Assert.assertEquals(tuple.f1(), "2");
+        Assertions.assertEquals(tuple.f1(), "2");
     }
 
     @Test
     public void toString1()
     {
-        Assert.assertEquals(tuple.toString(), "(1)");
+        Assertions.assertEquals(tuple.toString(), "(1)");
     }
 
     @Test
     public void getArity()
     {
-        Assert.assertEquals(tuple.getArity(), 1);
+        Assertions.assertEquals(tuple.getArity(), 1);
     }
 
     @Test
     public void getField()
     {
-        Assert.assertEquals(tuple.getField(1), "1");
+        Assertions.assertEquals(tuple.getField(1), "1");
         try {
-            Assert.assertEquals(tuple.getField(tuple.getArity() + 1), "1");
-            Assert.fail();
+            Assertions.assertEquals(tuple.getField(tuple.getArity() + 1), "1");
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException e) {
-            Assert.assertEquals(e.getMessage(), tuple.getArity() + 1 + "");
+            Assertions.assertEquals(e.getMessage(), tuple.getArity() + 1 + "");
         }
     }
 
     @Test
     public void copy()
     {
-        Assert.assertEquals(tuple, tuple.copy());
+        Assertions.assertEquals(tuple, tuple.copy());
     }
 
     @Test
     public void hashCodeTest()
     {
-        tuple.hashCode();
+        Assertions.assertEquals(tuple.hashCode(), 80);
     }
 }

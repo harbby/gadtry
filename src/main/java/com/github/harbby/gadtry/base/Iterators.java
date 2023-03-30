@@ -53,6 +53,12 @@ import static java.util.Objects.requireNonNull;
  */
 public class Iterators
 {
+    /**
+     * Asserts have been placed in if-statements for performace.
+     * To enable them, set this field to true. If you modify this class, please do test the asserts!
+     * */
+    private static final boolean DEBUG = false;
+
     private Iterators() {}
 
     private static final Iterator<?> EMPTY_ITERATOR = new Iterator<Object>()
@@ -1140,7 +1146,9 @@ public class Iterators
                 V v1 = iterator.peek();
                 if (!stopMatcher.apply(v1)) {
                     V v2 = iterator.next();
-                    assert v1 == v2;
+                    if (DEBUG) {
+                        assert v1 == v2;
+                    }
                     this.value = v1;
                     return;
                 }
@@ -1257,7 +1265,9 @@ public class Iterators
              * If you do so, a NoSuchElementException will be thrown.
              * or throw new NoSuchElementException("Previous groupIterator not exhausted. Must exhaust it before getting a new one.");
              */
-            assert !lastGroup.hasNext();
+            if (DEBUG) {
+                assert !lastGroup.hasNext();
+            }
             if (!hasNext()) {
                 throw new NoSuchElementException("No more groups available");
             }

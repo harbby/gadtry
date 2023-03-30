@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.MockGo;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static com.github.harbby.gadtry.aop.MockGo.when;
 
@@ -79,7 +79,7 @@ public class SpyObjectTest
         User user = MockGo.spy(old);
 
         when(user.getNameAge()).thenReturn("success");
-        Assert.assertEquals(user.getNameAge(), "success");
+        Assertions.assertEquals(user.getNameAge(), "success");
     }
 
     @Test
@@ -88,14 +88,14 @@ public class SpyObjectTest
         User old = new User("user", 1);
         User user = MockGo.spy(old);
 
-        Assert.assertEquals(user.getNameAge(), "user:1");
-        Assert.assertEquals(user.getName(), "user");
-        Assert.assertEquals(user.getValue(), 666);
+        Assertions.assertEquals(user.getNameAge(), "user:1");
+        Assertions.assertEquals(user.getName(), "user");
+        Assertions.assertEquals(user.getValue(), 666);
 
         when(user.getName()).thenReturn("aaa");
         when(user.getAge()).thenReturn(18);
-        Assert.assertEquals(user.getName(), "aaa");
-        Assert.assertEquals(user.getAge(), 18);
-        Assert.assertEquals(user.getNameAge(), "aaa:18");
+        Assertions.assertEquals(user.getName(), "aaa");
+        Assertions.assertEquals(user.getAge(), 18);
+        Assertions.assertEquals(user.getNameAge(), "aaa:18");
     }
 }

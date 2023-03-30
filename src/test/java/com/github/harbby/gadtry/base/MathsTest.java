@@ -15,32 +15,32 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class MathsTest
 {
     @Test
     public void isPowerOfTwoIntTest()
     {
-        Assert.assertFalse(Maths.isPowerOfTwo(-1));
-        Assert.assertFalse(Maths.isPowerOfTwo(7));
-        Assert.assertTrue(Maths.isPowerOfTwo(8));
+        Assertions.assertFalse(Maths.isPowerOfTwo(-1));
+        Assertions.assertFalse(Maths.isPowerOfTwo(7));
+        Assertions.assertTrue(Maths.isPowerOfTwo(8));
     }
 
     @Test
     public void IsPowerOfTwoLongTest()
     {
-        Assert.assertFalse(Maths.isPowerOfTwo(-1L));
-        Assert.assertFalse(Maths.isPowerOfTwo(7L));
-        Assert.assertTrue(Maths.isPowerOfTwo(8L));
+        Assertions.assertFalse(Maths.isPowerOfTwo(-1L));
+        Assertions.assertFalse(Maths.isPowerOfTwo(7L));
+        Assertions.assertTrue(Maths.isPowerOfTwo(8L));
     }
 
     @Test
     public void remainderTest()
     {
-        Assert.assertEquals(Maths.remainder(7, 2), 1);
-        Assert.assertEquals(Maths.remainder(11, 4), 3);
-        Assert.assertEquals(Maths.remainder(-11, 4), 1);
+        Assertions.assertEquals(Maths.remainder(7, 2), 1);
+        Assertions.assertEquals(Maths.remainder(11, 4), 3);
+        Assertions.assertEquals(Maths.remainder(-11, 4), 1);
     }
 }

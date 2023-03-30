@@ -21,8 +21,8 @@ import com.github.harbby.gadtry.aop.model.impl.PackageTestUtil;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.MutableList;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -50,7 +50,7 @@ public class PackageProxyTests
                     .build();
         }
         catch (MockGoException e) {
-            Assert.assertEquals("package name [test.aop.int] find exists JAVA system keywords int", e.getMessage());
+            Assertions.assertEquals("package name [test.aop.int] find exists JAVA system keywords int", e.getMessage());
         }
     }
 
@@ -65,9 +65,9 @@ public class PackageProxyTests
                     }).when().size();
                 })
                 .build();
-        Assert.assertTrue(set.getClass().getName().startsWith(AopGo.class.getPackage().getName()));
+        Assertions.assertTrue(set.getClass().getName().startsWith(AopGo.class.getPackage().getName()));
         set.size();
-        Assert.assertEquals(Arrays.asList("before1"), actions);
+        Assertions.assertEquals(Arrays.asList("before1"), actions);
     }
 
     @Test
@@ -76,11 +76,11 @@ public class PackageProxyTests
         PackageTestName instance = PackageTestUtil.getInstance();
         PackageTestName mock = (PackageTestName) MockGo.mock(instance.getClass().getInterfaces()[0]);
         MockGo.doAnswer(joinPoint -> {
-            Assert.assertEquals(joinPoint.getName(), "getName");
+            Assertions.assertEquals(joinPoint.getName(), "getName");
             Object value = joinPoint.getMethod().invoke(instance, joinPoint.getArgs());
             return value + "#123";
         }).when(mock).getName();
-        Assert.assertEquals(mock.getName(), "harbby1#123");
+        Assertions.assertEquals(mock.getName(), "harbby1#123");
         PackageTestUtil.getAge(mock);
     }
 
@@ -90,11 +90,11 @@ public class PackageProxyTests
         PackageTestName instance = PackageTestUtil.getInstance();
         PackageTestName mock = (PackageTestName) MockGo.mock(instance.getClass().getInterfaces()[0]);
         MockGo.doAnswer(joinPoint -> {
-            Assert.assertEquals(joinPoint.getMethod().getName(), "getName");
+            Assertions.assertEquals(joinPoint.getMethod().getName(), "getName");
             Object value = joinPoint.getMethod().invoke(instance, joinPoint.getArgs());
             return value + "#123";
         }).when(mock).getName();
-        Assert.assertEquals(mock.getName(), "harbby1#123");
+        Assertions.assertEquals(mock.getName(), "harbby1#123");
         PackageTestUtil.getAge(mock);
     }
 
@@ -117,21 +117,21 @@ public class PackageProxyTests
                         .add(Supplier.class)
                         .build().toArray(new Class[0]),
                 invocationHandler);
-        Assert.assertEquals(proxy.getName(), "harbby1");
+        Assertions.assertEquals(proxy.getName(), "harbby1");
 
         try {
             PackageTestUtil.getAge(proxy);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (java.lang.reflect.UndeclaredThrowableException e) {
             String errorMsg = e.getCause().getMessage();
             if (Platform.getJavaVersion() > 8) {
-                Assert.assertTrue(errorMsg.contains(this.getClass().getName()
+                Assertions.assertTrue(errorMsg.contains(this.getClass().getName()
                         + " cannot access a member of interface "
                         + instance.getClass().getInterfaces()[0].getName()));
             }
             else {
-                Assert.assertTrue(errorMsg.contains(this.getClass().getName()
+                Assertions.assertTrue(errorMsg.contains(this.getClass().getName()
                         + " can not access a member of class "
                         + instance.getClass().getInterfaces()[0].getName()));
             }
@@ -153,7 +153,7 @@ public class PackageProxyTests
                     }).allMethod();
                 })
                 .build();
-        Assert.assertEquals(proxy.getName(), "harbby1");
+        Assertions.assertEquals(proxy.getName(), "harbby1");
         PackageTestUtil.getAge(proxy);
     }
 
@@ -173,7 +173,7 @@ public class PackageProxyTests
         }
         catch (MockGoException e) {
             e.printStackTrace();
-            Assert.assertTrue(e.getMessage()
+            Assertions.assertTrue(e.getMessage()
                     .contains("cannot access its superclass " + instance.getClass().getName()));
         }
     }
@@ -196,12 +196,12 @@ public class PackageProxyTests
                     }).allMethod();
                 })
                 .build();
-        Assert.assertTrue(proxy.getClass().getPackage() != null);
-        Assert.assertTrue(proxy.getClass().getPackage() == instance.getClass().getPackage());
+        Assertions.assertTrue(proxy.getClass().getPackage() != null);
+        Assertions.assertTrue(proxy.getClass().getPackage() == instance.getClass().getPackage());
         System.out.println(proxy.getClass().getPackage());
 
-        Assert.assertEquals(proxy.getName(), "harbby1");
-        Assert.assertEquals(Arrays.asList("before1", "getName"), actions);
-        Assert.assertEquals(PackageTestUtil.getAge(proxy), 18);
+        Assertions.assertEquals(proxy.getName(), "harbby1");
+        Assertions.assertEquals(Arrays.asList("before1", "getName"), actions);
+        Assertions.assertEquals(PackageTestUtil.getAge(proxy), 18);
     }
 }

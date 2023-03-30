@@ -18,26 +18,28 @@ package com.github.harbby.gadtry.aop.aopgo;
 import com.github.harbby.gadtry.aop.event.JoinPoint;
 import com.github.harbby.gadtry.aop.mockgo.Mock;
 import com.github.harbby.gadtry.aop.mockgo.MockGoJUnitRunner;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.sql.SQLException;
 
 import static com.github.harbby.gadtry.aop.MockGo.when;
 
-@RunWith(MockGoJUnitRunner.class)
+@ExtendWith(MockGoJUnitRunner.class)
 public class AroundHandlerTest
 {
     @Mock private JoinPoint joinPoint;
 
-    @Test(expected = SQLException.class)
+    @Test
     public void doAfterThrowing()
             throws Throwable
     {
         when(joinPoint.proceed()).thenThrow(new SQLException("thenThrow"));
-        AroundHandler.doAfterThrowing(afterThrowing -> {
-            Assert.assertEquals(afterThrowing.getThrowable().getMessage(), "thenThrow");
-        }).apply(joinPoint);
+        Assertions.assertThrows(SQLException.class, ()-> {
+            AroundHandler.doAfterThrowing(afterThrowing -> {
+                Assertions.assertEquals(afterThrowing.getThrowable().getMessage(), "thenThrow");
+            }).apply(joinPoint);
+        });
     }
 }

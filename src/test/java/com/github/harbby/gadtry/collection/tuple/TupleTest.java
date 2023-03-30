@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.collection.tuple;
 
 import com.github.harbby.gadtry.base.Streams;
 import com.github.harbby.gadtry.base.Try;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -36,26 +36,26 @@ public class TupleTest
     {
         for (Class aClass : tupleClass) {
             Constructor[] constructors = aClass.getConstructors();
-            Assert.assertEquals(1, constructors.length);
+            Assertions.assertEquals(1, constructors.length);
             //------------------
             int columnCnt = constructors[0].getParameterCount();
             Object[] array = Streams.range(1, columnCnt + 1).mapToObj(x -> x).toArray();
             Tuple tuple = (Tuple) constructors[0].newInstance(array);
             //---toString test
             String str = "(" + Arrays.stream(array).reduce((x, y) -> x + ", " + y).get() + ")";
-            Assert.assertEquals(str, tuple.toString());
+            Assertions.assertEquals(str, tuple.toString());
             System.out.println(tuple);
             //------fields length test
-            Assert.assertEquals(columnCnt, tuple.getArity());
+            Assertions.assertEquals(columnCnt, tuple.getArity());
             //---- copy test
             Tuple copy = tuple.copy();
-            Assert.assertEquals(tuple, copy);
-            Assert.assertTrue(aClass.isInstance(copy));
-            Assert.assertEquals(tuple.hashCode(), copy.hashCode());
+            Assertions.assertEquals(tuple, copy);
+            Assertions.assertTrue(aClass.isInstance(copy));
+            Assertions.assertEquals(tuple.hashCode(), copy.hashCode());
             //---------------------------------------
-            Assert.assertEquals(tuple, tuple);
-            Assert.assertFalse(tuple.equals(null));
-            Assert.assertFalse(tuple.equals(""));
+            Assertions.assertEquals(tuple, tuple);
+            Assertions.assertFalse(tuple.equals(null));
+            Assertions.assertFalse(tuple.equals(""));
         }
     }
 
@@ -65,7 +65,7 @@ public class TupleTest
     {
         for (Class aClass : tupleClass) {
             Constructor[] constructors = aClass.getConstructors();
-            Assert.assertEquals(1, constructors.length);
+            Assertions.assertEquals(1, constructors.length);
             int columnCnt = constructors[0].getParameterCount();
             Object[] array = Streams.range(0, columnCnt).mapToObj(x -> x).toArray();
             Tuple tuple = (Tuple) constructors[0].newInstance(array);
@@ -74,7 +74,7 @@ public class TupleTest
                 Object[] newArray = Arrays.copyOf(array, columnCnt);
                 newArray[i] = -9999;
                 Tuple tuple2 = (Tuple) constructors[0].newInstance(newArray);
-                Assert.assertNotEquals(tuple, tuple2);
+                Assertions.assertNotEquals(tuple, tuple2);
             }
         }
     }
@@ -85,21 +85,21 @@ public class TupleTest
     {
         for (Class aClass : tupleClass) {
             Constructor[] constructors = aClass.getConstructors();
-            Assert.assertEquals(1, constructors.length);
+            Assertions.assertEquals(1, constructors.length);
             int columnCnt = constructors[0].getParameterCount();
             Method of = aClass.getMethod("of", Streams.range(0, columnCnt).mapToObj(x -> Object.class).toArray(Class[]::new));
             String[] args = Streams.range(0, columnCnt).mapToObj(x -> "str" + (x + 1)).toArray(String[]::new);
             Tuple tuple = (Tuple) of.invoke(null, (Object[]) args);
             Method getField = aClass.getMethod("getField", int.class);
             for (int i = 1; i <= columnCnt; i++) {
-                Assert.assertEquals("str" + i, getField.invoke(tuple, i));
-                Assert.assertEquals("str" + i, aClass.getMethod("f" + i).invoke(tuple));
+                Assertions.assertEquals("str" + i, getField.invoke(tuple, i));
+                Assertions.assertEquals("str" + i, aClass.getMethod("f" + i).invoke(tuple));
             }
             Try.of(() -> getField.invoke(tuple, columnCnt + 1))
-                    .onSuccess(Assert::fail)
+                    .onSuccess(Assertions::fail)
                     .matchException(InvocationTargetException.class, e -> {
                         IndexOutOfBoundsException e1 = (IndexOutOfBoundsException) e.getTargetException();
-                        Assert.assertEquals(e1.getMessage(), String.valueOf(columnCnt + 1));
+                        Assertions.assertEquals(e1.getMessage(), String.valueOf(columnCnt + 1));
                     }).doTry();
         }
     }

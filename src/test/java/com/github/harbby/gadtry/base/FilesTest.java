@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
@@ -30,7 +30,7 @@ public class FilesTest
         List<File> fileList = Files.listFiles(file, false, pathname -> {
             return true;
         });
-        Assert.assertEquals(fileList.size(), 1);
+        Assertions.assertEquals(fileList.size(), 1);
     }
 
     @Test
@@ -40,7 +40,7 @@ public class FilesTest
         List<File> fileList = Files.listFiles(file, true, pathname -> {
             return true;
         });
-        Assert.assertEquals(fileList.size(), 3);
+        Assertions.assertEquals(fileList.size(), 3);
     }
 
     @Test
@@ -50,6 +50,6 @@ public class FilesTest
         List<File> fileList = Files.listFiles(file, true, pathname -> {
             return true;
         });
-        Assert.assertEquals(fileList.size(), 0);
+        Assertions.assertEquals(fileList.size(), 0);
     }
 }

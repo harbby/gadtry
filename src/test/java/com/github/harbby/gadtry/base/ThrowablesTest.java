@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -32,14 +32,14 @@ public class ThrowablesTest
     public void testNoCatch()
     {
         noCatch(() -> {});
-        Assert.assertEquals(noCatch(() -> "done"), "done");
+        Assertions.assertEquals(noCatch(() -> "done"), "done");
         try {
             noCatch(() -> {
                 if (true) {
                     throw new MalformedURLException();
                 }
             });
-            Assert.fail();
+            Assertions.fail();
             Throwables.throwThrowable(MalformedURLException.class);
         }
         catch (MalformedURLException ignored) {
@@ -49,7 +49,7 @@ public class ThrowablesTest
             noCatch(() -> {
                 throw new MalformedURLException();
             });
-            Assert.fail();
+            Assertions.fail();
             Throwables.throwThrowable(MalformedURLException.class);
         }
         catch (MalformedURLException ignored) {
@@ -61,11 +61,11 @@ public class ThrowablesTest
     {
         try {
             Throwables.throwThrowable(new IOException("IO_test"));
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof IOException);
-            Assert.assertEquals("IO_test", e.getMessage());
+            Assertions.assertTrue(e instanceof IOException);
+            Assertions.assertEquals("IO_test", e.getMessage());
         }
     }
 
@@ -74,11 +74,11 @@ public class ThrowablesTest
     {
         try {
             Throwables.throwThrowable(new IOException("IO_test"));
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof IOException);
-            Assert.assertEquals("IO_test", e.getMessage());
+            Assertions.assertTrue(e instanceof IOException);
+            Assertions.assertEquals("IO_test", e.getMessage());
         }
     }
 
@@ -88,15 +88,15 @@ public class ThrowablesTest
         try {
             try {
                 URL url = new URL("/harbby");
-                Assert.fail();
+                Assertions.fail();
             }
             catch (IOException e) {
                 Throwables.throwThrowable(e);
             }
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof IOException);
+            Assertions.assertTrue(e instanceof IOException);
         }
     }
 
@@ -114,7 +114,7 @@ public class ThrowablesTest
         error = new IOException(error);
         error = new SQLException(error);
         Throwable rootCause = Throwables.getRootCause(error);
-        Assert.assertTrue(rootCause instanceof ClassCastException);
+        Assertions.assertTrue(rootCause instanceof ClassCastException);
     }
 
     @Test
@@ -131,7 +131,7 @@ public class ThrowablesTest
             Throwables.getRootCause(error2);
         }
         catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "Loop in causal chain detected.");
+            Assertions.assertEquals(e.getMessage(), "Loop in causal chain detected.");
         }
     }
 
@@ -142,6 +142,6 @@ public class ThrowablesTest
         error = new IOException(error);
         error = new SQLException(error);
         String msg = Throwables.getStackTraceAsString(error);
-        Assert.assertTrue(msg.contains("cast error"));
+        Assertions.assertTrue(msg.contains("cast error"));
     }
 }

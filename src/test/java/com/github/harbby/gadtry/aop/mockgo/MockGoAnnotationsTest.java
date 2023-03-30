@@ -16,9 +16,9 @@
 package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.MockGo;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,7 @@ public class MockGoAnnotationsTest
     @InjectMock
     private InjectMockClass injectMockClass;
 
-    @Before
+    @BeforeEach
     public void init()
     {
         MockGo.initMocks(this);
@@ -42,11 +42,11 @@ public class MockGoAnnotationsTest
     @Test
     public void initMocks()
     {
-        Assert.assertTrue(list == injectMockClass.getList());
-        Assert.assertTrue(map == injectMockClass.getMap());
+        Assertions.assertTrue(list == injectMockClass.getList());
+        Assertions.assertTrue(map == injectMockClass.getMap());
     }
 
-    public class InjectMockClass
+    public static class InjectMockClass
     {
         private final List<String> list;
         private final Map<String, Integer> map;

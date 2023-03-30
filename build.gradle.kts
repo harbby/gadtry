@@ -13,7 +13,7 @@ version = "1.10.2-SNAPSHOT"  //SNAPSHOT
 
 val jdk = project.findProperty("jdk")?: "java11"  //default -Pjdk=java11
 //val jdk: def = System.getProperty("jdk") ?: " -Djdk=java11
-apply(from = "profile-${jdk}.gradle")
+apply(from = "profile-${jdk}.gradle.kts")
 
 sourceSets {
   main {
@@ -44,13 +44,18 @@ tasks.withType<org.gradle.jvm.tasks.Jar> { duplicatesStrategy = DuplicatesStrate
 
 dependencies {
   compileOnly("net.java.dev.jna:jna-platform-jpms:5.9.0")
-  implementation("org.ow2.asm:asm:9.4")
+  implementation("org.ow2.asm:asm:9.5")
 
   testImplementation("org.javassist:javassist:3.29.1-GA")
-  testImplementation("junit:junit:4.12")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
   testImplementation("org.openjdk.jmh:jmh-core:1.32")
   testImplementation("org.fusesource.jansi:jansi:1.17.1")
   testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.32")
+}
+
+tasks.withType<Test> {
+  useJUnitPlatform()
 }
 
 tasks.jar {
@@ -116,7 +121,8 @@ license {
 tasks.jacocoTestReport {
   dependsOn(tasks.test)
   reports {
-    xml.required.set(true)  //xml.enabled = true
+    xml.required.set(false)  //xml.enabled = true
+    csv.required.set(false)
     html.required.set(true) //html.enabled = true
   }
 

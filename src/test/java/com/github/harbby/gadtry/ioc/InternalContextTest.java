@@ -15,34 +15,41 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 
 public class InternalContextTest
 {
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getInstance3()
     {
-        BindMapping bindMapping = BindMapping.create();
-        InternalContext context = InternalContext.of(bindMapping);
-        context.get(DeadDependency1.class);
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            BindMapping bindMapping = BindMapping.create();
+            InternalContext context = InternalContext.of(bindMapping);
+            context.get(DeadDependency1.class);
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getInstance4()
     {
-        BindMapping bindMapping = BindMapping.create(binder -> binder.bind(HashSet.class).byCreator(() -> null));
-        InternalContext context = InternalContext.of(bindMapping);
-        context.get(DeadDependency1.class);
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            BindMapping bindMapping = BindMapping.create(binder -> binder.bind(HashSet.class).byCreator(() -> null));
+            InternalContext context = InternalContext.of(bindMapping);
+            context.get(DeadDependency1.class);
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getInstance5()
     {
-        BindMapping bindMapping = BindMapping.create(binder -> {});
-        InternalContext context = InternalContext.of(bindMapping);
-        context.get(DeadDependency3.class);
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            BindMapping bindMapping = BindMapping.create(binder -> {});
+            InternalContext context = InternalContext.of(bindMapping);
+            context.get(DeadDependency3.class);
+        });
     }
 
     public static class DeadDependency1

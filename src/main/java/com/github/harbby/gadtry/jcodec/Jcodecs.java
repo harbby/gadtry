@@ -15,24 +15,23 @@
  */
 package com.github.harbby.gadtry.jcodec;
 
-import com.github.harbby.gadtry.jcodec.codecs.AnyArrayJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.ArrayJCodecs;
-import com.github.harbby.gadtry.jcodec.codecs.AsciiStringJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.BooleanJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.ByteJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.CharJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.DoubleJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.FloatJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.IntJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.JavaJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.LengthIteratorJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.LongJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.MapJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.ShortJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.StringJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.VarIntJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.VarLongJcodec;
-import com.github.harbby.gadtry.jcodec.codecs.VoidJcodec;
+import com.github.harbby.gadtry.jcodec.codecs.AnyArraySerializer;
+import com.github.harbby.gadtry.jcodec.codecs.ArraySerializers;
+import com.github.harbby.gadtry.jcodec.codecs.BooleanSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.ByteSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.CharSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.DoubleSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.FloatSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.IntSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.JavaSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.LengthIteratorSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.LongSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.MapSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.ShortSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.StringSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.VarIntSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.VarLongSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.VoidSerializer;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,10 +43,10 @@ public final class Jcodecs
 {
     private Jcodecs() {}
 
-    private static final Map<Class<?>, Jcodec<?>> primitiveMap = new HashMap<>();
+    private static final Map<Class<?>, Serializer<?>> primitiveMap = new HashMap<>();
 
     static {
-        primitiveMap.put(void.class, new VoidJcodec());
+        primitiveMap.put(void.class, new VoidSerializer());
         primitiveMap.put(byte.class, jByte());
         primitiveMap.put(boolean.class, jBoolean());
         primitiveMap.put(char.class, jChar());
@@ -59,125 +58,120 @@ public final class Jcodecs
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> Jcodec<E> javaEncoder()
+    public static <E> Serializer<E> javaEncoder()
     {
-        return (Jcodec<E>) new JavaJcodec<>();
+        return (Serializer<E>) new JavaSerializer<>();
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> Jcodec<E> createPrimitiveEncoder(Class<E> aClass)
+    public static <E> Serializer<E> createPrimitiveEncoder(Class<E> aClass)
     {
         requireNonNull(aClass, "aClass is null");
         if (aClass.isPrimitive()) {
-            return (Jcodec<E>) primitiveMap.get(aClass);
+            return (Serializer<E>) primitiveMap.get(aClass);
         }
         else {
             throw new UnsupportedOperationException(" unknown type " + aClass);
         }
     }
 
-    public static <K, V> MapJcodec<K, V> mapEncoder(Jcodec<K> kJcodec, Jcodec<V> vJcodec)
+    public static <K, V> MapSerializer<K, V> mapEncoder(Serializer<K> kSerializer, Serializer<V> vSerializer)
     {
-        requireNonNull(kJcodec, "key Encoder is null");
-        requireNonNull(vJcodec, "value Encoder is null");
-        return new MapJcodec<>(kJcodec, vJcodec);
+        requireNonNull(kSerializer, "key Encoder is null");
+        requireNonNull(vSerializer, "value Encoder is null");
+        return new MapSerializer<>(kSerializer, vSerializer);
     }
 
-    public static <V> AnyArrayJcodec<V> arrayEncoder(Jcodec<V> vJcodec, Class<V> aClass)
+    public static <V> AnyArraySerializer<V> arrayEncoder(Serializer<V> vSerializer, Class<V> aClass)
     {
-        requireNonNull(vJcodec, "value Encoder is null");
-        return new AnyArrayJcodec<>(vJcodec, aClass);
+        requireNonNull(vSerializer, "value Encoder is null");
+        return new AnyArraySerializer<>(vSerializer, aClass);
     }
 
-    public static <K, V> Tuple2Jcodec<K, V> tuple2(Jcodec<K> kJcodec, Jcodec<V> vJcodec)
+    public static <K, V> Tuple2Serializer<K, V> tuple2(Serializer<K> kSerializer, Serializer<V> vSerializer)
     {
-        requireNonNull(kJcodec, "key Encoder is null");
-        requireNonNull(vJcodec, "value Encoder is null");
-        return new Tuple2Jcodec.Tuple2KVJcodec<>(kJcodec, vJcodec);
+        requireNonNull(kSerializer, "key Encoder is null");
+        requireNonNull(vSerializer, "value Encoder is null");
+        return new Tuple2Serializer.Tuple2KVSerializer<>(kSerializer, vSerializer);
     }
 
-    public static <K> Tuple2Jcodec<K, Void> tuple2OnlyKey(Jcodec<K> kJcodec)
+    public static <K> Tuple2Serializer<K, Void> tuple2OnlyKey(Serializer<K> kSerializer)
     {
-        return tuple2(kJcodec, new VoidJcodec());
+        return tuple2(kSerializer, new VoidSerializer());
     }
 
-    public static <E> Jcodec<Iterator<E>> iteratorEncoder(Jcodec<E> eJcodec)
+    public static <E> Serializer<Iterator<E>> iteratorEncoder(Serializer<E> eSerializer)
     {
-        return new LengthIteratorJcodec<>(eJcodec);
+        return new LengthIteratorSerializer<>(eSerializer);
     }
 
-    public static Jcodec<String> asciiString()
+    public static Serializer<String> string()
     {
-        return new AsciiStringJcodec();
+        return new StringSerializer();
     }
 
-    public static Jcodec<String> string()
+    public static Serializer<Boolean> jBoolean()
     {
-        return new StringJcodec();
+        return new BooleanSerializer();
     }
 
-    public static Jcodec<Boolean> jBoolean()
+    public static Serializer<Byte> jByte()
     {
-        return new BooleanJcodec();
+        return new ByteSerializer();
     }
 
-    public static Jcodec<Byte> jByte()
+    public static Serializer<Float> jFloat()
     {
-        return new ByteJcodec();
+        return new FloatSerializer();
     }
 
-    public static Jcodec<Float> jFloat()
+    public static Serializer<Short> jShort()
     {
-        return new FloatJcodec();
+        return new ShortSerializer();
     }
 
-    public static Jcodec<Short> jShort()
+    public static Serializer<Character> jChar()
     {
-        return new ShortJcodec();
+        return new CharSerializer();
     }
 
-    public static Jcodec<Character> jChar()
+    public static Serializer<Long> jLong()
     {
-        return new CharJcodec();
+        return new LongSerializer();
     }
 
-    public static Jcodec<Long> jLong()
+    public static Serializer<Integer> jInt()
     {
-        return new LongJcodec();
+        return new IntSerializer();
     }
 
-    public static Jcodec<Integer> jInt()
+    public static Serializer<Integer> varInt(boolean optimizeNegativeNumber)
     {
-        return new IntJcodec();
+        return new VarIntSerializer(optimizeNegativeNumber);
     }
 
-    public static Jcodec<Integer> varInt(boolean optimizeNegativeNumber)
+    public static Serializer<Integer> varInt()
     {
-        return new VarIntJcodec(optimizeNegativeNumber);
+        return new VarIntSerializer();
     }
 
-    public static Jcodec<Integer> varInt()
+    public static Serializer<Long> varLong()
     {
-        return new VarIntJcodec();
+        return new VarLongSerializer();
     }
 
-    public static Jcodec<Long> varLong()
+    public static Serializer<Long> varLong(boolean optimizeNegativeNumber)
     {
-        return new VarLongJcodec();
+        return new VarLongSerializer(optimizeNegativeNumber);
     }
 
-    public static Jcodec<Long> varLong(boolean optimizeNegativeNumber)
+    public static Serializer<int[]> jIntArray()
     {
-        return new VarLongJcodec(optimizeNegativeNumber);
+        return new ArraySerializers.IntArraySerializer();
     }
 
-    public static Jcodec<int[]> jIntArray()
+    public static Serializer<Double> jDouble()
     {
-        return new ArrayJCodecs.IntArrayJcodec();
-    }
-
-    public static Jcodec<Double> jDouble()
-    {
-        return new DoubleJcodec();
+        return new DoubleSerializer();
     }
 }

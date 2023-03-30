@@ -146,20 +146,6 @@ public abstract class AbstractOutputView
         writeLong(Double.doubleToLongBits(v));
     }
 
-    @Override
-    public final void writeAsciiString(String s)
-            throws JcodecEOFException
-    {
-        if (s == null) {
-            throw new JcodecException("Encoding ascii string, str is null.");
-        }
-        int len = s.length();
-        if (len == 0) {
-            throw new JcodecException("Encoding ascii string, str.length() is zero.");
-        }
-        this.writeAscii0(s, len);
-    }
-
     private void writeAscii0(String s, int len)
             throws JcodecEOFException
     {

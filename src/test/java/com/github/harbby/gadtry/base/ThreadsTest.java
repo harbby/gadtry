@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ThreadsTest
 {
@@ -24,8 +24,8 @@ public class ThreadsTest
     public void getMainThreadTest()
     {
         Thread thread = Threads.getMainThread();
-        Assert.assertSame(thread, Thread.currentThread());
+        Assertions.assertSame(thread, Thread.currentThread());
         StackTraceElement stackTraceElement = Threads.getJvmMainClass();
-        Assert.assertEquals(stackTraceElement.getClassName(), "worker.org.gradle.process.internal.worker.GradleWorkerMain");
+        Assertions.assertEquals(stackTraceElement.getClassName(), "worker.org.gradle.process.internal.worker.GradleWorkerMain");
     }
 }

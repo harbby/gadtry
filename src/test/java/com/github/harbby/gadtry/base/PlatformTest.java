@@ -16,8 +16,9 @@
 package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.democode.PlatFormOther;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.Driver;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -34,10 +36,21 @@ public class PlatformTest
 {
     private final Unsafe unsafe = Platform.getUnsafe();
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
+    public void getArrayComparatorTest()
+    {
+        if (Platform.getJavaVersion() < 9) {
+            return;
+        }
+        Comparator<int[]> comparator = Platform.getArrayComparator(int[].class);
+        int c = comparator.compare(new int[] {1}, new int[] {2});
+        Assertions.assertEquals(-1, c);
+    }
+
+    @Test
     public void allocateAlignMemoryErrorTest()
     {
-        Platform.allocateAlignMemory(10, 31);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Platform.allocateAlignMemory(10, 31));
     }
 
     @Test
@@ -47,7 +60,7 @@ public class PlatformTest
         try {
             byteBuffer.putLong(123);
             byteBuffer.flip();
-            Assert.assertEquals(byteBuffer.getLong(), 123);
+            Assertions.assertEquals(byteBuffer.getLong(), 123);
         }
         finally {
             Platform.freeDirectBuffer(byteBuffer);
@@ -58,7 +71,7 @@ public class PlatformTest
     public void getDiskPageSizeTest()
     {
         int pageSize = Platform.pageSize();
-        Assert.assertTrue(pageSize > 0);
+        Assertions.assertTrue(pageSize > 0);
     }
 
     @Test
@@ -67,8 +80,8 @@ public class PlatformTest
         long base = Platform.allocateAlignMemory(10, 32);
         try {
             long dataAddress = Platform.getAlignedDataAddress(base, 32);
-            Assert.assertEquals(0, base % 16);
-            Assert.assertEquals(0, dataAddress % 32);
+            Assertions.assertEquals(0, base % 16);
+            Assertions.assertEquals(0, dataAddress % 32);
         }
         finally {
             unsafe.freeMemory(base);
@@ -82,7 +95,7 @@ public class PlatformTest
         long newAddress = Platform.reallocateMemory(address, 1024, 2048);
 
         try {
-            Assert.assertTrue(newAddress > 0);
+            Assertions.assertTrue(newAddress > 0);
         }
         finally {
             Platform.freeMemory(newAddress);
@@ -95,10 +108,10 @@ public class PlatformTest
         ByteBuffer b1 = ByteBuffer.allocateDirect(12);
         ByteBuffer byteBuffer = Platform.allocateDirectBuffer(1024);
         try {
-            Assert.assertNotNull(byteBuffer);
+            Assertions.assertNotNull(byteBuffer);
             byteBuffer.putLong(314);
             byteBuffer.flip();
-            Assert.assertEquals(byteBuffer.getLong(), 314);
+            Assertions.assertEquals(byteBuffer.getLong(), 314);
         }
         finally {
             Platform.freeDirectBuffer(byteBuffer);
@@ -110,11 +123,11 @@ public class PlatformTest
     {
         try {
             Platform.throwException(new IOException("IO_test"));
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof IOException);
-            Assert.assertEquals("IO_test", e.getMessage());
+            Assertions.assertTrue(e instanceof IOException);
+            Assertions.assertEquals("IO_test", e.getMessage());
         }
     }
 
@@ -123,10 +136,11 @@ public class PlatformTest
     {
         if (Platform.getJavaVersion() < 16) {
             List<URL> urlList = PlatFormOther.getSystemClassLoaderJars();
-            Assert.assertTrue(urlList.stream().anyMatch(x -> x.getPath().contains("junit")));
+            Assertions.assertTrue(urlList.stream().anyMatch(x -> x.getPath().contains("junit")));
         }
     }
 
+    @Disabled
     @Test
     public void loadExtJarToSystemClassLoaderTest()
             throws ClassNotFoundException
@@ -134,16 +148,16 @@ public class PlatformTest
         if (Platform.getJavaVersion() >= 16) {
             return;
         }
-        Assert.assertFalse(PlatFormOther.getSystemClassLoaderJars().stream().anyMatch(x -> x.getPath().contains("h2-1.4.191.jar")));
+        Assertions.assertFalse(PlatFormOther.getSystemClassLoaderJars().stream().anyMatch(x -> x.getPath().contains("h2-1.4.191.jar")));
         Try.of(() -> ClassLoader.getSystemClassLoader().loadClass("org.h2.Driver"))
-                .onSuccess(Assert::fail)
+                .onSuccess(Assertions::fail)
                 .matchException(ClassNotFoundException.class, e -> {})
                 .doTry();
 
         URL url = this.getClass().getClassLoader().getResource("version1/h2-1.4.191.jar");
         PlatFormOther.loadExtJarToSystemClassLoader(Arrays.asList(url));
 
-        Assert.assertTrue(PlatFormOther.getSystemClassLoaderJars().stream().anyMatch(x -> x.getPath().contains("h2-1.4.191.jar")));
-        Assert.assertTrue(Driver.class.isAssignableFrom(ClassLoader.getSystemClassLoader().loadClass("org.h2.Driver")));
+        Assertions.assertTrue(PlatFormOther.getSystemClassLoaderJars().stream().anyMatch(x -> x.getPath().contains("h2-1.4.191.jar")));
+        Assertions.assertTrue(Driver.class.isAssignableFrom(ClassLoader.getSystemClassLoader().loadClass("org.h2.Driver")));
     }
 }

@@ -16,8 +16,8 @@
 package com.github.harbby.gadtry.aop.mockgo;
 
 import com.github.harbby.gadtry.aop.MockGo;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static com.github.harbby.gadtry.aop.MockGo.doAnswer;
 import static com.github.harbby.gadtry.aop.MockGo.doReturn;
@@ -62,32 +62,32 @@ public class SpyAbstractClassTest
     public void spyAbstractUserClassTest()
     {
         AbstractUser user = MockGo.spy(AbstractUser.class);
-        Assert.assertEquals(user.getAge(), 0);
-        Assert.assertNull(user.getName());
-        Assert.assertEquals(user.getNameAge(), "null:0");
+        Assertions.assertEquals(user.getAge(), 0);
+        Assertions.assertNull(user.getName());
+        Assertions.assertEquals(user.getNameAge(), "null:0");
 
         when(user.getName()).thenReturn("hello");
         doReturn(666).when(user).getAge();
-        Assert.assertEquals(user.getNameAge(), "hello:666");
+        Assertions.assertEquals(user.getNameAge(), "hello:666");
     }
 
     @Test
     public void spyUser1ClassTest()
     {
         AbstractUser user = MockGo.spy(User1.class);
-        Assert.assertEquals(user.getAge(), 18);
-        Assert.assertEquals(user.getName(), "user0");
-        Assert.assertEquals(user.getNameAge(), "user0:18");
+        Assertions.assertEquals(user.getAge(), 18);
+        Assertions.assertEquals(user.getName(), "user0");
+        Assertions.assertEquals(user.getNameAge(), "user0:18");
 
         when(user.getName()).thenReturn("hello");
         doReturn(666).when(user).getAge();
-        Assert.assertEquals(user.getNameAge(), "hello:666");
+        Assertions.assertEquals(user.getNameAge(), "hello:666");
 
         doReturn("check_getNameAge").when(user).getNameAge();
-        Assert.assertEquals(user.getNameAge(), "check_getNameAge");
+        Assertions.assertEquals(user.getNameAge(), "check_getNameAge");
 
-        Assert.assertEquals(user.getValue(), 666);
+        Assertions.assertEquals(user.getValue(), 666);
         doAnswer(p -> (int) p.proceed() + 1).when(user).getValue();
-        Assert.assertEquals(user.getValue(), 667);
+        Assertions.assertEquals(user.getValue(), 667);
     }
 }

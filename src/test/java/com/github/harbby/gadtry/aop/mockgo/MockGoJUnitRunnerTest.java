@@ -15,14 +15,14 @@
  */
 package com.github.harbby.gadtry.aop.mockgo;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Map;
 
-@RunWith(MockGoJUnitRunner.class)
+@ExtendWith(MockGoJUnitRunner.class)
 public class MockGoJUnitRunnerTest
 {
     @Mock
@@ -36,7 +36,7 @@ public class MockGoJUnitRunnerTest
     @Test
     public void initMocks()
     {
-        Assert.assertTrue(list == injectMockClass.getList());
-        Assert.assertTrue(map == injectMockClass.getMap());
+        Assertions.assertTrue(list == injectMockClass.getList());
+        Assertions.assertTrue(map == injectMockClass.getMap());
     }
 }

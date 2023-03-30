@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.aop.proxy;
 import com.github.harbby.gadtry.aop.ProxyRequest;
 import com.github.harbby.gadtry.aop.model.Test1;
 import com.github.harbby.gadtry.collection.MutableList;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -56,12 +56,12 @@ public class JavassistProxyV2Test
                 .build();
         Test1 proxy = JavassistProxyV2.javassistProxyV2.newProxyInstance(request);
 
-        Assert.assertEquals(18 - 1, proxy.age());
-        Assert.assertEquals(name, proxy.name());
-        Assert.assertTrue(proxy instanceof ProxyAccess);
-        Assert.assertTrue(atomicBoolean.get());
+        Assertions.assertEquals(18 - 1, proxy.age());
+        Assertions.assertEquals(name, proxy.name());
+        Assertions.assertTrue(proxy instanceof ProxyAccess);
+        Assertions.assertTrue(atomicBoolean.get());
         //---支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "abc-17");
+        Assertions.assertEquals(proxy.getNameAndAge(), "abc-17");
         System.out.println(proxy);
     }
 
@@ -91,23 +91,23 @@ public class JavassistProxyV2Test
         //Test1 proxy = JavassistProxy.newProxyInstance(Test1.class.getClassLoader(), handler, Test1.class, Serializable.class);
         Test1 proxy = JavassistProxy.javassistProxy.newProxyInstance(request);
 
-        Assert.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
-        Assert.assertEquals(name, proxy.name());
-        Assert.assertTrue(proxy instanceof ProxyAccess);
-        Assert.assertTrue(atomicBoolean.get());
+        Assertions.assertEquals(18 - 1, proxy.age()); //这里因为上面age方法代理成-1,因此是17
+        Assertions.assertEquals(name, proxy.name());
+        Assertions.assertTrue(proxy instanceof ProxyAccess);
+        Assertions.assertTrue(atomicBoolean.get());
 
         //---不支持方法间this调用
-        Assert.assertEquals(proxy.getNameAndAge(), "abc-18");  //虽然上面代理了age()方法，但是这里并未生效
+        Assertions.assertEquals(proxy.getNameAndAge(), "abc-18");  //虽然上面代理了age()方法，但是这里并未生效
     }
 
     @Test
     public void extendsTest()
     {
         People proxy = new PeopleA();
-        Assert.assertEquals(proxy.age, proxy.getAge());
-        Assert.assertEquals(proxy.name, proxy.getName());
-        Assert.assertEquals(proxy.isActive, proxy.isActive());
-        Assert.assertEquals(proxy.list, proxy.getList());
+        Assertions.assertEquals(proxy.age, proxy.getAge());
+        Assertions.assertEquals(proxy.name, proxy.getName());
+        Assertions.assertEquals(proxy.isActive, proxy.isActive());
+        Assertions.assertEquals(proxy.list, proxy.getList());
     }
 
     @Test
@@ -120,10 +120,10 @@ public class JavassistProxyV2Test
                 .setNewInstance(aClass -> aClass.getConstructor().newInstance())
                 .build();
         People proxy = JavassistProxyV2.javassistProxyV2.newProxyInstance(request);
-        Assert.assertEquals(proxy.age, proxy.getAge());
-        Assert.assertEquals(proxy.name, proxy.getName());
-        Assert.assertEquals(proxy.isActive, proxy.isActive());
-        Assert.assertEquals(proxy.list, proxy.getList());
+        Assertions.assertEquals(proxy.age, proxy.getAge());
+        Assertions.assertEquals(proxy.name, proxy.getName());
+        Assertions.assertEquals(proxy.isActive, proxy.isActive());
+        Assertions.assertEquals(proxy.list, proxy.getList());
     }
 
     public static class PeopleA

@@ -18,8 +18,8 @@ package com.github.harbby.gadtry.compiler;
 import com.github.harbby.gadtry.aop.MockGo;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.collection.ImmutableList;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
@@ -82,19 +82,19 @@ public class JavaClassCompilerTest
         JavaClassCompiler javaClassCompiler = new JavaClassCompiler(javaCompiler, null, true);
         try {
             javaClassCompiler.doCompile("test", "");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (CompileException e) {
-            Assert.assertEquals(e.getMessage(), "Compilation failed");
+            Assertions.assertEquals(e.getMessage(), "Compilation failed");
         }
 
         when(task.call()).thenReturn(true);
         try {
             javaClassCompiler.doCompile("test", "");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (CompileException e) {
-            Assert.assertEquals(e.getMessage(), "test: Class file not created by compilation.");
+            Assertions.assertEquals(e.getMessage(), "test: Class file not created by compilation.");
         }
     }
 
@@ -107,10 +107,10 @@ public class JavaClassCompilerTest
                     "    {\n" +
                     "        System.o.println();\n" +
                     "    }\n}");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RuntimeException e) {
-            Assert.assertTrue(e.getCause() instanceof CompileException);
+            Assertions.assertTrue(e.getCause() instanceof CompileException);
         }
     }
 }

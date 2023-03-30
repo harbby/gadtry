@@ -22,8 +22,8 @@ import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.collection.tuple.Tuple1;
 import com.github.harbby.gadtry.collection.tuple.Tuple4;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,49 +57,49 @@ public class AopGoTest
                 .aop(binder -> {
                     binder.doBefore(before -> {
                         Object[] args = before.getArgs();
-                        Assert.assertTrue(args == null || args.length == 0);
+                        Assertions.assertTrue(args == null || args.length == 0);
                         action.set("before_" + before.getName());
                     }).when().f1();
                     binder.doAfterReturning(returning -> {
                         Object[] args = returning.getArgs();
-                        Assert.assertTrue(args == null || args.length == 0);
+                        Assertions.assertTrue(args == null || args.length == 0);
                         action.set("returning_" + returning.getName() + "_" + returning.getValue());
                     }).when().f2();
                     binder.doAfter(after -> {
                         Object[] args = after.getArgs();
-                        Assert.assertTrue(args == null || args.length == 0);
-                        Assert.assertTrue(after.isSuccess() && after.getThrowable() == null);
+                        Assertions.assertTrue(args == null || args.length == 0);
+                        Assertions.assertTrue(after.isSuccess() && after.getThrowable() == null);
                         action.set("after_" + after.getName() + "_" + after.getValue());
                     }).when().f3();
                     binder.doAround(around -> {
                         Object[] args = around.getArgs();
-                        Assert.assertTrue(args == null || args.length == 0);
+                        Assertions.assertTrue(args == null || args.length == 0);
                         Object value = around.proceed();
                         action.set("around_" + around.getName() + "_" + value);
                         return around.proceed();
                     }).when().f4();
                     binder.doAfterThrowing(throwing -> {
-                        Assert.assertArrayEquals(throwing.getArgs(), new Object[] {0});
-                        Assert.assertEquals(throwing.<Integer>getArgument(0).intValue(), 0);
+                        Assertions.assertArrayEquals(throwing.getArgs(), new Object[] {0});
+                        Assertions.assertEquals(throwing.<Integer>getArgument(0).intValue(), 0);
                         action.set("afterThrowing_" + throwing.getName() + "_" + throwing.getThrowable().getMessage());
                     }).when().getField(anyInt());
                 })
                 .build();
         proxy.f1();
-        Assert.assertEquals(action.get(), "before_f1");
+        Assertions.assertEquals(action.get(), "before_f1");
         proxy.f2();
-        Assert.assertEquals(action.get(), "returning_f2_2");
+        Assertions.assertEquals(action.get(), "returning_f2_2");
         proxy.f3();
-        Assert.assertEquals(action.get(), "after_f3_4.0");
+        Assertions.assertEquals(action.get(), "after_f3_4.0");
         proxy.f4();
-        Assert.assertEquals(action.get(), "around_f4_a");
+        Assertions.assertEquals(action.get(), "around_f4_a");
 
-        Assert.assertEquals(proxy.getField(1), "1");
+        Assertions.assertEquals(proxy.getField(1), "1");
         try {
             proxy.getField(0);
         }
         catch (IndexOutOfBoundsException e) {
-            Assert.assertEquals(action.get(), "afterThrowing_getField_0");
+            Assertions.assertEquals(action.get(), "afterThrowing_getField_0");
         }
     }
 
@@ -116,12 +116,12 @@ public class AopGoTest
                 .build();
         try {
             proxy.getField(999);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception e) {
-            Assert.assertTrue(e instanceof IndexOutOfBoundsException);
+            Assertions.assertTrue(e instanceof IndexOutOfBoundsException);
         }
-        Assert.assertEquals(checkList, ImmutableList.of(false));
+        Assertions.assertEquals(checkList, ImmutableList.of(false));
     }
 
     @Test
@@ -139,9 +139,9 @@ public class AopGoTest
                     }).when().isEmpty();
                 })
                 .build();
-        Assert.assertEquals(list.size(), 1);
-        Assert.assertTrue(list.isEmpty());
-        Assert.assertEquals(actions, MutableSet.of("isEmpty"));
+        Assertions.assertEquals(list.size(), 1);
+        Assertions.assertTrue(list.isEmpty());
+        Assertions.assertEquals(actions, MutableSet.of("isEmpty"));
     }
 
     @Test
@@ -158,9 +158,9 @@ public class AopGoTest
                     }).when().isEmpty();
                 })
                 .build();
-        Assert.assertEquals(list.size(), 1);
-        Assert.assertTrue(list.isEmpty());
-        Assert.assertEquals(actions, MutableSet.of("isEmpty"));
+        Assertions.assertEquals(list.size(), 1);
+        Assertions.assertTrue(list.isEmpty());
+        Assertions.assertEquals(actions, MutableSet.of("isEmpty"));
     }
 
     @Test
@@ -176,10 +176,10 @@ public class AopGoTest
                     }).returnType(String.class, int.class);
                 }).build();
 
-        Assert.assertEquals(list.size(), 0);
-        Assert.assertEquals(list.toString(), "[]");
-        Assert.assertTrue(list.isEmpty());
-        Assert.assertEquals(actions, MutableSet.of("size", "toString"));
+        Assertions.assertEquals(list.size(), 0);
+        Assertions.assertEquals(list.toString(), "[]");
+        Assertions.assertTrue(list.isEmpty());
+        Assertions.assertEquals(actions, MutableSet.of("size", "toString"));
     }
 
     @Test
@@ -195,10 +195,10 @@ public class AopGoTest
                     }).returnType(String.class, int.class);
                 }).build();
 
-        Assert.assertEquals(list.size(), 0);
-        Assert.assertEquals(list.toString(), "[]");
-        Assert.assertTrue(list.isEmpty());
-        Assert.assertEquals(actions, MutableSet.of("size", "toString"));
+        Assertions.assertEquals(list.size(), 0);
+        Assertions.assertEquals(list.toString(), "[]");
+        Assertions.assertTrue(list.isEmpty());
+        Assertions.assertEquals(actions, MutableSet.of("size", "toString"));
     }
 
     @Test
@@ -213,7 +213,7 @@ public class AopGoTest
                 }).build();
         proxy.a1();
         proxy.a2();
-        Assert.assertEquals(actions, MutableSet.of("a2"));
+        Assertions.assertEquals(actions, MutableSet.of("a2"));
     }
 
     public static class AnnotatedClass
@@ -247,7 +247,7 @@ public class AopGoTest
                         actions.add("before4");
                     }).when().size();
                 }).build();
-        Assert.assertEquals(set.size(), 1);
-        Assert.assertEquals(MutableList.of("before1", "before2", "before4", "before3"), actions);
+        Assertions.assertEquals(set.size(), 1);
+        Assertions.assertEquals(MutableList.of("before1", "before2", "before4", "before3"), actions);
     }
 }

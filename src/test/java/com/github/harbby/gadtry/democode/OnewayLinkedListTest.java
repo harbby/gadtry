@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.democode;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class OnewayLinkedListTest
 {
@@ -56,14 +56,14 @@ public class OnewayLinkedListTest
         c.next = d;
         //or  a.addNext("b").addNext("c").addNext("d");
         Node<String> node = reverse(a);
-        Assert.assertEquals(node.v, "d");
+        Assertions.assertEquals(node.v, "d");
 
         StringBuilder builder = new StringBuilder();
         while (node != null) {
             builder.append(node.v);
             node = node.next;
         }
-        Assert.assertEquals(builder.toString(), "dcba");
+        Assertions.assertEquals(builder.toString(), "dcba");
     }
 
     @Test
@@ -75,12 +75,12 @@ public class OnewayLinkedListTest
         list.add("c");
         list.add("d");
         for (int i = 0; i < list.size(); i++) {
-            Assert.assertEquals(String.valueOf((char) ('a' + i)), list.get(i));
+            Assertions.assertEquals(String.valueOf((char) ('a' + i)), list.get(i));
         }
 
         list.reverse();
         for (int i = 0; i < list.size(); i++) {
-            Assert.assertEquals(String.valueOf((char) ('d' - i)), list.get(i));
+            Assertions.assertEquals(String.valueOf((char) ('d' - i)), list.get(i));
         }
     }
 

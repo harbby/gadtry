@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.ioc;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -47,8 +47,8 @@ public class IocFactoryTest
             binder.bind(Map.class).byCreator(HashMap::new).withSingle();  //Single object
             binder.bind(StringBuilder.class).byCreator(StringBuilderCreator.class).withSingle();  //Single object
         });
-        Assert.assertEquals(9, iocFactory.getAllBeans().getAllBeans().size());
-        Assert.assertTrue(iocFactory.analyze().printShow().size() > 0);
+        Assertions.assertEquals(9, iocFactory.getAllBeans().getAllBeans().size());
+        Assertions.assertTrue(iocFactory.analyze().printShow().size() > 0);
     }
 
     @Test
@@ -60,10 +60,10 @@ public class IocFactoryTest
         });
         try {
             iocFactory.analyze();
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().startsWith("Find Circular dependency"));
+            Assertions.assertTrue(e.getMessage().startsWith("Find Circular dependency"));
         }
     }
 
@@ -92,8 +92,8 @@ public class IocFactoryTest
 
         TestInject testInject = iocFactory.getInstance(TestInject.class);
         TestInject testInject2 = iocFactory.getInstance(TestInject.class);
-        Assert.assertTrue(testInject != testInject2);
-        Assert.assertTrue(testInject == testInject.getTest());
+        Assertions.assertTrue(testInject != testInject2);
+        Assertions.assertTrue(testInject == testInject.getTest());
     }
 
     @Test
@@ -103,7 +103,7 @@ public class IocFactoryTest
             binder.bind(List.class).byCreator(ArrayList::new);  //Single object
         });
 
-        Assert.assertTrue(iocFactory.getInstance(List.class) != iocFactory.getInstance(List.class));
+        Assertions.assertTrue(iocFactory.getInstance(List.class) != iocFactory.getInstance(List.class));
     }
 
     @Test
@@ -115,7 +115,7 @@ public class IocFactoryTest
 
         Set a1 = iocFactory.getInstance(Set.class);
         Set a2 = iocFactory.getInstance(Set.class);
-        Assert.assertTrue(a1 == a2); // Single object
+        Assertions.assertTrue(a1 == a2); // Single object
     }
 
     @Test
@@ -127,7 +127,7 @@ public class IocFactoryTest
 
         Map map1 = iocFactory.getInstance(Map.class);
         Map map2 = iocFactory.getInstance(Map.class);
-        Assert.assertEquals(true, map1 == map2);  //Single object,单例对象
+        Assertions.assertEquals(true, map1 == map2);  //Single object,单例对象
     }
 
     @Test
@@ -139,8 +139,8 @@ public class IocFactoryTest
 
         Supplier a5 = iocFactory.getCreator(StringBuilderCreator.class);
         Supplier a6 = iocFactory.getCreator(StringBuilderCreator.class);
-        Assert.assertTrue(a5 != a6);
-        Assert.assertTrue(a5.get() instanceof StringBuilderCreator);
+        Assertions.assertTrue(a5 != a6);
+        Assertions.assertTrue(a5.get() instanceof StringBuilderCreator);
     }
 
     @Test
@@ -153,13 +153,13 @@ public class IocFactoryTest
 
         StringBuilder instance1 = iocFactory.getInstance(StringBuilder.class);
         StringBuilder instance2 = iocFactory.getInstance(StringBuilder.class);
-        Assert.assertNotNull(instance1);
-        Assert.assertTrue(instance1 == instance2);  // Single
+        Assertions.assertNotNull(instance1);
+        Assertions.assertTrue(instance1 == instance2);  // Single
 
         Set set1 = iocFactory.getInstance(Set.class);
         Set set2 = iocFactory.getInstance(Set.class);
-        Assert.assertNotNull(set1);
-        Assert.assertTrue(set1 == set2);  //Single
+        Assertions.assertNotNull(set1);
+        Assertions.assertTrue(set1 == set2);  //Single
     }
 
     @Test
@@ -172,8 +172,8 @@ public class IocFactoryTest
 
         StringBuilder instance1 = iocFactory.getInstance(StringBuilder.class);
         StringBuilder instance2 = iocFactory.getInstance(StringBuilder.class);
-        Assert.assertNotNull(instance1);
-        Assert.assertTrue(instance1 != instance2);  //no Single
+        Assertions.assertNotNull(instance1);
+        Assertions.assertTrue(instance1 != instance2);  //no Single
     }
 
     @Test
@@ -185,8 +185,8 @@ public class IocFactoryTest
 
         Set set1 = iocFactory.getInstance(Set.class);
         Set set2 = iocFactory.getInstance(Set.class);
-        Assert.assertNotNull(set1);
-        Assert.assertTrue(set1 != set2);  //no Single
+        Assertions.assertNotNull(set1);
+        Assertions.assertTrue(set1 != set2);  //no Single
     }
 
     private static class StringBuilderCreator
@@ -198,22 +198,24 @@ public class IocFactoryTest
         @Autowired
         public StringBuilderCreator(ArrayList<String> arrayList)
         {
-            Assert.assertNotNull(arrayList);
+            Assertions.assertNotNull(arrayList);
         }
 
         @Override
         public StringBuilder get()
         {
-            Assert.assertNotNull(set);
+            Assertions.assertNotNull(set);
             return new StringBuilder();
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getNotRegisteredMoreConstructorReturnError()
     {
-        IocFactory iocFactory = IocFactory.create();
-        iocFactory.getInstance(PrintStream.class);
+        Assertions.assertThrows(IllegalStateException.class, ()-> {
+            IocFactory iocFactory = IocFactory.create();
+            iocFactory.getInstance(PrintStream.class);
+        });
     }
 
     @Test
@@ -222,7 +224,7 @@ public class IocFactoryTest
         IocFactory iocFactory = IocFactory.create();
         try {
             iocFactory.getInstance(Supplier.class);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException ignored) {
         }

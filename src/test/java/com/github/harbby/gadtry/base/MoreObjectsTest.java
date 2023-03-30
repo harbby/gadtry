@@ -15,8 +15,8 @@
  */
 package com.github.harbby.gadtry.base;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class MoreObjectsTest
 {
@@ -24,13 +24,15 @@ public class MoreObjectsTest
     public void firstNonNull()
     {
         int num = MoreObjects.getFirstNonNull(null, null, 2, null, 3);
-        Assert.assertEquals(num, 2);
+        Assertions.assertEquals(num, 2);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void getFirstNonNullGiveNull()
     {
-        MoreObjects.getFirstNonNull(null, null, null);
+        Assertions.assertThrows(NullPointerException.class, ()-> {
+            MoreObjects.getFirstNonNull(null, null, null);
+        });
     }
 
     @Test
@@ -39,7 +41,7 @@ public class MoreObjectsTest
         MoreObjects.checkArgument(true);
         try {
             MoreObjects.checkArgument(false);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ignored) {
         }
@@ -51,7 +53,7 @@ public class MoreObjectsTest
         MoreObjects.checkState(true);
         try {
             MoreObjects.checkState(false);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalStateException ignored) {
         }
@@ -63,10 +65,10 @@ public class MoreObjectsTest
         MoreObjects.checkArgument(true, "done");
         try {
             MoreObjects.checkArgument(false, "done");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "done");
+            Assertions.assertEquals(e.getMessage(), "done");
         }
     }
 
@@ -76,10 +78,10 @@ public class MoreObjectsTest
         MoreObjects.checkArgument(true, "done %s,%s", 1, "2");
         try {
             MoreObjects.checkArgument(false, "done %s,%s", 1, "2");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException e) {
-            Assert.assertEquals(e.getMessage(), "done 1,2");
+            Assertions.assertEquals(e.getMessage(), "done 1,2");
         }
     }
 
@@ -94,6 +96,6 @@ public class MoreObjectsTest
                 .add("key5", 3.14d)
                 .add("key6", true)
                 .toString();
-        Assert.assertTrue(toString.contains("key") && toString.contains("123"));
+        Assertions.assertTrue(toString.contains("key") && toString.contains("123"));
     }
 }

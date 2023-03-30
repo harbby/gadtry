@@ -79,9 +79,6 @@ public interface InputView
     double readDouble()
             throws JcodecException;
 
-    String readAsciiString()
-            throws JcodecException;
-
     String readString()
             throws JcodecException;
 

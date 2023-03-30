@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.io;
 
 import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.base.Platform;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,7 +40,7 @@ public class IOUtilsTest
                 ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8));
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             IOUtils.copy(inputStream, outputStream, 1024);
-            Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+            Assertions.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
         }
     }
 
@@ -64,7 +64,7 @@ public class IOUtilsTest
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
             IOUtils.copy(inputStream, printStream, 1024);
-            Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+            Assertions.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
         }
     }
 
@@ -83,11 +83,11 @@ public class IOUtilsTest
 
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream("IOUtilsTest".getBytes(UTF_8))) {
             IOUtils.copy(inputStream, printStream, 1024);
-            Assert.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
-            Assert.fail();
+            Assertions.assertEquals("IOUtilsTest", outputStream.toString(UTF_8.name()));
+            Assertions.fail();
         }
         catch (IOException e) {
-            Assert.assertEquals(e.getMessage(), "Unable to write to output stream.");
+            Assertions.assertEquals(e.getMessage(), "Unable to write to output stream.");
         }
     }
 
@@ -97,7 +97,7 @@ public class IOUtilsTest
     {
         String line = "hello" + System.lineSeparator();
         List<String> lines = IOUtils.readAllLines(new ByteArrayInputStream(line.getBytes(UTF_8)));
-        Assert.assertEquals(Arrays.asList(line.trim()), lines);
+        Assertions.assertEquals(Arrays.asList(line.trim()), lines);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class IOUtilsTest
             IOUtils.readFully(new ByteArrayInputStream(line.getBytes(UTF_8)), new byte[10]);
         }
         catch (EOFException e) {
-            Assert.assertEquals(e.getMessage(), "should be read 10 bytes, but read 5");
+            Assertions.assertEquals(e.getMessage(), "should be read 10 bytes, but read 5");
         }
     }
 }

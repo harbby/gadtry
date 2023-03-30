@@ -17,8 +17,8 @@ package com.github.harbby.gadtry.collection.mutable;
 
 import com.github.harbby.gadtry.base.Iterators;
 import com.github.harbby.gadtry.collection.MutableSet;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,7 +35,7 @@ public class MutableSetTest
         check.add("3");
 
         Set<String> create = MutableSet.copy(check);
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -47,7 +47,7 @@ public class MutableSetTest
         check.add("3");
 
         Set<String> create = MutableSet.of("1", "2", "3");
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 
     @Test
@@ -66,6 +66,6 @@ public class MutableSetTest
                 .addAll(Iterators.of("4"))
                 .addAll(Arrays.asList("5"))
                 .build();
-        Assert.assertEquals(create, check);
+        Assertions.assertEquals(create, check);
     }
 }
