@@ -16,27 +16,23 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
 
-/**
- * @author ivan
- * @date 2021.02.09 10:01:00
- * float Serialize
- */
 public class FloatSerializer
         implements Serializer<Float>
 {
     @Override
-    public void write(OutputView output, Float value)
+    public void write(Jcodec jcodec, OutputView output, Float value)
     {
         output.writeFloat(value);
     }
 
     @Override
-    public Float read(InputView input)
+    public Float read(Jcodec jcodec, InputView input, Class<? extends Float> typeClass)
     {
         return input.readFloat();
     }

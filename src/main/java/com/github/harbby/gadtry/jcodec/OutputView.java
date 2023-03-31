@@ -54,17 +54,17 @@ public interface OutputView
             throws JcodecException;
 
     /**
-     * if false, Positive numbers are more efficient, negative numbers are less efficient,
+     * if true, Positive numbers are more efficient, negative numbers are less efficient,
      * negative numbers are at least 5 bytes and positive numbers are at least 1 byte.
      */
-    void writeVarInt(int v, boolean optimizeNegativeNumber)
+    void writeVarInt(int v, boolean optimizePositive)
             throws JcodecException;
 
     /**
-     * if false, Positive numbers are more efficient, negative numbers are less efficient,
+     * if true, Positive numbers are more efficient, negative numbers are less efficient,
      * negative numbers are at least 9 bytes and positive numbers are at least 1 byte.
      */
-    void writeVarLong(long v, boolean optimizeNegativeNumber)
+    void writeVarLong(long v, boolean optimizePositive)
             throws JcodecException;
 
     void writeBoolArray(boolean[] v)

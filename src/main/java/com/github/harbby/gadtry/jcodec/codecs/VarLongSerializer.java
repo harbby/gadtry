@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -24,28 +25,28 @@ import java.util.Comparator;
 public class VarLongSerializer
         implements Serializer<Long>
 {
-    private final boolean optimizeNegativeNumber;
+    private final boolean optimizePositive;
 
-    public VarLongSerializer(boolean optimizeNegativeNumber)
+    public VarLongSerializer(boolean optimizePositive)
     {
-        this.optimizeNegativeNumber = optimizeNegativeNumber;
+        this.optimizePositive = optimizePositive;
     }
 
     public VarLongSerializer()
     {
-        this(false);
+        this(true);
     }
 
     @Override
-    public void write(OutputView output, Long value)
+    public void write(Jcodec jcodec, OutputView output, Long value)
     {
-        output.writeVarLong(value, optimizeNegativeNumber);
+        output.writeVarLong(value, optimizePositive);
     }
 
     @Override
-    public Long read(InputView input)
+    public Long read(Jcodec jcodec, InputView input, Class<? extends Long> typeClass)
     {
-        return input.readVarLong(optimizeNegativeNumber);
+        return input.readVarLong(optimizePositive);
     }
 
     @Override

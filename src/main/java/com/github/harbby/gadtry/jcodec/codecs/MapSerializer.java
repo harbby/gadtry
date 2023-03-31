@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -23,53 +24,52 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ivan
- * @date 2021.02.07 21:34:23
- * map Serialize
- */
 public class MapSerializer<K, V>
         implements Serializer<Map<K, V>>
 {
+    private final Class<? extends K> keyClass;
+    private final Class<? extends V> vClass;
     private final Serializer<K> kSerializer;
     private final Serializer<V> vSerializer;
 
-    public MapSerializer(Serializer<K> kSerializer, Serializer<V> vSerializer)
+    public MapSerializer(Class<? extends K> keyClass, Class<? extends V> vClass, Serializer<K> kSerializer, Serializer<V> vSerializer)
     {
+        this.keyClass = keyClass;
+        this.vClass = vClass;
         this.kSerializer = kSerializer;
         this.vSerializer = vSerializer;
     }
 
     @Override
-    public void write(OutputView output, Map<K, V> value)
+    public void write(Jcodec jcodec, OutputView output, Map<K, V> value)
     {
         if (value == null) {
-            output.writeVarInt(0, false);
+            output.writeVarInt(0, true);
             return;
         }
         final int size = value.size();
         //write size on the head
-        output.writeVarInt(size + 1, false);
+        output.writeVarInt(size + 1, true);
         //write key and value
         for (Map.Entry<K, V> entry : value.entrySet()) {
             K k = entry.getKey();
             V v = entry.getValue();
-            kSerializer.write(output, k);
-            vSerializer.write(output, v);
+            kSerializer.write(jcodec, output, k);
+            vSerializer.write(jcodec, output, v);
         }
     }
 
     @Override
-    public Map<K, V> read(InputView input)
+    public Map<K, V> read(Jcodec jcodec, InputView input, Class<? extends Map<K, V>> typeClass)
     {
-        final int size = input.readVarInt(false) - 1;
+        final int size = input.readVarInt(true) - 1;
         if (size == -1) {
             return null;
         }
         Map<K, V> map = new HashMap<>(size);
         for (int i = 0; i < size; i++) {
-            K key = kSerializer.read(input);
-            V value = vSerializer.read(input);
+            K key = kSerializer.read(jcodec, input, keyClass);
+            V value = vSerializer.read(jcodec, input, vClass);
             map.put(key, value);
         }
         return map;

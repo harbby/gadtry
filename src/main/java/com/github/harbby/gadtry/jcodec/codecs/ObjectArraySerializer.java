@@ -15,48 +15,63 @@
  */
 package com.github.harbby.gadtry.jcodec.codecs;
 
+import com.github.harbby.gadtry.jcodec.HashCodeComparator;
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
 
-public class AnyArraySerializer<E>
+public class ObjectArraySerializer<E>
         implements Serializer<E[]>
 {
-    private final Serializer<E> serializer;
-    private final Class<E> classTag;
+    private final Class<? extends E> classTag;
 
-    public AnyArraySerializer(Serializer<E> serializer, Class<E> classTag)
+    public ObjectArraySerializer(Class<? extends E> classTag)
     {
-        this.serializer = serializer;
         this.classTag = classTag;
     }
 
     @Override
-    public void write(OutputView output, E[] values)
+    public boolean isNullable()
     {
-        if (values == null) {
-            output.writeVarInt(0, false);
-            return;
-        }
-        output.writeVarInt(values.length + 1, false);
-        for (E e : values) {
-            serializer.write(output, e);
-        }
+        return true;
     }
 
     @Override
-    public E[] read(InputView input)
+    public void write(Jcodec jcodec, OutputView output, E[] values)
     {
-        int len = input.readVarInt(false) - 1;
-        if (len == -1) {
+        if (values == null) {
+            output.writeVarInt(0, true);
+            return;
+        }
+        output.writeVarInt(values.length + 1, true);
+        for (E e : values) {
+            jcodec.writeClassAndObject(output, e);
+        }
+    }
+
+    private transient E[] emptry;
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public E[] read(Jcodec jcodec, InputView input, Class<? extends E[]> typeClass)
+    {
+        int len = input.readVarInt(true);
+        if (len == 0) {
             return null;
         }
-        @SuppressWarnings("unchecked")
+        if (len == 1) {
+            if (emptry == null) {
+                emptry = (E[]) java.lang.reflect.Array.newInstance(classTag, 0);
+            }
+            return emptry;
+        }
+        len--;
         E[] values = (E[]) java.lang.reflect.Array.newInstance(classTag, len);
         for (int i = 0; i < len; i++) {
-            values[i] = serializer.read(input);
+            values[i] = jcodec.readClassAndObject(input);
         }
         return values;
     }
@@ -64,7 +79,7 @@ public class AnyArraySerializer<E>
     @Override
     public Comparator<E[]> comparator()
     {
-        return comparator(serializer.comparator());
+        return comparator(new HashCodeComparator<>());
     }
 
     public static <E> Comparator<E[]> comparator(Comparator<E> comparator)
@@ -83,7 +98,7 @@ public class AnyArraySerializer<E>
                 }
                 k++;
             }
-            return len1 - len2;
+            return Integer.compare(len1, len2);
         };
     }
 }

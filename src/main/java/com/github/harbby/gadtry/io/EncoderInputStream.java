@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.jcodec;
+package com.github.harbby.gadtry.io;
 
 import com.github.harbby.gadtry.collection.iterator.CloseIterator;
+import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
+import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.NoSuchElementException;
 
@@ -25,15 +28,24 @@ import static java.util.Objects.requireNonNull;
 public class EncoderInputStream<E>
         implements CloseIterator<E>
 {
+    private final Jcodec jcodec;
+    private final Class<? extends E> typeClass;
     private final InputView dataInput;
     private final Serializer<E> serializer;
     private final long count;
     private long index = 0;
 
-    public EncoderInputStream(long count, Serializer<E> serializer, InputView dataInput)
+    public EncoderInputStream(Class<? extends E> typeClass, long count, Serializer<E> serializer, InputView dataInput)
+    {
+        this(Jcodec.of(), typeClass, count, serializer, dataInput);
+    }
+
+    public EncoderInputStream(Jcodec jcodec, Class<? extends E> typeClass, long count, Serializer<E> serializer, InputView dataInput)
     {
         checkState(count >= 0, "row count >= 0");
         this.count = count;
+        this.jcodec = requireNonNull(jcodec, "jcodec is null");
+        this.typeClass = requireNonNull(typeClass, "typeClass is null");
         this.serializer = requireNonNull(serializer, "encoder is null");
         this.dataInput = requireNonNull(dataInput, "dataInput is null");
     }
@@ -55,7 +67,7 @@ public class EncoderInputStream<E>
             throw new NoSuchElementException();
         }
         index++;
-        return serializer.read(dataInput);
+        return serializer.read(jcodec, dataInput, typeClass);
     }
 
     @Override

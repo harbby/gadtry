@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.jcodec.HashCodeComparator;
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -37,7 +38,7 @@ public class JavaSerializer<E extends Serializable>
     }
 
     @Override
-    public void write(OutputView output, E value)
+    public void write(Jcodec jcodec, OutputView output, E value)
     {
         try {
             OutputStream outputStream = (OutputStream) output;
@@ -49,7 +50,7 @@ public class JavaSerializer<E extends Serializable>
     }
 
     @Override
-    public E read(InputView input)
+    public E read(Jcodec jcodec, InputView input, Class<? extends E> typeClass)
     {
         try {
             InputStream inputStream = (InputStream) input;

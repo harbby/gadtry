@@ -16,22 +16,18 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.sql.Date;
 import java.util.Comparator;
 
-/**
- * @author ivan
- * @date 2021.02.09 10:01:00
- * sql date Serialize
- */
 public class SqlDateSerializer
         implements Serializer<Date>
 {
     @Override
-    public void write(OutputView output, Date value)
+    public void write(Jcodec jcodec, OutputView output, Date value)
     {
         if (value == null) {
             output.writeLong(-1);
@@ -42,7 +38,7 @@ public class SqlDateSerializer
     }
 
     @Override
-    public Date read(InputView input)
+    public Date read(Jcodec jcodec, InputView input, Class<? extends Date> typeClass)
     {
         final long l = input.readLong();
         if (l == -1) {

@@ -16,27 +16,23 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
 
-/**
- * @author ivan
- * @date 2021.02.09 10:01:00
- * boolean Serialize
- */
 public class BooleanSerializer
         implements Serializer<Boolean>
 {
     @Override
-    public void write(OutputView output, Boolean value)
+    public void write(Jcodec jcodec, OutputView output, Boolean value)
     {
         output.writeBoolean(value);
     }
 
     @Override
-    public Boolean read(InputView input)
+    public Boolean read(Jcodec jcodec, InputView input, Class<? extends Boolean> typeClass)
     {
         return input.readBoolean();
     }

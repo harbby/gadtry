@@ -21,9 +21,9 @@ import java.util.Comparator;
 public interface Serializer<E>
         extends Serializable
 {
-    public void write(OutputView output, E value);
+    public void write(Jcodec jcodec, OutputView output, E value);
 
-    public E read(InputView input);
+    public E read(Jcodec jcodec, InputView input, Class<? extends E> typeClass);
 
     default boolean isNullable()
     {

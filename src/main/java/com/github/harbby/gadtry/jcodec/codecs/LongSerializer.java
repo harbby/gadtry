@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -25,13 +26,13 @@ public class LongSerializer
         implements Serializer<Long>
 {
     @Override
-    public void write(OutputView output, Long value)
+    public void write(Jcodec jcodec, OutputView output, Long value)
     {
         output.writeLong(value);
     }
 
     @Override
-    public Long read(InputView input)
+    public Long read(Jcodec jcodec, InputView input, Class<? extends Long> typeClass)
     {
         return input.readLong();
     }

@@ -85,10 +85,10 @@ public interface InputView
     void readBoolArray(boolean[] booleans, int pos, int len)
             throws JcodecException;
 
-    int readVarInt(boolean optimizeNegativeNumber)
+    int readVarInt(boolean optimizePositive)
             throws JcodecException;
 
-    long readVarLong(boolean optimizeNegativeNumber)
+    long readVarLong(boolean optimizePositive)
             throws JcodecException;
 
     @Override

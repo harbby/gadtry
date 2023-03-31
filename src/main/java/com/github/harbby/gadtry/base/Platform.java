@@ -151,7 +151,7 @@ public final class Platform
             throw new PlatFormUnsupportedOperation("not support java8");
         }
         else {
-            checkArgument(typeClass.isArray() && typeClass.componentType().isPrimitive(), "must be primitive array.class");
+            checkArgument(typeClass.isArray() && typeClass.getComponentType().isPrimitive(), "must be primitive array.class");
             return ExtPlatformHolder.getExtPlatform().getArrayComparator(typeClass);
         }
     }

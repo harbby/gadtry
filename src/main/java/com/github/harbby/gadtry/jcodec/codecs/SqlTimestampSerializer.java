@@ -16,22 +16,18 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.sql.Timestamp;
 import java.util.Comparator;
 
-/**
- * @author ivan
- * @date 2021.02.09 10:01:00
- * sql timestamp Serialize
- */
 public class SqlTimestampSerializer
         implements Serializer<Timestamp>
 {
     @Override
-    public void write(OutputView output, Timestamp value)
+    public void write(Jcodec jcodec, OutputView output, Timestamp value)
     {
         if (value == null) {
             output.writeLong(-1);
@@ -43,7 +39,7 @@ public class SqlTimestampSerializer
     }
 
     @Override
-    public Timestamp read(InputView input)
+    public Timestamp read(Jcodec jcodec, InputView input, Class<? extends Timestamp> typeClass)
     {
         final long l = input.readLong();
         if (l == -1) {

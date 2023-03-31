@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -25,13 +26,19 @@ public class StringSerializer
         implements Serializer<String>
 {
     @Override
-    public void write(OutputView output, String value)
+    public boolean isNullable()
+    {
+        return true;
+    }
+
+    @Override
+    public void write(Jcodec jcodec, OutputView output, String value)
     {
         output.writeString(value);
     }
 
     @Override
-    public String read(InputView input)
+    public String read(Jcodec jcodec, InputView input, Class<? extends String> typeClass)
     {
         return input.readString();
     }

@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.collection.iterator.LengthIterator;
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -31,24 +32,26 @@ public class LengthIteratorSerializer<E>
         implements Serializer<Iterator<E>>
 {
     private final Serializer<E> eSerializer;
+    private final Class<? extends E> typeClass;
 
-    public LengthIteratorSerializer(Serializer<E> eSerializer)
+    public LengthIteratorSerializer(Class<? extends E> typeClass, Serializer<E> eSerializer)
     {
+        this.typeClass = typeClass;
         this.eSerializer = requireNonNull(eSerializer, "eEncoder is null");
     }
 
     @Override
-    public void write(OutputView output, Iterator<E> value)
+    public void write(Jcodec jcodec, OutputView output, Iterator<E> value)
     {
         checkState(value instanceof LengthIterator, "only support LengthIterator");
         output.writeLong(((LengthIterator<?>) value).length());
         while (value.hasNext()) {
-            eSerializer.write(output, value.next());
+            eSerializer.write(jcodec, output, value.next());
         }
     }
 
     @Override
-    public LengthIterator<E> read(InputView input)
+    public Iterator<E> read(Jcodec jcodec, InputView input, Class<? extends Iterator<E>> itClass)
     {
         final int length = input.readInt();
         return new LengthIterator<E>()
@@ -74,7 +77,7 @@ public class LengthIteratorSerializer<E>
                     throw new NoSuchElementException();
                 }
                 index++;
-                return eSerializer.read(input);
+                return eSerializer.read(jcodec, input, typeClass);
             }
 
             @Override

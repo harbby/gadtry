@@ -184,7 +184,7 @@ public abstract class AbstractInputView
     }
 
     @Override
-    public final int readVarInt(boolean optimizeNegativeNumber)
+    public final int readVarInt(boolean optimizePositive)
     {
         require(1);
         byte b = buffer[position++];
@@ -210,7 +210,7 @@ public abstract class AbstractInputView
                 }
             }
         }
-        if (optimizeNegativeNumber) {
+        if (!optimizePositive) {
             return (result >>> 1) ^ -(result & 1);
         }
         else {
@@ -219,7 +219,7 @@ public abstract class AbstractInputView
     }
 
     @Override
-    public final long readVarLong(boolean optimizeNegativeNumber)
+    public final long readVarLong(boolean optimizePositive)
     {
         require(1);
         byte b = buffer[position++];
@@ -264,7 +264,7 @@ public abstract class AbstractInputView
                 }
             }
         }
-        if (optimizeNegativeNumber) {
+        if (!optimizePositive) {
             return (result >>> 1) ^ -(result & 1);
         }
         else {

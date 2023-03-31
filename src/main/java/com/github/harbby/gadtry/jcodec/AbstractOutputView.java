@@ -257,10 +257,10 @@ public abstract class AbstractOutputView
     }
 
     @Override
-    public final void writeVarInt(int value, boolean optimizeNegativeNumber)
+    public final void writeVarInt(int value, boolean optimizePositive)
     {
         int v = value;
-        if (optimizeNegativeNumber) {
+        if (!optimizePositive) {
             // zigzag coder: v = v >=0 ? value << 1 : (~value) + 1;
             v = (v << 1) ^ (v >> 31);
         }
@@ -297,10 +297,10 @@ public abstract class AbstractOutputView
     }
 
     @Override
-    public final void writeVarLong(long value, boolean optimizeNegativeNumber)
+    public final void writeVarLong(long value, boolean optimizePositive)
     {
         long v = value;
-        if (optimizeNegativeNumber) {
+        if (!optimizePositive) {
             // zigzag coder: v = v >=0 ? value << 1 : (~value) + 1;
             v = (v << 1) ^ (v >> 63);
         }

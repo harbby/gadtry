@@ -16,27 +16,23 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
 
-/**
- * @author ivan
- * @date 2021.02.09 10:01:00
- * short Serialize
- */
 public class ShortSerializer
         implements Serializer<Short>
 {
     @Override
-    public void write(OutputView output, Short value)
+    public void write(Jcodec jcodec, OutputView output, Short value)
     {
         output.writeShort(value);
     }
 
     @Override
-    public Short read(InputView input)
+    public Short read(Jcodec jcodec, InputView input, Class<? extends Short> typeClass)
     {
         return input.readShort();
     }

@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -25,12 +26,12 @@ public class VoidSerializer
         implements Serializer<Void>
 {
     @Override
-    public void write(OutputView output, Void value)
+    public void write(Jcodec jcodec, OutputView output, Void value)
     {
     }
 
     @Override
-    public Void read(InputView input)
+    public Void read(Jcodec jcodec, InputView input, Class<? extends Void> typeClass)
     {
         return null;
     }

@@ -15,11 +15,12 @@
  */
 package com.github.harbby.gadtry.jcodec.codecs;
 
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
-import java.util.Arrays;
 import java.util.Comparator;
 
 public class ArraySerializers
@@ -32,39 +33,48 @@ public class ArraySerializers
         private static final byte[] zeroArr = new byte[0];
 
         @Override
-        public void write(OutputView output, byte[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, byte[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (byte e : values) {
                 output.writeByte(e);
             }
         }
 
         @Override
-        public byte[] read(InputView input)
+        public byte[] read(Jcodec jcodec, InputView input, Class<? extends byte[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            else if (len == 1) {
                 return zeroArr;
             }
-            byte[] values = new byte[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readByte();
+            else {
+                len--;
+                byte[] values = new byte[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readByte();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<byte[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(byte[].class);
         }
     }
 
@@ -74,37 +84,46 @@ public class ArraySerializers
         private static final boolean[] zeroArr = new boolean[0];
 
         @Override
-        public void write(OutputView output, boolean[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, boolean[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             if (values.length > 0) {
                 output.writeBoolArray(values);
             }
         }
 
         @Override
-        public boolean[] read(InputView input)
+        public boolean[] read(Jcodec jcodec, InputView input, Class<? extends boolean[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            else if (len == 1) {
                 return zeroArr;
             }
-            boolean[] values = new boolean[len];
-            input.readBoolArray(values, 0, len);
-            return values;
+            else {
+                len--;
+                boolean[] values = new boolean[len];
+                input.readBoolArray(values, 0, len);
+                return values;
+            }
         }
 
         @Override
         public Comparator<boolean[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(boolean[].class);
         }
     }
 
@@ -114,39 +133,48 @@ public class ArraySerializers
         private static final short[] zeroArr = new short[0];
 
         @Override
-        public void write(OutputView output, short[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, short[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (short e : values) {
                 output.writeShort(e);
             }
         }
 
         @Override
-        public short[] read(InputView input)
+        public short[] read(Jcodec jcodec, InputView input, Class<? extends short[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            else if (len == 1) {
                 return zeroArr;
             }
-            short[] values = new short[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readShort();
+            else {
+                len--;
+                short[] values = new short[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readShort();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<short[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(short[].class);
         }
     }
 
@@ -156,39 +184,48 @@ public class ArraySerializers
         private static final char[] zeroIntArr = new char[0];
 
         @Override
-        public void write(OutputView output, char[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, char[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (char e : values) {
                 output.writeChar(e);
             }
         }
 
         @Override
-        public char[] read(InputView input)
+        public char[] read(Jcodec jcodec, InputView input, Class<? extends char[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            else if (len == 1) {
                 return zeroIntArr;
             }
-            char[] values = new char[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readChar();
+            else {
+                len--;
+                char[] values = new char[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readChar();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<char[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(char[].class);
         }
     }
 
@@ -198,39 +235,48 @@ public class ArraySerializers
         private static final int[] zeroArr = new int[0];
 
         @Override
-        public void write(OutputView output, int[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, int[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (int e : values) {
                 output.writeInt(e);
             }
         }
 
         @Override
-        public int[] read(InputView input)
+        public int[] read(Jcodec jcodec, InputView input, Class<? extends int[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            if (len == 1) {
                 return zeroArr;
             }
-            int[] values = new int[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readInt();
+            else {
+                len--;
+                int[] values = new int[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readInt();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<int[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(int[].class);
         }
     }
 
@@ -240,39 +286,48 @@ public class ArraySerializers
         private static final float[] zeroArr = new float[0];
 
         @Override
-        public void write(OutputView output, float[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, float[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (float e : values) {
                 output.writeFloat(e);
             }
         }
 
         @Override
-        public float[] read(InputView input)
+        public float[] read(Jcodec jcodec, InputView input, Class<? extends float[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            else if (len == 1) {
                 return zeroArr;
             }
-            float[] values = new float[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readByte();
+            else {
+                len--;
+                float[] values = new float[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readByte();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<float[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(float[].class);
         }
     }
 
@@ -282,39 +337,48 @@ public class ArraySerializers
         private static final long[] zeroArr = new long[0];
 
         @Override
-        public void write(OutputView output, long[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, long[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (long e : values) {
                 output.writeLong(e);
             }
         }
 
         @Override
-        public long[] read(InputView input)
+        public long[] read(Jcodec jcodec, InputView input, Class<? extends long[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            if (len == 1) {
                 return zeroArr;
             }
-            long[] values = new long[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readInt();
+            else {
+                len--;
+                long[] values = new long[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readInt();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<long[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(long[].class);
         }
     }
 
@@ -324,39 +388,99 @@ public class ArraySerializers
         private static final double[] zeroArr = new double[0];
 
         @Override
-        public void write(OutputView output, double[] values)
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, double[] values)
         {
             if (values == null) {
-                output.writeVarInt(0, false);
+                output.writeVarInt(0, true);
                 return;
             }
-            output.writeVarInt(values.length + 1, false);
+            output.writeVarInt(values.length + 1, true);
             for (double e : values) {
                 output.writeDouble(e);
             }
         }
 
         @Override
-        public double[] read(InputView input)
+        public double[] read(Jcodec jcodec, InputView input, Class<? extends double[]> typeClass)
         {
-            int len = input.readVarInt(false) - 1;
-            if (len == -1) {
+            int len = input.readVarInt(true);
+            if (len == 0) {
                 return null;
             }
-            if (len == 0) {
+            else if (len == 1) {
                 return zeroArr;
             }
-            double[] values = new double[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = input.readInt();
+            else {
+                len--;
+                double[] values = new double[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readInt();
+                }
+                return values;
             }
-            return values;
         }
 
         @Override
         public Comparator<double[]> comparator()
         {
-            return Arrays::compare;
+            return Platform.getArrayComparator(double[].class);
+        }
+    }
+
+    public static class StringArraySerializer
+            implements Serializer<String[]>
+    {
+        private static final String[] zeroArr = new String[0];
+
+        @Override
+        public boolean isNullable()
+        {
+            return true;
+        }
+
+        @Override
+        public Comparator<String[]> comparator()
+        {
+            return Platform.getArrayComparator(String[].class);
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, String[] values)
+        {
+            if (values == null) {
+                output.writeVarInt(0, true);
+                return;
+            }
+            output.writeVarInt(values.length + 1, true);
+            for (String e : values) {
+                output.writeString(e);
+            }
+        }
+
+        @Override
+        public String[] read(Jcodec jcodec, InputView input, Class<? extends String[]> typeClass)
+        {
+            int len = input.readVarInt(true);
+            if (len == 0) {
+                return null;
+            }
+            else if (len == 1) {
+                return zeroArr;
+            }
+            else {
+                len--;
+                String[] values = new String[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = input.readString();
+                }
+                return values;
+            }
         }
     }
 }

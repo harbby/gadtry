@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -25,13 +26,13 @@ public class IntSerializer
         implements Serializer<Integer>
 {
     @Override
-    public void write(OutputView output, Integer value)
+    public void write(Jcodec jcodec, OutputView output, Integer value)
     {
         output.writeInt(value);
     }
 
     @Override
-    public Integer read(InputView input)
+    public Integer read(Jcodec jcodec, InputView input, Class<? extends Integer> typeClass)
     {
         return input.readInt();
     }

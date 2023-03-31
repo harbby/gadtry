@@ -15,7 +15,7 @@
  */
 package com.github.harbby.gadtry.jcodec;
 
-import com.github.harbby.gadtry.jcodec.codecs.AnyArraySerializer;
+import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.jcodec.codecs.ArraySerializers;
 import com.github.harbby.gadtry.jcodec.codecs.BooleanSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ByteSerializer;
@@ -24,17 +24,16 @@ import com.github.harbby.gadtry.jcodec.codecs.DoubleSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.FloatSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.IntSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.JavaSerializer;
-import com.github.harbby.gadtry.jcodec.codecs.LengthIteratorSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.LongSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.MapSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ShortSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.StringSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.TypeArraySerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VarIntSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VarLongSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VoidSerializer;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
@@ -79,30 +78,46 @@ public final class Jcodecs
     {
         requireNonNull(kSerializer, "key Encoder is null");
         requireNonNull(vSerializer, "value Encoder is null");
-        return new MapSerializer<>(kSerializer, vSerializer);
+        return new MapSerializer<>(JavaTypes.classTag(Object.class), JavaTypes.classTag(Object.class), kSerializer, vSerializer);
     }
 
-    public static <V> AnyArraySerializer<V> arrayEncoder(Serializer<V> vSerializer, Class<V> aClass)
+    public static <K, V> MapSerializer<K, V> mapEncoder(Class<? extends K> kClass, Class<? extends V> vClass,
+            Serializer<K> kSerializer, Serializer<V> vSerializer)
+    {
+        requireNonNull(kSerializer, "key Encoder is null");
+        requireNonNull(vSerializer, "value Encoder is null");
+        return new MapSerializer<>(kClass, vClass, kSerializer, vSerializer);
+    }
+
+    public static <V> TypeArraySerializer<V> arrayEncoder(Serializer<V> vSerializer, Class<V> aClass)
     {
         requireNonNull(vSerializer, "value Encoder is null");
-        return new AnyArraySerializer<>(vSerializer, aClass);
+        return new TypeArraySerializer<>(vSerializer, aClass);
     }
 
     public static <K, V> Tuple2Serializer<K, V> tuple2(Serializer<K> kSerializer, Serializer<V> vSerializer)
     {
         requireNonNull(kSerializer, "key Encoder is null");
         requireNonNull(vSerializer, "value Encoder is null");
-        return new Tuple2Serializer.Tuple2KVSerializer<>(kSerializer, vSerializer);
+        return tuple2(JavaTypes.classTag(Object.class), JavaTypes.classTag(Object.class), kSerializer, vSerializer);
+    }
+
+    public static <K, V> Tuple2Serializer<K, V> tuple2(Class<? extends K> kClass, Class<? extends V> vClass,
+            Serializer<K> kSerializer, Serializer<V> vSerializer)
+    {
+        requireNonNull(kSerializer, "key Encoder is null");
+        requireNonNull(vSerializer, "value Encoder is null");
+        return new Tuple2Serializer.Tuple2KVSerializer<>(kClass, vClass, kSerializer, vSerializer);
     }
 
     public static <K> Tuple2Serializer<K, Void> tuple2OnlyKey(Serializer<K> kSerializer)
     {
-        return tuple2(kSerializer, new VoidSerializer());
+        return tuple2OnlyKey(JavaTypes.classTag(Object.class), kSerializer);
     }
 
-    public static <E> Serializer<Iterator<E>> iteratorEncoder(Serializer<E> eSerializer)
+    public static <K> Tuple2Serializer<K, Void> tuple2OnlyKey(Class<? extends K> kClass, Serializer<K> kSerializer)
     {
-        return new LengthIteratorSerializer<>(eSerializer);
+        return tuple2(kClass, void.class, kSerializer, new VoidSerializer());
     }
 
     public static Serializer<String> string()

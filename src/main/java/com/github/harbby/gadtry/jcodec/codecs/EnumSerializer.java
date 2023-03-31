@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -41,20 +42,20 @@ public class EnumSerializer
     }
 
     @Override
-    public void write(OutputView output, Enum value)
+    public void write(Jcodec jcodec, OutputView output, Enum value)
     {
         if (value == null) {
-            output.writeVarInt(0, false);
+            output.writeVarInt(0, true);
         }
         else {
-            output.writeVarInt(value.ordinal() + 1, false);
+            output.writeVarInt(value.ordinal() + 1, true);
         }
     }
 
     @Override
-    public Enum<?> read(InputView input)
+    public Enum<?> read(Jcodec jcodec, InputView input, Class<? extends Enum> typeClass)
     {
-        int ordinal = input.readVarInt(false);
+        int ordinal = input.readVarInt(true);
         if (ordinal == 0) {
             return null;
         }

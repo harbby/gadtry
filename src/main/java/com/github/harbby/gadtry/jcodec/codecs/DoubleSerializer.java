@@ -16,6 +16,7 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
@@ -25,13 +26,13 @@ public class DoubleSerializer
         implements Serializer<Double>
 {
     @Override
-    public void write(OutputView output, Double value)
+    public void write(Jcodec jcodec, OutputView output, Double value)
     {
         output.writeDouble(value);
     }
 
     @Override
-    public Double read(InputView input)
+    public Double read(Jcodec jcodec, InputView input, Class<? extends Double> typeClass)
     {
         return input.readDouble();
     }

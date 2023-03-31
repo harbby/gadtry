@@ -16,27 +16,23 @@
 package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
+import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
 
-/**
- * @author ivan
- * @date 2021.02.09 10:01:00
- * byte Serialize
- */
 public class ByteSerializer
         implements Serializer<Byte>
 {
     @Override
-    public void write(OutputView output, Byte value)
+    public void write(Jcodec jcodec, OutputView output, Byte value)
     {
         output.writeByte(value);
     }
 
     @Override
-    public Byte read(InputView input)
+    public Byte read(Jcodec jcodec, InputView input, Class<? extends Byte> typeClass)
     {
         return input.readByte();
     }

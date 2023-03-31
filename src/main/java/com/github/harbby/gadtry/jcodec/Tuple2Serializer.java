@@ -31,11 +31,15 @@ public interface Tuple2Serializer<K, V>
     public static class Tuple2KVSerializer<K, V>
             implements Tuple2Serializer<K, V>
     {
+        private final Class<? extends K> keyClass;
+        private final Class<? extends V> vClass;
         private final Serializer<K> kSerializer;
         private final Serializer<V> vSerializer;
 
-        public Tuple2KVSerializer(Serializer<K> kSerializer, Serializer<V> vSerializer)
+        public Tuple2KVSerializer(Class<? extends K> keyClass, Class<? extends V> vClass, Serializer<K> kSerializer, Serializer<V> vSerializer)
         {
+            this.keyClass = keyClass;
+            this.vClass = vClass;
             this.kSerializer = requireNonNull(kSerializer, "kEncoder is null");
             this.vSerializer = requireNonNull(vSerializer, "vEncoder is null");
         }
@@ -53,17 +57,17 @@ public interface Tuple2Serializer<K, V>
         }
 
         @Override
-        public void write(OutputView output, Tuple2<K, V> value)
+        public void write(Jcodec jcodec, OutputView output, Tuple2<K, V> value)
         {
             requireNonNull(value, "Tuple2 value is null");
-            kSerializer.write(output, value.key());
-            vSerializer.write(output, value.value());
+            kSerializer.write(jcodec, output, value.key());
+            vSerializer.write(jcodec, output, value.value());
         }
 
         @Override
-        public Tuple2<K, V> read(InputView input)
+        public Tuple2<K, V> read(Jcodec jcodec, InputView input, Class<? extends Tuple2<K, V>> typeClass)
         {
-            return Tuple2.of(kSerializer.read(input), vSerializer.read(input));
+            return Tuple2.of(kSerializer.read(jcodec, input, keyClass), vSerializer.read(jcodec, input, vClass));
         }
 
         @Override
@@ -82,10 +86,12 @@ public interface Tuple2Serializer<K, V>
     public static class Tuple2OnlyKeySerializer<K>
             implements Tuple2Serializer<K, Void>
     {
+        private final Class<? extends K> kClass;
         private final Serializer<K> kSerializer;
 
-        public Tuple2OnlyKeySerializer(Serializer<K> kSerializer)
+        public Tuple2OnlyKeySerializer(Class<? extends K> kClass, Serializer<K> kSerializer)
         {
+            this.kClass = kClass;
             this.kSerializer = requireNonNull(kSerializer, "kEncoder is null");
         }
 
@@ -102,15 +108,15 @@ public interface Tuple2Serializer<K, V>
         }
 
         @Override
-        public void write(OutputView output, Tuple2<K, Void> value)
+        public void write(Jcodec jcodec, OutputView output, Tuple2<K, Void> value)
         {
-            kSerializer.write(output, value.key());
+            kSerializer.write(jcodec, output, value.key());
         }
 
         @Override
-        public Tuple2<K, Void> read(InputView input)
+        public Tuple2<K, Void> read(Jcodec jcodec, InputView input, Class<? extends Tuple2<K, Void>> typeClass)
         {
-            return Tuple2.of(kSerializer.read(input), null);
+            return Tuple2.of(kSerializer.read(jcodec, input, kClass), null);
         }
 
         @Override
