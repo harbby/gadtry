@@ -19,6 +19,8 @@ import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.InputStream;
 
+import static com.github.harbby.gadtry.StaticAssert.DEBUG;
+
 public abstract class AbstractInputView
         extends InputStream
         implements InputView
@@ -382,7 +384,7 @@ public abstract class AbstractInputView
     {
         require(1);
         byte b = buffer[position++];
-        assert b < 0;
+        assert !DEBUG || b < 0;
         if ((b & 0x40) == 0) {
             return b & 0x3F;
         }

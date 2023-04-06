@@ -17,6 +17,7 @@ package com.github.harbby.gadtry.base;
 
 import com.github.harbby.gadtry.collection.MutableList;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
@@ -29,7 +30,6 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
@@ -55,14 +55,14 @@ public class JavaTypes
      * If any of the actual type arguments is not an instance of the
      * bounds on the corresponding formal.
      *
-     * @param rawType             the Class representing the generic type declaration being
-     *                            instantiated
+     * @param rawType the Class representing the generic type declaration being
+     * instantiated
      * @param actualTypeArguments - a (possibly empty) array of types
-     *                            representing the actual type arguments to the parameterized type
-     * @param ownerType           - the enclosing type, if known.
+     * representing the actual type arguments to the parameterized type
+     * @param ownerType - the enclosing type, if known.
      * @return An instance of ParameterizedType
      * @throws MalformedParameterizedTypeException - if the instantiation
-     *                                             is invalid
+     * is invalid
      */
     public static Type make(Class<?> rawType,
             Type[] actualTypeArguments,
@@ -158,13 +158,16 @@ public class JavaTypes
      * @param method java method
      * @return method signature
      */
-    public static String getMethodSignature(Method method)
+    public static String getMethodSignature(Executable method)
     {
-        String parameterSignature = java.util.Arrays.stream(method.getParameterTypes())
-                .map(JavaTypes::getClassSignature)
-                .collect(Collectors.joining(""));
-
-        return String.format("(%s)%s", parameterSignature, getClassSignature(method.getReturnType()));
+        StringBuilder builder = new StringBuilder();
+        builder.append('(');
+        for (Class<?> t : method.getParameterTypes()) {
+            builder.append(JavaTypes.getClassSignature(t));
+        }
+        String returnSignature = method instanceof Method ? getClassSignature(((Method) method).getReturnType()) : "V";
+        builder.append(')').append(returnSignature);
+        return builder.toString();
     }
 
     public static String getClassSignature(final Class<?> type)
@@ -176,7 +179,7 @@ public class JavaTypes
             return "[" + getClassSignature(type.getComponentType());
         }
         else {
-            return "L" + type.getName().replaceAll("\\.", "/") + ";";
+            return "L" + type.getName().replace(".", "/") + ";";
         }
     }
 

@@ -9,18 +9,17 @@ configure<JavaPluginConvention> {
 }
 
 //jacoco {
-//  toolVersion = "0.8.8"
+//  toolVersion = "0.8.9"
 //}
 configure<JacocoPluginExtension> {
-  toolVersion = "0.8.8"
+  toolVersion = "0.8.9"
 }
 //tasks.jacocoTestReport {
 //  enabled = false
 //}
-// 0.8.8 not support jdk20
-tasks.withType<JacocoReport> {
-  enabled = false
-}
+//tasks.withType<JacocoReport> {
+//  enabled = false
+//}
 
 configure<SourceSetContainer> {
   named("main") {
@@ -40,6 +39,7 @@ if (targetVersion > 8) {
 
 tasks.withType<Test> {
   jvmArgs("--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED")
+  jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
 }
 tasks.withType<JavaExec> {
   // jvmArgs("--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED")

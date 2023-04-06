@@ -20,6 +20,8 @@ import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.OutputStream;
 
+import static com.github.harbby.gadtry.StaticAssert.DEBUG;
+
 public abstract class AbstractOutputView
         extends OutputStream
         implements OutputView
@@ -149,7 +151,7 @@ public abstract class AbstractOutputView
     private void writeAscii0(String s, int len)
             throws JcodecEOFException
     {
-        assert len > 0;
+        assert !DEBUG || len > 0;
         int ramming = buffer.length - offset;
         int off = 0;
         while (len > ramming) {
@@ -157,7 +159,7 @@ public abstract class AbstractOutputView
             for (int i = 0; i < ramming; i++) {
                 buffer[offset++] &= 0x7F;
             }
-            assert offset == buffer.length;
+            assert !DEBUG || offset == buffer.length;
             this.flush();
             off += ramming;
             len -= ramming;
@@ -382,7 +384,7 @@ public abstract class AbstractOutputView
     @Override
     public final void writeBoolArray(boolean[] value)
     {
-        assert value.length > 0;
+        assert !DEBUG || value.length > 0;
         int byteSize = (value.length + 7) >> 3;
         require(byteSize);
         IOUtils.zipBoolArray(value, 0, buffer, offset, value.length);

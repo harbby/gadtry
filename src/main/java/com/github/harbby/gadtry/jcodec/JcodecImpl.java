@@ -37,12 +37,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.harbby.gadtry.StaticAssert.DEBUG;
 import static java.util.Objects.requireNonNull;
 
 final class JcodecImpl
         implements Jcodec
 {
-    private static final boolean DEBUG = false;
     private static final int NULL = 0;
     private static final int NOT_NULL = 1;
 
@@ -109,15 +109,19 @@ final class JcodecImpl
         if (serializer == null) {
             return;
         }
-        int classId = nextClassId++;
-        SerializerWrapper wrapper = new SerializerWrapper(classId, typeClass, serializer);
-        SerializerWrapper old = classWriteCache.put(typeClass, wrapper);
+        SerializerWrapper old = classWriteCache.get(typeClass);
+        SerializerWrapper wrapper;
         if (old != null && old.getId() != -1) {
+            wrapper = new SerializerWrapper(old.getId(), typeClass, serializer);
             classReadCache.set(old.getId(), wrapper);
         }
         else {
+            int classId = nextClassId++;
+            wrapper = new SerializerWrapper(classId, typeClass, serializer);
+            assert !DEBUG || classId == classReadCache.size();
             classReadCache.add(wrapper);
         }
+        classWriteCache.put(typeClass, wrapper);
         if (typeClass.isPrimitive()) {
             Class<?> wrapperClass = JavaTypes.getWrapperClass(typeClass);
             classWriteCache.put(wrapperClass, wrapper);
@@ -174,7 +178,7 @@ final class JcodecImpl
             return null;
         }
         else {
-            return new FieldSerializer<>(this, typeClass);
+            return FieldSerializerFactory.makeSerializer(this, typeClass);
         }
     }
 
@@ -289,6 +293,7 @@ final class JcodecImpl
     @Override
     public void writeClassAndObject(OutputView output, Object value)
     {
+        requireNonNull(output, "output is null");
         if (value == null) {
             writeClass(output, null);
             return;
