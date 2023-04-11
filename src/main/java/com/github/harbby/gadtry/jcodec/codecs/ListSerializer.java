@@ -20,47 +20,44 @@ import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
-public class MapSerializer<K, V>
-        implements Serializer<Map<K, V>>
+public class ListSerializer<T>
+        implements Serializer<List<T>>
 {
     @Override
-    public void write(Jcodec jcodec, OutputView output, Map<K, V> value)
+    public void write(Jcodec jcodec, OutputView output, List<T> list)
     {
-        if (value == null) {
+        if (list == null) {
             output.writeVarInt(0, true);
             return;
         }
-        final int size = value.size();
+        final int size = list.size();
         //write size on the head
         output.writeVarInt(size + 1, true);
         //write key and value
-        for (Map.Entry<K, V> entry : value.entrySet()) {
-            jcodec.writeClassAndObject(output, entry.getKey());
-            jcodec.writeClassAndObject(output, entry.getValue());
+        for (T value : list) {
+            jcodec.writeClassAndObject(output, value);
         }
     }
 
     @Override
-    public Map<K, V> read(Jcodec jcodec, InputView input, Class<? extends Map<K, V>> typeClass)
+    public List<T> read(Jcodec jcodec, InputView input, Class<? extends List<T>> typeClass)
     {
         int size = input.readVarInt(true);
         if (size == 0) {
             return null;
         }
         size--;
-        Class<?> mapClass = typeClass;
-        Map<K, V> map = mapClass == LinkedHashMap.class ? new LinkedHashMap<>(size) : new HashMap<>(size);
+        Class<?> listClass = typeClass;
+        List<T> list = listClass == LinkedList.class ? new LinkedList<>() : new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            K key = jcodec.readClassAndObject(input);
-            V value = jcodec.readClassAndObject(input);
-            map.put(key, value);
+            list.add(jcodec.readClassAndObject(input));
         }
-        return map;
+        return list;
     }
 
     @Override
@@ -70,8 +67,8 @@ public class MapSerializer<K, V>
     }
 
     @Override
-    public Comparator<Map<K, V>> comparator()
+    public Comparator<List<T>> comparator()
     {
-        throw new UnsupportedOperationException("map obj not support comparator");
+        throw new UnsupportedOperationException("list obj not support comparator");
     }
 }

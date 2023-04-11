@@ -447,7 +447,12 @@ public class ArraySerializers
         @Override
         public Comparator<String[]> comparator()
         {
-            return Platform.getArrayComparator(String[].class);
+            try {
+                return Platform.getArrayComparator(String[].class);
+            }
+            catch (Exception e) {
+                return ObjectArraySerializer.comparator(String::compareTo);
+            }
         }
 
         @Override

@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.jcodec.HashCodeComparator;
 import com.github.harbby.gadtry.jcodec.InputView;
 import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
@@ -25,10 +24,8 @@ import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
-import java.util.Comparator;
 
-public class JavaSerializer<E extends Serializable>
+public class JavaSerializer<E>
         implements Serializer<E>
 {
     @Override
@@ -59,11 +56,5 @@ public class JavaSerializer<E extends Serializable>
         catch (Exception e) {
             throw Throwables.throwThrowable(e);
         }
-    }
-
-    @Override
-    public Comparator<E> comparator()
-    {
-        return new HashCodeComparator<>();
     }
 }

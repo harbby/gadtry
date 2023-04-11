@@ -21,48 +21,12 @@ import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
-public class MapSerializer<K, V>
-        implements Serializer<Map<K, V>>
+public class TreeMapSerializer<K, V>
+        implements Serializer<TreeMap<K, V>>
 {
-    @Override
-    public void write(Jcodec jcodec, OutputView output, Map<K, V> value)
-    {
-        if (value == null) {
-            output.writeVarInt(0, true);
-            return;
-        }
-        final int size = value.size();
-        //write size on the head
-        output.writeVarInt(size + 1, true);
-        //write key and value
-        for (Map.Entry<K, V> entry : value.entrySet()) {
-            jcodec.writeClassAndObject(output, entry.getKey());
-            jcodec.writeClassAndObject(output, entry.getValue());
-        }
-    }
-
-    @Override
-    public Map<K, V> read(Jcodec jcodec, InputView input, Class<? extends Map<K, V>> typeClass)
-    {
-        int size = input.readVarInt(true);
-        if (size == 0) {
-            return null;
-        }
-        size--;
-        Class<?> mapClass = typeClass;
-        Map<K, V> map = mapClass == LinkedHashMap.class ? new LinkedHashMap<>(size) : new HashMap<>(size);
-        for (int i = 0; i < size; i++) {
-            K key = jcodec.readClassAndObject(input);
-            V value = jcodec.readClassAndObject(input);
-            map.put(key, value);
-        }
-        return map;
-    }
-
     @Override
     public boolean isNullable()
     {
@@ -70,8 +34,36 @@ public class MapSerializer<K, V>
     }
 
     @Override
-    public Comparator<Map<K, V>> comparator()
+    public void write(Jcodec jcodec, OutputView output, TreeMap<K, V> map)
     {
-        throw new UnsupportedOperationException("map obj not support comparator");
+        if (map == null) {
+            output.writeVarInt(0, true);
+            return;
+        }
+
+        int size = map.size();
+        output.writeVarInt(size + 1, true);
+        Comparator<? super K> comparator = map.comparator();
+        jcodec.writeClassAndObject(output, comparator);
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            jcodec.writeClassAndObject(output, entry.getKey());
+            jcodec.writeClassAndObject(output, entry.getValue());
+        }
+    }
+
+    @Override
+    public TreeMap<K, V> read(Jcodec jcodec, InputView input, Class<? extends TreeMap<K, V>> typeClass)
+    {
+        int size = input.readVarInt(true);
+        if (size == 0) {
+            return null;
+        }
+        size--;
+        Comparator<? super K> comparator = jcodec.readClassAndObject(input);
+        TreeMap<K, V> treeMap = new TreeMap<>(comparator);
+        for (int i = 0; i < size; i++) {
+            treeMap.put(jcodec.readClassAndObject(input), jcodec.readClassAndObject(input));
+        }
+        return treeMap;
     }
 }

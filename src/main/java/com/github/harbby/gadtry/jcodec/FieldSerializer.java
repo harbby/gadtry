@@ -29,6 +29,11 @@ public abstract class FieldSerializer<T>
 
     protected boolean useConstructor = true;
 
+    public FieldSerializer(Jcodec jcodec, Class<? extends T> typeClass)
+    {
+        this.typeClass = typeClass;
+    }
+
     static class FieldData
     {
         protected final FieldType fieldType;
@@ -53,15 +58,16 @@ public abstract class FieldSerializer<T>
             return field.get(obj);
         }
 
-        public Field getField()
-        {
-            return field;
-        }
-
         public void set(Object obj, Object value)
                 throws IllegalAccessException
         {
             field.set(obj, value);
+        }
+
+        @Override
+        public String toString()
+        {
+            return field.toString();
         }
     }
 
@@ -70,11 +76,6 @@ public abstract class FieldSerializer<T>
         OBJECT,
         OBJECT_OR_NULL,
         CLASS_AND_OBJET;
-    }
-
-    public FieldSerializer(Jcodec jcodec, Class<? extends T> typeClass)
-    {
-        this.typeClass = typeClass;
     }
 
     static <T> List<FieldData> analyzeClass(Jcodec jcodec, Class<? extends T> typeClass)
@@ -91,7 +92,7 @@ public abstract class FieldSerializer<T>
                 if (!Modifier.isPublic(modifiers)) {
                     field.setAccessible(true);
                 }
-                FieldData fieldData = make(jcodec, field);
+                FieldData fieldData = analyzeField(jcodec, field);
                 fieldList.add(fieldData);
             }
             it = it.getSuperclass();
@@ -99,17 +100,19 @@ public abstract class FieldSerializer<T>
         return fieldList;
     }
 
-    private static FieldData make(Jcodec jcodec, Field field)
+    private static FieldData analyzeField(Jcodec jcodec, Field field)
     {
-        int modifiers = field.getType().getModifiers();
+        Class<?> fieldClass = field.getType();
+        int modifiers = fieldClass.getModifiers();
         FieldType fieldType;
         Serializer serializer;
         if (field.getType().isPrimitive()) {
-            serializer = jcodec.getSerializer(field.getType());
+            serializer = jcodec.getSerializer(fieldClass);
             fieldType = FieldType.OBJECT;
         }
         else if (Modifier.isFinal(modifiers)) {
-            serializer = jcodec.getSerializer(field.getType());
+            // final class and ARRAY[].class and EnumClass
+            serializer = jcodec.getSerializer(fieldClass);
             fieldType = serializer.isNullable() ? FieldType.OBJECT : FieldType.OBJECT_OR_NULL;
         }
         else {
@@ -119,16 +122,36 @@ public abstract class FieldSerializer<T>
         return new FieldData(field, fieldType, serializer);
     }
 
-    public T newInstance(Jcodec kryo, InputView input, Class<? extends T> typeClass)
+    public T newInstance(Jcodec jcodec, InputView input, Class<? extends T> typeClass)
     {
         if (useConstructor) {
             try {
-                return kryo.newInstance(typeClass);
+                return jcodec.newInstance(typeClass);
             }
             catch (JcodecException e) {
                 useConstructor = false;
             }
         }
         return Platform.allocateInstance2(typeClass);
+    }
+
+    static class EmptyFieldSerializer<T>
+            extends FieldSerializer<T>
+    {
+        EmptyFieldSerializer(Jcodec jcodec, Class<? extends T> typeClass)
+        {
+            super(jcodec, typeClass);
+        }
+
+        @Override
+        public void write(Jcodec jcodec, OutputView output, T value)
+        {
+        }
+
+        @Override
+        public T read(Jcodec jcodec, InputView input, Class<? extends T> typeClass)
+        {
+            return this.newInstance(jcodec, input, typeClass);
+        }
     }
 }

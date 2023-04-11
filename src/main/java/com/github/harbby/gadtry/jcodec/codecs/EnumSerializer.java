@@ -22,6 +22,7 @@ import com.github.harbby.gadtry.jcodec.Serializer;
 
 import java.util.Comparator;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class EnumSerializer
@@ -29,10 +30,11 @@ public class EnumSerializer
 {
     private final Enum<?>[] enums;
 
-    private EnumSerializer(Class<? extends Enum> enumClass)
+    public EnumSerializer(Class<? extends Enum> typeClass)
     {
-        Enum<?>[] enums = enumClass.getEnumConstants();
-        this.enums = requireNonNull(enums, enumClass + " not is Enum");
+        checkArgument(typeClass.isEnum(), "typeClass must is enum Class");
+        Enum<?>[] enums = typeClass.asSubclass(Enum.class).getEnumConstants();
+        this.enums = requireNonNull(enums, typeClass + " not is Enum");
     }
 
     @Override

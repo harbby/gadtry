@@ -17,36 +17,59 @@ package com.github.harbby.gadtry.jcodec.codecs;
 
 import com.github.harbby.gadtry.jcodec.InputView;
 import com.github.harbby.gadtry.jcodec.Jcodec;
+import com.github.harbby.gadtry.jcodec.JcodecException;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
-import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Comparator;
+import java.util.Date;
 
-public class SqlDateSerializer
+import static com.github.harbby.gadtry.StaticAssert.DEBUG;
+
+public class DateSerializer
         implements Serializer<Date>
 {
+    @Override
+    public boolean isNullable()
+    {
+        return true;
+    }
+
     @Override
     public void write(Jcodec jcodec, OutputView output, Date value)
     {
         if (value == null) {
-            output.writeLong(-1);
+            output.writeVarLong(0, true);
         }
         else {
-            output.writeLong(value.getTime());
+            assert !DEBUG || value.getTime() >= 0 : "time must > -1";
+            output.writeVarLong(value.getTime() + 1, true);
         }
     }
 
     @Override
     public Date read(Jcodec jcodec, InputView input, Class<? extends Date> typeClass)
     {
-        final long l = input.readLong();
-        if (l == -1) {
+        long time = input.readVarLong(true);
+        if (time == 0) {
             return null;
         }
-        else {
-            return new Date(l);
+        time--;
+        if (typeClass == Date.class) {
+            return new Date(time);
         }
+        else if (typeClass == Timestamp.class) {
+            return new Timestamp(time);
+        }
+        else if (typeClass == Time.class) {
+            return new Time(time);
+        }
+        else if (typeClass == java.sql.Date.class) {
+            return new java.sql.Date(time);
+        }
+        throw new JcodecException("unknown date type " + typeClass);
     }
 
     @Override

@@ -31,13 +31,13 @@ public interface Jcodec
      * write nonnull object to output
      *
      * @param output outputView
-     * @param value not null value
+     * @param value  not null value
      */
     void writeObject(OutputView output, Object value);
 
     <T> void writeObject(OutputView output, T value, Serializer<T> serializer);
 
-    void writeObjectOrNull(OutputView output, Object value, Class<?> typeClass);
+    <T> void writeObjectOrNull(OutputView output, T value, Class<T> typeClass);
 
     <T> void writeObjectOrNull(OutputView output, T value, Serializer<T> serializer);
 
@@ -45,13 +45,13 @@ public interface Jcodec
 
     <T> T readObject(InputView input, Class<T> typeClass);
 
-    <T> T readObject(InputView input, Class<T> typeClass, Serializer<T> serializer);
+    <T> T readObject(InputView input, Class<? extends T> typeClass, Serializer<T> serializer);
 
     <T> T readClassAndObject(InputView inputView);
 
     <T> T readObjectOrNull(InputView inputView, Class<T> typeClass);
 
-    <T> T readObjectOrNull(InputView inputView, Class<T> typeClass, Serializer<T> serializer);
+    <T> T readObjectOrNull(InputView inputView, Class<? extends T> typeClass, Serializer<T> serializer);
 
     static Jcodec of()
     {

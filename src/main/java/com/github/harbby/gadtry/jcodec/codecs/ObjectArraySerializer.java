@@ -21,16 +21,33 @@ import com.github.harbby.gadtry.jcodec.Jcodec;
 import com.github.harbby.gadtry.jcodec.OutputView;
 import com.github.harbby.gadtry.jcodec.Serializer;
 
+import java.lang.reflect.Modifier;
 import java.util.Comparator;
 
 public class ObjectArraySerializer<E>
         implements Serializer<E[]>
 {
     private final Class<? extends E> classTag;
+    private final Serializer<E> serializer;
+    private boolean isNullable;
 
-    public ObjectArraySerializer(Class<? extends E> classTag)
+    public ObjectArraySerializer(Jcodec jcodec, Class<E[]> typeClass)
     {
+        @SuppressWarnings("unchecked")
+        Class<? extends E> classTag = (Class<? extends E>) typeClass.getComponentType();
+        if (Modifier.isFinal(classTag.getModifiers())) {
+            this.serializer = jcodec.getSerializer(classTag);
+        }
+        else {
+            this.serializer = null;
+        }
         this.classTag = classTag;
+        this.isNullable = serializer != null && serializer.isNullable();
+    }
+
+    public void setNullable(boolean nullable)
+    {
+        isNullable = nullable;
     }
 
     @Override
@@ -47,8 +64,22 @@ public class ObjectArraySerializer<E>
             return;
         }
         output.writeVarInt(values.length + 1, true);
-        for (E e : values) {
-            jcodec.writeClassAndObject(output, e);
+        if (serializer == null) {
+            for (E e : values) {
+                jcodec.writeClassAndObject(output, e);
+            }
+        }
+        else {
+            if (isNullable) {
+                for (E e : values) {
+                    serializer.write(jcodec, output, e);
+                }
+            }
+            else {
+                for (E e : values) {
+                    jcodec.writeObjectOrNull(output, e, serializer);
+                }
+            }
         }
     }
 
@@ -70,9 +101,24 @@ public class ObjectArraySerializer<E>
         }
         len--;
         E[] values = (E[]) java.lang.reflect.Array.newInstance(classTag, len);
-        for (int i = 0; i < len; i++) {
-            values[i] = jcodec.readClassAndObject(input);
+        if (serializer == null) {
+            for (int i = 0; i < len; i++) {
+                values[i] = jcodec.readClassAndObject(input);
+            }
         }
+        else {
+            if (isNullable) {
+                for (int i = 0; i < len; i++) {
+                    values[i] = serializer.read(jcodec, input, classTag);
+                }
+            }
+            else {
+                for (int i = 0; i < len; i++) {
+                    values[i] = jcodec.readObjectOrNull(input, classTag, serializer);
+                }
+            }
+        }
+
         return values;
     }
 

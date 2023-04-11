@@ -23,14 +23,12 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
 import static com.github.harbby.gadtry.StaticAssert.DEBUG;
-import static com.github.harbby.gadtry.jcodec.FieldSerializer.analyzeClass;
 import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -60,12 +58,16 @@ public class FieldSerializerFactory
     @SuppressWarnings("unchecked")
     public static <T> FieldSerializer<T> makeSerializer(Jcodec jcodec, Class<? extends T> typeClass)
     {
-        return (FieldSerializer<T>) factory.makeSerializer0(jcodec, typeClass);
+        List<FieldSerializer.FieldData> fieldDataList = FieldSerializer.analyzeClass(jcodec, typeClass);
+        if (fieldDataList.isEmpty()) {
+            return new FieldSerializer.EmptyFieldSerializer<>(jcodec, typeClass);
+        }
+        // return new SimpleFieldSerializer<>(jcodec, typeClass);
+        return (FieldSerializer<T>) factory.makeSerializer0(jcodec, typeClass, fieldDataList);
     }
 
-    private FieldSerializer<?> makeSerializer0(Jcodec jcodec, Class<?> typeClass)
+    private FieldSerializer<?> makeSerializer0(Jcodec jcodec, Class<?> typeClass, List<FieldSerializer.FieldData> fieldDataList)
     {
-        List<FieldSerializer.FieldData> fieldDataList = analyzeClass(jcodec, typeClass);
         @SuppressWarnings({"rawtypes"})
         Serializer[] serializers = new Serializer[fieldDataList.size()];
         for (int i = 0; i < fieldDataList.size(); i++) {
@@ -81,7 +83,7 @@ public class FieldSerializerFactory
     }
 
     private <T> Class<? extends FieldSerializer<T>> makeClass(Class<? extends T> typeClass, List<FieldSerializer.FieldData> fieldDataList)
-            throws NoSuchMethodException, IOException, IllegalAccessException
+            throws Exception
     {
         String classFullName = typeClass.getName() + "$GenSerializer";
         ClassLoader classLoader = typeClass.getClassLoader();
@@ -94,16 +96,13 @@ public class FieldSerializerFactory
         catch (ClassNotFoundException ignored) {
         }
 
-        if (fieldDataList.isEmpty()) {
-            throw new UnsupportedOperationException();
-        }
         String className = classFullName.replace('.', '/');
         ClassWriter classWriter = new ClassWriter(COMPUTE_MAXS); // ClassWriter.COMPUTE_MAXS
         int version = Platform.getClassVersion();
         classWriter.visit(version, ACC_PUBLIC | ACC_FINAL | ACC_SUPER, className, null, Type.getInternalName(FieldSerializer.class), null);
         classWriter.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "unsafe", "Lsun/misc/Unsafe;", null, null)
                 .visitEnd();
-        classWriter.visitField(ACC_PRIVATE | ACC_FINAL, "serializers", "[Lcom/github/harbby/gadtry/jcodec/Serializer;", null, null)
+        classWriter.visitField(ACC_PRIVATE | ACC_FINAL, "serializers", Type.getDescriptor(Serializer[].class), null, null)
                 .visitEnd();
         // add static {}
         Method getUnsafeMethod = Platform.class.getMethod("getUnsafe");
@@ -123,7 +122,7 @@ public class FieldSerializerFactory
         addReadMethod(className, classWriter, fieldDataList);
         classWriter.visitEnd();
         byte[] byteCode = classWriter.toByteArray();
-        // IOUtils.write(byteCode, new File("out/" + className + ".class"));
+        // IOUtils.write(byteCode, "out/" + className + ".class");
         return Platform.defineClass(typeClass, byteCode).asSubclass(JavaTypes.classTag(FieldSerializer.class));
     }
 

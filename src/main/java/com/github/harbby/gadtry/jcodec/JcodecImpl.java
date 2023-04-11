@@ -21,21 +21,30 @@ import com.github.harbby.gadtry.jcodec.codecs.ArraySerializers;
 import com.github.harbby.gadtry.jcodec.codecs.BooleanSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ByteSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.CharSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.DateSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.DoubleSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.EnumSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.FloatSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.IntSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.JavaInternals;
+import com.github.harbby.gadtry.jcodec.codecs.ListSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.LongSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.MapSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ObjectArraySerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ShortSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.StringSerializer;
-import com.github.harbby.gadtry.jcodec.codecs.TypeArraySerializer;
+import com.github.harbby.gadtry.jcodec.codecs.TreeMapSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VoidSerializer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static com.github.harbby.gadtry.StaticAssert.DEBUG;
 import static java.util.Objects.requireNonNull;
@@ -50,6 +59,11 @@ final class JcodecImpl
     private int nextClassId;
     private final List<SerializerWrapper> classReadCache = new ArrayList<>();
 
+    private final Map<Class<?>, Integer> classNameWriteCache = new CuckooStashHashMap<>();
+    private final List<SerializerWrapper> classNameReadCache = new ArrayList<>();
+
+    private final SerializerManager serializerManager = new SerializerManager();
+
     JcodecImpl()
     {
         // Primitives
@@ -63,15 +77,25 @@ final class JcodecImpl
         register(double.class, DoubleSerializer.class);
         register(String.class, StringSerializer.class);
         // array
-        register(byte[].class, ArraySerializers.ByteArraySerializer.class);
-        register(boolean[].class, ArraySerializers.BooleanArraySerializer.class);
-        register(short[].class, ArraySerializers.ShortArraySerializer.class);
-        register(char[].class, ArraySerializers.CharArraySerializer.class);
-        register(int[].class, ArraySerializers.IntArraySerializer.class);
-        register(float[].class, ArraySerializers.FloatArraySerializer.class);
-        register(long[].class, ArraySerializers.LongArraySerializer.class);
-        register(double[].class, ArraySerializers.DoubleArraySerializer.class);
-        register(Void.class, VoidSerializer.class);
+        addSerializer(byte[].class, ArraySerializers.ByteArraySerializer.class);
+        addSerializer(boolean[].class, ArraySerializers.BooleanArraySerializer.class);
+        addSerializer(short[].class, ArraySerializers.ShortArraySerializer.class);
+        addSerializer(char[].class, ArraySerializers.CharArraySerializer.class);
+        addSerializer(int[].class, ArraySerializers.IntArraySerializer.class);
+        addSerializer(float[].class, ArraySerializers.FloatArraySerializer.class);
+        addSerializer(long[].class, ArraySerializers.LongArraySerializer.class);
+        addSerializer(double[].class, ArraySerializers.DoubleArraySerializer.class);
+        addSerializer(String[].class, ArraySerializers.StringArraySerializer.class);
+        addSerializer(Void.class, VoidSerializer.class);
+        // other
+        addSerializer(Arrays.asList(null, null).getClass(), JavaInternals.ArrayList.class);
+        addSerializer(Collections.singletonMap(null, null).getClass(), JavaInternals.SingletonMapSerializer.class);
+        addSerializer(TreeMap.class, TreeMapSerializer.class);
+        addSerializer(Map.class, MapSerializer.class);
+        addSerializer(List.class, ListSerializer.class);
+        addSerializer(Date.class, DateSerializer.class);
+        addSerializer(Enum.class, EnumSerializer.class);
+        addSerializer(Object[].class, ObjectArraySerializer.class);
     }
 
     @Override
@@ -166,24 +190,26 @@ final class JcodecImpl
         return (Serializer<T>) createSerializer(typeClass);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    public <T> void addSerializer(Class<T> typeClass, Class<? extends Serializer> serializerClass)
+    {
+        serializerManager.addSerializer(typeClass, serializerClass);
+    }
+
+    @SuppressWarnings({"unchecked"})
     private <T> Serializer<T> createSerializer(Class<T> typeClass)
     {
-        if (typeClass.isArray()) {
-            Class<?> classTag = typeClass.getComponentType();
-            Serializer<?> serializer = this.getSerializer(classTag);
-            return serializer == null ? new ObjectArraySerializer(classTag) : new TypeArraySerializer(serializer, classTag);
+        Serializer<T> serializer = (Serializer<T>) serializerManager.findSerializer(this, typeClass);
+        if (serializer != null) {
+            return serializer;
         }
-        else if (typeClass.isInterface() || Modifier.isAbstract(typeClass.getModifiers())) {
-            return null;
+        if (typeClass.isInterface() || Modifier.isAbstract(typeClass.getModifiers())) {
+            throw new JcodecException("typeClass is Interface or Abstract class");
+            // return null;
         }
         else {
             return FieldSerializerFactory.makeSerializer(this, typeClass);
         }
     }
-
-    private final Map<Class<?>, Integer> classNameWriteCache = new CuckooStashHashMap<>();
-    private final List<SerializerWrapper> classNameReadCache = new ArrayList<>();
 
     public SerializerWrapper writeClass(OutputView outputView, Class<?> typeClass)
     {
@@ -263,7 +289,7 @@ final class JcodecImpl
     }
 
     @Override
-    public void writeObjectOrNull(OutputView output, Object value, Class<?> typeClass)
+    public <T> void writeObjectOrNull(OutputView output, T value, Class<T> typeClass)
     {
         requireNonNull(output, "output is null");
         requireNonNull(typeClass, "typeClass is null");
@@ -310,7 +336,7 @@ final class JcodecImpl
     }
 
     @Override
-    public <T> T readObject(InputView input, Class<T> typeClass, Serializer<T> serializer)
+    public <T> T readObject(InputView input, Class<? extends T> typeClass, Serializer<T> serializer)
     {
         return serializer.read(this, input, typeClass);
     }
@@ -337,7 +363,7 @@ final class JcodecImpl
     }
 
     @Override
-    public <T> T readObjectOrNull(InputView inputView, Class<T> typeClass, Serializer<T> serializer)
+    public <T> T readObjectOrNull(InputView inputView, Class<? extends T> typeClass, Serializer<T> serializer)
     {
         boolean isNull = inputView.readVarInt(true) == 0;
         if (isNull) {

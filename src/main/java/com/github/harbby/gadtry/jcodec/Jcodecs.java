@@ -25,10 +25,8 @@ import com.github.harbby.gadtry.jcodec.codecs.FloatSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.IntSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.JavaSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.LongSerializer;
-import com.github.harbby.gadtry.jcodec.codecs.MapSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ShortSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.StringSerializer;
-import com.github.harbby.gadtry.jcodec.codecs.TypeArraySerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VarIntSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VarLongSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VoidSerializer;
@@ -56,10 +54,9 @@ public final class Jcodecs
         primitiveMap.put(double.class, jDouble());
     }
 
-    @SuppressWarnings("unchecked")
     public static <E> Serializer<E> javaEncoder()
     {
-        return (Serializer<E>) new JavaSerializer<>();
+        return new JavaSerializer<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -72,27 +69,6 @@ public final class Jcodecs
         else {
             throw new UnsupportedOperationException(" unknown type " + aClass);
         }
-    }
-
-    public static <K, V> MapSerializer<K, V> mapEncoder(Serializer<K> kSerializer, Serializer<V> vSerializer)
-    {
-        requireNonNull(kSerializer, "key Encoder is null");
-        requireNonNull(vSerializer, "value Encoder is null");
-        return new MapSerializer<>(JavaTypes.classTag(Object.class), JavaTypes.classTag(Object.class), kSerializer, vSerializer);
-    }
-
-    public static <K, V> MapSerializer<K, V> mapEncoder(Class<? extends K> kClass, Class<? extends V> vClass,
-            Serializer<K> kSerializer, Serializer<V> vSerializer)
-    {
-        requireNonNull(kSerializer, "key Encoder is null");
-        requireNonNull(vSerializer, "value Encoder is null");
-        return new MapSerializer<>(kClass, vClass, kSerializer, vSerializer);
-    }
-
-    public static <V> TypeArraySerializer<V> arrayEncoder(Serializer<V> vSerializer, Class<V> aClass)
-    {
-        requireNonNull(vSerializer, "value Encoder is null");
-        return new TypeArraySerializer<>(vSerializer, aClass);
     }
 
     public static <K, V> Tuple2Serializer<K, V> tuple2(Serializer<K> kSerializer, Serializer<V> vSerializer)

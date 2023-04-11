@@ -15,13 +15,21 @@
  */
 package com.github.harbby.gadtry.jcodec;
 
+import com.github.harbby.gadtry.base.TypeWrapper;
+import com.github.harbby.gadtry.collection.ImmutableMap;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 class JcodecTest
@@ -102,6 +110,20 @@ class JcodecTest
         Assertions.assertEquals(in, out);
     }
 
+    @Test
+    public void mapTest()
+    {
+        Jcodec jcodec = Jcodec.of();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        OutputView outputView = new StreamOutputView(outputStream);
+        jcodec.writeObject(outputView, ImmutableMap.of("a", 1.0f));
+        outputView.close();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        InputView inputView = new StreamInputView(inputStream);
+        Object rs = jcodec.readObject(inputView, Map.class);
+        System.out.println(rs);
+    }
+
     private static class TestClass1
     {
         private final int f1 = 123;
@@ -113,6 +135,12 @@ class JcodecTest
         private Number[] f7 = new Number[] {1, 3.14f, 2L};
         private final Tuple2<String, Tuple2<String, Integer>> f8 = Tuple2.of("k", Tuple2.of("kk", 123));
         private final IdClass[] f9 = new IdClass[] {new IdClass(666)};
+        private TypeWrapper f10 = TypeWrapper.BOOLEAN;
+        private final Map<String, Integer> f11 = Collections.singletonMap("a", 1);
+        private List<String> f12 = Arrays.asList("a", "b", "c");
+        private final Integer[] f13 = new Integer[] {1, 2, null};
+        private final Date[] f14 = new Date[] {new Timestamp(1), new Time(1)};
+        private IdClass f15 = new IdClass(888);
 
         public TestClass1(int f2)
         {
@@ -120,37 +148,63 @@ class JcodecTest
         }
 
         @Override
-        public int hashCode()
+        public boolean equals(Object o)
         {
-            return Objects.hash(f2, f3, f4, Arrays.hashCode(f5), Arrays.hashCode(f6), Arrays.hashCode(f7));
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestClass1 that = (TestClass1) o;
+            return f1 == that.f1 && Objects.equals(f2, that.f2) && Objects.equals(f3, that.f3) &&
+                    Objects.equals(f4, that.f4) && Arrays.equals(f5, that.f5) &&
+                    Arrays.equals(f6, that.f6) && Arrays.equals(f7, that.f7) &&
+                    Objects.equals(f8, that.f8) && Arrays.equals(f9, that.f9) &&
+                    f10 == that.f10 && Objects.equals(f11, that.f11) && Objects.equals(f12, that.f12) &&
+                    Arrays.equals(f13, that.f13) && Arrays.equals(f14, that.f14) && Objects.equals(f15, that.f15);
         }
 
         @Override
-        public boolean equals(Object obj)
+        public int hashCode()
         {
-            if (!(obj instanceof TestClass1)) {
-                return false;
-            }
-            else if (obj == this) {
-                return true;
-            }
-            TestClass1 that = (TestClass1) obj;
-            return Objects.equals(f2, that.f2) &&
-                    Objects.equals(f3, that.f3) &&
-                    Objects.equals(f4, that.f4) &&
-                    Arrays.equals(f5, that.f5) &&
-                    Arrays.equals(f6, that.f6) &&
-                    Arrays.equals(f7, that.f7);
+            int result = Objects.hash(f1, f2, f3, f4, f8, f10, f11, f12, f15);
+            result = 31 * result + Arrays.hashCode(f5);
+            result = 31 * result + Arrays.hashCode(f6);
+            result = 31 * result + Arrays.hashCode(f7);
+            result = 31 * result + Arrays.hashCode(f9);
+            result = 31 * result + Arrays.hashCode(f13);
+            result = 31 * result + Arrays.hashCode(f14);
+            return result;
         }
     }
 
-    public static final class IdClass
+    public static class IdClass
     {
         private final int id;
 
         public IdClass(int id)
         {
             this.id = id;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            IdClass idClass = (IdClass) o;
+            return id == idClass.id;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(id);
         }
     }
 }
