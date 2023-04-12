@@ -17,6 +17,8 @@ package com.github.harbby.gadtry.jcodec;
 
 public interface Jcodec
 {
+    public <T> void addSerializer(Class<T> typeClass, Class<? extends Serializer> serializerClass);
+
     public <T> Serializer<T> getSerializer(Class<?> typeClass);
 
     public <T> T newInstance(Class<? extends T> type);

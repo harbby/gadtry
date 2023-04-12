@@ -32,7 +32,7 @@ public class TimSortTest
             Integer[] intArr = random.ints(size, 0, 100).boxed().toArray(Integer[]::new);
             Integer[] copyArr = Arrays.copyOf(intArr, size);
 
-            TimSort.sort(intArr, Integer::compareTo, new TimeSortDataFormat.SingleDataFormat<>());
+            TimSort.sort(intArr, Integer::compareTo, new TimSortDataFormat.SingleDataFormat<>());
             Arrays.sort(copyArr, Integer::compareTo);
 
             Assertions.assertArrayEquals(intArr, copyArr);
@@ -51,7 +51,7 @@ public class TimSortTest
                 data[i * 2 + 1] = "int_" + baseArr[i];
             }
 
-            TimSort.sort(data, Integer::compareTo, new TimeSortDataFormat.PairDataFormat<>());
+            TimSort.sort(data, Integer::compareTo, new TimSortDataFormat.PairDataFormat<>());
             Arrays.sort(baseArr);
             // check
             for (int i = 0; i < size; i++) {

@@ -16,7 +16,6 @@
  */
 package com.github.harbby.gadtry.base;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -28,7 +27,7 @@ import static java.util.Objects.requireNonNull;
  * to the data structure being sorted, allowing for more flexible
  * sorting of different data structures.
  *
- * @see com.github.harbby.gadtry.base.TimeSortDataFormat
+ * @see TimSortDataFormat
  */
 public final class TimSort<K, ARRAY> {
     /**
@@ -56,7 +55,7 @@ public final class TimSort<K, ARRAY> {
      */
     private final Comparator<? super K> c;
 
-    private final TimeSortDataFormat<K, ARRAY> format;
+    private final TimSortDataFormat<K, ARRAY> format;
 
     /**
      * When we get into galloping mode, we stay there until both runs win less
@@ -107,7 +106,7 @@ public final class TimSort<K, ARRAY> {
      * @param c the comparator to determine the order of the sort
      * @param format array data formatter
      */
-    private TimSort(int len, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    private TimSort(int len, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         this.c = c;
         this.format = format;
         this.fixedLength = len;
@@ -184,7 +183,7 @@ public final class TimSort<K, ARRAY> {
         // If array is small, do a "mini-TimSort" with no merges
         if (nRemaining < MIN_MERGE) {
             Comparator<? super K> c = timSorter.c;
-            TimeSortDataFormat<K, ARRAY> format = timSorter.format;
+            TimSortDataFormat<K, ARRAY> format = timSorter.format;
             int initRunLen = countRunAndMakeAscending(a, lo, hi, c, format);
             binarySort(a, lo, hi, lo + initRunLen, c, format);
             return;
@@ -192,7 +191,7 @@ public final class TimSort<K, ARRAY> {
         timSorter.sort(a, lo, hi);
     }
 
-    public static <K, ARRAY> TimSort<K, ARRAY> createFixedLengthTimeSort(int len, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    public static <K, ARRAY> TimSort<K, ARRAY> createFixedLengthTimeSort(int len, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         if (len < MIN_MERGE) {
             throw new IllegalArgumentException("len must > " + MIN_MERGE);
         }
@@ -206,10 +205,10 @@ public final class TimSort<K, ARRAY> {
      * the entire API of this class.  Each of these methods obeys the contract
      * of the public method with the same signature in java.util.Arrays.
      */
-    public static <K, ARRAY> void sort(ARRAY a, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    public static <K, ARRAY> void sort(ARRAY a, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         sort(a, 0, format.getLength(a), c, format);
     }
-    public static <K, ARRAY> void sort(ARRAY a, int lo, int hi, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    public static <K, ARRAY> void sort(ARRAY a, int lo, int hi, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         requireNonNull(format, "dataFormat is null");
         // Arrays.checkStartAndEnd(a.length, lo, hi);
         int nRemaining  = hi - lo;
@@ -248,7 +247,7 @@ public final class TimSort<K, ARRAY> {
      * @param format array data foramtter
      */
     @SuppressWarnings("fallthrough")
-    private static <K, ARRAY> void binarySort(ARRAY a, int lo, int hi, int start, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    private static <K, ARRAY> void binarySort(ARRAY a, int lo, int hi, int start, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         if (DEBUG) assert lo <= start && start <= hi;
         ARRAY pivotCache = format.createArray(1);
         if (start == lo)
@@ -322,7 +321,7 @@ public final class TimSort<K, ARRAY> {
      * @return  the length of the run beginning at the specified position in
      *          the specified array
      */
-    private static <K, ARRAY> int countRunAndMakeAscending(ARRAY a, int lo, int hi, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+    private static <K, ARRAY> int countRunAndMakeAscending(ARRAY a, int lo, int hi, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         if (DEBUG) assert lo < hi;
         int runHi = lo + 1;
         if (runHi == hi)
@@ -348,7 +347,7 @@ public final class TimSort<K, ARRAY> {
      * @param lo the index of the first element in the range to be reversed
      * @param hi the index after the last element in the range to be reversed
      */
-    private static <K, ARRAY> void reverseRange(ARRAY a, int lo, int hi, TimeSortDataFormat<K, ARRAY> dataFormat) {
+    private static <K, ARRAY> void reverseRange(ARRAY a, int lo, int hi, TimSortDataFormat<K, ARRAY> dataFormat) {
         hi--;
         while (lo < hi) {
 //            Object t = a[lo];
@@ -504,7 +503,7 @@ public final class TimSort<K, ARRAY> {
      *    should follow it.
      */
     private static <K, ARRAY> int gallopLeft(K key, ARRAY a, int base, int len,
-            int hint, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> dataFormat) {
+            int hint, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> dataFormat) {
         if (DEBUG) assert len > 0 && hint >= 0 && hint < len;
         int lastOfs = 0;
         int ofs = 1;
@@ -573,7 +572,7 @@ public final class TimSort<K, ARRAY> {
      * @return the int k,  0 <= k <= n such that a[b + k - 1] <= key < a[b + k]
      */
     private static <K, ARRAY> int gallopRight(K key, ARRAY a, int base, int len,
-            int hint, Comparator<? super K> c, TimeSortDataFormat<K, ARRAY> format) {
+            int hint, Comparator<? super K> c, TimSortDataFormat<K, ARRAY> format) {
         if (DEBUG) assert len > 0 && hint >= 0 && hint < len;
         int ofs = 1;
         int lastOfs = 0;
@@ -895,7 +894,7 @@ public final class TimSort<K, ARRAY> {
      * @param minCapacity the minimum required capacity of the tmp array
      * @return tmp, whether or not it grew
      */
-    private ARRAY ensureCapacity(int minCapacity, TimeSortDataFormat<K, ARRAY> format) {
+    private ARRAY ensureCapacity(int minCapacity, TimSortDataFormat<K, ARRAY> format) {
         if (format.getLength(tmp) < minCapacity) {
             // Compute smallest power of 2 > minCapacity
             int newSize = minCapacity;

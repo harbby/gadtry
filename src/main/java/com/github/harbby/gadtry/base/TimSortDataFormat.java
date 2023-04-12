@@ -23,7 +23,7 @@ import java.util.Arrays;
  * @param <K> Type of elements in the array
  * @param <ARRAY> Array type
  */
-public interface TimeSortDataFormat<K, ARRAY>
+public interface TimSortDataFormat<K, ARRAY>
 {
     /**
      * Returns the length of the array.
@@ -77,7 +77,7 @@ public interface TimeSortDataFormat<K, ARRAY>
     void clearArray(ARRAY tmp);
 
     static final class SingleDataFormat<K, T>
-            implements TimeSortDataFormat<K, T[]>
+            implements TimSortDataFormat<K, T[]>
     {
         @Override
         public int getLength(T[] arr)
@@ -127,7 +127,7 @@ public interface TimeSortDataFormat<K, ARRAY>
     }
 
     static final class PairDataFormat<K, T>
-            implements TimeSortDataFormat<K, T[]>
+            implements TimSortDataFormat<K, T[]>
     {
         @Override
         public int getLength(T[] arr)

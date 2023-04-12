@@ -47,10 +47,10 @@ public abstract class AbstractInputView
         if (required > buffer.length) {
             throw new JcodecException("buffer is small: capacity: " + buffer.length + ", required: " + required);
         }
-        if (limit - position < required) {
-            int n = 0;
+        int n = limit - position;
+        if (n < required) {
             if (limit == buffer.length) {
-                n = this.refill();
+                n += this.refill();
             }
             if (n < required) {
                 throw new JcodecEOFException("required: " + required);

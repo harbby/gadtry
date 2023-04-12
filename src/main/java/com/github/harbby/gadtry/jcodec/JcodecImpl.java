@@ -25,15 +25,15 @@ import com.github.harbby.gadtry.jcodec.codecs.DateSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.DoubleSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.EnumSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.FloatSerializer;
-import com.github.harbby.gadtry.jcodec.codecs.IntSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.JavaInternals;
 import com.github.harbby.gadtry.jcodec.codecs.ListSerializer;
-import com.github.harbby.gadtry.jcodec.codecs.LongSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.MapSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ObjectArraySerializer;
 import com.github.harbby.gadtry.jcodec.codecs.ShortSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.StringSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.TreeMapSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.VarIntSerializer;
+import com.github.harbby.gadtry.jcodec.codecs.VarLongSerializer;
 import com.github.harbby.gadtry.jcodec.codecs.VoidSerializer;
 
 import java.lang.reflect.Constructor;
@@ -55,9 +55,9 @@ final class JcodecImpl
     private static final int NULL = 0;
     private static final int NOT_NULL = 1;
 
-    private final Map<Class<?>, SerializerWrapper> classWriteCache = new CuckooStashHashMap<>();
+    private final Map<Class<?>, SerializerWrapper> registerMap = new CuckooStashHashMap<>();
+    private final List<SerializerWrapper> registerIndex = new ArrayList<>();
     private int nextClassId;
-    private final List<SerializerWrapper> classReadCache = new ArrayList<>();
 
     private final Map<Class<?>, Integer> classNameWriteCache = new CuckooStashHashMap<>();
     private final List<SerializerWrapper> classNameReadCache = new ArrayList<>();
@@ -71,9 +71,9 @@ final class JcodecImpl
         register(boolean.class, BooleanSerializer.class);
         register(short.class, ShortSerializer.class);
         register(char.class, CharSerializer.class);
-        register(int.class, IntSerializer.class);
         register(float.class, FloatSerializer.class);
-        register(long.class, LongSerializer.class);
+        register(int.class, VarIntSerializer.class);
+        register(long.class, VarLongSerializer.class);
         register(double.class, DoubleSerializer.class);
         register(String.class, StringSerializer.class);
         // array
@@ -133,22 +133,22 @@ final class JcodecImpl
         if (serializer == null) {
             return;
         }
-        SerializerWrapper old = classWriteCache.get(typeClass);
+        SerializerWrapper old = registerMap.get(typeClass);
         SerializerWrapper wrapper;
         if (old != null && old.getId() != -1) {
             wrapper = new SerializerWrapper(old.getId(), typeClass, serializer);
-            classReadCache.set(old.getId(), wrapper);
+            registerIndex.set(old.getId(), wrapper);
         }
         else {
             int classId = nextClassId++;
             wrapper = new SerializerWrapper(classId, typeClass, serializer);
-            assert !DEBUG || classId == classReadCache.size();
-            classReadCache.add(wrapper);
+            assert !DEBUG || classId == registerIndex.size();
+            registerIndex.add(wrapper);
         }
-        classWriteCache.put(typeClass, wrapper);
+        registerMap.put(typeClass, wrapper);
         if (typeClass.isPrimitive()) {
             Class<?> wrapperClass = JavaTypes.getWrapperClass(typeClass);
-            classWriteCache.put(wrapperClass, wrapper);
+            registerMap.put(wrapperClass, wrapper);
         }
     }
 
@@ -156,7 +156,7 @@ final class JcodecImpl
     public <T> void register(Class<T> typeClass)
     {
         requireNonNull(typeClass, "typeClass is null");
-        SerializerWrapper wrapper = classWriteCache.get(typeClass);
+        SerializerWrapper wrapper = registerMap.get(typeClass);
         if (wrapper != null) {
             return;
         }
@@ -169,13 +169,13 @@ final class JcodecImpl
 
     private SerializerWrapper getOrCacheSerializerWrapper(Class<?> typeClass)
     {
-        SerializerWrapper wrapper = classWriteCache.get(typeClass);
+        SerializerWrapper wrapper = registerMap.get(typeClass);
         if (wrapper != null) {
             return wrapper;
         }
         Serializer<?> serializer = createSerializer(typeClass);
         wrapper = new SerializerWrapper(-1, typeClass, serializer);
-        classWriteCache.put(typeClass, wrapper);
+        registerMap.put(typeClass, wrapper);
         return wrapper;
     }
 
@@ -183,13 +183,14 @@ final class JcodecImpl
     @Override
     public <T> Serializer<T> getSerializer(Class<?> typeClass)
     {
-        SerializerWrapper wrapper = classWriteCache.get(typeClass);
+        SerializerWrapper wrapper = registerMap.get(typeClass);
         if (wrapper != null) {
             return wrapper.getSerializer();
         }
         return (Serializer<T>) createSerializer(typeClass);
     }
 
+    @Override
     public <T> void addSerializer(Class<T> typeClass, Class<? extends Serializer> serializerClass)
     {
         serializerManager.addSerializer(typeClass, serializerClass);
@@ -198,7 +199,12 @@ final class JcodecImpl
     @SuppressWarnings({"unchecked"})
     private <T> Serializer<T> createSerializer(Class<T> typeClass)
     {
-        Serializer<T> serializer = (Serializer<T>) serializerManager.findSerializer(this, typeClass);
+        JcodecSerializer jcodecSerializer = typeClass.getAnnotation(JcodecSerializer.class);
+        if (jcodecSerializer != null) {
+            serializerManager.checkSerializer(typeClass, jcodecSerializer.value());
+            return (Serializer<T>) serializerManager.makeSerializer(this, typeClass, jcodecSerializer.value());
+        }
+        Serializer<T> serializer = (Serializer<T>) serializerManager.makeSerializer(this, typeClass);
         if (serializer != null) {
             return serializer;
         }
@@ -206,9 +212,7 @@ final class JcodecImpl
             throw new JcodecException("typeClass is Interface or Abstract class");
             // return null;
         }
-        else {
-            return FieldSerializerFactory.makeSerializer(this, typeClass);
-        }
+        return FieldSerializerFactory.makeSerializer(this, typeClass);
     }
 
     public SerializerWrapper writeClass(OutputView outputView, Class<?> typeClass)
@@ -263,7 +267,7 @@ final class JcodecImpl
             return wrapper;
         }
         else {
-            SerializerWrapper wrapper = classReadCache.get(classId - 2);
+            SerializerWrapper wrapper = registerIndex.get(classId - 2);
             if (DEBUG) {
                 assert wrapper != null;
             }

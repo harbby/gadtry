@@ -17,10 +17,13 @@ package com.github.harbby.gadtry.jcodec;
 
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 final class SerializerManager
 {
@@ -28,39 +31,60 @@ final class SerializerManager
 
     public <T> void addSerializer(Class<T> typeClass, Class<? extends Serializer> serializerClass)
     {
+        // check serializerClass
+        this.checkSerializer(typeClass, serializerClass);
+        int i = 0;
+        for (; i < list.size(); i++) {
+            Tuple2<Class<?>, Class<? extends Serializer>> it = list.get(i);
+            if (it.key().isAssignableFrom(typeClass)) {
+                break;
+            }
+        }
+        list.add(i, Tuple2.of(typeClass, serializerClass));
+    }
+
+    public Serializer<?> makeSerializer(Jcodec jcodec, Class<?> typeClass)
+    {
+        for (Tuple2<Class<?>, Class<? extends Serializer>> it : list) {
+            if (it.key().isAssignableFrom(typeClass)) {
+                return this.makeSerializer(jcodec, typeClass, it.value());
+            }
+        }
+        return null;
+    }
+
+    public void checkSerializer(Class<?> typeClass, Class<? extends Serializer> serializerClass)
+    {
         ParameterizedType parameterizedType = (ParameterizedType) serializerClass.getGenericInterfaces()[0];
         Type type = parameterizedType.getActualTypeArguments()[0];
         if (type instanceof ParameterizedType) {
             type = ((ParameterizedType) type).getRawType();
         }
-        //Class<?> tClass = (Class<?>) type;
-        //checkState(tClass.isAssignableFrom(tClass), "serializerClass not typeClass");
-        list.add(Tuple2.of(typeClass, serializerClass));
+        if (typeClass == Object[].class) {
+            checkState(type instanceof GenericArrayType, "serializerClass not is array serializer");
+        }
+        else {
+            checkState(((Class<?>) type).isAssignableFrom(typeClass), "serializerClass not typeClass");
+        }
     }
 
-    public Serializer<?> findSerializer(Jcodec jcodec, Class<?> typeClass)
+    public Serializer<?> makeSerializer(Jcodec jcodec, Class<?> typeClass, Class<? extends Serializer> serializerClass)
     {
-        for (Tuple2<Class<?>, Class<? extends Serializer>> it : list) {
-            if (it.key().isAssignableFrom(typeClass)) {
-                Class<? extends Serializer> serializerClass = it.value();
-                try {
-                    try {
-                        return serializerClass.getDeclaredConstructor().newInstance();
-                    }
-                    catch (NoSuchMethodException ignored) {
-                    }
-                    try {
-                        return serializerClass.getDeclaredConstructor(Class.class).newInstance(typeClass);
-                    }
-                    catch (NoSuchMethodException ignored) {
-                    }
-                    return serializerClass.getDeclaredConstructor(Jcodec.class, Class.class).newInstance(jcodec, typeClass);
-                }
-                catch (Exception e) {
-                    throw new JcodecException("Instance failed", e);
-                }
+        try {
+            try {
+                return serializerClass.getDeclaredConstructor().newInstance();
             }
+            catch (NoSuchMethodException ignored) {
+            }
+            try {
+                return serializerClass.getDeclaredConstructor(Class.class).newInstance(typeClass);
+            }
+            catch (NoSuchMethodException ignored) {
+            }
+            return serializerClass.getDeclaredConstructor(Jcodec.class, Class.class).newInstance(jcodec, typeClass);
         }
-        return null;
+        catch (Exception e) {
+            throw new JcodecException("Instance failed", e);
+        }
     }
 }

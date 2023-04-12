@@ -18,6 +18,7 @@ package com.github.harbby.gadtry.jcodec;
 import com.github.harbby.gadtry.base.TypeWrapper;
 import com.github.harbby.gadtry.collection.ImmutableMap;
 import com.github.harbby.gadtry.collection.tuple.Tuple2;
+import com.github.harbby.gadtry.jcodec.codecs.MapSerializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -114,6 +115,7 @@ class JcodecTest
     public void mapTest()
     {
         Jcodec jcodec = Jcodec.of();
+        jcodec.addSerializer(ImmutableMap.class, MapSerializer.class);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         OutputView outputView = new StreamOutputView(outputStream);
         jcodec.writeObject(outputView, ImmutableMap.of("a", 1.0f));
@@ -179,6 +181,7 @@ class JcodecTest
         }
     }
 
+    @JcodecSerializer(IdClass.IdClassSerializer.class)
     public static class IdClass
     {
         private final int id;
@@ -205,6 +208,22 @@ class JcodecTest
         public int hashCode()
         {
             return Objects.hash(id);
+        }
+
+        public static class IdClassSerializer
+                implements Serializer<IdClass>
+        {
+            @Override
+            public void write(Jcodec jcodec, OutputView output, IdClass value)
+            {
+                output.writeVarInt(value.id, true);
+            }
+
+            @Override
+            public IdClass read(Jcodec jcodec, InputView input, Class<? extends IdClass> typeClass)
+            {
+                return new IdClass(input.readVarInt(true));
+            }
         }
     }
 }
