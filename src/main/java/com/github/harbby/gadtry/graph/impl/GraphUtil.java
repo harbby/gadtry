@@ -63,6 +63,21 @@ public class GraphUtil
         }
     }
 
+    private static final String LINE_SEPARATOR = LineSeparator.Linux.separator;
+
+    public enum LineSeparator
+    {
+        Linux("── "),
+        Default("────"),
+        RightArrow("──> ");
+        private final String separator;
+
+        LineSeparator(String separator)
+        {
+            this.separator = separator;
+        }
+    }
+
     private static List<String> printBuilder(List<GraphNode<?, ?>> beginNodes)
     {
         Deque<NextStep> queue = new LinkedList<>();
@@ -74,7 +89,7 @@ public class GraphUtil
         NextStep nextStep;
         while ((nextStep = queue.pollFirst()) != null) {
             GraphNode<?, ?> node = nextStep.getNode();
-            String line = nextStep.getHeader() + "────" + node.toString();
+            String line = nextStep.getHeader() + LINE_SEPARATOR + node.toString();
             builder.add(line);
 
             String nextHeader = getNextLineHeader(line, node.toString());

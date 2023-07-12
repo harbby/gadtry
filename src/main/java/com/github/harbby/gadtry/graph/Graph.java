@@ -15,8 +15,11 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.graph.canvas.CanvasBuilder;
 import com.github.harbby.gadtry.graph.impl.DefaultGraph;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +37,17 @@ public interface Graph<N, E>
     public void addEdge(N n1, N n2);
 
     List<String> printShow();
+
+    default void saveAsCanvas(String path)
+            throws IOException
+    {
+        saveAsCanvas(new File(path));
+    }
+
+    CanvasBuilder<N, E> saveAsCanvas();
+
+    void saveAsCanvas(File path)
+            throws IOException;
 
     /**
      * 打印graph结构

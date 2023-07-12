@@ -17,7 +17,7 @@ package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.collection.MutableSet;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -32,31 +32,29 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
  */
 public class GraphDemoTest
 {
-    private Graph<String, Integer> graph;
+    //AB5, BC4, CD8, DC8, DE6, AD5, CE2, EB3, AE7
+    public static final Graph<String, Integer> TRAIN_GRAPH = ImmutableGraph.<String, Integer>builder()
+            .addNode("A")
+            .addNode("B")
+            .addNode("C")
+            .addNode("D")
+            .addNode("E")
+            .addEdge("A", "B", 5)  //A到B距离为5
+            .addEdge("B", "C", 4)
+            .addEdge("C", "D", 8)
+            .addEdge("D", "C", 8)
+            .addEdge("D", "E", 6)
+            .addEdge("A", "D", 5)
+            .addEdge("C", "E", 2)
+            .addEdge("E", "B", 3)
+            .addEdge("A", "E", 7)
+            .create();
 
-    @BeforeEach
-    public void before()
+    @BeforeAll
+    public static void before()
     {
-        //AB5, BC4, CD8, DC8, DE6, AD5, CE2, EB3, AE7
-        this.graph = ImmutableGraph.<String, Integer>builder()
-                .addNode("A")
-                .addNode("B")
-                .addNode("C")
-                .addNode("D")
-                .addNode("E")
-                .addEdge("A", "B", 5)  //A到B距离为5
-                .addEdge("B", "C", 4)
-                .addEdge("C", "D", 8)
-                .addEdge("D", "C", 8)
-                .addEdge("D", "E", 6)
-                .addEdge("A", "D", 5)
-                .addEdge("C", "E", 2)
-                .addEdge("E", "B", 3)
-                .addEdge("A", "E", 7)
-                .create();
-
         //---打印出已A为起点的网络
-        graph.printShow("A").forEach(System.out::println);
+        TRAIN_GRAPH.printShow("A").forEach(System.out::println);
     }
 
     @Test
@@ -64,12 +62,12 @@ public class GraphDemoTest
             throws Exception
     {
         //1-5
-        Assertions.assertEquals(9L, getRouteDistance(graph.getRoute("A", "B", "C")));
-        Assertions.assertEquals(5L, getRouteDistance(graph.getRoute("A", "D")));
-        Assertions.assertEquals(13L, getRouteDistance(graph.getRoute("A", "D", "C")));
-        Assertions.assertEquals(22L, getRouteDistance(graph.getRoute("A", "E", "B", "C", "D")));
+        Assertions.assertEquals(9L, getRouteDistance(TRAIN_GRAPH.getRoute("A", "B", "C")));
+        Assertions.assertEquals(5L, getRouteDistance(TRAIN_GRAPH.getRoute("A", "D")));
+        Assertions.assertEquals(13L, getRouteDistance(TRAIN_GRAPH.getRoute("A", "D", "C")));
+        Assertions.assertEquals(22L, getRouteDistance(TRAIN_GRAPH.getRoute("A", "E", "B", "C", "D")));
         try {
-            graph.getRoute("A", "E", "D");  //5
+            TRAIN_GRAPH.getRoute("A", "E", "D");  //5
         }
         catch (Exception e) {
             Assertions.assertEquals("NO SUCH ROUTE", e.getMessage());
@@ -80,7 +78,7 @@ public class GraphDemoTest
     public void test6SearchMax3Return2CToC()
     {
         //6  找出C到C经过最多3个点的路线
-        List<Route<String, Integer>> routes = graph.searchRuleRoute("C", "C", route -> route.size() <= 3);
+        List<Route<String, Integer>> routes = TRAIN_GRAPH.searchRuleRoute("C", "C", route -> route.size() <= 3);
         Assertions.assertEquals(2, routes.size());
         List<String> paths = routes.stream().map(x -> String.join("-", x.getIds())).collect(Collectors.toList());
         Assertions.assertTrue(paths.contains("C-D-C") && paths.contains("C-E-B-C"));
@@ -90,7 +88,7 @@ public class GraphDemoTest
     public void test7SearchEq4Return3AToC()
     {
         //7 找出A到C恰好经过4个点的路线
-        List<Route<String, Integer>> routes = graph.searchRuleRoute("A", "C", route -> route.size() <= 4)
+        List<Route<String, Integer>> routes = TRAIN_GRAPH.searchRuleRoute("A", "C", route -> route.size() <= 4)
                 .stream().filter(x -> x.size() == 4)
                 .collect(Collectors.toList());
 
@@ -103,7 +101,7 @@ public class GraphDemoTest
     public void searchApi7SearchEq4Return3AToC()
     {
         //7 找出A到C恰好经过4个点的路线
-        List<Route<String, Integer>> routes = graph.search()
+        List<Route<String, Integer>> routes = TRAIN_GRAPH.search()
                 .beginNode("A")
                 .endNode("C")
                 .mode(SearchBuilder.Mode.BREADTH_FIRST)
@@ -121,7 +119,7 @@ public class GraphDemoTest
     public void test8SearchMinRouteReturn9AToC()
     {
         //8 找出A到C的最短距离线路
-        List<Route<String, Integer>> minRoutes = searchMinRoute(graph, "A", "C");
+        List<Route<String, Integer>> minRoutes = searchMinRoute(TRAIN_GRAPH, "A", "C");
         long distances = getRouteDistance(minRoutes.get(0));
 
         Assertions.assertEquals(9L, distances);
@@ -131,7 +129,7 @@ public class GraphDemoTest
     public void test9SearchMinRouteReturn9BToB()
     {
         //9 找出B到B的最短距离线路
-        List<Route<String, Integer>> minRoutes = searchMinRoute(graph, "B", "B");
+        List<Route<String, Integer>> minRoutes = searchMinRoute(TRAIN_GRAPH, "B", "B");
         long distances = getRouteDistance(minRoutes.get(0));
         Assertions.assertEquals(9L, distances);
     }
@@ -140,7 +138,7 @@ public class GraphDemoTest
     public void test10SearchMaxDistances30RouteReturn7CToC()
     {
         //10 找出c to c 距离30以内的线路
-        List<Route<String, Integer>> routes = graph.searchRuleRoute("C", "C", route -> {
+        List<Route<String, Integer>> routes = TRAIN_GRAPH.searchRuleRoute("C", "C", route -> {
             long distances = getRouteDistance(route);
             return distances < 30;
         });
@@ -151,7 +149,7 @@ public class GraphDemoTest
     public void searchApi10SearchGiveMaxDistances30Return7ByCToC()
     {
         //10 找出c to c 距离30以内的线路
-        List<Route<String, Integer>> routes = graph.search()
+        List<Route<String, Integer>> routes = TRAIN_GRAPH.search()
                 .beginNode("C")
                 .endNode("C")
                 .mode(SearchBuilder.Mode.DEPTH_FIRST)

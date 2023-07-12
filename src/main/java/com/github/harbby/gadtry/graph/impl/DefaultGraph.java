@@ -20,7 +20,10 @@ import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.Route;
 import com.github.harbby.gadtry.graph.SearchBuilder;
+import com.github.harbby.gadtry.graph.canvas.CanvasBuilder;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -106,6 +109,18 @@ public class DefaultGraph<N, E>
     {
         List<GraphNode<?, ?>> nodes = root.nextNodes().stream().map(GraphEdge::getOutNode).collect(Collectors.toList());
         return GraphUtil.printShow(nodes);
+    }
+
+    @Override
+    public CanvasBuilder<N, E> saveAsCanvas()
+    {
+        return new CanvasBuilder<>(root, nodes);
+    }
+
+    public void saveAsCanvas(File path)
+            throws IOException
+    {
+        this.saveAsCanvas().save(path);
     }
 
     @Override

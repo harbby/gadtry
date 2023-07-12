@@ -43,6 +43,33 @@ public class GraphxTest
             .addEdge("a3", "a6")
             .create();
 
+    public static final Graph<String, Void> JAVA_EXCEPTION_GRAPH = Graph.<String, Void>builder()
+            .addNode("Throwable")
+            .addNode("Exception")
+            .addNode("IOException")
+            .addNode("FileNotFoundException")
+
+            .addNode("RuntimeException")
+            .addNode("UnsupportedOperationException")
+            .addNode("IllegalArgumentException")
+
+            .addNode("Error")
+            .addNode("OutOfMemoryError")
+            .addNode("NoClassDefFoundError")
+
+            .addEdge("Throwable", "Exception")
+            .addEdge("Throwable", "Error")
+
+            .addEdge("Exception", "IOException")
+            .addEdge("Exception", "FileNotFoundException")
+            .addEdge("Exception", "RuntimeException")
+            .addEdge("RuntimeException", "UnsupportedOperationException")
+            .addEdge("RuntimeException", "IllegalArgumentException")
+
+            .addEdge("Error", "OutOfMemoryError")
+            .addEdge("Error", "NoClassDefFoundError")
+            .create();
+
     @Test
     public void testCreateGraph1()
     {
@@ -106,33 +133,7 @@ public class GraphxTest
     @Test
     public void testRoute()
     {
-        Graph<String, Void> graph = Graph.<String, Void>builder()
-                .addNode("Throwable")
-                .addNode("Exception")
-                .addNode("IOException")
-                .addNode("FileNotFoundException")
-
-                .addNode("RuntimeException")
-                .addNode("UnsupportedOperationException")
-                .addNode("IllegalArgumentException")
-
-                .addNode("Error")
-                .addNode("OutOfMemoryError")
-                .addNode("NoClassDefFoundError")
-
-                .addEdge("Throwable", "Exception")
-                .addEdge("Throwable", "Error")
-
-                .addEdge("Exception", "IOException")
-                .addEdge("Exception", "FileNotFoundException")
-                .addEdge("Exception", "RuntimeException")
-                .addEdge("RuntimeException", "UnsupportedOperationException")
-                .addEdge("RuntimeException", "IllegalArgumentException")
-
-                .addEdge("Error", "OutOfMemoryError")
-                .addEdge("Error", "NoClassDefFoundError")
-                .create();
-
+        Graph<String, Void> graph = JAVA_EXCEPTION_GRAPH;
         graph.printShow().forEach(System.out::println);
 
         List<? extends Route<?, ?>> routes = graph.searchRuleRoute("Throwable", route -> {

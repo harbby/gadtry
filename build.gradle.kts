@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.10.2-SNAPSHOT"  //SNAPSHOT
+version = "1.10.2"  //SNAPSHOT
 
 val jdk = project.findProperty("jdk")?: "java11"  //default -Pjdk=java11
 //val jdk: def = System.getProperty("jdk") ?: " -Djdk=java11
@@ -45,6 +45,7 @@ tasks.withType<org.gradle.jvm.tasks.Jar> { duplicatesStrategy = DuplicatesStrate
 dependencies {
   compileOnly("net.java.dev.jna:jna-platform-jpms:5.9.0")
   implementation("org.ow2.asm:asm:9.5")
+  compileOnly("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
   testImplementation("org.javassist:javassist:3.29.1-GA")
   testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
@@ -54,8 +55,18 @@ dependencies {
   testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.32")
 }
 
+// ./gradlew test --tests "com.github.harbby.gadtry.graph.GraphxTest"
+// ./gradlew test --tests "com.github.harbby.gadtry.graph.GraphxTest.testCreateGraph1" -PshowStandardStreams=true
 tasks.withType<Test> {
   useJUnitPlatform()
+  //testLogging.showStandardStreams = true
+  testLogging.showStandardStreams = project.findProperty("showStandardStreams")?.toString()?.toBoolean()?: false
+}
+
+configurations {
+  testImplementation {
+    extendsFrom(compileOnly.get())
+  }
 }
 
 tasks.jar {
@@ -204,7 +215,7 @@ publishing {
       // change URLs to point to your repos, e.g. http://my.org/repo
       val repository_url = if (project.version.toString().endsWith("-SNAPSHOT"))
               "https://oss.sonatype.org/content/repositories/snapshots" else
-              "https =//oss.sonatype.org/service/local/staging/deploy/maven2"
+              "https://oss.sonatype.org/service/local/staging/deploy/maven2"
       url = uri(repository_url)
     }
     mavenLocal()

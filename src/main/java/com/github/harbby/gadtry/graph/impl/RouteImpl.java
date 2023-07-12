@@ -103,9 +103,6 @@ public class RouteImpl<N, E>
         return edges.size();
     }
 
-    /**
-     * 上一个
-     */
     @Override
     public GraphNode<N, E> getLastNode(int index)
     {
