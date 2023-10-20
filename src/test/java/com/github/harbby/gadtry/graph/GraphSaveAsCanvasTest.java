@@ -24,7 +24,7 @@ import static com.github.harbby.gadtry.graph.GraphxTest.JAVA_EXCEPTION_GRAPH;
 
 public class GraphSaveAsCanvasTest
 {
-    private final String bashPath = "/home/ideal/Documents/Obsidian Vault";
+    private final String bashPath = "/tmp";
 
     @Test
     void save_exception_graph_as_canvas_test()
@@ -64,13 +64,13 @@ public class GraphSaveAsCanvasTest
                 .ySpacingFactor(4)
                 .visitNode(node -> {
                     if ("a".equals(node.getNode())) {
-                        node.putConf("color", "1");
+                        node.getInfo().setColor("1");
                     }
                 })
                 .visitEdge(edge -> {
                     if ("a".equals(edge.getInput()) && "c".equals(edge.getOutput())) {
-                        edge.putConf("label", "red_edge");
-                        edge.putConf("color", "1");
+                        edge.getInfo().setLabel("red_edge");  //"label"
+                        edge.getInfo().setColor("1");
                     }
                 })
                 .save(new File(bashPath, "4.canvas"));

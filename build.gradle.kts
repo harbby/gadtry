@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.10.2"  //SNAPSHOT
+version = "1.10.6"  //SNAPSHOT
 
 val jdk = project.findProperty("jdk")?: "java11"  //default -Pjdk=java11
 //val jdk: def = System.getProperty("jdk") ?: " -Djdk=java11
@@ -42,17 +42,28 @@ tasks.processResources {
 }
 tasks.withType<org.gradle.jvm.tasks.Jar> { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
 
-dependencies {
-  compileOnly("net.java.dev.jna:jna-platform-jpms:5.9.0")
-  implementation("org.ow2.asm:asm:9.5")
-  compileOnly("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+object versions {
+  val jna = "5.13.0"
+  val asm = "9.6"
+  val jackson = "2.15.3"
+  val javassist = "3.29.2-GA"
+  val junit = "5.9.3"
+  val jmh = "1.37"
+  val jansi = "2.4.0"
+}
 
-  testImplementation("org.javassist:javassist:3.29.1-GA")
-  testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
-  testImplementation("org.openjdk.jmh:jmh-core:1.32")
-  testImplementation("org.fusesource.jansi:jansi:1.17.1")
-  testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.32")
+dependencies {
+  compileOnly("net.java.dev.jna:jna-platform-jpms:${versions.jna}")
+  implementation("org.ow2.asm:asm:${versions.asm}")
+  compileOnly("com.fasterxml.jackson.core:jackson-databind:${versions.jackson}")
+  compileOnly("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${versions.jackson}")
+
+  testImplementation("org.javassist:javassist:${versions.javassist}")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:${versions.junit}")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${versions.junit}")
+  testImplementation("org.fusesource.jansi:jansi:${versions.jansi}")
+  testImplementation("org.openjdk.jmh:jmh-core:${versions.jmh}")
+  testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:${versions.jmh}")
 }
 
 // ./gradlew test --tests "com.github.harbby.gadtry.graph.GraphxTest"
@@ -95,13 +106,13 @@ tasks.withType<Javadoc> {
 checkstyle {
   toolVersion = "9.3"
   isShowViolations = true
-  configFile = rootProject.file("src/checkstyle/facebook_checks.xml")
-  //configFile = file("${rootDir}/src/checkstyle/facebook_checks.xml")
+  configFile = rootProject.file("src/checkstyle/ci_checks.xml")
+  //configFile = file("${rootDir}/src/checkstyle/ci_checks.xml")
 }
 //assemble.dependsOn 'checkstyle'
 
 tasks.named<Checkstyle>("checkstyleMain") {
-  configFile = rootProject.file("src/checkstyle/facebook_checks.xml")
+  configFile = rootProject.file("src/checkstyle/ci_checks.xml")
   source("src")
   include("**/*.java")
   exclude("**/gen/**", "**/test/**", "**/build/**", "**/module-info.java", "**/TimSort.java")

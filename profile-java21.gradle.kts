@@ -1,7 +1,7 @@
-//java 20
-//deploy to maven repo: ./gradlew clean build -Pjdk=java20 -Ptarget=8
+//java 21
+//deploy to maven repo: ./gradlew clean build -Pjdk=java21 -Ptarget=8
 
-val targetVersion = project.findProperty("target")?.toString()?.toInt() ?: 20
+val targetVersion = project.findProperty("target")?.toString()?.toInt() ?: 21
 
 configure<JavaPluginConvention> {
   sourceCompatibility = JavaVersion.toVersion(targetVersion)

@@ -16,6 +16,8 @@
 package com.github.harbby.gadtry.graph;
 
 import com.github.harbby.gadtry.graph.canvas.CanvasBuilder;
+import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
+import com.github.harbby.gadtry.graph.drawio.DrawioBuilder;
 import com.github.harbby.gadtry.graph.impl.DefaultGraph;
 
 import java.io.File;
@@ -26,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNull;
 
 public interface Graph<N, E>
         extends Serializable
@@ -46,8 +46,12 @@ public interface Graph<N, E>
 
     CanvasBuilder<N, E> saveAsCanvas();
 
+    DrawioBuilder<N, E> saveAsDrawio();
+
     void saveAsCanvas(File path)
             throws IOException;
+
+    public <T extends SaveFileBuilder<N, E, ?, ?>> T saveAsTypeBuilder(Class<T> builderType);
 
     /**
      * 打印graph结构
@@ -96,20 +100,25 @@ public interface Graph<N, E>
 
         public GraphBuilder<N, E> addNode(N nodeData)
         {
-            nodes.computeIfAbsent(nodeData, key -> {
+            computeIfAbsentNode(nodeData);
+            return this;
+        }
+
+        private GraphNode<N, E> computeIfAbsentNode(N nodeData)
+        {
+            return nodes.computeIfAbsent(nodeData, key -> {
                 GraphNode<N, E> node = GraphNode.of(nodeData);
                 rootNodes.put(nodeData, node);
                 return node;
             });
-            return this;
         }
 
-        public GraphBuilder<N, E> addEdge(N node1, N node2, E edgeData)
+        public GraphBuilder<N, E> addEdge(N in, N out, E edgeData)
         {
-            GraphNode<N, E> inNode = requireNonNull(nodes.get(node1), "Unable to create edge because " + node1 + " does not exist");
-            GraphNode<N, E> outNode = requireNonNull(nodes.get(node2), "Unable to create edge because " + node2 + " does not exist");
+            GraphNode<N, E> inNode = computeIfAbsentNode(in);
+            GraphNode<N, E> outNode = computeIfAbsentNode(out);
             inNode.addNextNode(outNode, edgeData);
-            rootNodes.remove(node2);  //从根节点列表中删除
+            rootNodes.remove(out);  //从根节点列表中删除
             return this;
         }
 

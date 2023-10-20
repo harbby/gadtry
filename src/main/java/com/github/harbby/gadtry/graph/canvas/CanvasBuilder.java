@@ -21,40 +21,24 @@ import com.github.harbby.gadtry.graph.GraphNode;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 public class CanvasBuilder<N, E>
+        extends SaveFileBuilder<N, E, CanvasNodePo, CanvasEdgePo>
 {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final GraphNode<N, E> root;
-    private final Map<N, GraphNode<N, E>> nodes;
-    private int width = 300;
-    private int height = 70;
-    private double xSpacingFactor = 1.5;
-    private double ySpacingFactor = 1.4;
     private String nodeColor = "0";
     private String edgeColor = "0";
     private String nodeType = "text";
     private String edgeType = "text";
 
-    private Consumer<CanvasNodePo<N, E>> nodeVisitor = nNodeContext -> {};
-    private Consumer<CanvasEdgePo<N, E>> edgeVisitor = nNodeContext -> {};
-
     public CanvasBuilder(GraphNode<N, E> root, Map<N, GraphNode<N, E>> nodes)
     {
-        this.root = root;
-        this.nodes = nodes;
+        super(root, nodes, 300, 50);
     }
 
     public CanvasBuilder<N, E> nodeWidth(int width)
@@ -93,113 +77,77 @@ public class CanvasBuilder<N, E>
         return this;
     }
 
-    public CanvasBuilder<N, E> visitNode(Consumer<CanvasNodePo<N, E>> consumer)
+    public CanvasBuilder<N, E> nodeType(String type)
+    {
+        this.nodeType = type;
+        return this;
+    }
+
+    public CanvasBuilder<N, E> edgeType(String type)
+    {
+        this.edgeType = type;
+        return this;
+    }
+
+    public CanvasBuilder<N, E> visitNode(Consumer<NodeView<N, CanvasNodePo>> consumer)
     {
         this.nodeVisitor = requireNonNull(consumer, "nodeVisitor is null");
         return this;
     }
 
-    public CanvasBuilder<N, E> visitEdge(Consumer<CanvasEdgePo<N, E>> consumer)
+    public CanvasBuilder<N, E> visitEdge(Consumer<EdgeView<N, E, CanvasEdgePo>> consumer)
     {
         this.edgeVisitor = requireNonNull(consumer, "nodeVisitor is null");
         return this;
     }
 
-    private CanvasNodePo<N, E> createCanvasNode(GraphNode<N, E> node, int depth, int index)
+    protected NodeViewImpl<N, E, CanvasNodePo> createNodeView(GraphNode<N, E> node, int depth, int index)
     {
-        CanvasNodePo<N, E> nodePo = new CanvasNodePo<>(node, depth, index);
-        nodePo.nodeConfig.put("width", this.width);
-        nodePo.nodeConfig.put("height", this.height);
-        nodePo.nodeConfig.put("color", this.nodeColor);
-        nodePo.nodeConfig.put("type", this.nodeType);
-        String id = node.toString();
-        nodePo.nodeConfig.put("text", id);
-        nodePo.nodeConfig.put("id", id);
+        String id = this.idSelector.apply(node.getValue());
+        CanvasNodePo nodePo = new CanvasNodePo(id);
+        nodePo.putConf("width", this.width);
+        nodePo.putConf("height", this.height);
+        nodePo.putConf("type", this.nodeType);
+
+        nodePo.setColor(this.nodeColor);
+        nodePo.setLabel(String.valueOf(node.getValue()));
 
         boolean hasChildren = !node.nextNodes().isEmpty();
-        nodePo.nodeConfig.put("hasChildren", hasChildren);
-        int x = (int) (depth * this.width * this.xSpacingFactor);
-        int y = index * (int) (this.height * this.ySpacingFactor);
-        nodePo.nodeConfig.put("x", x);
-        nodePo.nodeConfig.put("y", y);
-        this.nodeVisitor.accept(nodePo);
-        return nodePo;
+        nodePo.putConf("hasChildren", hasChildren);
+        long xy = generateXY(depth, index);
+        int x = (int) (xy >>> Integer.SIZE);
+        int y = (int) (xy);
+        nodePo.putConf("x", x);
+        nodePo.putConf("y", y);
+        NodeViewImpl<N, E, CanvasNodePo> wrapper = new NodeViewImpl<>(node, depth, index, nodePo);
+        this.nodeVisitor.accept(wrapper);
+        return wrapper;
     }
 
-    private CanvasEdgePo<N, E> createCanvasEdge(GraphNode<N, E> from, GraphEdge<N, E> edge)
+    protected EdgeView<N, E, CanvasEdgePo> createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge)
     {
-        Map<String, Object> edgeConfig = new HashMap<>();
-        N in = from.getValue();
-        N out = edge.getOutNode().getValue();
-        String fromNode = in.toString();
-        String toNode = out.toString();
-        String id = fromNode + " to " + toNode;
-        edgeConfig.put("id", id);
-        edgeConfig.put("fromNode", fromNode);
-        edgeConfig.put("toNode", toNode);
-        edgeConfig.put("fromSide", "right");
-        edgeConfig.put("toSide", "left");
-        edgeConfig.put("color", this.edgeColor);
-        edgeConfig.put("type", this.edgeType);
-        CanvasEdgePo<N, E> canvasEdgePo = new CanvasEdgePo<>(in, out, edge.getValue(), edgeConfig);
-        this.edgeVisitor.accept(canvasEdgePo);
-        return canvasEdgePo;
+        final String sourceID = this.idSelector.apply(from.getValue());
+        final String targetID = this.idSelector.apply(edge.getOutNode().getValue());
+        final String edgeValue = edge.getValue() == null ? null : edge.getValue().toString();
+        final String id = sourceID + " to " + targetID;
+        CanvasEdgePo canvasEdgePo = new CanvasEdgePo(id);
+
+        canvasEdgePo.putConf("fromNode", sourceID);
+        canvasEdgePo.putConf("toNode", targetID);
+        canvasEdgePo.putConf("fromSide", "right");
+        canvasEdgePo.putConf("toSide", "left");
+        canvasEdgePo.setColor(this.edgeColor);
+        canvasEdgePo.setLabel(edgeValue);
+        canvasEdgePo.putConf("type", this.edgeType);
+        EdgeView<N, E, CanvasEdgePo> edgeView = new EdgeViewImpl<>(from.getValue(), edge.getOutNode().getValue(), edge.getValue(), canvasEdgePo);
+        this.edgeVisitor.accept(edgeView);
+        return edgeView;
     }
 
-    public void save(File path)
+    @Override
+    protected void serialize(CanvasGraphPO<CanvasNodePo, CanvasEdgePo> graphPO, File path)
             throws IOException
     {
-        CanvasGraphPO<N, E> canvasGraphPO = new CanvasGraphPO<>();
-        Queue<CanvasNodePo<N, E>> stack = new LinkedList<>();
-        stack.add(this.createCanvasNode(root, -1, 0));
-
-        int[] depthIndexArray = new int[nodes.size()];
-        java.util.Arrays.fill(depthIndexArray, 0);
-        Set<N> loopedCheck = new HashSet<>();
-        CanvasNodePo<N, E> wrapper;
-        while ((wrapper = stack.poll()) != null) {
-            GraphNode<N, E> parentNode = wrapper.node;
-            final int depth = wrapper.depth + 1;
-            for (GraphEdge<N, E> edge : parentNode.nextNodes()) {
-                GraphNode<N, E> node = edge.getOutNode();
-                if (loopedCheck.add(node.getValue())) {
-                    // add node to tree
-                    CanvasNodePo<N, E> nodePo = this.createCanvasNode(node, depth, depthIndexArray[depth]);
-                    canvasGraphPO.addNode(nodePo);
-                    stack.add(nodePo);
-                }
-                depthIndexArray[depth]++;
-                if (!(parentNode instanceof GraphNode.RootNode)) {
-                    canvasGraphPO.addEdge(this.createCanvasEdge(parentNode, edge));
-                }
-            }
-        }
-        MAPPER.writerFor(CanvasGraphPO.class).writeValue(path, canvasGraphPO);
-    }
-
-    public static class CanvasGraphPO<N, E>
-    {
-        private final List<CanvasNodePo<N, E>> nodes = new ArrayList<>();
-        private final List<CanvasEdgePo<N, E>> edges = new ArrayList<>();
-
-        public void addEdge(CanvasEdgePo<N, E> edge)
-        {
-            edges.add(edge);
-        }
-
-        public void addNode(CanvasNodePo<N, E> node)
-        {
-            nodes.add(node);
-        }
-
-        public List<CanvasEdgePo<N, E>> getEdges()
-        {
-            return edges;
-        }
-
-        public List<CanvasNodePo<N, E>> getNodes()
-        {
-            return nodes;
-        }
+        MAPPER.writerFor(CanvasGraphPO.class).writeValue(path, graphPO);
     }
 }

@@ -15,43 +15,52 @@
  */
 package com.github.harbby.gadtry.graph.canvas;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.util.HashMap;
 import java.util.Map;
 
-@JsonSerialize(using = JsonSerializers.CanvasEdgePoSerializer.class)
-public class CanvasEdgePo<N, E>
+public class CanvasEdgePo
 {
-    private final N input;
-    private final N output;
-    private final E value;
-    final Map<String, Object> edgeConfig;
+    private final String id;
+    private final Map<String, Object> edgeConfig = new HashMap<>();
 
-    public CanvasEdgePo(N input, N output, E value, Map<String, Object> edgeConfig)
+    public CanvasEdgePo(String id)
     {
-        this.input = input;
-        this.output = output;
-        this.value = value;
-        this.edgeConfig = edgeConfig;
+        this.id = id;
+        this.putConf("id", id);
     }
 
-    public N getInput()
+    @JsonIgnore
+    public void setColor(String color)
     {
-        return input;
+        this.putConf("color", color);
     }
 
-    public N getOutput()
+    @JsonIgnore
+    public void setLabel(String label)
     {
-        return output;
+        // this key is `label`
+        this.putConf("label", label);
     }
 
-    public E getValue()
-    {
-        return value;
-    }
-
-    public void putConf(String key, Object value)
+    @JsonIgnore
+    public CanvasEdgePo putConf(String key, Object value)
     {
         edgeConfig.put(key, value);
+        return this;
+    }
+
+    @Override
+    public String toString()
+    {
+        return id;
+    }
+
+    @JsonAnyGetter
+    private Map<String, Object> getEdgeConfig()
+    {
+        return edgeConfig;
     }
 }

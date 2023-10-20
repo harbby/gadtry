@@ -15,40 +15,50 @@
  */
 package com.github.harbby.gadtry.graph.canvas;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.github.harbby.gadtry.graph.GraphNode;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@JsonSerialize(using = JsonSerializers.CanvasNodePoSerializer.class)
-public class CanvasNodePo<N, E>
+public class CanvasNodePo
 {
-    final transient GraphNode<N, E> node;
-    final int depth;
-    final int index;
-    final Map<String, Object> nodeConfig = new HashMap<>();
+    private final String id;
+    private final Map<String, Object> nodeConfig = new HashMap<>();
 
-    public CanvasNodePo(GraphNode<N, E> node, int depth, int index)
+    public CanvasNodePo(String id)
     {
-        this.node = node;
-        this.depth = depth;
-        this.index = index;
-    }
-
-    public final N getNode()
-    {
-        return node.getValue();
-    }
-
-    public final void putConf(String key, Object value)
-    {
-        nodeConfig.put(key, value);
+        this.id = id;
+        this.putConf("id", id);
     }
 
     @Override
     public String toString()
     {
-        return node.toString();
+        return id;
+    }
+
+    @JsonIgnore
+    public void setColor(String color)
+    {
+        this.putConf("color", color);
+    }
+
+    @JsonIgnore
+    public void setLabel(String label)
+    {
+        this.putConf("text", label);
+    }
+
+    @JsonIgnore
+    public void putConf(String key, Object value)
+    {
+        nodeConfig.put(key, value);
+    }
+
+    @JsonAnyGetter
+    private Map<String, Object> getNodeConfig()
+    {
+        return nodeConfig;
     }
 }

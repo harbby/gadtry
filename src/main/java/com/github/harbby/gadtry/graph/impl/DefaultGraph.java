@@ -21,6 +21,8 @@ import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.Route;
 import com.github.harbby.gadtry.graph.SearchBuilder;
 import com.github.harbby.gadtry.graph.canvas.CanvasBuilder;
+import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
+import com.github.harbby.gadtry.graph.drawio.DrawioBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -115,6 +117,24 @@ public class DefaultGraph<N, E>
     public CanvasBuilder<N, E> saveAsCanvas()
     {
         return new CanvasBuilder<>(root, nodes);
+    }
+
+    @Override
+    public DrawioBuilder<N, E> saveAsDrawio()
+    {
+        return new DrawioBuilder<>(root, nodes);
+    }
+
+    @Override
+    public <T extends SaveFileBuilder<N, E, ?, ?>> T saveAsTypeBuilder(Class<T> builderType)
+    {
+        try {
+            return builderType.getConstructor(GraphNode.class, Map.class)
+                    .newInstance(root, nodes);
+        }
+        catch (Exception e) {
+            throw new IllegalStateException();
+        }
     }
 
     public void saveAsCanvas(File path)
