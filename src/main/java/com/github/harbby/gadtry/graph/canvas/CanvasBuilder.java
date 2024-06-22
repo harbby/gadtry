@@ -101,7 +101,7 @@ public class CanvasBuilder<N, E>
         return this;
     }
 
-    protected NodeViewImpl<N, E, CanvasNodePo> createNodeView(GraphNode<N, E> node, int depth, int index)
+    protected CanvasNodePo createNodeView(GraphNode<N, E> node, int depth, int index)
     {
         String id = this.idSelector.apply(node.getValue());
         CanvasNodePo nodePo = new CanvasNodePo(id);
@@ -119,12 +119,10 @@ public class CanvasBuilder<N, E>
         int y = (int) (xy);
         nodePo.putConf("x", x);
         nodePo.putConf("y", y);
-        NodeViewImpl<N, E, CanvasNodePo> wrapper = new NodeViewImpl<>(node, depth, index, nodePo);
-        this.nodeVisitor.accept(wrapper);
-        return wrapper;
+        return nodePo;
     }
 
-    protected EdgeView<N, E, CanvasEdgePo> createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge)
+    protected CanvasEdgePo createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge)
     {
         final String sourceID = this.idSelector.apply(from.getValue());
         final String targetID = this.idSelector.apply(edge.getOutNode().getValue());
@@ -139,9 +137,7 @@ public class CanvasBuilder<N, E>
         canvasEdgePo.setColor(this.edgeColor);
         canvasEdgePo.setLabel(edgeValue);
         canvasEdgePo.putConf("type", this.edgeType);
-        EdgeView<N, E, CanvasEdgePo> edgeView = new EdgeViewImpl<>(from.getValue(), edge.getOutNode().getValue(), edge.getValue(), canvasEdgePo);
-        this.edgeVisitor.accept(edgeView);
-        return edgeView;
+        return canvasEdgePo;
     }
 
     @Override

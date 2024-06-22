@@ -17,17 +17,17 @@ package com.github.harbby.gadtry.graph.canvas;
 
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
+import com.github.harbby.gadtry.graph.drawio.DrawioMxCell;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -73,9 +73,9 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
         this.height = defaultHeight;
     }
 
-    protected abstract EdgeView<N, E, E0> createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge);
+    protected abstract E0 createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge);
 
-    protected abstract NodeViewImpl<N, E, N0> createNodeView(GraphNode<N, E> node, int depth, int index);
+    protected abstract N0 createNodeView(GraphNode<N, E> node, int depth, int index);
 
     protected abstract void serialize(CanvasGraphPO<N0, E0> graphPO, File path)
             throws IOException;
@@ -113,29 +113,42 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
             throws IOException
     {
         CanvasGraphPO<N0, E0> canvasGraphPO = new CanvasGraphPO<>();
-        Queue<NodeViewImpl<N, E, N0>> stack = new LinkedList<>();
-        stack.add(new NodeViewImpl<>(root, -1, 0, null));
+        Queue<WrapperNode<N, E>> stack = new LinkedList<>();
+        stack.add(new WrapperNode<>(root, -1, 0));
 
         int[] depthIndexArray = new int[nodes.size()];
         java.util.Arrays.fill(depthIndexArray, 0);
-        Set<N> loopedCheck = new HashSet<>();
-        NodeViewImpl<N, E, N0> wrapper;
+        final Map<N, WrapperNode<N, E>> loopedCheck = new HashMap<>();
+        WrapperNode<N, E> wrapper;
         while ((wrapper = stack.poll()) != null) {
             GraphNode<N, E> parentNode = wrapper.node;
             final int depth = wrapper.depth + 1;
             for (GraphEdge<N, E> edge : parentNode.nextNodes()) {
                 GraphNode<N, E> node = edge.getOutNode();
-                if (loopedCheck.add(node.getValue())) {
+                WrapperNode<N, E> wrapperNode = loopedCheck.get(node.getValue());
+                if (wrapperNode == null) {
                     // add node to tree
-                    NodeViewImpl<N, E, N0> nodePo = this.createNodeView(node, depth, depthIndexArray[depth]);
-                    canvasGraphPO.addNode(nodePo.getInfo());
-                    stack.add(nodePo);
+                    wrapperNode = new WrapperNode<>(node, depth, depthIndexArray[depth]);
+                    loopedCheck.put(node.getValue(), wrapperNode);
+                    stack.add(wrapperNode);
+                }
+                else {
+                    wrapperNode.depth = Math.max(wrapperNode.depth, depth);
                 }
                 depthIndexArray[depth]++;
                 if (!(parentNode instanceof GraphNode.RootNode)) {
-                    canvasGraphPO.addEdge(this.createEdgeView(parentNode, edge).getInfo());
+                    E0 edgeInfo = this.createEdgeView(parentNode, edge);
+                    EdgeView<N, E, E0> edgeView = new EdgeViewImpl<>(parentNode.getValue(), edge.getOutNode().getValue(), edge.getValue(), edgeInfo);
+                    this.edgeVisitor.accept(edgeView);
+                    canvasGraphPO.addEdge(edgeInfo);
                 }
             }
+        }
+        for (WrapperNode<N, E> wrapperNode : loopedCheck.values()) {
+            N0 nodeInfo = this.createNodeView(wrapperNode.node, wrapperNode.depth, wrapperNode.index);
+            NodeViewImpl<N, E, N0> nodeView = new NodeViewImpl<>(wrapperNode.node, nodeInfo);
+            this.nodeVisitor.accept(nodeView);
+            canvasGraphPO.addNode(nodeInfo);
         }
         // check and mkdir parent dir
         File parentFile = path.getParentFile();
@@ -145,19 +158,29 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
         this.serialize(canvasGraphPO, path);
     }
 
+    static class WrapperNode<N, E>
+    {
+        private final transient GraphNode<N, E> node;
+        private int depth;
+        private final int index;
+
+        WrapperNode(GraphNode<N, E> node, int depth, int index)
+        {
+            this.node = node;
+            this.index = index;
+            this.depth = depth;
+        }
+    }
+
     protected static final class NodeViewImpl<N, E, N0>
             implements NodeView<N, N0>
     {
         private final transient GraphNode<N, E> node;
-        private final int depth;
-        private final int index;
         private final N0 fileNode;
 
-        public NodeViewImpl(GraphNode<N, E> node, int depth, int index, N0 fileNode)
+        public NodeViewImpl(GraphNode<N, E> node, N0 fileNode)
         {
             this.node = node;
-            this.depth = depth;
-            this.index = index;
             this.fileNode = fileNode;
         }
 

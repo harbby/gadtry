@@ -165,7 +165,7 @@ public class DrawioBuilder<N, E>
     }
 
     @Override
-    protected EdgeView<N, E, DrawioMxCell> createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge)
+    protected DrawioMxCell createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge)
     {
         String sourceID = this.idSelector.apply(from.getValue());
         String targetID = this.idSelector.apply(edge.getOutNode().getValue());
@@ -210,14 +210,11 @@ public class DrawioBuilder<N, E>
 
         drawioEdge.addStyle("fillColor", edgeFillColor);
         drawioEdge.addStyle("strokeColor", edgeStrokeColor);
-
-        EdgeView<N, E, DrawioMxCell> edgeView = new EdgeViewImpl<>(from.getValue(), edge.getOutNode().getValue(), edge.getValue(), drawioEdge);
-        edgeVisitor.accept(edgeView);
-        return edgeView;
+        return drawioEdge;
     }
 
     @Override
-    protected NodeViewImpl<N, E, DrawioMxCell> createNodeView(GraphNode<N, E> node, int depth, int index)
+    protected DrawioMxCell createNodeView(GraphNode<N, E> node, int depth, int index)
     {
         String id = this.idSelector.apply(node.getValue());
         DrawioMxCell drawioNode = DrawioMxCell.ofNode(id);
@@ -234,10 +231,7 @@ public class DrawioBuilder<N, E>
         drawioNode.addStyle("rounded", "1");
         drawioNode.addStyle("fillColor", nodeFillColor);
         drawioNode.addStyle("strokeColor", nodeStrokeColor);
-
-        NodeViewImpl<N, E, DrawioMxCell> wrapper = new NodeViewImpl<>(node, depth, index, drawioNode);
-        nodeVisitor.accept(wrapper);
-        return wrapper;
+        return drawioNode;
     }
 
     @Override

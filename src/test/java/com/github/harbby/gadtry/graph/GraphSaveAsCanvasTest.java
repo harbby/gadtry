@@ -24,7 +24,7 @@ import static com.github.harbby.gadtry.graph.GraphxTest.JAVA_EXCEPTION_GRAPH;
 
 public class GraphSaveAsCanvasTest
 {
-    private final String bashPath = "/tmp";
+    private final String bashPath = "/data/workspace/obsidian/tmp";
 
     @Test
     void save_exception_graph_as_canvas_test()
@@ -74,5 +74,17 @@ public class GraphSaveAsCanvasTest
                     }
                 })
                 .save(new File(bashPath, "4.canvas"));
+    }
+
+    @Test
+    public void flowDepthOptimize1()
+            throws IOException
+    {
+        Graph<String, Void> graph = Graph.<String, Void>builder()
+                .addEdge("a", "b")
+                .addEdge("b", "c")
+                .addEdge("a", "c")
+                .create();
+        graph.saveAsCanvas().save(new File(bashPath, "5.canvas"));
     }
 }
