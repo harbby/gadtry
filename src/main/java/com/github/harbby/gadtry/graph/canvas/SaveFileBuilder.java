@@ -17,7 +17,6 @@ package com.github.harbby.gadtry.graph.canvas;
 
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
-import com.github.harbby.gadtry.graph.drawio.DrawioMxCell;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,7 +115,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
         Queue<WrapperNode<N, E>> stack = new LinkedList<>();
         stack.add(new WrapperNode<>(root, -1, 0));
 
-        int[] depthIndexArray = new int[nodes.size()];
+        int[] depthIndexArray = new int[nodes.size() + 1];
         java.util.Arrays.fill(depthIndexArray, 0);
         final Map<N, WrapperNode<N, E>> loopedCheck = new HashMap<>();
         WrapperNode<N, E> wrapper;

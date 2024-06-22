@@ -130,10 +130,15 @@ public interface Graph<N, E>
         public Graph<N, E> create()
         {
             final GraphNode<N, E> root = new GraphNode.RootNode<>();
-            for (GraphNode<N, E> node : rootNodes.values()) {
-                root.addNextNode(node, null);
+            if (rootNodes.isEmpty() && !nodes.isEmpty()) {
+                // This is a completely circular dependency graph.
+                root.addNextNode(nodes.values().iterator().next(), null);
             }
-
+            else {
+                for (GraphNode<N, E> node : rootNodes.values()) {
+                    root.addNextNode(node, null);
+                }
+            }
             Map<N, GraphNode<N, E>> nodeMap = nodes.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             return new DefaultGraph<>(root, nodeMap);

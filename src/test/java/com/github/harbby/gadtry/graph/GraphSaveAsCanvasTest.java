@@ -94,10 +94,22 @@ public class GraphSaveAsCanvasTest
     {
         Graph<String, Void> graph = Graph.<String, Void>builder()
                 .addEdge("p1", "a")
-                .addEdge("a",  "b")
+                .addEdge("a", "b")
                 .addEdge("p2", "c")
                 .addEdge("c", "a")
                 .create();
         graph.saveAsCanvas().save(new File(bashPath, "6.canvas"));
+    }
+
+    @Test
+    public void flowLoopDepthOptimize3()
+            throws IOException
+    {
+        Graph<String, Void> graph = Graph.<String, Void>builder()
+                .addEdge("a", "b")
+                .addEdge("b", "c")
+                .addEdge("c", "a")
+                .create();
+        graph.saveAsCanvas().save(new File(bashPath, "7.canvas"));
     }
 }
