@@ -131,11 +131,14 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
                     wrapperNode = new WrapperNode<>(node, depth, depthIndexArray[depth]);
                     loopedCheck.put(node.getValue(), wrapperNode);
                     stack.add(wrapperNode);
+                    depthIndexArray[depth]++;
                 }
                 else {
-                    wrapperNode.depth = Math.max(wrapperNode.depth, depth);
+                    if (wrapperNode.depth < depth) {
+                        wrapperNode.depth = depth;
+                        wrapperNode.index = depthIndexArray[depth]++;
+                    }
                 }
-                depthIndexArray[depth]++;
                 if (!(parentNode instanceof GraphNode.RootNode)) {
                     E0 edgeInfo = this.createEdgeView(parentNode, edge);
                     EdgeView<N, E, E0> edgeView = new EdgeViewImpl<>(parentNode.getValue(), edge.getOutNode().getValue(), edge.getValue(), edgeInfo);
@@ -162,7 +165,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     {
         private final transient GraphNode<N, E> node;
         private int depth;
-        private final int index;
+        private int index;
 
         WrapperNode(GraphNode<N, E> node, int depth, int index)
         {

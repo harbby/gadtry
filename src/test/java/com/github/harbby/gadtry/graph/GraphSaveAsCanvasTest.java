@@ -87,4 +87,17 @@ public class GraphSaveAsCanvasTest
                 .create();
         graph.saveAsCanvas().save(new File(bashPath, "5.canvas"));
     }
+
+    @Test
+    public void flowDepthOptimize2()
+            throws IOException
+    {
+        Graph<String, Void> graph = Graph.<String, Void>builder()
+                .addEdge("p1", "a")
+                .addEdge("a",  "b")
+                .addEdge("p2", "c")
+                .addEdge("c", "a")
+                .create();
+        graph.saveAsCanvas().save(new File(bashPath, "6.canvas"));
+    }
 }
