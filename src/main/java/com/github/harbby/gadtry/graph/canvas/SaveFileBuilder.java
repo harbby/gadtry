@@ -22,11 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,6 +36,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     protected Direction direction = Direction.left_to_right;
     protected Consumer<NodeView<N, N0>> nodeVisitor = nNodeContext -> {};
     protected Consumer<EdgeView<N, E, E0>> edgeVisitor = nNodeContext -> {};
+    private ProcessOptimizer.Strategy strategy = ProcessOptimizer.Strategy.PERFECT_DEPTH;
 
     protected Double xSpacingFactor;
     protected Double ySpacingFactor;
@@ -48,8 +46,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
 
     public enum Direction
     {
-        left_to_right(1.6, 1.4),
-        up_to_down(1.1, 2.3);
+        left_to_right(1.6, 1.4), up_to_down(1.1, 2.3);
 
         private final double xSpacingFactor;
         private final double ySpacingFactor;
@@ -108,50 +105,17 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
         return (((long) x) << Integer.SIZE) | (long) y;
     }
 
+    public final SaveFileBuilder<N, E, N0, E0> strategy(ProcessOptimizer.Strategy strategy)
+    {
+        this.strategy = strategy;
+        return this;
+    }
+
     public final void save(File path)
             throws IOException
     {
-        CanvasGraphPO<N0, E0> canvasGraphPO = new CanvasGraphPO<>();
-        Queue<WrapperNode<N, E>> stack = new LinkedList<>();
-        stack.add(new WrapperNode<>(root, -1, 0));
-
-        int[] depthIndexArray = new int[nodes.size() + 1];
-        java.util.Arrays.fill(depthIndexArray, 0);
-        final Map<N, WrapperNode<N, E>> loopedCheck = new HashMap<>();
-        WrapperNode<N, E> wrapper;
-        while ((wrapper = stack.poll()) != null) {
-            GraphNode<N, E> parentNode = wrapper.node;
-            final int depth = wrapper.depth + 1;
-            for (GraphEdge<N, E> edge : parentNode.nextNodes()) {
-                GraphNode<N, E> node = edge.getOutNode();
-                WrapperNode<N, E> wrapperNode = loopedCheck.get(node.getValue());
-                if (wrapperNode == null) {
-                    // add node to tree
-                    wrapperNode = new WrapperNode<>(node, depth, depthIndexArray[depth]);
-                    loopedCheck.put(node.getValue(), wrapperNode);
-                    stack.add(wrapperNode);
-                    depthIndexArray[depth]++;
-                }
-                else {
-                    if (wrapperNode.depth < depth) {
-                        wrapperNode.depth = depth;
-                        wrapperNode.index = depthIndexArray[depth]++;
-                    }
-                }
-                if (!(parentNode instanceof GraphNode.RootNode)) {
-                    E0 edgeInfo = this.createEdgeView(parentNode, edge);
-                    EdgeView<N, E, E0> edgeView = new EdgeViewImpl<>(parentNode.getValue(), edge.getOutNode().getValue(), edge.getValue(), edgeInfo);
-                    this.edgeVisitor.accept(edgeView);
-                    canvasGraphPO.addEdge(edgeInfo);
-                }
-            }
-        }
-        for (WrapperNode<N, E> wrapperNode : loopedCheck.values()) {
-            N0 nodeInfo = this.createNodeView(wrapperNode.node, wrapperNode.depth, wrapperNode.index);
-            NodeViewImpl<N, E, N0> nodeView = new NodeViewImpl<>(wrapperNode.node, nodeInfo);
-            this.nodeVisitor.accept(nodeView);
-            canvasGraphPO.addNode(nodeInfo);
-        }
+        ProcessOptimizer<N, E, N0, E0> optimizer = new DepthPerfectOptimizer<>(this);
+        CanvasGraphPO<N0, E0> canvasGraphPO = optimizer.optimize(root, nodes.size());
         // check and mkdir parent dir
         File parentFile = path.getParentFile();
         if (!parentFile.exists() && !parentFile.mkdirs()) {
@@ -160,93 +124,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
         this.serialize(canvasGraphPO, path);
     }
 
-    static class WrapperNode<N, E>
-    {
-        private final transient GraphNode<N, E> node;
-        private int depth;
-        private int index;
-
-        WrapperNode(GraphNode<N, E> node, int depth, int index)
-        {
-            this.node = node;
-            this.index = index;
-            this.depth = depth;
-        }
-    }
-
-    protected static final class NodeViewImpl<N, E, N0>
-            implements NodeView<N, N0>
-    {
-        private final transient GraphNode<N, E> node;
-        private final N0 fileNode;
-
-        public NodeViewImpl(GraphNode<N, E> node, N0 fileNode)
-        {
-            this.node = node;
-            this.fileNode = fileNode;
-        }
-
-        @Override
-        public N0 getInfo()
-        {
-            return fileNode;
-        }
-
-        @Override
-        public String toString()
-        {
-            return node.toString();
-        }
-
-        @Override
-        public N getNode()
-        {
-            return node.getValue();
-        }
-    }
-
-    protected static class EdgeViewImpl<N, E, E0>
-            implements EdgeView<N, E, E0>
-    {
-        private final N input;
-        private final N output;
-        private final E value;
-        private final E0 edgeConfig;
-
-        public EdgeViewImpl(N input, N output, E value, E0 edgeConfig)
-        {
-            this.input = input;
-            this.output = output;
-            this.value = value;
-            this.edgeConfig = edgeConfig;
-        }
-
-        @Override
-        public N getInput()
-        {
-            return input;
-        }
-
-        @Override
-        public N getOutput()
-        {
-            return output;
-        }
-
-        @Override
-        public E getValue()
-        {
-            return value;
-        }
-
-        @Override
-        public E0 getInfo()
-        {
-            return edgeConfig;
-        }
-    }
-
-    protected static class CanvasGraphPO<N0, E0>
+    public static class CanvasGraphPO<N0, E0>
     {
         private final List<N0> nodes = new ArrayList<>();
         private final List<E0> edges = new ArrayList<>();

@@ -15,6 +15,8 @@
  */
 package com.github.harbby.gadtry.graph;
 
+import com.github.harbby.gadtry.graph.canvas.ProcessOptimizer;
+import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -24,7 +26,7 @@ import static com.github.harbby.gadtry.graph.GraphxTest.JAVA_EXCEPTION_GRAPH;
 
 public class GraphSaveAsCanvasTest
 {
-    private final String bashPath = "/data/workspace/obsidian/tmp";
+    private final String bashPath = "/tmp/graphs";
 
     @Test
     void save_exception_graph_as_canvas_test()
@@ -85,7 +87,10 @@ public class GraphSaveAsCanvasTest
                 .addEdge("b", "c")
                 .addEdge("a", "c")
                 .create();
-        graph.saveAsCanvas().save(new File(bashPath, "5.canvas"));
+        graph.saveAsCanvas()
+                .direction(SaveFileBuilder.Direction.up_to_down)
+                .strategy(ProcessOptimizer.Strategy.DEFAULT)
+                .save(new File(bashPath, "5.canvas"));
     }
 
     @Test
