@@ -132,8 +132,14 @@ public class CanvasBuilder<N, E>
 
         canvasEdgePo.putConf("fromNode", sourceID);
         canvasEdgePo.putConf("toNode", targetID);
-        canvasEdgePo.putConf("fromSide", "right");
-        canvasEdgePo.putConf("toSide", "left");
+        if (direction == Direction.left_to_right) {
+            canvasEdgePo.putConf("fromSide", "right");
+            canvasEdgePo.putConf("toSide", "left");
+        }
+        else {
+            canvasEdgePo.putConf("fromSide", "bottom");
+            canvasEdgePo.putConf("toSide", "top");
+        }
         canvasEdgePo.setColor(this.edgeColor);
         canvasEdgePo.setLabel(edgeValue);
         canvasEdgePo.putConf("type", this.edgeType);
