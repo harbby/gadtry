@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.10.7-SNAPSHOT"  //SNAPSHOT
+version = "1.10.9-SNAPSHOT"  //SNAPSHOT
 
 val jdk = project.findProperty("jdk")?: "java11"  //default -Pjdk=java11
 //val jdk: def = System.getProperty("jdk") ?: " -Djdk=java11

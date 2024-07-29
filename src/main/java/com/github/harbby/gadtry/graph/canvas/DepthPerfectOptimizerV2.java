@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.graph.canvas;
 
-import com.github.harbby.gadtry.collection.tuple.Tuple2;
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
 
@@ -26,10 +25,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class DepthPerfectOptimizer<N, E, N0, E0>
+public class DepthPerfectOptimizerV2<N, E, N0, E0>
         extends ProcessOptimizer<N, E, N0, E0>
 {
-    DepthPerfectOptimizer(SaveFileBuilder<N, E, N0, E0> saveFileBuilder)
+    DepthPerfectOptimizerV2(SaveFileBuilder<N, E, N0, E0> saveFileBuilder)
     {
         super(saveFileBuilder);
     }
@@ -41,7 +40,7 @@ public class DepthPerfectOptimizer<N, E, N0, E0>
         Queue<WrapperNode<N, E>> stack = new LinkedList<>();
         stack.add(new WrapperNode<>(root, -1, 0));
 
-        int[] depthIndexArray = new int[nodeNumber << 1 + 1];
+        int[] depthIndexArray = new int[nodeNumber + 1];
         java.util.Arrays.fill(depthIndexArray, 0);
         final Map<N, WrapperNode<N, E>> nodeMap = new HashMap<>();
         final Set<WrapperNode<N, E>> doubleDepths = new HashSet<>();
@@ -90,7 +89,6 @@ public class DepthPerfectOptimizer<N, E, N0, E0>
     private void depthFix(WrapperNode<N, E> fixNode, Queue<WrapperNode<N, E>> stack, int[] depthIndexArray, Map<N, WrapperNode<N, E>> nodeMap)
     {
         stack.add(fixNode);
-        final Set<Tuple2<N, N>> looped = new HashSet<>();
         WrapperNode<N, E> it;
         while ((it = stack.poll()) != null) {
             final GraphNode<N, E> parentNode = it.node;
@@ -98,13 +96,13 @@ public class DepthPerfectOptimizer<N, E, N0, E0>
             for (GraphEdge<N, E> edge : parentNode.nextNodes()) {
                 GraphNode<N, E> node = edge.getOutNode();
                 WrapperNode<N, E> child = nodeMap.get(node.getValue());
-                boolean loopCheck = looped.add(Tuple2.of(parentNode.getValue(), edge.getOutNode().getValue()));
-                if (!loopCheck) {
+                if (depth >= depthIndexArray.length) {
+                    // 假设上面的逻辑正确，且任何一个图的最大深度不超过node数量
+                    // Assume that the above logic is correct and the maximum depth of any graph does not exceed the number of nodes
                     continue;
                 }
                 if (child.depth < depth) {
                     child.depth = depth;
-                    //todo: For loop, the estimated `depthIndexArray` length may not be enough
                     child.index = depthIndexArray[depth]++;
                     stack.add(child);
                 }

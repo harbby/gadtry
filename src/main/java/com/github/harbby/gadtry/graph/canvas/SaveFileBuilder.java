@@ -36,7 +36,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     protected Direction direction = Direction.left_to_right;
     protected Consumer<NodeView<N, N0>> nodeVisitor = nNodeContext -> {};
     protected Consumer<EdgeView<N, E, E0>> edgeVisitor = nNodeContext -> {};
-    private ProcessOptimizer.Strategy strategy = ProcessOptimizer.Strategy.PERFECT_DEPTH;
+    private ProcessOptimizer.Strategy strategy = ProcessOptimizer.Strategy.PERFECT_DEPTH_V2;
 
     protected Double xSpacingFactor;
     protected Double ySpacingFactor;
@@ -114,7 +114,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     public final void save(File path)
             throws IOException
     {
-        ProcessOptimizer<N, E, N0, E0> optimizer = new DepthPerfectOptimizer<>(this);
+        ProcessOptimizer<N, E, N0, E0> optimizer = strategy.create(this);
         CanvasGraphPO<N0, E0> canvasGraphPO = optimizer.optimize(root, nodes.size());
         // check and mkdir parent dir
         File parentFile = path.getParentFile();
