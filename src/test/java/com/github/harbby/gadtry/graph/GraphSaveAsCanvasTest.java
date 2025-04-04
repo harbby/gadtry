@@ -117,4 +117,60 @@ public class GraphSaveAsCanvasTest
                 .create();
         graph.saveAsCanvas().save(new File(bashPath, "7.canvas"));
     }
+
+    @Test
+    void dotDemo()
+            throws IOException
+    {
+        Graph<String, Void> graph = Graph.<String, Void>builder()
+                .addNode("0")
+                .addEdge("1", "3")
+                .addEdge("2", "4")
+                .addEdge("3", "5")
+                .addEdge("3", "6")
+                .addEdge("3", "7")
+                .addEdge("3", "8")
+                .addEdge("3", "9")
+                .addEdge("3", "10")
+                .addEdge("4", "11")
+                .addEdge("5", "12")
+                .addEdge("6", "12")
+                .addEdge("7", "12")
+                .addEdge("8", "12")
+                .addEdge("9", "12")
+                .addEdge("10", "12")
+                .addEdge("11", "13")
+                .addEdge("12", "14")
+                .addEdge("13", "12")
+                .addEdge("14", "15")
+                .addEdge("15", "16")
+                .create();
+        graph.saveAsCanvas().save(new File(bashPath, "8.canvas"));
+        /*
+        digraph G {
+            rankdir=LR;
+            "0";
+            "1" -> "3";
+            "2" -> "4";
+            "3" -> "5";
+            "3" -> "6";
+            "3" -> "7";
+            "3" -> "8";
+            "3" -> "9";
+            "3" -> "10";
+            "4" -> "11";
+            "5" -> "12";
+            "6" -> "12";
+            "7" -> "12";
+            "8" -> "12";
+            "9" -> "12";
+            "10" -> "12";
+            "11" -> "13";
+            "12" -> "14";
+            "13" -> "12";
+            "14" -> "15";
+            "15" -> "16";
+        }
+        */
+    }
 }

@@ -137,65 +137,6 @@ public abstract class RedBlackTree<K, V>
         while (true);
     }
 
-    final V put(int treeId, TreeNode<K, V> node)
-    {
-        K key = node.getKey();
-        V value = node.getValue();
-        int hash = node.getHash();
-        node.red = true;
-        final TreeNode<K, V> root = getRoot(treeId);
-        if (root == null) {
-            node.red = false;
-            this.setRoot(treeId, node);
-            return null;
-        }
-
-        TreeNode<K, V> next = root;
-        do {
-            int hash0 = next.getHash();
-            if (hash0 == hash) {
-                TreeNode<K, V> first = next;
-                do {
-                    if (key.equals(next.getKey())) {
-                        return next.setValue(value);
-                    }
-                    next = next.hashDuplicated;
-                }
-                while (next != null);
-                node.hashDuplicated = first.hashDuplicated;
-                first.hashDuplicated = node;
-                return null;
-            }
-            else if (hash > hash0) {
-                if (next.right == null) {
-                    next.right = node;
-                    node.parent = next;
-                    if (next.red) {
-                        this.balanceInsert(treeId, node, false);
-                    }
-                    return null;
-                }
-                else {
-                    next = next.right;
-                }
-            }
-            else {
-                if (next.left == null) {
-                    next.left = node;
-                    node.parent = next;
-                    if (next.red) {
-                        this.balanceInsert(treeId, node, true);
-                    }
-                    return null;
-                }
-                else {
-                    next = next.left;
-                }
-            }
-        }
-        while (true);
-    }
-
     public final V remove(int treeId, K key, int hash)
     {
         final TreeNode<K, V> root = getRoot(treeId);
@@ -388,68 +329,65 @@ public abstract class RedBlackTree<K, V>
         }
     }
 
-    private void balanceInsert(int treeId, TreeNode<K, V> insertedNode, boolean isLeftInsertedNode)
+    private void balanceInsert(int treeId, TreeNode<K, V> insertedNode, boolean isLeftInsert)
     {
         TreeNode<K, V> n = insertedNode;
-        boolean isLeft = isLeftInsertedNode;
+        boolean isLeft = isLeftInsert;
+        TreeNode<K, V> parent, grandParent;
         while (true) {
             //assert n.isRed;
             //assert n.parent.isRed;
-            TreeNode<K, V> parent = n.parent;
+            parent = n.parent;
             TreeNode<K, V> uncle = n.getUncle();
-            TreeNode<K, V> grandParent = parent.parent;
-            if (uncle != null && uncle.red) {
-                //Parent and uncle is red
-                parent.red = false;
-                uncle.red = false;
-                grandParent.red = true;
-                if (grandParent == this.getRoot(treeId)) {
-                    grandParent.red = false;
-                }
-                else if (grandParent.parent != null && grandParent.parent.red) {
-                    n = grandParent;
-                    isLeft = grandParent.isLeftNode();
-                    continue;
-                    //don't while(true) can also be used `balanceInsert(grandParent, grandParent.isLeftNode())`;
-                }
+            grandParent = parent.parent;
+            if (!(uncle != null && uncle.red)) {
+                break;
+            }
+            //Parent and uncle is red
+            parent.red = false;
+            uncle.red = false;
+            grandParent.red = true;
+            if (grandParent == this.getRoot(treeId)) {
+                grandParent.red = false;
+                return;
+            }
+            else if (grandParent.parent != null && grandParent.parent.red) {
+                n = grandParent;
+                isLeft = grandParent.isLeftNode();
+                continue;
+            }
+            return;
+        }
+
+        //Parent is red but uncle is black
+        if (parent.isLeftNode() == isLeft) {
+            //Parent and N are on the same side
+            if (isLeft) {
+                //Parent and N are on the left
+                rotateRight(treeId, grandParent);
             }
             else {
-                //Parent is red but uncle is black
-                if (parent.isLeftNode() == isLeft) {
-                    //Parent and N are on the same side
-                    if (isLeft) {
-                        //Parent and N are on the left
-                        rotateRight(treeId, grandParent);
-                        parent.red = false;
-                        grandParent.red = true;
-                    }
-                    else {
-                        //Parent and N are on the right
-                        this.rotateLeft(treeId, grandParent);
-                        parent.red = false;
-                        grandParent.red = true;
-                    }
-                }
-                else { //rotate at twice
-                    if (isLeft) {
-                        //Parent is right and N is left
-                        this.rotateRight(treeId, parent);
-                        //Parent and N are on the right
-                        rotateLeft(treeId, grandParent);
-                        n.red = false;
-                        grandParent.red = true;
-                    }
-                    else {
-                        //Parent is left and N is right
-                        this.rotateLeft(treeId, parent);
-                        //Parent and N are on the left
-                        rotateRight(treeId, grandParent);
-                        n.red = false;
-                        grandParent.red = true;
-                    }
-                }
+                //Parent and N are on the right
+                this.rotateLeft(treeId, grandParent);
             }
-            break;
+            parent.red = false;
+            grandParent.red = true;
+        }
+        else { //rotate at twice
+            if (isLeft) {
+                //Parent is right and N is left
+                this.rotateRight(treeId, parent);
+                //Parent and N are on the right
+                this.rotateLeft(treeId, grandParent);
+            }
+            else {
+                //Parent is left and N is right
+                this.rotateLeft(treeId, parent);
+                //Parent and N are on the left
+                this.rotateRight(treeId, grandParent);
+            }
+            n.red = false;
+            grandParent.red = true;
         }
     }
 

@@ -214,15 +214,12 @@ public class DrawioBuilder<N, E>
     }
 
     @Override
-    protected DrawioMxCell createNodeView(GraphNode<N, E> node, int depth, int index)
+    protected DrawioMxCell createNodeView(GraphNode<N, E> node, int x, int y)
     {
         String id = this.idSelector.apply(node.getValue());
         DrawioMxCell drawioNode = DrawioMxCell.ofNode(id);
         drawioNode.setLabel(String.valueOf(node.getValue()));
 
-        long xy = generateXY(depth, index);
-        int x = (int) (xy >>> Integer.SIZE);
-        int y = (int) (xy);
         drawioNode.addMxGeometry("x", String.valueOf(x));
         drawioNode.addMxGeometry("y", String.valueOf(y));
         drawioNode.addMxGeometry("width", String.valueOf(this.width));

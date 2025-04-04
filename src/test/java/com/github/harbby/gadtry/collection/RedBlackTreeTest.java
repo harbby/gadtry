@@ -84,6 +84,15 @@ public class RedBlackTreeTest
     }
 
     @Test
+    public void putTest()
+    {
+        SingleRedBlackTree<Integer, String> tree = new TestRedBlackTree<>();
+        List<Integer> data = ImmutableList.of(12, 23, 45, 34, 40, 67, 78, 89, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180);  //
+        data.forEach(i -> tree.put(i, "" + i, i));
+        show(tree);
+    }
+
+    @Test
     public void deleteTest()
     {
         SingleRedBlackTree<Integer, String> tree = new TestRedBlackTree<>();

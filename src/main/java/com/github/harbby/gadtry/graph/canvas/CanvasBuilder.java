@@ -101,7 +101,7 @@ public class CanvasBuilder<N, E>
         return this;
     }
 
-    protected CanvasNodePo createNodeView(GraphNode<N, E> node, int depth, int index)
+    protected CanvasNodePo createNodeView(GraphNode<N, E> node, int x, int y)
     {
         String id = this.idSelector.apply(node.getValue());
         CanvasNodePo nodePo = new CanvasNodePo(id);
@@ -114,9 +114,6 @@ public class CanvasBuilder<N, E>
 
         boolean hasChildren = !node.nextNodes().isEmpty();
         nodePo.putConf("hasChildren", hasChildren);
-        long xy = generateXY(depth, index);
-        int x = (int) (xy >>> Integer.SIZE);
-        int y = (int) (xy);
         nodePo.putConf("x", x);
         nodePo.putConf("y", y);
         return nodePo;

@@ -478,8 +478,7 @@ public abstract class ImmutableMap<K, V>
 
                 HashEntry<K, V> hashEntry = buckets[index];
                 if (hashEntry instanceof TreeNode) {
-                    TreeNode<K, V> treeNode = new TreeNode<>(key, value, hash);
-                    treeView.put(index, treeNode);
+                    treeView.put(index, key, value, hash);
                 }
                 else {
                     EntryNode<K, V> node = new EntryNode<>(key, value, hash);

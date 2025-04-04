@@ -19,11 +19,21 @@ import com.github.harbby.gadtry.graph.GraphNode;
 
 public abstract class ProcessOptimizer<N, E, N0, E0>
 {
+    protected final SaveFileBuilder<N, E, N0, E0> saveFileBuilder;
+
+    protected ProcessOptimizer(SaveFileBuilder<N, E, N0, E0> saveFileBuilder)
+    {
+        this.saveFileBuilder = saveFileBuilder;
+    }
+
+    public abstract SaveFileBuilder.CanvasGraphPO<N0, E0> optimize(GraphNode<N, E> root, int nodeNumber);
+
     public enum Strategy
     {
         DEFAULT,
         PERFECT_DEPTH,
-        PERFECT_DEPTH_V2;
+        PERFECT_DEPTH_V2,
+        DOT_LAYOUT;
 
         <N, E, N0, E0> ProcessOptimizer<N, E, N0, E0> create(SaveFileBuilder<N, E, N0, E0> builder)
         {
@@ -34,20 +44,13 @@ public abstract class ProcessOptimizer<N, E, N0, E0>
                     return new DepthPerfectOptimizer<>(builder);
                 case PERFECT_DEPTH_V2:
                     return new DepthPerfectOptimizerV2<>(builder);
+                case DOT_LAYOUT:
+                    return new DotLayout<>(builder);
                 default:
                     throw new UnsupportedOperationException();
             }
         }
     }
-
-    protected final SaveFileBuilder<N, E, N0, E0> saveFileBuilder;
-
-    ProcessOptimizer(SaveFileBuilder<N, E, N0, E0> saveFileBuilder)
-    {
-        this.saveFileBuilder = saveFileBuilder;
-    }
-
-    abstract SaveFileBuilder.CanvasGraphPO<N0, E0> optimize(GraphNode<N, E> root, int nodeNumber);
 
     protected static class WrapperNode<N, E>
     {

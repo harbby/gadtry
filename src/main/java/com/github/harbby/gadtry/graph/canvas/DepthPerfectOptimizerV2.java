@@ -78,7 +78,10 @@ public class DepthPerfectOptimizerV2<N, E, N0, E0>
             depthFix(wrapperNode, stack, depthIndexArray, nodeMap);
         }
         for (WrapperNode<N, E> wrapperNode : nodeMap.values()) {
-            N0 nodeInfo = saveFileBuilder.createNodeView(wrapperNode.node, wrapperNode.depth, wrapperNode.index);
+            long xy = saveFileBuilder.generateXY(wrapperNode.depth, wrapperNode.index);
+            int x = (int) (xy >>> Integer.SIZE);
+            int y = (int) (xy);
+            N0 nodeInfo = saveFileBuilder.createNodeView(wrapperNode.node, x, y);
             NodeViewImpl<N, E, N0> nodeView = new NodeViewImpl<>(wrapperNode.node, nodeInfo);
             saveFileBuilder.nodeVisitor.accept(nodeView);
             canvasGraphPO.addNode(nodeInfo);

@@ -36,7 +36,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     protected Direction direction = Direction.left_to_right;
     protected Consumer<NodeView<N, N0>> nodeVisitor = nNodeContext -> {};
     protected Consumer<EdgeView<N, E, E0>> edgeVisitor = nNodeContext -> {};
-    private ProcessOptimizer.Strategy strategy = ProcessOptimizer.Strategy.PERFECT_DEPTH_V2;
+    private ProcessOptimizer.Strategy strategy = ProcessOptimizer.Strategy.DOT_LAYOUT;  // PERFECT_DEPTH_V2 or DOT_LAYOUT
 
     protected Double xSpacingFactor;
     protected Double ySpacingFactor;
@@ -71,7 +71,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
 
     protected abstract E0 createEdgeView(GraphNode<N, E> from, GraphEdge<N, E> edge);
 
-    protected abstract N0 createNodeView(GraphNode<N, E> node, int depth, int index);
+    protected abstract N0 createNodeView(GraphNode<N, E> node, int x, int y);
 
     protected abstract void serialize(CanvasGraphPO<N0, E0> graphPO, File path)
             throws IOException;
@@ -86,6 +86,16 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     {
         this.idSelector = requireNonNull(idSelector, "idSelector is null");
         return this;
+    }
+
+    protected double xSpacingFactor()
+    {
+        return getNonNull(this.xSpacingFactor, direction.xSpacingFactor);
+    }
+
+    protected double ySpacingFactor()
+    {
+        return getNonNull(this.ySpacingFactor, direction.ySpacingFactor);
     }
 
     protected final long generateXY(int depth, int index)
