@@ -3,7 +3,7 @@
 
 val targetVersion = project.findProperty("target")?.toString()?.toInt() ?: 21
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.toVersion(targetVersion)
   targetCompatibility = JavaVersion.toVersion(targetVersion)
 }

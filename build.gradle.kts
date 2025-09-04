@@ -6,6 +6,7 @@ plugins {
   id("com.github.hierynomus.license") version "0.16.1"
   jacoco
   `maven-publish`
+  id("com.github.ben-manes.versions") version "0.52.0"  // ./gradlew dependencyUpdates
 }
 
 group = "com.github.harbby"
@@ -43,13 +44,13 @@ tasks.processResources {
 tasks.withType<org.gradle.jvm.tasks.Jar> { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
 
 object versions {
-  val jna = "5.13.0"
-  val asm = "9.6"
-  val jackson = "2.15.3"
-  val javassist = "3.29.2-GA"
-  val junit = "5.9.3"
+  val jna = "5.17.0"
+  val asm = "9.8"
+  val jackson = "2.20.0"
+  val javassist = "3.30.2-GA"
+  val junit = "5.13.4"
   val jmh = "1.37"
-  val jansi = "2.4.0"
+  val jansi = "2.4.2"
 }
 
 dependencies {
@@ -61,6 +62,7 @@ dependencies {
   testImplementation("org.javassist:javassist:${versions.javassist}")
   testImplementation("org.junit.jupiter:junit-jupiter-api:${versions.junit}")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${versions.junit}")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation("org.fusesource.jansi:jansi:${versions.jansi}")
   testImplementation("org.openjdk.jmh:jmh-core:${versions.jmh}")
   testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:${versions.jmh}")
