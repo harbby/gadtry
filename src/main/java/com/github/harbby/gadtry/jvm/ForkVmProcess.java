@@ -44,7 +44,11 @@ public final class ForkVmProcess
     private static void doMain(boolean autoExit, OutputStream sysErr)
     {
         try {
-            // first read sys.in
+            //1. send ack
+            sysErr.write(VM_HEADER, 0, VM_HEADER.length);
+            sysErr.flush();
+
+            //2. read sys.in
             Callable<?> task = Serializables.byteToObject(System.in, ClassLoader.getSystemClassLoader());
             // check parent
             if (autoExit) {
@@ -53,9 +57,6 @@ public final class ForkVmProcess
                 teakThread.start();
             }
 
-            //2. write header to sys.err
-            sysErr.write(VM_HEADER, 0, VM_HEADER.length);
-            sysErr.flush();
             //3. call task
             Object value = task.call();
             byte[] result = Serializables.serialize(value);
@@ -99,8 +100,8 @@ public final class ForkVmProcess
         OutputStream sysOut = (OutputStream) unsafe.getObject(System.out, offset);
         OutputStream sysErr = (OutputStream) unsafe.getObject(System.err, offset);
         // redirect Error Stream
-        unsafe.putObject(System.err, offset, sysOut);
-        return sysErr;
+        unsafe.putObject(System.out, offset, sysErr);
+        return sysOut;
     }
 
     private static void saveTarget(OutputStream outputStream, byte[] bytes, boolean success)

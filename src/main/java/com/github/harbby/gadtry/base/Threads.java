@@ -34,27 +34,10 @@ public final class Threads
         }
     }
 
-    public static StackTraceElement getThreadMainFunc(Thread thread)
+    public static StackTraceElement getThreadCaller(Thread thread)
     {
         StackTraceElement[] stackTraceElements = thread.getStackTrace();
         ArrayUtil.checkNotEmpty(stackTraceElements, thread + " not exists Stack Trace");
         return stackTraceElements[stackTraceElements.length - 1];
-    }
-
-    public static StackTraceElement getJvmMainClass()
-    {
-        Thread mainThread = getMainThread();
-        return getThreadMainFunc(mainThread);
-    }
-
-    public static Thread getMainThread()
-    {
-        Thread[] threads = getThreads();
-        for (Thread thread : threads) {
-            if (thread.getId() == 1) {
-                return thread;
-            }
-        }
-        throw new PlatFormUnsupportedOperation("not support this platform jvm");
     }
 }

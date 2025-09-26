@@ -163,7 +163,7 @@ public class JVMLaunchersTest
 
         long out = launcher.startAndGet();
         Assertions.assertEquals(out, 1L);
-        Assertions.assertEquals(logs, Collections.singletonList(hookLog));
+        Assertions.assertEquals(logs.get(logs.size() - 1), hookLog);
     }
 
     @Test
@@ -199,7 +199,7 @@ public class JVMLaunchersTest
                 .task(() -> {
                     System.out.println("System.out: child jvm is running.");
                     System.err.println("System.err: child jvm is running.");
-                    StackTraceElement element = Threads.getJvmMainClass();
+                    StackTraceElement element = Threads.getThreadCaller(Threads.getThreads()[0]);
                     Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x -> System.out.println(x));
                     System.out.println(element);
                     return element.getClassName();
@@ -227,7 +227,7 @@ public class JVMLaunchersTest
                 .task(() -> {
                     System.out.println("System.out: child jvm is running.");
                     System.err.println("System.err: child jvm is running.");
-                    StackTraceElement element = Threads.getJvmMainClass();
+                    StackTraceElement element = Threads.getThreadCaller(Threads.getThreads()[0]);
                     return element.getClassName();
                 })
                 .setXms("16m")
@@ -255,7 +255,7 @@ public class JVMLaunchersTest
                     //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("System.out: child jvm is running.");
                     System.err.println("System.err: child jvm is running.");
-                    StackTraceElement element = Threads.getJvmMainClass();
+                    StackTraceElement element = Threads.getThreadCaller(Threads.getThreads()[0]);
                     Arrays.stream(Thread.currentThread().getStackTrace()).forEach(x -> System.out.println(x));
                     System.out.println(element);
                     return element.getClassName();
@@ -310,14 +310,13 @@ public class JVMLaunchersTest
                 .setConsole(System.out::println)
                 .ignoreParentClasspath()
                 .build();
-        VmPromise<Integer> promise = launcher.start();
         try {
-            promise.call();
+            VmPromise<Integer> promise = launcher.start();
             Assertions.fail();
         }
         catch (JVMException e) {
             String errorMsg = e.getMessage();
-            Assertions.assertTrue(errorMsg.contains(JVMLauncher.class.getName()));
+            Assertions.assertEquals("child process init failed, exit code 1", errorMsg);
         }
     }
 
@@ -477,7 +476,7 @@ public class JVMLaunchersTest
                 .setConsole(logs::add)
                 .build();
         Assertions.assertEquals(0, baseLauncher.startAndGet().intValue());
-        Assertions.assertEquals(Collections.singletonList(msg), logs);
+        Assertions.assertEquals(msg, logs.get(logs.size() - 1));
 
         List<String> testLogs = new ArrayList<>();
         JVMLauncher<Integer> testLauncher = JVMLaunchers.<Integer>newJvm()

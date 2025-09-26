@@ -15,7 +15,6 @@
  */
 package com.github.harbby.gadtry.jvm;
 
-import com.github.harbby.gadtry.base.ArrayUtil;
 import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.io.IOUtils;
@@ -24,11 +23,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static com.github.harbby.gadtry.jvm.JVMLauncherImpl.VM_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class VmPromiseImpl<T>
@@ -58,9 +55,8 @@ public class VmPromiseImpl<T>
             throws JVMException, InterruptedException
     {
         long end = System.nanoTime() + nanos;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                InputStream errorStream = process.getErrorStream()) {
-            checkVMHeader(errorStream);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                InputStream callbackStream = process.getInputStream()) {
             T result = null;
             boolean isResult = false;
             while (true) {
@@ -70,8 +66,8 @@ public class VmPromiseImpl<T>
                 else if (reader.ready()) {
                     consoleHandler.accept(reader.readLine());
                 }
-                else if (!isResult && errorStream.available() > 0) {
-                    result = tryReadResult(errorStream);
+                else if (!isResult && callbackStream.available() > 0) {
+                    result = tryReadResult(callbackStream);
                     isResult = true;
                 }
                 else if (process.isAlive()) {
@@ -83,7 +79,7 @@ public class VmPromiseImpl<T>
                         consoleHandler.accept(line);
                     }
                     if (!isResult) {
-                        result = tryReadResult(errorStream);
+                        result = tryReadResult(callbackStream);
                     }
                     return result;
                 }
@@ -125,41 +121,17 @@ public class VmPromiseImpl<T>
         process.destroy();
     }
 
-    private void checkVMHeader(InputStream sysErr)
-            throws IOException, InterruptedException
-    {
-        //check child state
-        int first = sysErr.read();
-        if (first == -1) {
-            throw new JVMException("child process init failed, exit code " + process.waitFor());
-        }
-        byte[] headBuffer = new byte[VM_HEADER.length];
-        headBuffer[0] = (byte) first;
-        int len = IOUtils.tryReadFully(sysErr, headBuffer, 1, headBuffer.length - 1);
-        if (len != headBuffer.length - 1) {
-            String err = new String(headBuffer, 0, len + 1, UTF_8);
-            throw new JVMException(String.format("child process init failed, exit code %s, %s", process.waitFor(), err));
-        }
-        else if (!Arrays.equals(VM_HEADER, headBuffer)) {
-            //check child jvm header failed
-            byte[] failedByes = IOUtils.readAllBytes(sysErr);
-            byte[] errorMsg = ArrayUtil.merge(headBuffer, failedByes);
-            String err = new String(errorMsg, UTF_8).trim();
-            throw new JVMException(String.format("child process init failed, exit code %s, %s", process.waitFor(), err));
-        }
-    }
-
-    private T tryReadResult(InputStream errorStream)
+    private T tryReadResult(InputStream callbackStream)
             throws IOException, ClassNotFoundException, InterruptedException
     {
-        int flag = errorStream.read();
+        int flag = callbackStream.read();
         switch (flag) {
             case -1:
                 throw new JVMException("child process abnormal exit, exit code " + process.waitFor());
             case '0':
-                return Serializables.byteToObject(errorStream, classLoader);
+                return Serializables.byteToObject(callbackStream, classLoader);
             case '1':
-                throw new JVMException(IOUtils.toString(errorStream, UTF_8));
+                throw new JVMException(IOUtils.toString(callbackStream, UTF_8));
             default:
                 throw new JVMException("child process unknown error");
         }

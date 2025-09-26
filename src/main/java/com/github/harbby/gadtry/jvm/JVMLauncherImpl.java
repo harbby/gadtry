@@ -15,14 +15,18 @@
  */
 package com.github.harbby.gadtry.jvm;
 
+import com.github.harbby.gadtry.base.ArrayUtil;
 import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Strings;
+import com.github.harbby.gadtry.io.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -130,7 +134,8 @@ public class JVMLauncherImpl<R>
             builder.directory(workDirectory);
         }
         if (redirectOutputToNull) {
-            builder.redirectOutput(DISCARD);
+            // builder.redirectOutput(DISCARD);
+            builder.redirectError(DISCARD);
         }
 
         builder.environment().putAll(environment);
@@ -141,11 +146,41 @@ public class JVMLauncherImpl<R>
         try {
             os.write(task);
             os.flush();
+            checkVMHeader(process); // process startup ack
         }
         catch (IOException e) {
             // child vm exited
         }
+        catch (InterruptedException e) {
+            // Interrupted
+            process.destroy();
+        }
         return new VmPromiseImpl<>(process, consoleHandler, classLoader, timeoutNanos);
+    }
+
+    private void checkVMHeader(Process process)
+            throws IOException, InterruptedException
+    {
+        InputStream sysErr = process.getInputStream();
+        //check child state
+        int first = sysErr.read();
+        if (first == -1) {
+            throw new JVMException("child process init failed, exit code " + process.waitFor());
+        }
+        byte[] headBuffer = new byte[VM_HEADER.length];
+        headBuffer[0] = (byte) first;
+        int len = IOUtils.tryReadFully(sysErr, headBuffer, 1, headBuffer.length - 1);
+        if (len != headBuffer.length - 1) {
+            String err = new String(headBuffer, 0, len + 1, UTF_8);
+            throw new JVMException(String.format("child process init failed, exit code %s, %s", process.waitFor(), err));
+        }
+        else if (!Arrays.equals(VM_HEADER, headBuffer)) {
+            //check child jvm header failed
+            byte[] failedByes = IOUtils.readAllBytes(sysErr);
+            byte[] errorMsg = ArrayUtil.merge(headBuffer, failedByes);
+            String err = new String(errorMsg, UTF_8).trim();
+            throw new JVMException(String.format("child process init failed, exit code %s, %s", process.waitFor(), err));
+        }
     }
 
     private String getUserAddClasspath()

@@ -23,9 +23,9 @@ public class ThreadsTest
     @Test
     public void getMainThreadTest()
     {
-        Thread thread = Threads.getMainThread();
+        Thread thread = Threads.getThreads()[0];
         Assertions.assertSame(thread, Thread.currentThread());
-        StackTraceElement stackTraceElement = Threads.getJvmMainClass();
+        StackTraceElement stackTraceElement = Threads.getThreadCaller(thread);
         Assertions.assertEquals(stackTraceElement.getClassName(), "worker.org.gradle.process.internal.worker.GradleWorkerMain");
     }
 }
