@@ -18,17 +18,38 @@ package com.github.harbby.gadtry.graph;
 import java.io.Serializable;
 
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
-public class GraphEdge<N, E>
+/**
+ * A directed edge {@code inNode -> outNode} carrying an optional value.
+ */
+public final class GraphEdge<N, E>
         implements Serializable
 {
+    private final GraphNode<N, E> inNode;
     private final GraphNode<N, E> outNode;
     private final E value;
 
-    private GraphEdge(GraphNode<N, E> outNode, E value)
+    private GraphEdge(GraphNode<N, E> inNode, GraphNode<N, E> outNode, E value)
     {
-        this.outNode = outNode;
+        this.inNode = requireNonNull(inNode, "inNode is null");
+        this.outNode = requireNonNull(outNode, "outNode is null");
         this.value = value;
+    }
+
+    public static <N, E> GraphEdge<N, E> of(GraphNode<N, E> inNode, GraphNode<N, E> outNode, E value)
+    {
+        return new GraphEdge<>(inNode, outNode, value);
+    }
+
+    public static <N, E> GraphEdge<N, E> of(GraphNode<N, E> inNode, GraphNode<N, E> outNode)
+    {
+        return of(inNode, outNode, null);
+    }
+
+    public GraphNode<N, E> getInNode()
+    {
+        return inNode;
     }
 
     public GraphNode<N, E> getOutNode()
@@ -45,18 +66,9 @@ public class GraphEdge<N, E>
     public String toString()
     {
         return toStringHelper(this)
+                .add("in", inNode)
                 .add("out", outNode)
                 .add("value", value)
                 .toString();
-    }
-
-    public static <N, E> GraphEdge<N, E> of(GraphNode<N, E> outNode, E edgeData)
-    {
-        return new GraphEdge<>(outNode, edgeData);
-    }
-
-    public static <N, E> GraphEdge<N, E> of(GraphNode<N, E> outNode)
-    {
-        return of(outNode, null);
     }
 }

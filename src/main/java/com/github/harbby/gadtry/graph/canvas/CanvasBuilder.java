@@ -16,12 +16,13 @@
 package com.github.harbby.gadtry.graph.canvas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
+import com.github.harbby.gadtry.graph.export.Direction;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Map;
+import java.io.Writer;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -36,9 +37,9 @@ public class CanvasBuilder<N, E>
     private String nodeType = "text";
     private String edgeType = "text";
 
-    public CanvasBuilder(GraphNode<N, E> root, Map<N, GraphNode<N, E>> nodes)
+    public CanvasBuilder(Graph<N, E> graph)
     {
-        super(root, nodes, 300, 50);
+        super(graph, 300, 50);
     }
 
     public CanvasBuilder<N, E> nodeWidth(int width)
@@ -112,7 +113,7 @@ public class CanvasBuilder<N, E>
         nodePo.setColor(this.nodeColor);
         nodePo.setLabel(String.valueOf(node.getValue()));
 
-        boolean hasChildren = !node.nextNodes().isEmpty();
+        boolean hasChildren = !node.isSink();
         nodePo.putConf("hasChildren", hasChildren);
         nodePo.putConf("x", x);
         nodePo.putConf("y", y);
@@ -129,7 +130,7 @@ public class CanvasBuilder<N, E>
 
         canvasEdgePo.putConf("fromNode", sourceID);
         canvasEdgePo.putConf("toNode", targetID);
-        if (direction == Direction.left_to_right) {
+        if (direction == Direction.LEFT_TO_RIGHT) {
             canvasEdgePo.putConf("fromSide", "right");
             canvasEdgePo.putConf("toSide", "left");
         }
@@ -144,9 +145,9 @@ public class CanvasBuilder<N, E>
     }
 
     @Override
-    protected void serialize(CanvasGraphPO<CanvasNodePo, CanvasEdgePo> graphPO, File path)
+    protected void serialize(CanvasGraphPO<CanvasNodePo, CanvasEdgePo> graphPO, Writer writer)
             throws IOException
     {
-        MAPPER.writerFor(CanvasGraphPO.class).writeValue(path, graphPO);
+        MAPPER.writerFor(CanvasGraphPO.class).writeValue(writer, graphPO);
     }
 }

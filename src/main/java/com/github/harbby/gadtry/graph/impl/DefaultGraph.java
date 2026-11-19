@@ -19,81 +19,77 @@ import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.Route;
-import com.github.harbby.gadtry.graph.SearchBuilder;
-import com.github.harbby.gadtry.graph.canvas.CanvasBuilder;
-import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
-import com.github.harbby.gadtry.graph.drawio.DrawioBuilder;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * 默认graph
- * 采用普通左二叉树遍历法
- * default 采用普通串行遍历(非并行)
+ * Default immutable graph implementation.
  */
 public class DefaultGraph<N, E>
         implements Graph<N, E>
 {
-    private final GraphNode<N, E> root;
     private final Map<N, GraphNode<N, E>> nodes;
+    private final List<GraphEdge<N, E>> edges;
 
-    public DefaultGraph(
-            GraphNode<N, E> root,
-            Map<N, GraphNode<N, E>> nodes)
+    public DefaultGraph(Map<N, GraphNode<N, E>> nodes)
     {
-        this.root = root;
-        this.nodes = nodes;
+        this.nodes = requireNonNull(nodes, "nodes is null");
+        List<GraphEdge<N, E>> edgeList = new ArrayList<>();
+        for (GraphNode<N, E> node : nodes.values()) {
+            edgeList.addAll(node.outEdges());
+        }
+        this.edges = Collections.unmodifiableList(edgeList);
     }
 
     @Override
-    public void addNode(N node)
+    public int nodeCount()
     {
-        throw new UnsupportedOperationException();
+        return nodes.size();
     }
 
     @Override
-    public void addEdge(N n1, N n2)
+    public int edgeCount()
     {
-        throw new UnsupportedOperationException();
+        return edges.size();
     }
 
     @Override
-    public List<Route<N, E>> searchRuleRoute(N in, Function<Route<N, E>, Boolean> rule)
+    public Collection<GraphNode<N, E>> nodes()
     {
-        GraphNode<N, E> begin = requireNonNull(nodes.get(in), "NO SUCH Node " + in);
-
-        return new SearchBuilder<>(this, begin)
-                .mode(SearchBuilder.Mode.DEPTH_FIRST)
-                .nextRule(rule)
-                .search()
-                .getRoutes();
+        return Collections.unmodifiableCollection(nodes.values());
     }
 
     @Override
-    public List<Route<N, E>> searchRuleRoute(Function<Route<N, E>, Boolean> rule)
+    public List<GraphEdge<N, E>> edges()
     {
-        return new SearchBuilder<>(this, root)
-                .mode(SearchBuilder.Mode.DEPTH_FIRST)
-                .nextRule(rule)
-                .search()
-                .getRoutes();
+        return edges;
+    }
+
+    @Override
+    public Optional<GraphNode<N, E>> findNode(N id)
+    {
+        return Optional.ofNullable(nodes.get(id));
     }
 
     @SafeVarargs
     @Override
     public final Route<N, E> getRoute(N... nodeIds)
     {
-        GraphNode<N, E> begin = requireNonNull(nodes.get(nodeIds[0]), "NO SUCH Node " + nodeIds[0]);
+        requireNonNull(nodeIds, "nodeIds is null");
+        if (nodeIds.length == 0) {
+            throw new IllegalArgumentException("nodeIds is empty");
+        }
+        GraphNode<N, E> begin = getNode(nodeIds[0]);
         Route.Builder<N, E> route = Route.builder(begin);
         for (int i = 1; i < nodeIds.length; i++) {
-            GraphEdge<N, E> edge = begin.getNextNode(nodeIds[i]).orElseThrow(() -> new IllegalArgumentException("NO SUCH ROUTE"));
+            GraphEdge<N, E> edge = begin.getOutEdge(nodeIds[i]).orElseThrow(() -> new IllegalArgumentException("NO SUCH ROUTE"));
             route.add(edge);
             begin = edge.getOutNode();
         }
@@ -101,66 +97,14 @@ public class DefaultGraph<N, E>
     }
 
     @Override
-    public GraphNode<N, E> getNode(N id)
-    {
-        return requireNonNull(nodes.get(id), "NO SUCH Node " + id);
-    }
-
-    @Override
     public List<String> printShow()
     {
-        List<GraphNode<?, ?>> nodes = root.nextNodes().stream().map(GraphEdge::getOutNode).collect(Collectors.toList());
-        return GraphUtil.printShow(nodes);
+        return GraphUtil.printShow(GraphUtil.entryNodes(this));
     }
 
     @Override
-    public CanvasBuilder<N, E> saveAsCanvas()
+    public List<String> printShow(N id)
     {
-        return new CanvasBuilder<>(root, nodes);
-    }
-
-    @Override
-    public DrawioBuilder<N, E> saveAsDrawio()
-    {
-        return new DrawioBuilder<>(root, nodes);
-    }
-
-    @Override
-    public <T extends SaveFileBuilder<N, E, ?, ?>> T saveAsTypeBuilder(Class<T> builderType)
-    {
-        try {
-            return builderType.getConstructor(GraphNode.class, Map.class)
-                    .newInstance(root, nodes);
-        }
-        catch (Exception e) {
-            throw new IllegalStateException();
-        }
-    }
-
-    public void saveAsCanvas(File path)
-            throws IOException
-    {
-        this.saveAsCanvas().save(path);
-    }
-
-    @Override
-    public Iterable<String> printShow(N id)
-    {
-        GraphNode<N, E> firstNode = requireNonNull(nodes.get(id), "NO SUCH Node " + id);
-        List<String> builder = GraphUtil.printShow(firstNode);
-        builder.forEach(System.out::println);
-        return builder;
-    }
-
-    @Override
-    public List<GraphNode<N, E>> findNode(Function<GraphNode<N, E>, Boolean> rule)
-    {
-        return nodes.values().stream().filter(rule::apply).collect(Collectors.toList());
-    }
-
-    @Override
-    public SearchBuilder<N, E> search()
-    {
-        return new SearchBuilder<>(this, root);
+        return GraphUtil.printShow(getNode(id));
     }
 }

@@ -15,20 +15,20 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class SearchContext<N, E>
 {
-    private final Function<Route<N, E>, Boolean> nextRule;
-    private final Function<SearchContext<N, E>, Boolean> globalRule;
+    private final Predicate<Route<N, E>> nextRule;
+    private final Predicate<SearchContext<N, E>> globalRule;
     private final long searchStartTime = System.currentTimeMillis();
 
     private Route<N, E> lastRoute;
     private int number;
 
     public SearchContext(
-            Function<Route<N, E>, Boolean> nextRule,
-            Function<SearchContext<N, E>, Boolean> globalRule)
+            Predicate<Route<N, E>> nextRule,
+            Predicate<SearchContext<N, E>> globalRule)
     {
         this.nextRule = nextRule;
         this.globalRule = globalRule;
@@ -60,12 +60,12 @@ public class SearchContext<N, E>
         return number;
     }
 
-    public Function<Route<N, E>, Boolean> getNextRule()
+    public Predicate<Route<N, E>> getNextRule()
     {
         return nextRule;
     }
 
-    public Function<SearchContext<N, E>, Boolean> getGlobalRule()
+    public Predicate<SearchContext<N, E>> getGlobalRule()
     {
         return globalRule;
     }

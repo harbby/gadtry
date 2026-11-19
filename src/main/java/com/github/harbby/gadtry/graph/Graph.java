@@ -15,133 +15,284 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import com.github.harbby.gadtry.graph.canvas.CanvasBuilder;
-import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
-import com.github.harbby.gadtry.graph.drawio.DrawioBuilder;
+import com.github.harbby.gadtry.graph.export.GraphExporter;
+import com.github.harbby.gadtry.graph.export.GraphFormat;
 import com.github.harbby.gadtry.graph.impl.DefaultGraph;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Immutable directed graph. Build instances with {@link #builder()}.
+ * <pre>{@code
+ * for (GraphNode<N, E> node : graph) { ... }
+ * for (GraphEdge<N, E> edge : graph.edges()) { edge.getInNode(); edge.getOutNode(); edge.getValue(); }
+ * graph.forEachEdge((from, to, value) -> ...);
+ * graph.traverse().from("a").bfs().values().forEach(...);
+ * }</pre>
+ *
+ * @param <N> node value type, used as the node id
+ * @param <E> edge value type
+ */
 public interface Graph<N, E>
-        extends Serializable
+        extends Iterable<GraphNode<N, E>>, Serializable
 {
-    public void addNode(N node);
+    int nodeCount();
 
-    public void addEdge(N n1, N n2);
-
-    List<String> printShow();
-
-    default void saveAsCanvas(String path)
-            throws IOException
-    {
-        saveAsCanvas(new File(path));
-    }
-
-    CanvasBuilder<N, E> saveAsCanvas();
-
-    DrawioBuilder<N, E> saveAsDrawio();
-
-    void saveAsCanvas(File path)
-            throws IOException;
-
-    public <T extends SaveFileBuilder<N, E, ?, ?>> T saveAsTypeBuilder(Class<T> builderType);
+    int edgeCount();
 
     /**
-     * 打印graph结构
-     *
-     * @param id 已指定id为起点
-     * @return graph text
+     * @return all nodes in insertion order (read-only)
      */
-    Iterable<String> printShow(N id);
+    Collection<GraphNode<N, E>> nodes();
 
     /**
-     * 搜索出in到out符合规则的所有路径
-     *
-     * @param in   搜索起点
-     * @param out  搜索终点
-     * @param rule 规则
-     * @return 搜索到的路径
+     * @return all edges, grouped by source node in node insertion order (read-only)
      */
-    default List<Route<N, E>> searchRuleRoute(N in, N out, Function<Route<N, E>, Boolean> rule)
+    List<GraphEdge<N, E>> edges();
+
+    @Override
+    default Iterator<GraphNode<N, E>> iterator()
     {
-        return searchRuleRoute(in, rule).stream()
-                .filter(x -> out.equals(x.getLastNodeId()))
-                .collect(Collectors.toList());
+        return nodes().iterator();
     }
 
-    public List<GraphNode<N, E>> findNode(Function<GraphNode<N, E>, Boolean> rule);
+    default Stream<GraphNode<N, E>> nodeStream()
+    {
+        return nodes().stream();
+    }
 
-    public SearchBuilder<N, E> search();
+    default Stream<GraphEdge<N, E>> edgeStream()
+    {
+        return edges().stream();
+    }
 
-    List<Route<N, E>> searchRuleRoute(N in, Function<Route<N, E>, Boolean> rule);
+    default void forEachEdge(EdgeConsumer<? super N, ? super E> consumer)
+    {
+        requireNonNull(consumer, "consumer is null");
+        for (GraphEdge<N, E> edge : edges()) {
+            consumer.accept(edge.getInNode().getValue(), edge.getOutNode().getValue(), edge.getValue());
+        }
+    }
 
-    List<Route<N, E>> searchRuleRoute(Function<Route<N, E>, Boolean> rule);
+    Optional<GraphNode<N, E>> findNode(N id);
 
+    /**
+     * @throws NoSuchElementException if the node does not exist
+     */
+    default GraphNode<N, E> getNode(N id)
+    {
+        return findNode(id).orElseThrow(() -> new NoSuchElementException("NO SUCH Node " + id));
+    }
+
+    default boolean containsNode(N id)
+    {
+        return findNode(id).isPresent();
+    }
+
+    default Optional<GraphEdge<N, E>> findEdge(N from, N to)
+    {
+        return findNode(from).flatMap(node -> node.getOutEdge(to));
+    }
+
+    default boolean containsEdge(N from, N to)
+    {
+        return findEdge(from, to).isPresent();
+    }
+
+    default List<GraphNode<N, E>> findNodes(Predicate<? super GraphNode<N, E>> rule)
+    {
+        requireNonNull(rule, "rule is null");
+        return nodeStream().filter(rule).collect(Collectors.toList());
+    }
+
+    /**
+     * @return nodes without incoming edges, in insertion order
+     */
+    default List<GraphNode<N, E>> sources()
+    {
+        return findNodes(GraphNode::isSource);
+    }
+
+    /**
+     * @return nodes without outgoing edges, in insertion order
+     */
+    default List<GraphNode<N, E>> sinks()
+    {
+        return findNodes(GraphNode::isSink);
+    }
+
+    default List<GraphNode<N, E>> successors(N id)
+    {
+        return getNode(id).successors();
+    }
+
+    default List<GraphNode<N, E>> predecessors(N id)
+    {
+        return getNode(id).predecessors();
+    }
+
+    default int outDegree(N id)
+    {
+        return getNode(id).outDegree();
+    }
+
+    default int inDegree(N id)
+    {
+        return getNode(id).inDegree();
+    }
+
+    /**
+     * Chained node traversal: {@code graph.traverse().from(x).bfs() | dfs() | topological()}.
+     */
+    default GraphTraversal<N, E> traverse()
+    {
+        return new GraphTraversal<>(this);
+    }
+
+    /**
+     * Route (path) search. Without {@code beginNode} the whole graph is searched.
+     */
+    default SearchBuilder<N, E> search()
+    {
+        return new SearchBuilder<>(this);
+    }
+
+    /**
+     * Searches all routes starting at every entry node of the graph.
+     * The single-node route of each entry node is offered to {@code rule} too.
+     */
+    default List<Route<N, E>> searchRuleRoute(Predicate<Route<N, E>> rule)
+    {
+        return search().nextRule(rule).search().getRoutes();
+    }
+
+    default List<Route<N, E>> searchRuleRoute(N in, Predicate<Route<N, E>> rule)
+    {
+        return search().beginNode(in).nextRule(rule).search().getRoutes();
+    }
+
+    default List<Route<N, E>> searchRuleRoute(N in, N out, Predicate<Route<N, E>> rule)
+    {
+        return search().beginNode(in).endNode(out).nextRule(rule).search().getRoutes();
+    }
+
+    /**
+     * @throws IllegalArgumentException if the ids do not form a connected route
+     */
     Route<N, E> getRoute(N... ids);
 
-    public GraphNode<N, E> getNode(N id);
+    /**
+     * @return tree-style text of the whole graph
+     */
+    List<String> printShow();
+
+    /**
+     * @return tree-style text of the graph reachable from {@code id}
+     */
+    List<String> printShow(N id);
+
+    /**
+     * Single export entry point, e.g.
+     * {@code graph.export(GraphFormats.json()).save(path)} or {@code graph.export(GraphFormats.canvas()).writeTo(out)}.
+     * A custom format can be passed as a constructor reference: {@code graph.export(MyExporter::new)}.
+     */
+    default <X extends GraphExporter<N, E>> X export(GraphFormat<N, E, X> format)
+    {
+        requireNonNull(format, "format is null");
+        return requireNonNull(format.create(this), "format created a null exporter");
+    }
 
     static <N, E> GraphBuilder<N, E> builder()
     {
         return new GraphBuilder<>();
     }
 
-    public static class GraphBuilder<N, E>
+    @FunctionalInterface
+    interface EdgeConsumer<N, E>
     {
-        private final Map<N, GraphNode<N, E>> rootNodes = new HashMap<>();
-        private final Map<N, GraphNode<N, E>> nodes = new HashMap<>();
+        void accept(N from, N to, E value);
+    }
 
-        public GraphBuilder<N, E> addNode(N nodeData)
+    class GraphBuilder<N, E>
+    {
+        private Map<N, GraphNode<N, E>> nodes = new LinkedHashMap<>();
+        // set once create() hands the current nodes to a graph; the next change copies them first
+        private boolean shared;
+
+        public GraphBuilder<N, E> addNode(N node)
         {
-            computeIfAbsentNode(nodeData);
+            requireNonNull(node, "node is null");
+            computeIfAbsent(node);
             return this;
         }
 
-        private GraphNode<N, E> computeIfAbsentNode(N nodeData)
+        /**
+         * Adds {@code from -> to}. Adding the same pair again replaces the edge value.
+         */
+        public GraphBuilder<N, E> addEdge(N from, N to, E edgeValue)
         {
-            return nodes.computeIfAbsent(nodeData, key -> {
-                GraphNode<N, E> node = GraphNode.of(nodeData);
-                rootNodes.put(nodeData, node);
-                return node;
-            });
-        }
-
-        public GraphBuilder<N, E> addEdge(N in, N out, E edgeData)
-        {
-            GraphNode<N, E> inNode = computeIfAbsentNode(in);
-            GraphNode<N, E> outNode = computeIfAbsentNode(out);
-            inNode.addNextNode(outNode, edgeData);
-            rootNodes.remove(out);  //从根节点列表中删除
+            requireNonNull(from, "from is null");
+            requireNonNull(to, "to is null");
+            ensureWritable();
+            GraphNode.connect(computeIfAbsent(from), computeIfAbsent(to), edgeValue);
             return this;
         }
 
-        public GraphBuilder<N, E> addEdge(N node1, N node2)
+        public GraphBuilder<N, E> addEdge(N from, N to)
         {
-            return addEdge(node1, node2, null);
+            return addEdge(from, to, null);
         }
 
+        /**
+         * Creates a new immutable graph. The builder can keep being used afterwards
+         * without affecting graphs it already created.
+         */
         public Graph<N, E> create()
         {
-            final GraphNode<N, E> root = new GraphNode.RootNode<>();
-            if (rootNodes.isEmpty() && !nodes.isEmpty()) {
-                // This is a completely circular dependency graph.
-                root.addNextNode(nodes.values().iterator().next(), null);
+            shared = true;
+            return new DefaultGraph<>(nodes);
+        }
+
+        private GraphNode<N, E> computeIfAbsent(N id)
+        {
+            GraphNode<N, E> node = nodes.get(id);
+            if (node == null) {
+                ensureWritable();
+                node = GraphNode.of(id);
+                nodes.put(id, node);
             }
-            else {
-                for (GraphNode<N, E> node : rootNodes.values()) {
-                    root.addNextNode(node, null);
+            return node;
+        }
+
+        private void ensureWritable()
+        {
+            if (!shared) {
+                return;
+            }
+            Map<N, GraphNode<N, E>> copy = new LinkedHashMap<>();
+            for (N id : nodes.keySet()) {
+                copy.put(id, GraphNode.of(id));
+            }
+            for (GraphNode<N, E> node : nodes.values()) {
+                GraphNode<N, E> from = copy.get(node.getValue());
+                for (GraphEdge<N, E> edge : node.outEdges()) {
+                    GraphNode.connect(from, copy.get(edge.getOutNode().getValue()), edge.getValue());
                 }
             }
-            Map<N, GraphNode<N, E>> nodeMap = nodes.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            return new DefaultGraph<>(root, nodeMap);
+            nodes = copy;
+            shared = false;
         }
     }
 }

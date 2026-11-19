@@ -30,8 +30,8 @@ public class RouteImplTest
         GraphNode<String, Void> n9 = GraphNode.of("9");
 
         Route.Builder<String, Void> builder = Route.builder(n1);
-        builder.add(GraphEdge.of(n9));
-        builder.add(GraphEdge.of(n1));
+        builder.add(GraphEdge.of(n1, n9));
+        builder.add(GraphEdge.of(n9, n1));
 
         Route<String, Void> route = builder.create();
         Assertions.assertTrue(route.containsLoop());
@@ -40,7 +40,7 @@ public class RouteImplTest
     @Test
     public void edgeToString()
     {
-        GraphEdge<String, Void> edge = GraphEdge.of(GraphNode.of("2"));
-        Assertions.assertEquals(edge.toString(), "GraphEdge{out=2, value=null}");
+        GraphEdge<String, Void> edge = GraphEdge.of(GraphNode.of("1"), GraphNode.of("2"));
+        Assertions.assertEquals(edge.toString(), "GraphEdge{in=1, out=2, value=null}");
     }
 }

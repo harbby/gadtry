@@ -19,6 +19,10 @@ import com.github.harbby.gadtry.base.Serializables;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,13 +81,13 @@ public class GraphxTest
         Assertions.assertEquals(list.size(), 6);
         graph.printShow().forEach(System.out::println);
 
-        Assertions.assertEquals(graph.getNode("a2").nextNodes().size(), 2);
+        Assertions.assertEquals(graph.getNode("a2").outDegree(), 2);
 
         try {
             graph.getNode("a100");
             Assertions.fail();
         }
-        catch (NullPointerException e) {
+        catch (NoSuchElementException e) {
             Assertions.assertEquals(e.getMessage(), "NO SUCH Node a100");
         }
     }
@@ -217,5 +221,97 @@ public class GraphxTest
         NodeOperator.runGraph(graph);
         graph.printShow().forEach(System.out::println);
         Assertions.assertEquals(6, db.get());
+    }
+
+    @Test
+    public void iterateNodesAndEdges()
+    {
+        List<String> nodes = new ArrayList<>();
+        for (GraphNode<String, Void> node : graph) {
+            nodes.add(node.getValue());
+        }
+        Assertions.assertEquals(Arrays.asList("a1", "a2", "a3", "a4", "a5", "a6"), nodes);
+        Assertions.assertEquals(6, graph.nodeCount());
+        Assertions.assertEquals(5, graph.edgeCount());
+
+        List<String> edges = new ArrayList<>();
+        graph.forEachEdge((from, to, value) -> edges.add(from + "->" + to));
+        List<String> streamed = graph.edgeStream()
+                .map(edge -> edge.getInNode().getValue() + "->" + edge.getOutNode().getValue())
+                .collect(Collectors.toList());
+        Assertions.assertEquals(streamed, edges);
+        Assertions.assertTrue(edges.contains("a2->a5"));
+        Assertions.assertTrue(graph.containsEdge("a1", "a3"));
+        Assertions.assertFalse(graph.containsEdge("a3", "a1"));
+    }
+
+    @Test
+    public void sourcesSinksAndDegrees()
+    {
+        Assertions.assertEquals(Collections.singletonList("a1"), values(graph.sources()));
+        Assertions.assertEquals(Arrays.asList("a4", "a5", "a6"), values(graph.sinks()));
+        Assertions.assertEquals(2, graph.outDegree("a1"));
+        Assertions.assertEquals(1, graph.inDegree("a5"));
+        Assertions.assertEquals(Collections.singletonList("a2"), values(graph.predecessors("a5")));
+        Assertions.assertFalse(graph.findNode("a100").isPresent());
+    }
+
+    @Test
+    public void traverseBfsDfsTopological()
+    {
+        List<String> bfs = graph.traverse().from("a2").bfs().values().collect(Collectors.toList());
+        Assertions.assertEquals("a2", bfs.get(0));
+        Assertions.assertEquals(new HashSet<>(Arrays.asList("a2", "a4", "a5")), new HashSet<>(bfs));
+
+        List<String> dfs = graph.traverse().dfs().values().collect(Collectors.toList());
+        Assertions.assertEquals("a1", dfs.get(0));
+        Assertions.assertEquals(6, dfs.size());
+
+        List<String> reverse = graph.traverse().from("a5").reverse().dfs().values().collect(Collectors.toList());
+        Assertions.assertEquals(Arrays.asList("a5", "a2", "a1"), reverse);
+
+        List<String> topo = graph.traverse().topological().values().collect(Collectors.toList());
+        Assertions.assertEquals(6, topo.size());
+        graph.forEachEdge((from, to, value) -> Assertions.assertTrue(topo.indexOf(from) < topo.indexOf(to)));
+    }
+
+    @Test
+    public void cyclicGraphTraversal()
+    {
+        Graph<String, Void> cyclic = Graph.<String, Void>builder()
+                .addEdge("a", "b")
+                .addEdge("b", "c")
+                .addEdge("c", "b")
+                .addEdge("d", "e")
+                .addEdge("e", "d")
+                .create();
+        // the d<->e cycle is unreachable from the only source "a" but must still be covered
+        Assertions.assertEquals(5, cyclic.traverse().bfs().toList().size());
+        Assertions.assertEquals(5, cyclic.traverse().dfs().toList().size());
+        Assertions.assertEquals(5, cyclic.searchRuleRoute(route -> !route.containsLoop()).stream()
+                .map(Route::getLastNodeId).distinct().count());
+        Assertions.assertThrows(IllegalStateException.class, () -> cyclic.traverse().topological().toList());
+    }
+
+    @Test
+    public void builderReuseDoesNotChangeCreatedGraph()
+    {
+        Graph.GraphBuilder<String, Integer> builder = Graph.<String, Integer>builder().addEdge("a", "b", 1);
+        Graph<String, Integer> first = builder.create();
+        builder.addEdge("a", "b", 2).addEdge("b", "c");
+        Graph<String, Integer> second = builder.create();
+
+        Assertions.assertEquals(2, first.nodeCount());
+        Assertions.assertEquals(1, first.edgeCount());
+        Assertions.assertEquals(Integer.valueOf(1), first.findEdge("a", "b").get().getValue());
+        Assertions.assertEquals(3, second.nodeCount());
+        Assertions.assertEquals(2, second.edgeCount());
+        Assertions.assertEquals(Integer.valueOf(2), second.findEdge("a", "b").get().getValue());
+        Assertions.assertEquals(1, second.getNode("b").inDegree());
+    }
+
+    private static <N> List<N> values(List<? extends GraphNode<N, ?>> nodes)
+    {
+        return nodes.stream().map(GraphNode::getValue).collect(Collectors.toList());
     }
 }

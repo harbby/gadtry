@@ -16,9 +16,12 @@
 package com.github.harbby.gadtry.graph.impl;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.graph.GraphEdge;
+import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.GraphNode;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -26,11 +29,56 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GraphUtil
+public final class GraphUtil
 {
     private GraphUtil() {}
 
-    public static List<String> printShow(List<GraphNode<?, ?>> firstNodes)
+    /**
+     * Nodes from which the whole graph can be reached: all sources (in insertion order),
+     * plus one representative node for every cycle that no source can reach.
+     */
+    public static <N, E> List<GraphNode<N, E>> entryNodes(Graph<N, E> graph)
+    {
+        List<GraphNode<N, E>> entries = new ArrayList<>(graph.sources());
+        Set<GraphNode<N, E>> visited = new HashSet<>();
+        markReachable(entries, visited);
+        for (GraphNode<N, E> node : graph.nodes()) {
+            if (visited.contains(node)) {
+                continue;
+            }
+            GraphNode<N, E> entry = findCycleAncestor(node);
+            entries.add(entry);
+            markReachable(Collections.singletonList(entry), visited);
+        }
+        return entries;
+    }
+
+    /**
+     * Walks predecessors until a node repeats. Only valid for nodes no source can reach:
+     * all their ancestors are unreachable non-sources too, so the walk always ends in a cycle.
+     */
+    private static <N, E> GraphNode<N, E> findCycleAncestor(GraphNode<N, E> node)
+    {
+        Set<GraphNode<N, E>> walked = new HashSet<>();
+        GraphNode<N, E> it = node;
+        while (walked.add(it)) {
+            it = it.inEdges().iterator().next().getInNode();
+        }
+        return it;
+    }
+
+    private static <N, E> void markReachable(List<GraphNode<N, E>> starts, Set<GraphNode<N, E>> visited)
+    {
+        Deque<GraphNode<N, E>> queue = new ArrayDeque<>(starts);
+        GraphNode<N, E> node;
+        while ((node = queue.poll()) != null) {
+            if (visited.add(node)) {
+                queue.addAll(node.successors());
+            }
+        }
+    }
+
+    public static List<String> printShow(List<? extends GraphNode<?, ?>> firstNodes)
     {
         return printBuilder(firstNodes);
     }
@@ -48,7 +96,6 @@ public class GraphUtil
         public NextStep(GraphNode<?, ?> node, String header)
         {
             this.node = node;
-
             this.header = header;
         }
 
@@ -78,7 +125,7 @@ public class GraphUtil
         }
     }
 
-    private static List<String> printBuilder(List<GraphNode<?, ?>> beginNodes)
+    private static List<String> printBuilder(List<? extends GraphNode<?, ?>> beginNodes)
     {
         Deque<NextStep> queue = new LinkedList<>();
         List<String> builder = new LinkedList<>();
@@ -94,16 +141,16 @@ public class GraphUtil
 
             String nextHeader = getNextLineHeader(line, node.toString());
             //push next nodes...
-            List<GraphNode<?, ?>> nexts = node.nextNodes().stream().filter(edge -> {
+            List<GraphNode<?, ?>> nexts = node.outEdges().stream().filter(edge -> {
                 String path = node.toString() + "->" + edge.getOutNode();
                 return looped.add(path);
-            }).map(GraphEdge::getOutNode).collect(Collectors.toList());
+            }).map(edge -> (GraphNode<?, ?>) edge.getOutNode()).collect(Collectors.toList());
             pushNext(queue, nexts, nextHeader);
         }
         return builder;
     }
 
-    private static void pushNext(Deque<NextStep> queue, List<GraphNode<?, ?>> nexts, String nextHeader)
+    private static void pushNext(Deque<NextStep> queue, List<? extends GraphNode<?, ?>> nexts, String nextHeader)
     {
         for (int i = nexts.size() - 1; i >= 0; i--) {
             if (i == nexts.size() - 1) {  //end

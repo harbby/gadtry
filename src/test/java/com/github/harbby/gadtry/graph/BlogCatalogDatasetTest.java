@@ -40,7 +40,7 @@ public class BlogCatalogDatasetTest
     private static final Graph<String, Void> graph;
 
     static {
-        Graph.GraphBuilder<String, Void> graphBuilder = ImmutableGraph.builder();
+        Graph.GraphBuilder<String, Void> graphBuilder = Graph.builder();
         try (CloseableIterator<String> iterator = getResourceAsIterator("blogCatalog-dataset/data/nodes.csv")) {
             while (iterator.hasNext()) {
                 String line = iterator.next();

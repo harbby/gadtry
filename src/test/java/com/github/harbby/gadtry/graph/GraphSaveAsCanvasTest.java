@@ -15,8 +15,9 @@
  */
 package com.github.harbby.gadtry.graph;
 
-import com.github.harbby.gadtry.graph.canvas.ProcessOptimizer;
-import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
+import com.github.harbby.gadtry.graph.export.Direction;
+import com.github.harbby.gadtry.graph.export.GraphFormats;
+import com.github.harbby.gadtry.graph.layout.GraphLayouts;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -32,14 +33,14 @@ public class GraphSaveAsCanvasTest
     void save_exception_graph_as_canvas_test()
             throws IOException
     {
-        JAVA_EXCEPTION_GRAPH.saveAsCanvas(new File(bashPath, "1.canvas"));
+        JAVA_EXCEPTION_GRAPH.export(GraphFormats.canvas()).save(new File(bashPath, "1.canvas"));
     }
 
     @Test
     void save_graph_as_canvas_test2()
             throws IOException
     {
-        GraphDemoTest.TRAIN_GRAPH.saveAsCanvas(new File(bashPath, "2.canvas"));
+        GraphDemoTest.TRAIN_GRAPH.export(GraphFormats.canvas()).save(new File(bashPath, "2.canvas"));
     }
 
     @Test
@@ -58,7 +59,7 @@ public class GraphSaveAsCanvasTest
                 .addEdge("b", "e")
                 .create();
         graph.printShow().forEach(System.out::println);
-        graph.saveAsCanvas()
+        graph.export(GraphFormats.canvas())
                 .NodeColor("4")
                 .nodeWidth(150)
                 .nodeHeight(50)
@@ -87,9 +88,9 @@ public class GraphSaveAsCanvasTest
                 .addEdge("b", "c")
                 .addEdge("a", "c")
                 .create();
-        graph.saveAsCanvas()
-                .direction(SaveFileBuilder.Direction.up_to_down)
-                .strategy(ProcessOptimizer.Strategy.DEFAULT)
+        graph.export(GraphFormats.canvas())
+                .direction(Direction.TOP_TO_BOTTOM)
+                .layout(GraphLayouts.sugiyama())
                 .save(new File(bashPath, "5.canvas"));
     }
 
@@ -103,7 +104,7 @@ public class GraphSaveAsCanvasTest
                 .addEdge("p2", "c")
                 .addEdge("c", "a")
                 .create();
-        graph.saveAsCanvas().save(new File(bashPath, "6.canvas"));
+        graph.export(GraphFormats.canvas()).save(new File(bashPath, "6.canvas"));
     }
 
     @Test
@@ -115,7 +116,7 @@ public class GraphSaveAsCanvasTest
                 .addEdge("b", "c")
                 .addEdge("c", "a")
                 .create();
-        graph.saveAsCanvas().save(new File(bashPath, "7.canvas"));
+        graph.export(GraphFormats.canvas()).save(new File(bashPath, "7.canvas"));
     }
 
     @Test
@@ -145,7 +146,7 @@ public class GraphSaveAsCanvasTest
                 .addEdge("14", "15")
                 .addEdge("15", "16")
                 .create();
-        graph.saveAsCanvas().save(new File(bashPath, "8.canvas"));
+        graph.export(GraphFormats.canvas()).layout(GraphLayouts.auto()).save(new File(bashPath, "8.canvas"));
         /*
         digraph G {
             rankdir=LR;

@@ -13,9 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.graph;
+package com.github.harbby.gadtry.graph.export;
 
-public interface ConcurrentGraph<N, E>
-        extends Graph<N, E>
+import com.github.harbby.gadtry.graph.Graph;
+
+/**
+ * Factory of a {@link GraphExporter}. Built-in formats live in {@link GraphFormats};
+ * a custom format is usually just a constructor reference: {@code graph.export(MyExporter::new)}.
+ */
+@FunctionalInterface
+public interface GraphFormat<N, E, X extends GraphExporter<N, E>>
 {
+    X create(Graph<N, E> graph);
 }

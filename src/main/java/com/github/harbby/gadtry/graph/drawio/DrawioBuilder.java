@@ -36,15 +36,17 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.github.harbby.gadtry.base.MoreObjects;
+import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
 import com.github.harbby.gadtry.graph.canvas.EdgeView;
 import com.github.harbby.gadtry.graph.canvas.NodeView;
 import com.github.harbby.gadtry.graph.canvas.SaveFileBuilder;
+import com.github.harbby.gadtry.graph.export.Direction;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -80,9 +82,9 @@ public class DrawioBuilder<N, E>
 
     private String edgeStyle;
 
-    public DrawioBuilder(GraphNode<N, E> root, Map<N, GraphNode<N, E>> nodes)
+    public DrawioBuilder(Graph<N, E> graph)
     {
-        super(root, nodes, 200, 40);
+        super(graph, 200, 40);
     }
 
     public DrawioBuilder<N, E> nodeWidth(int width)
@@ -175,7 +177,7 @@ public class DrawioBuilder<N, E>
 
         drawioEdge.addMxGeometry("as", "geometry");
         drawioEdge.addMxGeometry("relative", "1");
-        edgeStyle = MoreObjects.getNonNull(edgeStyle, () -> direction == Direction.left_to_right ? "entityRelationEdgeStyle" : "elbowEdgeStyle");
+        edgeStyle = MoreObjects.getNonNull(edgeStyle, () -> direction == Direction.LEFT_TO_RIGHT ? "entityRelationEdgeStyle" : "elbowEdgeStyle");
         switch (edgeStyle) {
             case "entityRelationEdgeStyle":
                 drawioEdge.addStyle("edgeStyle", edgeStyle);
@@ -183,7 +185,7 @@ public class DrawioBuilder<N, E>
                 break;
             case "elbowEdgeStyle":
             case "orthogonalEdgeStyle":
-                if (direction == Direction.left_to_right) {
+                if (direction == Direction.LEFT_TO_RIGHT) {
                     drawioEdge.addStyle("edgeStyle", "elbowEdgeStyle");
                 }
                 else {
@@ -195,7 +197,7 @@ public class DrawioBuilder<N, E>
                 drawioEdge.addStyle("edgeStyle", edgeStyle);
                 drawioEdge.addStyle("curved", "0");
         }
-        if (direction == Direction.left_to_right) {
+        if (direction == Direction.LEFT_TO_RIGHT) {
             drawioEdge.addStyle("exitX", "1");
             drawioEdge.addStyle("exitY", "0.5");
             drawioEdge.addStyle("entryX", "0");
@@ -232,7 +234,7 @@ public class DrawioBuilder<N, E>
     }
 
     @Override
-    protected void serialize(CanvasGraphPO<DrawioMxCell, DrawioMxCell> graphPO, File path)
+    protected void serialize(CanvasGraphPO<DrawioMxCell, DrawioMxCell> graphPO, Writer writer)
             throws IOException
     {
         DrawioMxfile drawioMxfile = new DrawioMxfile();
@@ -251,7 +253,7 @@ public class DrawioBuilder<N, E>
         mxGraphModel.root = root;
         drawioMxfile.diagram.mxGraphModel = mxGraphModel;
 
-        XML_MAPPER.writeValue(path, drawioMxfile);
+        XML_MAPPER.writeValue(writer, drawioMxfile);
     }
 
     @JacksonXmlRootElement(localName = "mxGraphModel")

@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.harbby.gadtry.graph;
+package com.github.harbby.gadtry.graph.layout;
 
-public interface ImmutableGraph<N, E>
-        extends Graph<N, E>
+import com.github.harbby.gadtry.graph.Graph;
+
+import java.util.Map;
+
+/**
+ * Computes node positions only; exporters turn the positions into files.
+ * Built-in implementations are available from {@link GraphLayouts}.
+ */
+public interface GraphLayout
 {
-    static <N, E> Graph.GraphBuilder<N, E> builder()
-    {
-        return new Graph.GraphBuilder<>();
-    }
+    /**
+     * @return the top-left corner of every node of {@code graph}, keyed by node value
+     */
+    <N, E> Map<N, Point> layout(Graph<N, E> graph, LayoutOptions options);
 }

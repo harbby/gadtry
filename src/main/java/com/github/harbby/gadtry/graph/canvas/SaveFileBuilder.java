@@ -15,12 +15,18 @@
  */
 package com.github.harbby.gadtry.graph.canvas;
 
+import com.github.harbby.gadtry.graph.Graph;
 import com.github.harbby.gadtry.graph.GraphEdge;
 import com.github.harbby.gadtry.graph.GraphNode;
+import com.github.harbby.gadtry.graph.export.Direction;
+import com.github.harbby.gadtry.graph.export.GraphExporter;
+import com.github.harbby.gadtry.graph.layout.GraphLayout;
+import com.github.harbby.gadtry.graph.layout.GraphLayouts;
+import com.github.harbby.gadtry.graph.layout.LayoutOptions;
+import com.github.harbby.gadtry.graph.layout.Point;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.NotDirectoryException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +36,18 @@ import java.util.function.Function;
 import static com.github.harbby.gadtry.base.MoreObjects.getNonNull;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Base class of the visual formats (canvas, drawio): a {@link GraphLayout} places the nodes,
+ * subclasses turn nodes and edges into file elements.
+ */
 public abstract class SaveFileBuilder<N, E, N0, E0>
+        extends GraphExporter<N, E>
 {
     protected Function<N, String> idSelector = String::valueOf;
-    protected Direction direction = Direction.left_to_right;
-    protected Consumer<NodeView<N, N0>> nodeVisitor = nNodeContext -> {};
-    protected Consumer<EdgeView<N, E, E0>> edgeVisitor = nNodeContext -> {};
-    private ProcessOptimizer.Strategy strategy = ProcessOptimizer.Strategy.DOT_LAYOUT;  // PERFECT_DEPTH_V2 or DOT_LAYOUT
+    protected Direction direction = Direction.LEFT_TO_RIGHT;
+    protected Consumer<NodeView<N, N0>> nodeVisitor = nodeView -> {};
+    protected Consumer<EdgeView<N, E, E0>> edgeVisitor = edgeView -> {};
+    private GraphLayout layout = GraphLayouts.sugiyama();
 
     protected Double xSpacingFactor;
     protected Double ySpacingFactor;
@@ -44,27 +55,9 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
     protected int width;
     protected int height;
 
-    public enum Direction
+    protected SaveFileBuilder(Graph<N, E> graph, int defaultWidth, int defaultHeight)
     {
-        left_to_right(1.6, 1.4), up_to_down(1.1, 2.3);
-
-        private final double xSpacingFactor;
-        private final double ySpacingFactor;
-
-        Direction(double x, double y)
-        {
-            this.xSpacingFactor = x;
-            this.ySpacingFactor = y;
-        }
-    }
-
-    private final GraphNode<N, E> root;
-    private final Map<N, GraphNode<N, E>> nodes;
-
-    protected SaveFileBuilder(GraphNode<N, E> root, Map<N, GraphNode<N, E>> nodes, int defaultWidth, int defaultHeight)
-    {
-        this.root = root;
-        this.nodes = nodes;
+        super(graph);
         this.width = defaultWidth;
         this.height = defaultHeight;
     }
@@ -73,7 +66,7 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
 
     protected abstract N0 createNodeView(GraphNode<N, E> node, int x, int y);
 
-    protected abstract void serialize(CanvasGraphPO<N0, E0> graphPO, File path)
+    protected abstract void serialize(CanvasGraphPO<N0, E0> graphPO, Writer writer)
             throws IOException;
 
     public SaveFileBuilder<N, E, N0, E0> direction(Direction direction)
@@ -90,48 +83,116 @@ public abstract class SaveFileBuilder<N, E, N0, E0>
 
     protected double xSpacingFactor()
     {
-        return getNonNull(this.xSpacingFactor, direction.xSpacingFactor);
+        return getNonNull(this.xSpacingFactor, direction == Direction.LEFT_TO_RIGHT ? 1.6 : 1.1);
     }
 
     protected double ySpacingFactor()
     {
-        return getNonNull(this.ySpacingFactor, direction.ySpacingFactor);
+        return getNonNull(this.ySpacingFactor, direction == Direction.LEFT_TO_RIGHT ? 1.4 : 2.3);
     }
 
-    protected final long generateXY(int depth, int index)
+    /**
+     * Node placement algorithm, default {@link GraphLayouts#sugiyama()} (pure java, no external tools).
+     */
+    public final SaveFileBuilder<N, E, N0, E0> layout(GraphLayout layout)
     {
-        double xSpacingFactor = getNonNull(this.xSpacingFactor, direction.xSpacingFactor);
-        double ySpacingFactor = getNonNull(this.ySpacingFactor, direction.ySpacingFactor);
-        int x;
-        int y;
-        if (this.direction == Direction.left_to_right) {
-            x = (int) (depth * width * xSpacingFactor);
-            y = (int) (index * height * ySpacingFactor);
-        }
-        else {
-            y = (int) (depth * height * ySpacingFactor);
-            x = (int) (index * width * xSpacingFactor);
-        }
-        return (((long) x) << Integer.SIZE) | (long) y;
-    }
-
-    public final SaveFileBuilder<N, E, N0, E0> strategy(ProcessOptimizer.Strategy strategy)
-    {
-        this.strategy = strategy;
+        this.layout = requireNonNull(layout, "layout is null");
         return this;
     }
 
-    public final void save(File path)
+    @Override
+    protected final void write(Writer writer)
             throws IOException
     {
-        ProcessOptimizer<N, E, N0, E0> optimizer = strategy.create(this);
-        CanvasGraphPO<N0, E0> canvasGraphPO = optimizer.optimize(root, nodes.size());
-        // check and mkdir parent dir
-        File parentFile = path.getParentFile();
-        if (!parentFile.exists() && !parentFile.mkdirs()) {
-            throw new NotDirectoryException("mkdir parent dir " + parentFile + " failed");
+        LayoutOptions options = new LayoutOptions(direction, width, height,
+                width * xSpacingFactor(), height * ySpacingFactor());
+        Map<N, Point> positions = layout.layout(graph, options);
+
+        CanvasGraphPO<N0, E0> graphPO = new CanvasGraphPO<>();
+        for (GraphNode<N, E> node : graph.nodes()) {
+            Point point = requireNonNull(positions.get(node.getValue()), "layout missing node " + node.getValue());
+            N0 nodeInfo = createNodeView(node, (int) Math.round(point.getX()), (int) Math.round(point.getY()));
+            nodeVisitor.accept(new NodeViewImpl<>(node, nodeInfo));
+            graphPO.addNode(nodeInfo);
         }
-        this.serialize(canvasGraphPO, path);
+        for (GraphEdge<N, E> edge : graph.edges()) {
+            E0 edgeInfo = createEdgeView(edge.getInNode(), edge);
+            edgeVisitor.accept(new EdgeViewImpl<>(edge.getInNode().getValue(), edge.getOutNode().getValue(), edge.getValue(), edgeInfo));
+            graphPO.addEdge(edgeInfo);
+        }
+        this.serialize(graphPO, writer);
+    }
+
+    private static final class NodeViewImpl<N, E, N0>
+            implements NodeView<N, N0>
+    {
+        private final GraphNode<N, E> node;
+        private final N0 fileNode;
+
+        private NodeViewImpl(GraphNode<N, E> node, N0 fileNode)
+        {
+            this.node = node;
+            this.fileNode = fileNode;
+        }
+
+        @Override
+        public N0 getInfo()
+        {
+            return fileNode;
+        }
+
+        @Override
+        public N getNode()
+        {
+            return node.getValue();
+        }
+
+        @Override
+        public String toString()
+        {
+            return node.toString();
+        }
+    }
+
+    private static final class EdgeViewImpl<N, E, E0>
+            implements EdgeView<N, E, E0>
+    {
+        private final N input;
+        private final N output;
+        private final E value;
+        private final E0 edgeConfig;
+
+        private EdgeViewImpl(N input, N output, E value, E0 edgeConfig)
+        {
+            this.input = input;
+            this.output = output;
+            this.value = value;
+            this.edgeConfig = edgeConfig;
+        }
+
+        @Override
+        public N getInput()
+        {
+            return input;
+        }
+
+        @Override
+        public N getOutput()
+        {
+            return output;
+        }
+
+        @Override
+        public E getValue()
+        {
+            return value;
+        }
+
+        @Override
+        public E0 getInfo()
+        {
+            return edgeConfig;
+        }
     }
 
     public static class CanvasGraphPO<N0, E0>

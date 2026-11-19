@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.github.harbby"
-version = "1.10.9-SNAPSHOT"  //SNAPSHOT
+version = "1.10.9"  //SNAPSHOT
 
 val jdk = project.findProperty("jdk")?: "java21"  //default -Pjdk=java11
 //val jdk: def = System.getProperty("jdk") ?: " -Djdk=java11
@@ -221,16 +221,22 @@ publishing {
   }
   repositories {
     maven {
-      credentials {
-        username = project.findProperty("mavenUsername")?.toString()
-        password = project.findProperty("mavenPassword")?.toString()
-      }
-      // change URLs to point to your repos, e.g. http://my.org/repo
-      val repository_url = if (project.version.toString().endsWith("-SNAPSHOT"))
+        name = "centralManualTesting"
+//      credentials {
+//        username = project.findProperty("mavenUsername")?.toString()
+//        password = project.findProperty("mavenPassword")?.toString()
+//      }
+        // change URLs to point to your repos, e.g. http://my.org/repo
+        val repository_url = if (project.version.toString().endsWith("-SNAPSHOT"))
               "https://oss.sonatype.org/content/repositories/snapshots" else
-              "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-      url = uri(repository_url)
+              "https://central.sonatype.com/api/v1/publisher/deployments/download"
+        url = uri(repository_url)
+        credentials(HttpHeaderCredentials::class)
+        authentication {
+            create("header", HttpHeaderAuthentication::class)
+        }
     }
+    mavenCentral()
     mavenLocal()
   }
   artifacts {

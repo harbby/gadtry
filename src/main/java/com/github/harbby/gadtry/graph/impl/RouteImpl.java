@@ -72,7 +72,7 @@ public class RouteImpl<N, E>
         }
         GraphNode<N, E> lastNode = edges.getLast().getOutNode();
         N lastNodeValue = lastNode.getValue();
-        if (!(begin instanceof GraphNode.RootNode) && Objects.equals(begin.getValue(), lastNodeValue)) {
+        if (Objects.equals(begin.getValue(), lastNodeValue)) {
             return true;
         }
         Iterator<GraphEdge<N, E>> iterator = edges.descendingIterator();
