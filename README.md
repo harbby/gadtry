@@ -16,7 +16,7 @@ Contains: ioc. aop. mock. exec. graph ...
 <dependency>
     <groupId>com.github.harbby</groupId>
     <artifactId>gadtry</artifactId>
-    <version>1.9.9</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -116,34 +116,67 @@ Assert.assertEquals(out.intValue(), 1);
 ```
 
 ## Graph
-* Create ImmutableGraph
+* Create an immutable graph (`N` = node value / id, `E` = edge value)
+```java
+Graph<String, Void> graph = Graph.<String, Void>builder()
+        .addNode("Throwable")
+        .addEdge("Throwable", "Exception")
+        .addEdge("Throwable", "Error")
+        .addEdge("Exception", "IOException")
+        .addEdge("Exception", "FileNotFoundException")
+        .addEdge("Exception", "RuntimeException")
+        .addEdge("RuntimeException", "UnsupportedOperationException")
+        .addEdge("RuntimeException", "IllegalArgumentException")
+        .addEdge("Error", "OutOfMemoryError")
+        .addEdge("Error", "NoClassDefFoundError")
+        .create();
 ```
-Graph graph = ImmutableGraph.builder()
-                .addNode("Throwable")
-                .addNode("Exception")
-                .addNode("IOException")
-                .addNode("FileNotFoundException")
+* Iterate nodes and edges
+```java
+for (GraphNode<String, Void> node : graph) {
+    System.out.println(node.getValue() + " out=" + node.outDegree() + " in=" + node.inDegree());
+}
+for (GraphEdge<String, Void> edge : graph.edges()) {
+    System.out.println(edge.getInNode().getValue() + " -> " + edge.getOutNode().getValue());
+}
+graph.forEachEdge((from, to, value) -> System.out.println(from + " -> " + to));
+long errors = graph.nodeStream().filter(n -> n.getValue().endsWith("Error")).count();
+```
+* Query
+```java
+graph.sources();                              // [Throwable]
+graph.sinks();                                // leaf nodes
+graph.successors("Exception");                // IOException, FileNotFoundException, RuntimeException
+graph.containsEdge("Throwable", "Error");     // true
+Optional<GraphEdge<String, Void>> edge = graph.findEdge("Error", "OutOfMemoryError");
+```
+* Chained traversal (lazy, cycle safe)
+```java
+List<String> bfs = graph.traverse().from("Throwable").bfs().values().collect(Collectors.toList());
+List<String> order = graph.traverse().topological().values().collect(Collectors.toList());
+// ancestors of IOException: follow edges backwards
+graph.traverse().from("IOException").reverse().dfs().values().forEach(System.out::println);
+for (GraphNode<String, Void> node : graph.traverse().from("Exception").dfs()) {
+    // ...
+}
+```
+* Export (JSON / DOT / GraphML / Mermaid / Obsidian canvas / draw.io)
 
-                .addNode("RuntimeException")
-                .addNode("UnsupportedOperationException")
-                .addNode("IllegalArgumentException")
+  Every exporter can write to a `Writer`, an `OutputStream`, a `Path`/`File`, or return a `String`.
+  JSON / DOT / GraphML / Mermaid have no dependencies; `canvas()` needs `jackson-databind` and `drawio()` needs `jackson-dataformat-xml` on the classpath.
+```java
+graph.export(GraphFormats.json()).save(Paths.get("/tmp/graph.json"));
+String dot = graph.export(GraphFormats.dot()).direction(Direction.TOP_TO_BOTTOM).asString();
+graph.export(GraphFormats.mermaid()).writeTo(System.out);
+graph.export(GraphFormats.graphml()).labelBy(String::toLowerCase).save(new File("/tmp/graph.graphml"));
 
-                .addNode("Error")
-                .addNode("OutOfMemoryError")
-                .addNode("NoClassDefFoundError")
-
-                .addEdge("Throwable", "Exception")
-                .addEdge("Throwable", "Error")
-
-                .addEdge("Exception", "IOException")
-                .addEdge("Exception", "FileNotFoundException")
-                .addEdge("Exception", "RuntimeException")
-                .addEdge("RuntimeException", "UnsupportedOperationException")
-                .addEdge("RuntimeException", "IllegalArgumentException")
-
-                .addEdge("Error", "OutOfMemoryError")
-                .addEdge("Error", "NoClassDefFoundError")
-                .create();
+// visual formats: the built-in Sugiyama layout is pure java and works everywhere,
+// GraphLayouts.auto() uses graphviz `dot` when it is installed and falls back to Sugiyama otherwise
+graph.export(GraphFormats.canvas())
+        .direction(Direction.TOP_TO_BOTTOM)
+        .layout(GraphLayouts.auto())
+        .save(new File("/tmp/graph.canvas"));
+graph.export(GraphFormats.drawio()).save(new File("/tmp/graph.drawio"));
 ```
 * Print Graph:
 ```

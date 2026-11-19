@@ -6,11 +6,12 @@ plugins {
   id("com.github.hierynomus.license") version "0.16.1"
   jacoco
   `maven-publish`
+  id("com.vanniktech.maven.publish") version "0.37.0"
   id("com.github.ben-manes.versions") version "0.52.0"  // ./gradlew dependencyUpdates
 }
 
 group = "com.github.harbby"
-version = "1.10.9"  //SNAPSHOT
+version = "2.0.0"  //SNAPSHOT
 
 val jdk = project.findProperty("jdk")?: "java21"  //default -Pjdk=java11
 //val jdk: def = System.getProperty("jdk") ?: " -Djdk=java11
@@ -166,92 +167,68 @@ tasks.check {
   dependsOn(tasks.jacocoTestReport)
 }
 
-tasks.register<Jar>("sourcesJar") {
-  dependsOn(tasks.classes)
-  archiveClassifier.set("sources")
-  from(sourceSets.main.orNull?.allSource)
+tasks.javadoc {
+  isFailOnError = false
 }
 
-tasks.register<Jar>("javadocJar") {
-  dependsOn(tasks.javadoc)
-  archiveClassifier.set("javadoc")
-  from(tasks.javadoc.orNull?.destinationDir)
-  tasks.javadoc.orNull?.isFailOnError = false
-}
+// Release to Maven Central via the Central Portal (bytecode must stay Java 8):
+//   ./gradlew clean publishToMavenCentral -Pjdk=java21 -Ptarget=8
+// then review and press "Publish" at https://central.sonatype.com/publishing/deployments
+// ~/.gradle/gradle.properties: mavenCentralUsername/mavenCentralPassword (Portal user token),
+// signing.keyId/signing.password/signing.secretKeyRingFile
+val hasSigningKey = project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")
 
-//--- gradle clean build publish
-publishing {
-  publications {
-    create<MavenPublication>("mavenJava") {
-      from(project.components.getByName("java"))
-      //artifact jar
-      artifact(tasks.getByName("sourcesJar"))
-      artifact(tasks.getByName("javadocJar"))
+mavenPublishing {
+  publishToMavenCentral(automaticRelease = false)
+  // publishToMavenLocal works without a key; Central releases are guarded below
+  if (hasSigningKey) {
+    signAllPublications()
+  }
 
-      version = "${project.version}"
-      artifactId = project.name
-      groupId = "${project.group}"
+  pom {
+    name.set("gadtry")
+    description.set("Gadtry A collection of java tool libraries. Contains: ioc. aop. exec. graph ...")
+    url.set("https://github.com/harbby/gadtry")
 
-      pom {
-        name.set("gadtry")
-        description.set("Gadtry A collection of java tool libraries. Contains: ioc. aop. exec. graph ...")
-        url.set("https://github.com/harbby/gadtry")
-
-        licenses {
-          license {
-            name.set("The Apache License, Version 2.0")
-            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-            distribution.set("repo")
-          }
-        }
-        developers {
-          developer {
-            id.set("harbby")
-            name.set("harbby")
-            email.set("yezhixinghai@gmail.com")
-          }
-        }
-        scm {
-          url.set("https://github.com/harbby/gadtry")
-          connection.set("https://github.com/harbby/gadtry.git")
-          developerConnection.set("https://github.com/harbby/gadtry.git")
-        }
+    licenses {
+      license {
+        name.set("The Apache License, Version 2.0")
+        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+        distribution.set("repo")
       }
     }
-  }
-  repositories {
-    maven {
-        name = "centralManualTesting"
-//      credentials {
-//        username = project.findProperty("mavenUsername")?.toString()
-//        password = project.findProperty("mavenPassword")?.toString()
-//      }
-        // change URLs to point to your repos, e.g. http://my.org/repo
-        val repository_url = if (project.version.toString().endsWith("-SNAPSHOT"))
-              "https://oss.sonatype.org/content/repositories/snapshots" else
-              "https://central.sonatype.com/api/v1/publisher/deployments/download"
-        url = uri(repository_url)
-        credentials(HttpHeaderCredentials::class)
-        authentication {
-            create("header", HttpHeaderAuthentication::class)
-        }
+    developers {
+      developer {
+        id.set("harbby")
+        name.set("harbby")
+        email.set("yezhixinghai@gmail.com")
+      }
     }
-    mavenCentral()
-    mavenLocal()
+    scm {
+      url.set("https://github.com/harbby/gadtry")
+      connection.set("scm:git:https://github.com/harbby/gadtry.git")
+      developerConnection.set("scm:git:ssh://git@github.com/harbby/gadtry.git")
+    }
   }
-  artifacts {
-    archives(tasks.getByName("sourcesJar"))
-    archives(tasks.getByName("javadocJar"))
-  }
-  signing {
-    isRequired = project.hasProperty("mavenUsername")
-    sign(publishing.publications.getByName("mavenJava"))
-  }
+}
 
-  tasks.register("install") {
-    dependsOn(tasks.publishToMavenLocal)
+gradle.taskGraph.whenReady {
+  val releasing = allTasks.any { it.name.contains("MavenCentral") }
+  if (releasing && java.targetCompatibility != JavaVersion.VERSION_1_8) {
+    throw GradleException("Maven Central releases must target Java 8, add -Ptarget=8 (current: ${java.targetCompatibility})")
   }
-  tasks.register("upload") {
-    dependsOn(tasks.publish)
+  if (releasing && !hasSigningKey) {
+    throw GradleException("Maven Central requires signed artifacts, configure signing.keyId/signing.password/signing.secretKeyRingFile")
   }
+  if (releasing && !(project.hasProperty("mavenCentralUsername") && project.hasProperty("mavenCentralPassword"))) {
+    val hint = if (project.hasProperty("mavenUsername")) " (found legacy mavenUsername/mavenPassword, rename them to mavenCentralUsername/mavenCentralPassword)" else ""
+    throw GradleException("Missing mavenCentralUsername/mavenCentralPassword (Central Portal user token) in ~/.gradle/gradle.properties$hint")
+  }
+}
+
+tasks.register("install") {
+  dependsOn(tasks.publishToMavenLocal)
+}
+tasks.register("upload") {
+  dependsOn("publishToMavenCentral")
 }
